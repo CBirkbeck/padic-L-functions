@@ -13,4 +13,4 @@ lake build PadicLFunctionsBlueprint
 lake env lean --run PadicLFunctionsBlueprintMain.lean --output _out/site
 
 test -f _out/site/html-multi/index.html
-test -f _out/site/html-multi/-verso-data/blueprint-preview-manifest.json
+test -f _out/site/html-multi/-verso-data/blueprint-manifest.json
