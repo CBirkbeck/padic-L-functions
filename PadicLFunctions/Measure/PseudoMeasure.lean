@@ -325,7 +325,113 @@ transform of `ιμ` is constant (binomial polynomials with `n ≥ 1` have no con
 term), and `ψ` fixes constants while killing `ιμ`; hence `𝓐_{ιμ} = 0`. -/
 theorem eq_zero_of_forall_unitsPowCM_eq_zero (μ : PadicMeasure p ℤ_[p]ˣ)
     (h : ∀ k, 0 < k → μ (unitsPowCM p k) = 0) : μ = 0 := by
-  sorry
+  -- Step 1: the positive Mahler coefficients of `ι μ` vanish
+  have hcoeff : ∀ n : ℕ, 0 < n → (iota p μ) (mahler n) = 0 := by
+    intro n hn
+    obtain ⟨q, hq⟩ : (Polynomial.X : Polynomial ℤ_[p]) ∣ descPochhammer ℤ_[p] n := by
+      rw [Polynomial.X_dvd_iff, Polynomial.coeff_zero_eq_eval_zero, descPochhammer_eval_zero]
+      simp [hn.ne']
+    have hbridge : ∀ x : ℤ_[p],
+        (descPochhammer ℤ_[p] n).eval x = (descPochhammer ℤ n).smeval x := by
+      intro x
+      rw [← descPochhammer_map (Int.castRingHom ℤ_[p]) n, Polynomial.eval_map,
+        Polynomial.eval₂_eq_sum, Polynomial.smeval_eq_sum, Polynomial.sum_def,
+        Polynomial.sum_def]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Polynomial.smul_pow, zsmul_eq_mul]
+      rfl
+    have hfun : (n.factorial • mahler n : C(ℤ_[p], ℤ_[p]))
+        = ⟨fun x => (descPochhammer ℤ_[p] n).eval x, (descPochhammer ℤ_[p] n).continuous⟩ := by
+      ext x
+      show n.factorial • mahler n x = (descPochhammer ℤ_[p] n).eval x
+      rw [mahler_apply, hbridge x, Ring.descPochhammer_eq_factorial_smul_choose]
+    have hint : (iota p μ) (n.factorial • mahler n) = 0 := by
+      rw [hfun]
+      show μ ((⟨fun x => (descPochhammer ℤ_[p] n).eval x,
+        (descPochhammer ℤ_[p] n).continuous⟩ : C(ℤ_[p], ℤ_[p])).comp (unitsValCM p)) = 0
+      have hcomp : ((⟨fun x => (descPochhammer ℤ_[p] n).eval x,
+            (descPochhammer ℤ_[p] n).continuous⟩ : C(ℤ_[p], ℤ_[p])).comp (unitsValCM p))
+          = ∑ i ∈ Finset.range (q.natDegree + 1), q.coeff i • unitsPowCM p (i + 1) := by
+        ext u
+        simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, unitsValCM,
+          ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.coe_smul, Pi.smul_apply,
+          smul_eq_mul, unitsPowCM]
+        rw [hq, Polynomial.eval_mul, Polynomial.eval_X, Polynomial.eval_eq_sum_range,
+          Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rw [hcomp, map_sum]
+      refine Finset.sum_eq_zero fun i _ => ?_
+      rw [map_smul, h (i + 1) (Nat.succ_pos i), smul_zero]
+    rw [map_nsmul] at hint
+    refine nsmul_right_injective (M := ℤ_[p]) (Nat.factorial_ne_zero n) ?_
+    show n.factorial • ((iota p μ) (mahler n)) = n.factorial • (0 : ℤ_[p])
+    rw [hint, smul_zero]
+  -- Step 2: `𝓐(ιμ)` is constant, so `ιμ` is a multiple of `δ₀`
+  set c₀ := (iota p μ) (mahler 0) with hc₀
+  have hμδ : iota p μ = c₀ • dirac p 0 := by
+    apply mahlerTransform_injective p
+    ext n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · rw [coeff_mahlerTransform, coeff_mahlerTransform, LinearMap.smul_apply, dirac_apply,
+        mahler_apply, Ring.choose_zero_right, smul_eq_mul, mul_one, hc₀]
+    · rw [coeff_mahlerTransform, coeff_mahlerTransform, hcoeff n hn, LinearMap.smul_apply,
+        dirac_apply, mahler_apply,
+        show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) from by norm_num, Ring.choose_natCast,
+        Nat.choose_eq_zero_of_lt hn, Nat.cast_zero, smul_zero]
+  -- Step 3: `ψ` kills `ιμ` but fixes multiples of `δ₀`
+  have hψ : psi p (iota p μ) = 0 := by
+    rw [← isSupportedOn_units_iff_psi_eq_zero]
+    exact res_iota p μ
+  have hψδ : psi p ((c₀ • dirac p 0 : PadicMeasure p ℤ_[p])) = c₀ • dirac p 0 := by
+    have hsd : shiftDiv p 0 = 0 := by
+      have hdig : digit p (0 : ℤ_[p]) = 0 := by
+        rw [digit, map_zero, ZMod.val_zero, Nat.cast_zero]
+      refine Subtype.ext ?_
+      show (((0 : ℤ_[p]) : ℚ_[p]) - (digit p (0 : ℤ_[p]) : ℚ_[p])) / (p : ℚ_[p])
+          = ((0 : ℤ_[p]) : ℚ_[p])
+      rw [hdig]
+      simp
+    refine LinearMap.ext fun f => ?_
+    show (c₀ • dirac p 0)
+        ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+          f.comp (shiftDiv p)) = (c₀ • dirac p 0) f
+    rw [LinearMap.smul_apply, LinearMap.smul_apply, dirac_apply, dirac_apply]
+    congr 1
+    show (LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) 0 *
+        f (shiftDiv p 0) = f 0
+    have h0mem : (0 : ℤ_[p]) ∈ {x : ℤ_[p] | ‖x‖ < 1} := by
+      simp [Set.mem_setOf_eq]
+    rw [hsd]
+    simp only [LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn]
+    rw [Set.indicator_of_mem h0mem, Pi.one_apply, one_mul]
+  rw [hμδ, hψδ] at hψ
+  have hc0 : c₀ = 0 := by
+    have heval := LinearMap.congr_fun hψ (1 : C(ℤ_[p], ℤ_[p]))
+    simpa using heval
+  rw [hc0, zero_smul] at hμδ
+  exact iota_injective p (hμδ.trans (map_zero (iota p)).symm)
+
+/-- Power moments are multiplicative for the convolution product:
+`∫(xy)^k = (∫x^k)(∫y^k)` (RJW TeX line 1233). -/
+lemma units_mul_apply_unitsPowCM (μ ν : PadicMeasure p ℤ_[p]ˣ) (k : ℕ) :
+    (μ * ν) (unitsPowCM p k) = μ (unitsPowCM p k) * ν (unitsPowCM p k) := by
+  rw [units_mul_apply]
+  have hfn : innerInt p ν ((unitsPowCM p k).comp (unitsMulCM₂ p))
+      = ν (unitsPowCM p k) • unitsPowCM p k := by
+    ext x
+    rw [innerInt_apply]
+    have hcurry : ((unitsPowCM p k).comp (unitsMulCM₂ p)).curry x
+        = ((x : ℤ_[p]) ^ k) • unitsPowCM p k := by
+      ext y
+      show ((x * y : ℤ_[p]ˣ) : ℤ_[p]) ^ k = _
+      simp only [Units.val_mul, mul_pow, ContinuousMap.smul_apply, unitsPowCM,
+        ContinuousMap.coe_mk, smul_eq_mul]
+    rw [hcurry, map_smul, smul_eq_mul]
+    show ((x : ℤ_[p])) ^ k * ν (unitsPowCM p k)
+        = (ν (unitsPowCM p k) • unitsPowCM p k) x
+    simp only [ContinuousMap.smul_apply, unitsPowCM, ContinuousMap.coe_mk, smul_eq_mul]
+    rw [mul_comm]
+  rw [hfn, map_smul, smul_eq_mul, mul_comm]
 
 /-- **RJW Lem. 3.36(ii)**: a measure on `ℤ_p^×` with `∫ x^k dμ ≠ 0` for all `k > 0`
 is not a zero divisor. Source proof (TeX lines 1232–1234): `∫ (xy)^k d(μ⋆λ) =
@@ -333,7 +439,15 @@ is not a zero divisor. Source proof (TeX lines 1232–1234): `∫ (xy)^k d(μ⋆
 theorem mem_nonZeroDivisors_of_forall_unitsPowCM_ne_zero (μ : PadicMeasure p ℤ_[p]ˣ)
     (h : ∀ k, 0 < k → μ (unitsPowCM p k) ≠ 0) :
     μ ∈ nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) := by
-  sorry
+  rw [mem_nonZeroDivisors_iff]
+  have key : ∀ ν, ν * μ = 0 → ν = 0 := by
+    intro ν hν
+    apply eq_zero_of_forall_unitsPowCM_eq_zero
+    intro k hk
+    have heval := LinearMap.congr_fun hν (unitsPowCM p k)
+    rw [units_mul_apply_unitsPowCM, LinearMap.zero_apply] at heval
+    exact (mul_eq_zero.1 heval).resolve_right (h k hk)
+  exact ⟨fun ν hν => key ν (by rwa [mul_comm] at hν), key⟩
 
 end zeroDivisor
 
@@ -354,8 +468,8 @@ def IsPseudoMeasure (q : QuotientField p) : Prop :=
 
 /-- Measures are pseudo-measures. -/
 theorem isPseudoMeasure_algebraMap (μ : PadicMeasure p ℤ_[p]ˣ) :
-    IsPseudoMeasure p (algebraMap _ _ μ) := by
-  sorry
+    IsPseudoMeasure p (algebraMap _ _ μ) := fun g =>
+  ⟨(dirac p g - 1) * μ, by rw [map_mul]⟩
 
 /-- **RJW Lem. 3.36(iii)**: a pseudo-measure all of whose moments `∫ x^k` (`k > 0`)
 vanish is zero. The moments of a pseudo-measure `q` are encoded via any `g` with
