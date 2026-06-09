@@ -451,6 +451,20 @@ theorem mem_nonZeroDivisors_of_forall_unitsPowCM_ne_zero (μ : PadicMeasure p �
 
 end zeroDivisor
 
+/-- `[a]−[1]` is a non-zero-divisor when `a` has no torsion moments: its `k`-th moment
+is `a^k − 1 ≠ 0`. Source: RJW TeX line 1240. -/
+theorem dirac_sub_one_mem_nonZeroDivisors {a : ℤ_[p]ˣ}
+    (ha : ∀ k, 0 < k → (a : ℤ_[p]) ^ k ≠ 1) :
+    (dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ) ∈
+      nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) := by
+  refine mem_nonZeroDivisors_of_forall_unitsPowCM_ne_zero p _ fun k hk => ?_
+  have heval : (dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ) (unitsPowCM p k)
+      = (a : ℤ_[p]) ^ k - 1 := by
+    rw [LinearMap.sub_apply, dirac_apply, units_one_def, dirac_apply]
+    simp only [unitsPowCM, ContinuousMap.coe_mk, Units.val_one, one_pow]
+  rw [heval, sub_ne_zero]
+  exact ha k hk
+
 section pseudoMeasure
 
 /-- The total ring of fractions `Q(ℤ_p^×)` of the Iwasawa algebra `Λ(ℤ_p^×)`.
@@ -482,20 +496,110 @@ theorem pseudoMeasure_eq_zero_of_moments {a : ℤ_[p]ˣ}
       algebraMap _ (QuotientField p) (dirac p a - 1) * q = algebraMap _ _ ν →
         ν (unitsPowCM p k) = 0) :
     q = 0 := by
-  sorry
+  obtain ⟨ν₀, hν₀⟩ := hq a
+  have hzero : ν₀ = 0 :=
+    eq_zero_of_forall_unitsPowCM_eq_zero p ν₀ fun k hk => h k hk ν₀ hν₀
+  rw [hzero, map_zero] at hν₀
+  have hunit : IsUnit (algebraMap _ (QuotientField p) (dirac p a - 1)) :=
+    IsLocalization.map_units (QuotientField p)
+      ⟨_, dirac_sub_one_mem_nonZeroDivisors p ha⟩
+  rcases hunit with ⟨u, hu⟩
+  calc q = ↑u⁻¹ * (↑u * q) := by rw [← mul_assoc, Units.inv_mul, one_mul]
+    _ = ↑u⁻¹ * 0 := by rw [hu, hν₀]
+    _ = 0 := mul_zero _
 
 end pseudoMeasure
 
 section augmentation
 
+/-- The reductions are compatible: level `n` factors through level `n+1`. -/
+lemma unitsToZModPow_succ (n : ℕ) (a : ℤ_[p]ˣ) :
+    unitsToZModPow p n a
+      = ZMod.unitsMap (pow_dvd_pow p n.le_succ) (unitsToZModPow p (n + 1) a) := by
+  apply Units.ext
+  show PadicInt.toZModPow n (a : ℤ_[p])
+      = ZMod.castHom (pow_dvd_pow p n.le_succ) _ (PadicInt.toZModPow (n + 1) (a : ℤ_[p]))
+  exact (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow n (n + 1) n.le_succ) _).symm
+
+/-- The reduction `ℤ_p^× → (ℤ/p^n)^×` is surjective: lift the canonical representative. -/
+lemma unitsToZModPow_surjective (n : ℕ) (hn : 0 < n) :
+    Function.Surjective (unitsToZModPow p n) := by
+  intro c
+  set z : ℤ_[p] := (((c : ZMod (p ^ n)).val : ℕ) : ℤ_[p]) with hz
+  have hzc : PadicInt.toZModPow n z = (c : ZMod (p ^ n)) := by
+    rw [hz, map_natCast]
+    exact ZMod.natCast_rightInverse _
+  have hunit : IsUnit z := by
+    rw [PadicInt.isUnit_iff]
+    by_contra hne
+    have hlt : ‖z‖ < 1 := lt_of_le_of_ne (PadicInt.norm_le_one z) hne
+    have hker : PadicInt.toZModPow 1 z = 0 := by
+      have hle : ‖z‖ ≤ (p : ℝ) ^ (-1 : ℤ) := by
+        rw [PadicInt.norm_le_pow_iff_norm_lt_pow_add_one]
+        simpa using hlt
+      have hmem := (PadicInt.norm_le_pow_iff_mem_span_pow z 1).1 hle
+      rwa [← PadicInt.ker_toZModPow, RingHom.mem_ker] at hmem
+    -- but `z` is a unit mod `p^n`, hence a unit mod `p`
+    have hcast : PadicInt.toZModPow 1 z
+        = ZMod.castHom (pow_dvd_pow p hn) _ (PadicInt.toZModPow n z) :=
+      (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow 1 n hn) _).symm
+    rw [hcast, hzc] at hker
+    have hu : IsUnit (ZMod.castHom (pow_dvd_pow p hn) (ZMod (p ^ 1)) (c : ZMod (p ^ n))) :=
+      c.isUnit.map (ZMod.castHom (pow_dvd_pow p hn) (ZMod (p ^ 1)))
+    rw [hker] at hu
+    haveI : Nontrivial (ZMod (p ^ 1)) := by
+      rw [pow_one]; infer_instance
+    exact not_isUnit_zero hu
+  refine ⟨hunit.unit, Units.ext ?_⟩
+  show PadicInt.toZModPow n ((hunit.unit : ℤ_[p])) = (c : ZMod (p ^ n))
+  rw [IsUnit.unit_spec]
+  exact hzc
+
 /-- For odd `p` there is a *topological generator* of `ℤ_p^×`: an `a` whose image
 generates `(ℤ/p^n)^×` for every `n`. The hypothesis `p ≠ 2` is essential:
-`(ZMod 8)ˣ` is not cyclic. Source: RJW Lem. 3.38 ("take `a` to be a primitive
-root modulo `p` such that `a^{p−1} ≢ 1 mod p²`"; the proof opens "As p is odd");
-uses mathlib's `isCyclic_units_of_prime_pow`. -/
+`(ZMod 8)ˣ` is not cyclic. Proof: the per-level generator sets are nonempty nested
+clopen subsets of the compact `ℤ_[p]ˣ`; pick a point of the intersection.
+Source: RJW Lem. 3.38 (the proof opens "As p is odd"). -/
 theorem exists_topological_generator (hp2 : p ≠ 2) :
     ∃ a : ℤ_[p]ˣ, ∀ n : ℕ, Subgroup.zpowers (unitsToZModPow p n a) = ⊤ := by
-  sorry
+  classical
+  -- the nested sequence of (clopen, nonempty) generator sets
+  set t : ℕ → Set ℤ_[p]ˣ :=
+    fun n => {a : ℤ_[p]ˣ | Subgroup.zpowers (unitsToZModPow p n a) = ⊤} with ht
+  have hsub : ∀ n, t (n + 1) ⊆ t n := by
+    intro n a hagen
+    show Subgroup.zpowers (unitsToZModPow p n a) = ⊤
+    rw [unitsToZModPow_succ p n a, ← MonoidHom.map_zpowers, hagen]
+    exact Subgroup.map_top_of_surjective _
+      (ZMod.unitsMap_surjective (pow_dvd_pow p n.le_succ))
+  have hne : ∀ n, (t n).Nonempty := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · refine ⟨1, ?_⟩
+      show Subgroup.zpowers (unitsToZModPow p 0 1) = ⊤
+      haveI : Subsingleton (ZMod (p ^ 0))ˣ := by
+        rw [pow_zero]
+        infer_instance
+      exact Subsingleton.elim _ _
+    · haveI := Fact.mk hp.out
+      haveI := ZMod.isCyclic_units_of_prime_pow p hp.out hp2 n
+      obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := (ZMod (p ^ n))ˣ)
+      obtain ⟨a, rfl⟩ := unitsToZModPow_surjective p n hn g
+      exact ⟨a, (Subgroup.eq_top_iff' _).2 hg⟩
+  have hclosed : ∀ n, IsClosed (t n) := by
+    intro n
+    have hset : t n = ⋃ g ∈ {g : (ZMod (p ^ n))ˣ | Subgroup.zpowers g = ⊤},
+        unitsToZModPow p n ⁻¹' {g} := by
+      ext a
+      simp only [ht, Set.mem_setOf_eq, Set.mem_iUnion, Set.mem_preimage,
+        Set.mem_singleton_iff, exists_prop]
+      exact ⟨fun h => ⟨_, h, rfl⟩, fun ⟨g, hg, hag⟩ => hag ▸ hg⟩
+    rw [hset]
+    exact (Set.toFinite _).isClosed_biUnion
+      fun g _ => (isClopen_unitsToZModPow_fiber p n g).isClosed
+  obtain ⟨a, ha⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
+    t hsub hne ((hclosed 0).isCompact) hclosed
+  exact ⟨a, fun n => Set.mem_iInter.1 ha n⟩
 
 /-- For a topological generator `a`, the augmentation ideal is principal, generated by
 `[a] − [1]`: at each finite level the augmentation ideal of the (cyclic) group ring
@@ -520,11 +624,11 @@ theorem isPseudoMeasure_mk' {a : ℤ_[p]ˣ}
 /-- `[a]−[1]` is a non-zero-divisor for a topological generator `a` (its moments are
 `a^k − 1 ≠ 0`). Source: RJW TeX line 1240 ("But `[a]−[1]` satisfies the condition of
 part (ii)") together with the remark after Lem. 3.38. -/
-theorem dirac_sub_one_mem_nonZeroDivisors {a : ℤ_[p]ˣ}
+theorem dirac_sub_one_mem_nonZeroDivisors' {a : ℤ_[p]ˣ}
     (ha : ∀ k, 0 < k → (a : ℤ_[p]) ^ k ≠ 1) :
     (dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ) ∈
-      nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) := by
-  sorry
+      nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) :=
+  dirac_sub_one_mem_nonZeroDivisors p ha
 
 /-- Every pseudo-measure has the shape `μ/([a]−[1])`. Source: RJW TeX lines 1284–1285
 ("Note moreover that *all* pseudo-measures have this shape"). -/
