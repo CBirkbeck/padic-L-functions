@@ -181,15 +181,86 @@ Source: RJW §3.5.5 (TeX lines 1141–1142). -/
 noncomputable def phi : PadicMeasure p ℤ_[p] →ₗ[ℤ_[p]] PadicMeasure p ℤ_[p] :=
   pushforward p (mulCM p (p : ℤ_[p]))
 
+private lemma binomialSeries_mul_nat (c : ℤ_[p]) (k : ℕ) :
+    binomialSeries ℤ_[p] (c * (k : ℤ_[p])) = binomialSeries ℤ_[p] c ^ k := by
+  induction k with
+  | zero => simp [binomialSeries_zero]
+  | succ m ih =>
+    have : c * ((m : ℤ_[p]) + 1) = c * (m : ℤ_[p]) + c := by ring
+    rw [Nat.cast_add, Nat.cast_one, this, binomialSeries_add, ih, pow_succ]
+
+/-- General substitution formula: pushing a measure forward along multiplication by
+`c ∈ ℤ_p` substitutes `(1+T)^c − 1` into the Mahler transform.
+
+Source: RJW §3.5.5 (TeX line 1138 for `σ_a`; Eq. (3.9) for `φ`). -/
+theorem mahlerTransform_pushforward_mulCM (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]) :
+    mahlerTransform p (pushforward p (mulCM p c) μ)
+      = PowerSeries.subst (binomialSeries ℤ_[p] c - 1) (mahlerTransform p μ) := by
+  set B' : PowerSeries ℤ_[p] := binomialSeries ℤ_[p] c - 1 with hB'
+  have hconst : PowerSeries.constantCoeff B' = 0 := by
+    simp [hB', binomialSeries_constantCoeff]
+  have hsub : PowerSeries.HasSubst B' := PowerSeries.HasSubst.of_constantCoeff_zero' hconst
+  have hvanish : ∀ {n d : ℕ}, n < d → PowerSeries.coeff n (B' ^ d) = 0 := fun {n d} hnd =>
+    PowerSeries.X_pow_dvd_iff.1
+      (pow_dvd_pow_of_dvd (PowerSeries.X_dvd_iff.2 hconst) d) n hnd
+  ext n
+  rw [coeff_mahlerTransform, PowerSeries.coeff_subst' hsub,
+    finsum_eq_finset_sum_of_support_subset _ (s := Finset.range (n + 1)) (by
+      intro d hd
+      simp only [Function.mem_support] at hd
+      by_contra hmem
+      simp only [Finset.coe_range, Set.mem_Iio, not_lt] at hmem
+      exact hd (by rw [hvanish (by omega)]; simp))]
+  have key : ∀ k : ℕ, mahler n (c * (k : ℤ_[p]))
+      = ∑ d ∈ Finset.range (n + 1),
+          PowerSeries.coeff n (B' ^ d) * ((k.choose d : ℕ) : ℤ_[p]) := by
+    intro k
+    have lhs_eq : mahler n (c * (k : ℤ_[p]))
+        = PowerSeries.coeff n (binomialSeries ℤ_[p] c ^ k) := by
+      rw [← binomialSeries_mul_nat p c k, binomialSeries_coeff, mahler_apply, smul_eq_mul,
+        mul_one]
+    have expand : PowerSeries.coeff n (binomialSeries ℤ_[p] c ^ k)
+        = ∑ d ∈ Finset.range (k + 1),
+            PowerSeries.coeff n (B' ^ d) * ((k.choose d : ℕ) : ℤ_[p]) := by
+      have hb : binomialSeries ℤ_[p] c = B' + 1 := by rw [hB', sub_add_cancel]
+      rw [hb, add_pow, map_sum]
+      refine Finset.sum_congr rfl fun d _ => ?_
+      rw [one_pow, mul_one, ← map_natCast (PowerSeries.C (R := ℤ_[p])) (k.choose d),
+        PowerSeries.coeff_mul_C]
+    rw [lhs_eq, expand]
+    rcases le_total k n with hkn | hnk
+    · refine Finset.sum_subset (by intro d hd; simp only [Finset.mem_range] at *; omega)
+        (fun d hd hnd => ?_)
+      simp only [Finset.mem_range, not_lt] at hnd
+      simp only [Finset.mem_range] at hd
+      rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero]
+    · refine (Finset.sum_subset (by intro d hd; simp only [Finset.mem_range] at *; omega)
+        (fun d hd hnd => ?_)).symm
+      simp only [Finset.mem_range, not_lt] at hnd
+      rw [hvanish (by omega), zero_mul]
+  have hfun : (mahler n).comp (mulCM p c)
+      = ∑ d ∈ Finset.range (n + 1),
+          (PowerSeries.coeff n (B' ^ d)) • (mahler d : C(ℤ_[p], ℤ_[p])) := by
+    apply ContinuousMap.coe_injective
+    refine PadicInt.denseRange_natCast.equalizer (map_continuous _) (map_continuous _)
+      (funext fun k => ?_)
+    show mahler n (c * (k : ℤ_[p])) = _
+    rw [key k]
+    simp only [Function.comp_apply, ContinuousMap.coe_sum, Finset.sum_apply,
+      ContinuousMap.coe_smul, Pi.smul_apply, smul_eq_mul, mahler_natCast_eq]
+  show μ ((mahler n).comp (mulCM p c)) = _
+  rw [hfun, map_sum]
+  refine Finset.sum_congr rfl fun d _ => ?_
+  rw [map_smul, smul_eq_mul, coeff_mahlerTransform, smul_eq_mul, mul_comm]
+
 /-- `𝓐_{σ_a μ} = 𝓐_μ((1+T)^a − 1)`: the `ℤ_p^×`-action on power series is substitution
-into the binomial series. (Constant coefficient of `(1+T)^a − 1` is `0`, so mathlib's
-algebraic `PowerSeries.subst` applies.)
+into the binomial series.
 
 Source: RJW §3.5.5 (TeX line 1138). -/
 theorem mahlerTransform_sigma (a : ℤ_[p]ˣ) (μ : PadicMeasure p ℤ_[p]) :
     mahlerTransform p (sigma p a μ) =
-      PowerSeries.subst (binomialSeries ℤ_[p] (a : ℤ_[p]) - 1) (mahlerTransform p μ) := by
-  sorry
+      PowerSeries.subst (binomialSeries ℤ_[p] (a : ℤ_[p]) - 1) (mahlerTransform p μ) :=
+  mahlerTransform_pushforward_mulCM p _ μ
 
 /-- `𝓐_{φ(μ)} = 𝓐_μ((1+T)^p − 1)` — Eq. (3.9) (`eq:varphi power series`).
 
@@ -197,7 +268,8 @@ Source: RJW TeX lines 1144–1146. -/
 theorem mahlerTransform_phi (μ : PadicMeasure p ℤ_[p]) :
     mahlerTransform p (phi p μ) =
       PowerSeries.subst ((1 + PowerSeries.X) ^ p - 1) (mahlerTransform p μ) := by
-  sorry
+  have h := mahlerTransform_pushforward_mulCM p ((p : ℕ) : ℤ_[p]) μ
+  rwa [binomialSeries_nat] at h
 
 /-- The canonical digit of `x` mod `p`, lifted back to `ℤ_p`. -/
 noncomputable def digit (x : ℤ_[p]) : ℤ_[p] :=
@@ -274,15 +346,61 @@ noncomputable def psi (μ : PadicMeasure p ℤ_[p]) : PadicMeasure p ℤ_[p] whe
   map_smul' c f := by
     rw [ContinuousMap.smul_comp, mul_smul_comm, map_smul, RingHom.id_apply]
 
+lemma mem_pZp_of_mul {x : ℤ_[p]} : ‖(p : ℤ_[p]) * x‖ < 1 :=
+  lt_of_le_of_lt (by
+      calc ‖(p : ℤ_[p]) * x‖ = ‖(p : ℤ_[p])‖ * ‖x‖ := norm_mul _ _
+        _ ≤ ‖(p : ℤ_[p])‖ * 1 :=
+            mul_le_mul_of_nonneg_left (PadicInt.norm_le_one x) (norm_nonneg _)
+        _ = ‖(p : ℤ_[p])‖ := mul_one _)
+    (by rw [PadicInt.norm_p]; exact inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.out.one_lt))
+
+/-- On `pℤ_p`, multiplying the digit shift back by `p` recovers the point. -/
+lemma mul_shiftDiv_of_mem {x : ℤ_[p]} (hx : ‖x‖ < 1) :
+    (p : ℤ_[p]) * shiftDiv p x = x := by
+  have hker : PadicInt.toZModPow 1 x = 0 := by
+    have hle : ‖x‖ ≤ (p : ℝ) ^ (-1 : ℤ) := by
+      rw [PadicInt.norm_le_pow_iff_norm_lt_pow_add_one]
+      simpa using hx
+    have hmem := (PadicInt.norm_le_pow_iff_mem_span_pow x 1).1 hle
+    rwa [← PadicInt.ker_toZModPow, RingHom.mem_ker] at hmem
+  have hdig : digit p x = 0 := by
+    rw [digit, hker, ZMod.val_zero, Nat.cast_zero]
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 hp.out.ne_zero
+  refine Subtype.ext ?_
+  show (p : ℚ_[p]) * (((x : ℚ_[p]) - (digit p x : ℚ_[p])) / (p : ℚ_[p])) = (x : ℚ_[p])
+  rw [hdig]
+  push_cast
+  rw [sub_zero, mul_comm, div_mul_cancel₀ _ hp0]
+
 /-- `ψ ∘ φ = id`. Source: RJW TeX lines 1149–1150, first display. -/
 @[simp]
 theorem psi_phi (μ : PadicMeasure p ℤ_[p]) : psi p (phi p μ) = μ := by
-  sorry
+  refine LinearMap.ext fun f => ?_
+  show μ ((((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+      f.comp (shiftDiv p))).comp (mulCM p (p : ℤ_[p]))) = μ f
+  congr 1
+  ext x
+  simp only [ContinuousMap.comp_apply, ContinuousMap.mul_apply, mulCM,
+    ContinuousMap.coe_mk, LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn,
+    shiftDiv_mul]
+  have hmem : ((p : ℤ_[p]) * x) ∈ {y : ℤ_[p] | ‖y‖ < 1} := mem_pZp_of_mul p
+  rw [Set.indicator_of_mem hmem, Pi.one_apply, one_mul]
 
 /-- `φ ∘ ψ = Res_{pℤ_p}`. Source: RJW TeX lines 1149–1151, second display. -/
 theorem phi_psi (μ : PadicMeasure p ℤ_[p]) :
     phi p (psi p μ) = res p (isClopen_pZp p) μ := by
-  sorry
+  refine LinearMap.ext fun f => ?_
+  show μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+      (f.comp (mulCM p (p : ℤ_[p]))).comp (shiftDiv p))
+    = μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) * f)
+  congr 1
+  ext x
+  simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply,
+    LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn, mulCM,
+    ContinuousMap.coe_mk]
+  by_cases hx : ‖x‖ < 1
+  · rw [mul_shiftDiv_of_mem p hx]
+  · rw [Set.indicator_of_notMem (by simpa using hx) 1, zero_mul, zero_mul]
 
 /-- `ℤ_p^× ⊆ ℤ_p` (the units, i.e. `‖x‖ = 1`) is clopen. -/
 lemma isClopen_units : IsClopen {x : ℤ_[p] | IsUnit x} := by
@@ -296,16 +414,51 @@ lemma isClopen_units : IsClopen {x : ℤ_[p] | IsUnit x} := by
 /-- `Res_{ℤ_p^×} = 1 − φ∘ψ` — Eq. (3.10) (`res to Zp`).
 
 Source: RJW TeX lines 1152–1154. -/
+lemma setOf_isUnit_eq : {x : ℤ_[p] | IsUnit x} = {x : ℤ_[p] | ‖x‖ < 1}ᶜ := by
+  ext x
+  simp only [Set.mem_compl_iff, Set.mem_setOf_eq, PadicInt.isUnit_iff, not_lt]
+  exact ⟨fun h => h.ge, fun h => le_antisymm (PadicInt.norm_le_one x) h⟩
+
 theorem res_units_eq (μ : PadicMeasure p ℤ_[p]) :
     res p (isClopen_units p) μ = μ - phi p (psi p μ) := by
-  sorry
+  rw [phi_psi]
+  refine LinearMap.ext fun f => ?_
+  show μ (_ * f) = μ f - μ (_ * f)
+  rw [eq_sub_iff_add_eq, ← map_add]
+  congr 1
+  ext x
+  simp only [ContinuousMap.add_apply, ContinuousMap.mul_apply,
+    LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn]
+  rw [← add_mul]
+  by_cases hx : ‖x‖ < 1
+  · have hnu : x ∉ {y : ℤ_[p] | IsUnit y} := fun hu =>
+      absurd (PadicInt.isUnit_iff.1 hu) hx.ne
+    have hmem : x ∈ {y : ℤ_[p] | ‖y‖ < 1} := hx
+    rw [Set.indicator_of_notMem hnu, Set.indicator_of_mem hmem, Pi.one_apply, zero_add,
+      one_mul]
+  · have hu : x ∈ {y : ℤ_[p] | IsUnit y} :=
+      PadicInt.isUnit_iff.2 (le_antisymm (PadicInt.norm_le_one x) (not_lt.1 hx))
+    have hnm : x ∉ {y : ℤ_[p] | ‖y‖ < 1} := hx
+    rw [Set.indicator_of_mem hu, Set.indicator_of_notMem hnm, Pi.one_apply, add_zero,
+      one_mul]
 
 /-- **RJW Cor. 3.32 (`CorollarySupportedZpet`)**: a measure is supported on `ℤ_p^×` if
 and only if `ψ(μ) = 0`. (Source proof uses injectivity of `φ`, which here follows from
 `ψ ∘ φ = id`; TeX lines 1161–1167.) -/
+lemma psi_sub (μ ν : PadicMeasure p ℤ_[p]) :
+    psi p (μ - ν) = psi p μ - psi p ν :=
+  LinearMap.ext fun f => LinearMap.sub_apply μ ν _
+
 theorem isSupportedOn_units_iff_psi_eq_zero (μ : PadicMeasure p ℤ_[p]) :
     IsSupportedOn p (isClopen_units p) μ ↔ psi p μ = 0 := by
-  sorry
+  rw [IsSupportedOn]
+  constructor
+  · intro h
+    have hres := congrArg (psi p) h
+    rw [res_units_eq, psi_sub, psi_phi, sub_self] at hres
+    exact hres.symm
+  · intro h
+    rw [res_units_eq, h, map_zero, sub_zero]
 
 end phipsi
 

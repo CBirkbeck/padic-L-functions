@@ -328,7 +328,7 @@ RJW Ex. 3.12 + 3.16, TeX 914–920, 968–973.
 ---
 
 ### [T011] Toolbox: mult-by-x ↔ ∂ and moments
-- **Status**: open | **File**: Measure/Toolbox.lean | **Depends on**: T007
+- **Status**: done (2026-06-10; mul_choose_eq by ℕ+density; coeff_del helper) | **File**: Measure/Toolbox.lean | **Depends on**: T007
 - **Type**: lemma ×2 | **Leaves**: L4.1, L4.2
 
 #### Statement
@@ -355,7 +355,7 @@ RJW Lem. 3.24 + Cor. 3.25, TeX 1059–1082 (quotes: decomposition L4.1, L4.2).
 ---
 
 ### [T012] Toolbox: clopens and restriction additivity
-- **Status**: open | **File**: Toolbox.lean | **Depends on**: T001 (only)
+- **Status**: done (2026-06-10; closedBall + compl; indicator additivity) | **File**: Toolbox.lean | **Depends on**: T001 (only)
 - **Parallel**: yes | **Type**: lemma ×3 | **Leaf**: L4.3
 
 #### Statement
@@ -382,7 +382,7 @@ RJW §3.5.3, TeX 1098–1129.
 ---
 
 ### [T013] Toolbox: shiftDiv and the ψ operator's well-definedness
-- **Status**: open | **File**: Toolbox.lean | **Depends on**: T012
+- **Status**: done (2026-06-10; digit via toZModPow 1 — cleaner than appr as ticket anticipated) | **File**: Toolbox.lean | **Depends on**: T012
 - **Type**: def-fields + lemma | **Leaf**: L4.5
 
 #### Statement
@@ -413,12 +413,12 @@ RJW §3.5.5 ψ-definition, TeX 1147–1148.
 Off-`pℤ_p` values of shiftDiv are irrelevant (cut by indicator); canonical digit choice.
 
 ### [CLEANUP-5] Run /cleanup on Toolbox.lean (cadence, after 3rd ticket on file)
-- **Status**: open | **Depends on**: T013 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode) | **Depends on**: T013 | **Type**: cleanup
 
 ---
 
 ### [T014] Toolbox: σ/φ transforms and the φψ identities + Cor. 3.32
-- **Status**: open | **File**: Toolbox.lean | **Depends on**: CLEANUP-5, T009
+- **Status**: done (2026-06-10; general mahlerTransform_pushforward_mulCM lemma covers σ_a AND φ; coeff_subst' + finsum truncation + add_pow; φψ identities pointwise) | **File**: Toolbox.lean | **Depends on**: CLEANUP-5, T009
 - **Type**: theorem ×6 | **Leaves**: L4.4, L4.6, L4.7
 
 #### Statement
@@ -453,7 +453,7 @@ Off-`pℤ_p` values of shiftDiv are irrelevant (cut by indicator); canonical dig
 RJW §3.5.5, TeX 1133–1167 (verbatim displays quoted in decomposition L4.4/L4.6/L4.7).
 
 ### [CLEANUP-6] Run /cleanup on Toolbox.lean (final)
-- **Status**: open | **Depends on**: T014 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode — note: `show` style warnings queued for CLEANUP-FINAL) | **Depends on**: T014 | **Type**: cleanup
 
 ---
 
