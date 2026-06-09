@@ -458,7 +458,7 @@ RJW §3.5.5, TeX 1133–1167 (verbatim displays quoted in decomposition L4.4/L4.
 ---
 
 ### [T015] Units geometry: CompactSpace ℤ_[p]ˣ + topological instances + unitsValCM
-- **Status**: open | **File**: Measure/UnitsZp.lean | **Depends on**: none
+- **Status**: done (2026-06-10; embedProduct closed range; T2 was already a mathlib instance; t.d. via opHomeomorph transfer) | **File**: Measure/UnitsZp.lean | **Depends on**: none
 - **Parallel**: yes (anytime) | **Type**: instance + def-field | **Leaf**: L5.3 (+ L5.4 part)
 
 #### Statement
@@ -492,7 +492,7 @@ generality — note for the PR pass; prove for ℤ_[p] now (instance placement l
 ---
 
 ### [T016] Units: extendByZero + iota_injective
-- **Status**: open | **File**: UnitsZp.lean | **Depends on**: T015, T012
+- **Status**: done (2026-06-10; unitsHomeo via homeoOfEquivCompactToT2; extendByZero glued on clopen cover) | **File**: UnitsZp.lean | **Depends on**: T015, T012
 - **Type**: def-fields + lemma | **Leaf**: L5.4
 
 #### Statement
@@ -522,7 +522,7 @@ RJW Rem. 3.33, TeX 1169–1172 (verbatim in decomposition L5.4).
 ---
 
 ### [T017] Units: res_iota + mem_range_iota_iff (image = ker ψ)
-- **Status**: open | **File**: UnitsZp.lean | **Depends on**: T016, T014
+- **Status**: done (2026-06-10; range ι = ker ψ both directions) | **File**: UnitsZp.lean | **Depends on**: T016, T014
 - **Type**: theorem ×2 | **Leaf**: L5.4 (rest)
 
 #### Statement
@@ -544,7 +544,7 @@ Internal + `Set.indicator` arithmetic.
 RJW Rem. 3.33, TeX 1171–1172.
 
 ### [CLEANUP-7] Run /cleanup on UnitsZp.lean (3rd ticket + final)
-- **Status**: open | **Depends on**: T017 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode — show-linter warnings queued) | **Depends on**: T017 | **Type**: cleanup
 
 ---
 
