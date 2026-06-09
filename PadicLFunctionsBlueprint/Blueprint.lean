@@ -20,14 +20,14 @@ This is the mathematical blueprint for a Lean 4 / Mathlib formalisation of
 
 The notes build, from the ground up, the cyclotomic Iwasawa theory of the
 Riemann zeta function. Starting from $`p`-adic measures and the Iwasawa algebra
-$`\Lam \cong \Zp[[T]]`, they construct the **Kubota–Leopoldt $`p`-adic
-$`L`-function** $`\zeta_p`, prove that it interpolates the special values
+$`\Lam \cong \Zp[[T]]`, they construct the *Kubota–Leopoldt $`p`-adic
+$`L`-function* $`\zeta_p`, prove that it interpolates the special values
 $`\zeta(1-n) = -B_n/n` of the Riemann zeta function against the Teichmüller
 character, and then develop the structure theory of $`\Lam`-modules far enough to
-state and (for Vandiver primes) prove the **Iwasawa Main Conjecture**. A final
+state and (for Vandiver primes) prove the *Iwasawa Main Conjecture*. A final
 part sketches the analogous picture for modular forms.
 
-**How to read this blueprint.** Each node below is a definition, theorem or
+*How to read this blueprint.* Each node below is a definition, theorem or
 proposition with its mathematical statement and a paragraph-level proof sketch.
 The dependency graph records which results feed into which. A node is coloured
 *green* once the Lean declaration it references (`lean := …`) is fully proved,
@@ -35,7 +35,7 @@ The dependency graph records which results feed into which. A node is coloured
 is roadmap-only. There is no manual status to maintain: Verso reads it from the
 Lean side directly.
 
-**Status.** *Roadmap stage.* The chapters record the intended statements and
+*Status.* *Roadmap stage.* The chapters record the intended statements and
 proof strategies for the whole paper (§2–§15 of {Informal.citet "RJW"}[]); the
 Lean skeletons that the graph points at are being introduced incrementally, after
 which the corresponding nodes colour in.
