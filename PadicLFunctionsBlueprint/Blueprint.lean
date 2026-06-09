@@ -4,6 +4,19 @@ import VersoBlueprint
 import VersoBlueprint.Commands.Graph
 import VersoBlueprint.Commands.Summary
 import PadicLFunctionsBlueprint.Chapters.Intro
+import PadicLFunctionsBlueprint.Chapters.Motivation
+import PadicLFunctionsBlueprint.Chapters.Measures
+import PadicLFunctionsBlueprint.Chapters.KubotaLeopoldt
+import PadicLFunctionsBlueprint.Chapters.Interpolation
+import PadicLFunctionsBlueprint.Chapters.ValuesAtOne
+import PadicLFunctionsBlueprint.Chapters.Residue
+import PadicLFunctionsBlueprint.Chapters.Eisenstein
+import PadicLFunctionsBlueprint.Chapters.ColemanMap
+import PadicLFunctionsBlueprint.Chapters.IwasawaZeros
+import PadicLFunctionsBlueprint.Chapters.IwasawaProof
+import PadicLFunctionsBlueprint.Chapters.MainConjecture
+import PadicLFunctionsBlueprint.Chapters.MuInvariant
+import PadicLFunctionsBlueprint.Chapters.ModularForms
 import PadicLFunctionsBlueprint.Refs
 import PadicLFunctions
 
@@ -41,6 +54,32 @@ Lean skeletons that the graph points at are being introduced incrementally, afte
 which the corresponding nodes colour in.
 
 {include 0 PadicLFunctionsBlueprint.Chapters.Intro}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.Motivation}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.Measures}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.KubotaLeopoldt}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.Interpolation}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.ValuesAtOne}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.Residue}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.Eisenstein}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.ColemanMap}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.IwasawaZeros}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.IwasawaProof}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.MainConjecture}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.MuInvariant}
+
+{include 0 PadicLFunctionsBlueprint.Chapters.ModularForms}
 
 # Dependency graph
 

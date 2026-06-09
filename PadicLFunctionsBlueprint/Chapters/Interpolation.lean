@@ -1,0 +1,428 @@
+import Verso
+import VersoManual
+import VersoBlueprint
+import PadicLFunctions
+import PadicLFunctionsBlueprint.Refs
+
+open Verso.Genre
+open Verso.Genre.Manual
+open Informal
+
+tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Fp{\mathbb{F}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\Qpx{\mathbb{Q}_p^{\times}}\def\Qbar{\overline{\mathbb{Q}}}\def\Qpbar{\overline{\mathbb{Q}_p}}\def\cO{\mathcal{O}}\def\cC{\mathcal{C}}\def\cH{\mathcal{H}}\def\cG{\mathcal{G}}\def\cN{\mathcal{N}}\def\cM{\mathcal{M}}\def\cD{\mathcal{D}}\def\cA{\mathcal{A}}\def\sX{\mathscr{X}}\def\sY{\mathscr{Y}}\def\sM{\mathscr{M}}\def\sL{\mathscr{L}}\def\sU{\mathscr{U}}\def\sW{\mathscr{W}}\def\sE{\mathscr{E}}\def\Gal{\mathrm{Gal}}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\val{\mathrm{val}}\def\res{\operatorname{res}}\def\Res{\operatorname{Res}}\def\Tr{\mathrm{Tr}}\def\Nm{\mathrm{N}}\def\Mahler{\mathfrak{M}}\def\Mellin{\mathrm{Mel}}\def\Exp{\mathrm{Exp}}\def\Col{\mathrm{Col}}\def\Log{\mathrm{Log}}\def\charid{\mathrm{char}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}\def\floor#1{\left\lfloor#1\right\rfloor}\def\Am{\mathscr{A}}\def\sC{\mathscr{C}}\def\eps{\varepsilon}\def\mua{\mu_a}\def\zetap{\zeta_p}"#
+
+#doc (Manual) "Interpolation at Dirichlet characters" =>
+
+The Kubota–Leopoldt pseudo-measure $`\zetap` was built purely from values of the
+Riemann zeta function, with Dirichlet characters never entering the construction.
+Remarkably, $`\zetap` nonetheless interpolates Dirichlet $`L`-values as well. This
+chapter establishes that interpolation, first for characters of $`p`-power
+conductor, then for general conductors (where one even obtains a genuine measure
+$`\zeta_\eta` rather than a pseudo-measure), and finally repackages everything as
+analytic functions on $`\Zp` via the Mellin transform.
+
+Throughout, $`p` is an odd prime, $`(\eps_{p^n})_{n}` is a compatible system of
+primitive $`p^n`-th roots of unity in $`\Qpbar` (so $`\eps_{p^{n+1}}^p =
+\eps_{p^n}`), and $`L/\Qp` is a finite extension large enough to contain the values
+of the characters under consideration, with ring of integers $`\cO_L`. A Dirichlet
+character $`\chi` of conductor $`p^n` is viewed, via $`\Zpx \twoheadrightarrow
+(\Z/p^n\Z)^\times`, as a locally constant character of $`\Zpx`. We write $`\Am_\mu`
+for the Mahler transform of a measure $`\mu` and recall the standard substitution
+$`e^t = T+1` relating power series to functions of a real variable.
+
+# Characters of p-power conductor
+
+The headline result twists $`\zetap` by a Dirichlet character of $`p`-power
+conductor. Its proof runs the construction of $`\zetap` *in reverse*: a twisted
+measure is built, its Mahler transform is computed, the corresponding function of
+$`t` is identified with a complex $`L`-function via the Mellin transform, and the
+special-value formula is read off.
+
+:::theorem "interpolation-property"
+Let $`\chi` be a primitive Dirichlet character of conductor $`p^n`, $`n \geq 1`,
+viewed as a locally constant character of $`\Zpx`. Then for every integer $`k > 0`,
+$$`\int_{\Zpx}\chi(x)\,x^k \cdot \zetap = L(\chi, 1-k).`
+This depends on {uses "kubota-leopoldt"}[], {uses "interp-twist"}[],
+{uses "interp-dirichlet-integral"}[] and {uses "dirichlet-L-function"}[].
+:::
+
+:::proof "interpolation-property"
+Since $`\chi` vanishes on $`p\Zp`, integrating over $`\Zpx` is the same as
+integrating over $`\Zp`, and by the definition of the twist {uses "interp-twist"}[]
+this equals $`\int_{\Zp} x^k \cdot \mu_{\chi,a}`, where $`\mu_{\chi,a}` is the
+twist of the measure $`\mua` by $`\chi`. Under $`e^t = T+1` this integral is
+$`(\partial^k F_{\chi,a})(0) = f_{\chi,a}^{(k)}(0)`. By
+{uses "interp-dirichlet-integral"}[] we obtain
+$`\int_{\Zpx}\chi(x)x^k\cdot\mua = -(1-\chi(a)a^{k+1})L(\chi,-k)`, and integrating
+against $`x^{-1}` shifts this to
+$`\int_{\Zpx}\chi(x)x^k \cdot x^{-1}\mua = -(1-\chi(a)a^{k})L(\chi,1-k)`. The
+smoothing measure $`\theta_a` used in the construction of $`\zetap` satisfies
+$`\int_{\Zpx}\chi(x)x^k\cdot\theta_a = -(1-\chi(a)a^{k})`; dividing the previous
+identity by this Euler-type factor cancels the $`(1-\chi(a)a^k)` exactly and leaves
+$`\int_{\Zpx}\chi(x)x^k\cdot\zetap = L(\chi,1-k)`, as claimed.
+:::
+
+We first record the twisting operation and the classical Gauss-sum input it
+requires, then compute the Mahler transform of a twist.
+
+:::definition "interp-twist"
+Let $`\mu` be a measure on $`\Zp` and $`\chi` a locally constant character of
+$`\Zpx`. The *twist of $`\mu` by $`\chi`* is the measure $`\mu_\chi` on $`\Zp`
+defined by
+$$`\int_{\Zp} f(x)\cdot\mu_\chi = \int_{\Zp}\chi(x)f(x)\cdot\mu.`
+Because $`\chi` is supported on $`\Zpx`, the measure $`\mu_\chi` is automatically
+supported on $`\Zpx`.
+:::
+
+:::definition "interp-gauss-sum"
+Let $`\chi` be a primitive Dirichlet character of conductor $`p^n`, $`n \geq 1`.
+The *Gauss sum* of $`\chi` is
+$$`G(\chi) := \sum_{c \in (\Z/p^n\Z)^\times} \chi(c)\,\eps_{p^n}^{\,c},`
+where $`(\eps_{p^n})_n` is the fixed compatible system of primitive $`p`-power
+roots of unity in $`\Qpbar` (one may take $`\eps_{p^n} = e^{2\pi i/p^n}` under a
+fixed isomorphism $`\Qpbar \cong \C`).
+:::
+
+:::lemma_ "interp-gauss-sum-properties"
+The Gauss sum of a primitive Dirichlet character $`\chi` of conductor $`p^n`
+satisfies two basic identities. *(i)* $`G(\chi)\,G(\chi^{-1}) = \chi(-1)\,p^n`; in
+particular $`G(\chi)` is nonzero. *(ii)* For every $`a \in \Zpx`, $`G(\chi) =
+\chi(a)\sum_{c\in(\Z/p^n\Z)^\times}\chi(c)\,\eps_{p^n}^{\,ac}`. This rests on
+{uses "interp-gauss-sum"}[].
+:::
+
+:::proof "interp-gauss-sum-properties"
+These are standard facts on Gauss sums. For (ii), substituting $`c \mapsto a^{-1}c`
+in the defining sum and using multiplicativity of $`\chi` rewrites $`\sum_c
+\chi(c)\eps_{p^n}^{ac}` as $`\chi(a)^{-1}\sum_c \chi(c)\eps_{p^n}^{c} =
+\chi(a)^{-1}G(\chi)`, which rearranges to the stated identity (the change of
+variables is a bijection of $`(\Z/p^n\Z)^\times` since $`a` is a unit). For (i),
+expand $`G(\chi)G(\chi^{-1})` as a double sum over $`(\Z/p^n\Z)^\times`, change
+variables to separate the additive characters, and evaluate the resulting
+character sums; the cross terms cancel and the diagonal contributes $`\chi(-1)p^n`.
+Nonvanishing of $`G(\chi)` is immediate from (i) since $`\chi(-1)p^n \neq 0`.
+:::
+
+:::lemma_ "interp-mahler-twist"
+Let $`\chi` be a primitive Dirichlet character of conductor $`p^n`, $`n \geq 1`,
+and $`\mu` a measure on $`\Zp`. Then the Mahler transform of the twist $`\mu_\chi`
+is
+$$`\Am_{\mu_\chi}(T) = \frac{1}{G(\chi^{-1})}\sum_{c\in(\Z/p^n\Z)^\times}
+\chi(c)^{-1}\,\Am_\mu\big((1+T)\eps_{p^n}^{\,c} - 1\big).`
+This uses {uses "interp-twist"}[], {uses "interp-gauss-sum"}[],
+{uses "interp-gauss-sum-properties"}[] and {uses "mahler-transform"}[].
+:::
+
+:::proof "interp-mahler-twist"
+Since $`\chi` is constant modulo $`p^n`, the twist decomposes as a weighted sum of
+restrictions, $`\mu_\chi = \sum_{c\in(\Z/p^n\Z)^\times}\chi(c)\,\Res_{c+p^n\Zp}(\mu)`.
+Applying the formula for the Mahler transform of a restriction to $`b + p^n\Zp`,
+$$`\Am_{\Res_{b+p^n\Zp}(\mu)}(T) = \frac{1}{p^n}\sum_{\xi\in\mu_{p^n}}
+\xi^{-b}\,\Am_\mu\big((1+T)\xi - 1\big),`
+and summing over $`b`, we get
+$`\Am_{\mu_\chi}(T) = p^{-n}\sum_{b}\chi(b)\sum_{\xi\in\mu_{p^n}}\xi^{-b}
+\Am_\mu((1+T)\xi-1)`. Writing each $`\xi = \eps_{p^n}^{c}` and interchanging the
+sums, the inner sum over $`b` becomes $`\sum_b \chi(b)\eps_{p^n}^{-bc}`, which by
+{uses "interp-gauss-sum-properties"}[](ii) equals $`G(\chi)\chi(-c)^{-1}`. Thus
+$`\Am_{\mu_\chi}(T) = p^{-n}\sum_c G(\chi)\chi(-c)^{-1}\Am_\mu((1+T)\eps_{p^n}^c-1)`,
+and substituting $`G(\chi)/p^n = \chi(-1)/G(\chi^{-1})` from
+{uses "interp-gauss-sum-properties"}[](i) together with $`\chi(-c)^{-1} =
+\chi(-1)\chi(c)^{-1}` gives the claimed formula.
+:::
+
+Specialising to $`\mu = \mua` — the measure with $`\Am_{\mua}(T) = \tfrac1T -
+\tfrac{a}{(1+T)^a - 1}` from which $`\zetap` was built — and substituting $`e^t =
+T+1` motivates the study of the auxiliary function
+$$`f_{\chi,a}(t) = \frac{1}{G(\chi^{-1})}\sum_{c\in(\Z/p^n\Z)^\times}\chi(c)^{-1}
+\left[\frac{1}{e^t\eps_{p^n}^{\,c} - 1} - \frac{a}{e^{at}\eps_{p^n}^{\,ac} -
+1}\right].`
+
+:::lemma_ "interp-dirichlet-integral"
+With $`f_{\chi,a}` as above and $`L(f,s) = \frac{1}{\Gamma(s)}\int_0^\infty
+f(t)t^{s-1}dt` the complex Mellin transform (whose special-value formula
+$`L(f,-n)=(-1)^n f^{(n)}(0)` was established earlier), we have
+$$`L(f_{\chi,a}, s) = \chi(-1)\big(1-\chi(a)a^{1-s}\big)\,L(\chi,s).`
+Moreover, for $`k \geq 0`,
+$$`f_{\chi,a}^{(k)}(0) = \begin{cases} -\big(1-\chi(a)a^{k+1}\big)L(\chi,-k) &
+\chi(-1)(-1)^k = -1,\\ 0 & \chi(-1)(-1)^k = 1.\end{cases}`
+This uses {uses "interp-mahler-twist"}[] and {uses "dirichlet-L-function"}[].
+:::
+
+:::proof "interp-dirichlet-integral"
+Expanding each summand as a geometric series, $`\frac{1}{e^t\eps_{p^n}^c - 1} =
+\sum_{k\geq 1} e^{-kt}\eps_{p^n}^{-kc}`, and feeding this into the Mellin integral
+$`L(f_{\chi,a},s) = \frac{1}{\Gamma(s)}\int_0^\infty f_{\chi,a}(t)t^{s-1}dt`, the
+inner character sum $`\sum_c \chi(c)^{-1}\eps_{p^n}^{-akc}` collapses to
+$`\chi(-ak)G(\chi^{-1})` (and similarly for the first term), cancelling the
+$`G(\chi^{-1})` in the denominator. The integral reduces to
+$`\frac{1}{\Gamma(s)}\int_0^\infty\sum_{k\geq1}\chi(-k)(e^{-kt}-\chi(a)e^{-akt})
+t^{s-1}dt`. For $`\Re(s)\gg 0` one may interchange sum and integral; the $`k`-th
+term integrates to $`(1-\chi(a)a^{1-s})k^{-s}`, yielding $`\chi(-1)(1-\chi(a)
+a^{1-s})\sum_{k\geq1}\chi(-k)k^{-s} = \chi(-1)(1-\chi(a)a^{1-s})L(\chi,s)`. This is
+entirely classical: $`p` never appears. The Mellin special-value formula then gives
+$`f_{\chi,a}^{(k)}(0) = (-1)^k\chi(-1)(1-\chi(a)a^{k+1})L(\chi,-k)`.
+
+For the parity dichotomy, the identity $`\frac{1}{e^{-t}\eps_{p^n}^c - 1} = -1 -
+\frac{1}{e^t\eps_{p^n}^{-c}-1}` applied twice, followed by the substitution
+$`c\mapsto -c`, shows $`f_{\chi,a}(-t) = -\chi(-1)f_{\chi,a}(t)`. Comparing $`k`-th
+derivatives at $`0` gives $`(-1)^k f_{\chi,a}^{(k)}(0) = -\chi(-1)f_{\chi,a}^{(k)}
+(0)`, forcing $`f_{\chi,a}^{(k)}(0) = 0` unless $`\chi(-1)(-1)^k = -1`. (In
+particular this recovers the classical vanishing $`L(\chi,-k)=0` when
+$`\chi(-1)(-1)^k = 1`.)
+:::
+
+# Non-trivial tame conductors
+
+The previous theorem treats *tame conductor $`1`*. One can do better: for a
+Dirichlet character $`\eta` of conductor $`D > 1` coprime to $`p`, there is a
+genuine measure interpolating the twisted values $`L(\chi\eta, 1-k)`. Because
+$`L`-functions of non-trivial characters are entire, no smoothing factor is needed
+and one obtains a measure rather than a pseudo-measure.
+
+:::definition "interp-mu-eta"
+Let $`D > 1` be coprime to $`p` and $`\eta` a primitive Dirichlet character of
+conductor $`D`. Because no smoothing factor is needed (the relevant $`L`-function
+is entire), set
+$$`f_\eta(t) := \frac{-1}{G(\eta^{-1})}\sum_{c\in(\Z/D\Z)^\times}
+\frac{\eta(c)^{-1}}{e^t\eps_D^c - 1},`
+where the Gauss sum $`G(\eta^{-1})` is defined as before with $`p^n` replaced by
+$`D`. Substituting $`e^t = T+1` and expanding the geometric series gives
+$$`F_\eta(T) := \frac{-1}{G(\eta^{-1})}\sum_{c\in(\Z/D\Z)^\times}
+\frac{\eta(c)^{-1}}{(1+T)\eps_D^c - 1} = \frac{-1}{G(\eta^{-1})}
+\sum_{c\in(\Z/D\Z)^\times}\eta(c)^{-1}\sum_{k\geq 0}\frac{\eps_D^{kc}}
+{(\eps_D^c-1)^{k+1}}\,T^k.`
+This lies in $`\cO_L[[T]]` for a sufficiently large finite extension $`L/\Qp`
+containing the values of $`\eta`: the Gauss sum is a $`p`-adic unit because
+$`G(\eta)G(\eta^{-1}) = \eta(-1)D` with $`D` coprime to $`p`, and $`\eps_D^c - 1
+\in \cO_L^\times` (its norm divides $`D`). Let $`\mu_\eta \in \Lam(\Zp)` be the
+measure with Mahler transform $`\Am_{\mu_\eta} = F_\eta`. This uses
+{uses "interp-gauss-sum"}[] and {uses "mahler-transform"}[].
+:::
+
+:::theorem "interp-nontame"
+Let $`D > 1` be an integer coprime to $`p` and $`\eta` a primitive Dirichlet
+character of conductor $`D`. There is a unique measure $`\zeta_\eta \in
+\Lam(\Zpx)` over the Iwasawa algebra defined over a finite extension $`L/\Qp`
+containing the values of $`\eta`, such that for every primitive Dirichlet character
+$`\chi` of conductor $`p^n`, $`n \geq 0`, and every $`k > 0`,
+$$`\int_{\Zpx}\chi(x)\,x^k\cdot\zeta_\eta = \big(1 - \chi\eta(p)\,p^{k-1}\big)
+L(\chi\eta, 1-k).`
+This rests on {uses "interp-zeta-eta"}[], {uses "interp-eta-restriction"}[],
+{uses "interp-mahler-theta"}[] and {uses "dirichlet-L-function"}[].
+:::
+
+:::proof "interp-nontame"
+The argument parallels the $`p`-power case but needs no smoothing factor, since
+$`L(\eta,s)` is entire. Starting from the measure $`\mu_\eta` of
+{uses "interp-mu-eta"}[], one has by {uses "interp-eta-restriction"}[] the moment
+formula $`\int_{\Zpx}x^k\cdot\mu_\eta = (1-\eta(p)p^k)L(\eta,-k)`. Twisting
+$`\mu_\eta` by a $`p`-power character $`\chi` and setting $`\theta := \chi\eta`,
+the measure $`\mu_\theta := (\mu_\eta)_\chi` has the explicit Mahler transform of
+{uses "interp-mahler-theta"}[], and the same calculation gives
+$`\int_{\Zpx}\chi(x)x^k\cdot\mu_\eta = (1-\theta(p)p^k)L(\theta,-k)`. Finally
+setting $`\zeta_\eta := x^{-1}\Res_{\Zpx}(\mu_\eta)` from {uses "interp-zeta-eta"}[]
+shifts the exponent of the Euler factor and the argument of $`L`, yielding
+$`\int_{\Zpx}\chi(x)x^k\cdot\zeta_\eta = (1-\theta(p)p^{k-1})L(\theta,1-k)`.
+Uniqueness follows from the fact that a measure on $`\Zpx` is determined by its
+moments $`\int x^k`.
+:::
+
+:::lemma_ "interp-eta-mellin"
+With $`f_\eta` and $`\mu_\eta` the function and measure of {uses "interp-mu-eta"}[],
+we have $`L(f_\eta, s) = -\eta(-1)L(\eta, s)`, and hence for $`k \geq 0`,
+$$`\int_{\Zp}x^k\cdot\mu_\eta = L(\eta, -k).`
+This uses {uses "interp-mu-eta"}[] and {uses "dirichlet-L-function"}[].
+:::
+
+:::proof "interp-eta-mellin"
+The $`L`-function identity is proved exactly as in {uses "interp-dirichlet-integral"}[]:
+expanding $`1/(e^t\eps_D^c-1)` as a geometric series and collapsing the character
+sum over $`(\Z/D\Z)^\times` against the additive characters reduces $`L(f_\eta,s)`
+to $`-\eta(-1)L(\eta,s)` (the overall sign coming from the $`-1` normalisation in
+$`f_\eta`). The moment formula follows by identifying the differential operator
+$`\partial` with $`d/dt` and applying the Mellin special-value theorem: $`\int_{\Zp}
+x^k\cdot\mu_\eta = (\partial^k F_\eta)(0) = f_\eta^{(k)}(0) = (-1)^k L(f_\eta,-k) =
+-(-1)^k\eta(-1)L(\eta,-k)`. The same parity argument as in
+{uses "interp-dirichlet-integral"}[] shows $`f_\eta(-t) = -\eta(-1)f_\eta(t)`, so
+$`L(\eta,-k)` vanishes unless $`\eta(-1)(-1)^k = -1`, on which locus the prefactor
+$`-(-1)^k\eta(-1)` equals $`1`; hence $`\int_{\Zp}x^k\cdot\mu_\eta = L(\eta,-k)`.
+:::
+
+:::lemma_ "interp-psi-twisted"
+The power series $`F_\eta` of {uses "interp-mu-eta"}[] satisfies $`\psi(F_\eta) =
+\eta(p)\,F_\eta`, where $`\psi` is the trace-like operator on power series adjoint
+to $`\varphi : G(T) \mapsto G((1+T)^p - 1)`. This uses {uses "interp-mu-eta"}[].
+:::
+
+:::proof "interp-psi-twisted"
+The key local computation is $`\frac1p\sum_{\xi\in\mu_p}\frac{1}{(1+T)\xi\eps_D^c -
+1} = \frac{1}{(1+T)^p\eps_D^{pc}-1}`: expanding the left side as a geometric series,
+$`\frac{-1}{p}\sum_{\xi}\sum_{n\geq0}(1+T)^n\eps_D^{nc}\xi^n`, the inner sum over
+$`\xi\in\mu_p` annihilates every term with $`p \nmid n`, leaving $`-\sum_n
+(1+T)^{pn}\eps_D^{pcn}`, which resums to the right side. Applying this to each
+summand of $`F_\eta` shows $`(\varphi\circ\psi)(F_\eta) = \eta(p)\,\varphi(F_\eta)`
+(the index $`c \mapsto pc` rescales the character via $`\eta(p)`); by injectivity
+of $`\varphi` we conclude $`\psi(F_\eta) = \eta(p)F_\eta`.
+:::
+
+:::lemma_ "interp-eta-restriction"
+For all $`k \geq 0`,
+$$`\int_{\Zpx}x^k\cdot\mu_\eta = \big(1-\eta(p)\,p^k\big)\,L(\eta,-k).`
+This uses {uses "interp-psi-twisted"}[] and {uses "interp-eta-mellin"}[].
+:::
+
+:::proof "interp-eta-restriction"
+Restriction to $`\Zpx` is given by $`1 - \varphi\circ\psi`, so by
+{uses "interp-psi-twisted"}[], $`\Res_{\Zpx}(\mu_\eta) = (1-\varphi\circ\psi)\mu_\eta
+= \mu_\eta - \eta(p)\varphi(\mu_\eta)`. Since $`\int_{\Zp}x^k\cdot\varphi(\mu_\eta) =
+p^k\int_{\Zp}x^k\cdot\mu_\eta` (the operator $`\varphi` corresponds to $`x\mapsto
+px`), integrating against $`x^k` gives $`\int_{\Zpx}x^k\cdot\mu_\eta = (1-\eta(p)
+p^k)\int_{\Zp}x^k\cdot\mu_\eta`, and the result follows from
+{uses "interp-eta-mellin"}[].
+:::
+
+:::lemma_ "interp-mahler-theta"
+Let $`\chi` be a Dirichlet character of conductor $`p^n`, $`n\geq 0`, and set
+$`\theta := \chi\eta`, a Dirichlet character of conductor $`Dp^n`. Then the measure
+$`\mu_\theta := (\mu_\eta)_\chi` has Mahler transform
+$$`F_\theta(T) = \frac{-1}{G(\theta^{-1})}\sum_{c\in(\Z/Dp^n\Z)^\times}
+\frac{\theta(c)^{-1}}{(1+T)\eps_{Dp^n}^{\,c} - 1}.`
+This uses {uses "interp-mahler-twist"}[] and {uses "interp-mu-eta"}[].
+:::
+
+:::proof "interp-mahler-theta"
+Apply the twisting formula {uses "interp-mahler-twist"}[] to $`\mu_\eta`, whose
+Mahler transform is $`F_\eta(T) = \frac{-1}{G(\eta^{-1})}\sum_{c}\frac{\eta(c)^{-1}}
+{(1+T)\eps_D^c-1}`. The composite sum over $`(\Z/p^n\Z)^\times` and
+$`(\Z/D\Z)^\times` recombines, via the Chinese Remainder Theorem and the
+multiplicativity of Gauss sums, into a single sum over $`(\Z/Dp^n\Z)^\times` with
+the product character $`\theta^{-1}` and the root of unity $`\eps_{Dp^n} =
+\eps_D\eps_{p^n}`, giving the stated closed form.
+:::
+
+:::definition "interp-zeta-eta"
+With $`\mu_\eta` the measure of {uses "interp-mu-eta"}[] attached to $`\eta`,
+define
+$$`\zeta_\eta := x^{-1}\,\Res_{\Zpx}(\mu_\eta) \in \Lam(\Zpx).`
+This is directly analogous to the construction of $`\zetap`, except that
+$`\zeta_\eta` is a genuine measure (no pseudo-measure denominator is needed). This
+uses {uses "interp-mu-eta"}[] and {uses "interp-eta-restriction"}[].
+:::
+
+# Analytic functions on Zp via the Mellin transform
+
+We now translate measures on $`\Zpx` into analytic functions on $`\Zp`, recovering
+the question posed at the outset: $`p`-adic analytic functions interpolating
+$`\zeta(1-k)`. The price is that no *single* analytic function captures all $`k`;
+instead there are $`p-1` branches, one for each residue class modulo $`p-1`.
+
+The obstruction is that the naive definition $`x \mapsto x^s = \exp(s\log x)`
+fails: the $`p`-adic exponential does not converge on all of $`\Zpx`.
+
+:::lemma_ "interp-padic-exp"
+The $`p`-adic exponential converges on $`p\Zp`. Consequently, for every $`s \in
+\Zp` the map $`1 + p\Zp \to \Zp`, $`x \mapsto x^s := \exp(s\log x)`, is
+well-defined.
+:::
+
+:::proof "interp-padic-exp"
+This is standard local field theory: $`\exp` converges on the disc $`|z| <
+p^{-1/(p-1)}`, which for odd $`p` contains $`p\Zp`, while $`\log` maps $`1+p\Zp`
+into $`p\Zp`. Hence $`\exp(s\log x)` makes sense for $`x \in 1+p\Zp` and $`s \in
+\Zp`, and standard properties of $`\exp` and $`\log` show it has the expected
+behaviour of an exponential.
+:::
+
+:::definition "teichmuller-character"
+For odd $`p` there is a decomposition $`\Zpx \cong \mu_{p-1}\times(1+p\Zp)`. The
+*Teichmüller character* $`\omega : \Zpx \to \mu_{p-1}` sends $`x` to the
+Teichmüller lift of its reduction modulo $`p`, and the projection
+$`\ang{\,\cdot\,} : \Zpx \to 1+p\Zp` is given by $`\ang{x} := \omega^{-1}(x)\,x`.
+Every $`x\in\Zpx` factors as $`x = \omega(x)\ang{x}`. This uses
+{uses "interp-padic-exp"}[].
+:::
+
+Because the $`p`-adic exponential converges on $`p\Zp`, the map $`x \mapsto
+\ang{x}^s` is well-defined for all $`s \in \Zp`, so for each $`i` the assignment
+$`s \mapsto [x \mapsto \omega(x)^i\ang{x}^s]` embeds $`\Zp` into the continuous
+characters of $`\Zpx`.
+
+:::definition "interp-branches"
+For each $`i = 1, \dots, p-1` the *$`i`-th branch of the $`p`-adic zeta function*
+is
+$$`\zeta_{p,i} : \Zp \to \Cp, \qquad \zeta_{p,i}(s) =
+\int_{\Zpx}\omega(x)^i\,\ang{x}^{1-s}\cdot\zetap.`
+This uses {uses "kubota-leopoldt"}[] and {uses "teichmuller-character"}[].
+:::
+
+:::theorem "interp-branch-interpolation"
+For all $`k \geq 1` with $`k \equiv i \pmod{p-1}`,
+$$`\zeta_{p,i}(1-k) = (1 - p^{k-1})\,\zeta(1-k).`
+In particular $`\zeta_{p,i} \equiv 0` for odd $`i`. This uses
+{uses "interp-branches"}[], {uses "kubota-leopoldt"}[] and
+{uses "special-values-zeta"}[].
+:::
+
+:::proof "interp-branch-interpolation"
+The monomial character $`x \mapsto x^k` factors as $`\omega(x)^i\ang{x}^k`
+precisely when $`k \equiv i \pmod{p-1}`, and in that case it equals the value of
+$`\omega(x)^i\ang{x}^{1-s}` at $`s = 1-k`. Substituting $`s = 1-k` into the
+definition of $`\zeta_{p,i}` therefore gives $`\zeta_{p,i}(1-k) =
+\int_{\Zpx}x^k\cdot\zetap`. The defining interpolation property of the
+Kubota–Leopoldt pseudo-measure {uses "kubota-leopoldt"}[] — the trivial-conductor
+case $`\int_{\Zpx}x^k\cdot\zetap = (1-p^{k-1})\zeta(1-k)` — then evaluates this to
+$`(1-p^{k-1})\zeta(1-k)`. Since $`\zeta(1-k) = 0` for odd $`k > 0` by
+{uses "special-values-zeta"}[], and the congruence $`k\equiv i \pmod{p-1}` forces
+$`k` to be odd exactly when $`i` is odd (as $`p-1` is even), the branch
+$`\zeta_{p,i}` vanishes identically whenever $`i` is odd.
+:::
+
+We package the most general statement using the measure $`\zeta_\eta`.
+
+:::definition "interp-Lp-theta"
+Let $`\theta = \chi\eta` be a Dirichlet character with $`\eta` of conductor $`D`
+prime to $`p` and $`\chi` of conductor $`p^n`, $`n \geq 0`. The *$`p`-adic
+$`L`-function* of $`\theta` is
+$$`L_p(\theta, s) := \int_{\Zpx}\chi(x)\,\ang{x}^{1-s}\cdot\zeta_\eta, \qquad s \in
+\Zp.`
+Equivalently, in terms of the unshifted measure $`\mu_\eta`,
+$$`L_p(\theta,s) = \int_{\Zpx}\chi\omega^{-1}(x)\,\ang{x}^{-s}\cdot\mu_\eta =
+\int_{\Zpx}\chi\omega^{s-1}(x)\,x^{-s}\cdot\mu_\eta.`
+This uses {uses "interp-zeta-eta"}[] and {uses "teichmuller-character"}[].
+:::
+
+:::theorem "interp-Lp-interpolation"
+For all $`k \geq 1`,
+$$`L_p(\theta, 1-k) = \big(1 - \theta\omega^{-k}(p)\,p^{k-1}\big)\,
+L(\theta\omega^{-k}, 1-k).`
+Consequently $`\zeta_{p,i}(s) = L_p(\omega^i, s)`. This uses
+{uses "interp-Lp-theta"}[], {uses "interp-eta-restriction"}[],
+{uses "interp-mahler-theta"}[] and {uses "dirichlet-L-function"}[].
+:::
+
+:::proof "interp-Lp-interpolation"
+Use the equivalent description of {uses "interp-Lp-theta"}[]. From $`x =
+\omega(x)\ang{x}` one computes $`\chi\omega^{-1}(x)\ang{x}^{k-1} = \chi\omega^{-k}
+(x)\,\omega^{k-1}(x)\ang{x}^{k-1} = \chi\omega^{-k}(x)\,x^{k-1}`. Hence $`L_p(\theta,
+1-k) = \int_{\Zpx}\chi\omega^{-k}(x)\,x^{k-1}\cdot\mu_\eta`. Writing $`\psi :=
+\chi\omega^{-k}` for the $`p`-power-conductor character and $`\theta\omega^{-k} =
+\psi\eta`, the twisted moment $`\int_{\Zpx}\psi(x)x^{k-1}\cdot\mu_\eta` is computed
+exactly as in the non-tame proof: forming the twist $`\mu_{\psi\eta} =
+(\mu_\eta)_\psi` with its Mahler transform {uses "interp-mahler-theta"}[] and
+applying the restriction-interpolation {uses "interp-eta-restriction"}[] to it
+gives $`\int_{\Zpx}\psi(x)x^{k-1}\cdot\mu_\eta = (1-\theta\omega^{-k}(p)p^{k-1})
+L(\theta\omega^{-k},1-k)`. Setting $`\chi = \omega^i` (trivial tame part) recovers
+$`\zeta_{p,i}(s) = L_p(\omega^i,s)`, and at $`s = 1-k` with $`i \equiv k` this
+reproduces {uses "interp-branch-interpolation"}[].
+:::
+
+Finally, the construction $`\zeta_{p,i}` is an instance of a general transform.
+
+:::definition "mellin-transform"
+For any measure $`\mu` on $`\Zpx` and $`i \in \{1,\dots,p-1\}`, the *Mellin
+transform of $`\mu` at $`i`* is the function
+$$`\Mellin_{\mu,i}(s) := \int_{\Zpx}\omega(x)^i\,\ang{x}^s\cdot\mu, \qquad s \in
+\Zp.`
+It converts $`p`-adic measures on $`\Zpx` into analytic functions on $`\Zp`; one
+has $`\zeta_{p,i}(s) = \Mellin_{\zetap,i}(1-s)`. This uses
+{uses "teichmuller-character"}[] and {uses "interp-branches"}[].
+:::
