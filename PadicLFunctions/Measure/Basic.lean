@@ -38,6 +38,8 @@ open scoped fwdDiff
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
+instance (n : ℕ) : NeZero (p ^ n) := ⟨pow_ne_zero n hp.out.ne_zero⟩
+
 noncomputable section
 
 /-- The space of `ℤ_[p]`-valued *p-adic measures* on a topological space `X`: `ℤ_[p]`-linear
@@ -155,6 +157,29 @@ theorem continuous (μ : PadicMeasure p X) : Continuous μ :=
     simpa only [dist_eq_norm, ← map_sub, NNReal.coe_one, one_mul] using
       norm_apply_le p μ (f - g)).continuous
 
+/-- Residue discs mod `p^k` are open in `ℤ_p`: the reduction `toZModPow k` is locally
+constant. Workhorse for density and for the `ψ`-operator's digit shift. -/
+lemma isOpen_toZModPow_fiber (k : ℕ) (a : ZMod (p ^ k)) :
+    IsOpen {z : ℤ_[p] | PadicInt.toZModPow k z = a} := by
+  rw [Metric.isOpen_iff]
+  intro z hz
+  refine ⟨(p : ℝ) ^ (-k : ℤ), zpow_pos (by exact_mod_cast hp.out.pos) _, fun y hy => ?_⟩
+  have hmem : PadicInt.toZModPow k (y - z) = 0 := by
+    rw [← RingHom.mem_ker, PadicInt.ker_toZModPow]
+    exact (PadicInt.norm_le_pow_iff_mem_span_pow _ k).1
+      (le_of_lt (by simpa [Metric.mem_ball, dist_eq_norm] using hy))
+  rw [map_sub, sub_eq_zero] at hmem
+  simpa only [Set.mem_setOf_eq, hmem] using hz
+
+/-- The canonical-digit lift `x ↦ [x mod p^k] : ℤ_p → ℤ_p` is locally constant
+(hence continuous). -/
+lemma isLocallyConstant_toZModPow_val (k : ℕ) :
+    IsLocallyConstant fun x : ℤ_[p] => (((PadicInt.toZModPow k x).val : ℕ) : ℤ_[p]) :=
+  (IsLocallyConstant.comp (fun s => by
+      rw [← Set.biUnion_preimage_singleton]
+      exact isOpen_biUnion fun a _ => isOpen_toZModPow_fiber p k a)
+    fun a : ZMod (p ^ k) => ((a.val : ℕ) : ℤ_[p]))
+
 /-- **Density of locally constant functions**: any continuous `f : X → ℤ_[p]` on a
 compact space is uniformly approximated by locally constant functions. The preimages of
 the (clopen) balls of radius `ε` form a clopen cover; pass to a finite subcover,
@@ -166,19 +191,7 @@ truncations". Not in mathlib (verified absent); PR candidate. -/
 theorem exists_locallyConstant_norm_sub_le (f : C(X, ℤ_[p])) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : LocallyConstant X ℤ_[p], ‖f - (g : C(X, ℤ_[p]))‖ ≤ ε := by
   obtain ⟨k, hk⟩ := PadicInt.exists_pow_neg_lt p hε
-  haveI : NeZero (p ^ k) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
-  -- residue discs mod `p^k` are open
-  have hopen : ∀ a : ZMod (p ^ k), IsOpen {z : ℤ_[p] | PadicInt.toZModPow k z = a} := by
-    intro a
-    rw [Metric.isOpen_iff]
-    intro z hz
-    refine ⟨(p : ℝ) ^ (-k : ℤ), zpow_pos (by exact_mod_cast hp.out.pos) _, fun y hy => ?_⟩
-    have hmem : PadicInt.toZModPow k (y - z) = 0 := by
-      rw [← RingHom.mem_ker, PadicInt.ker_toZModPow]
-      exact (PadicInt.norm_le_pow_iff_mem_span_pow _ k).1
-        (le_of_lt (by simpa [Metric.mem_ball, dist_eq_norm] using hy))
-    rw [map_sub, sub_eq_zero] at hmem
-    simpa only [Set.mem_setOf_eq, hmem] using hz
+  have hopen := isOpen_toZModPow_fiber p k
   -- the mod-`p^k` reduction of `f` is locally constant
   set q : X → ZMod (p ^ k) := fun x => PadicInt.toZModPow k (f x) with hq
   have hlc : IsLocallyConstant q := fun s => by

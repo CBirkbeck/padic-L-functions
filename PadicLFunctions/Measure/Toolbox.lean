@@ -46,13 +46,66 @@ lemma cmul_apply (g f : C(ℤ_[p], ℤ_[p])) (μ : PadicMeasure p ℤ_[p]) :
 noncomputable def del (F : PowerSeries ℤ_[p]) : PowerSeries ℤ_[p] :=
   (1 + PowerSeries.X) * F.derivativeFun
 
+/-- The binomial recurrence `x·binom(x,n) = (n+1)·binom(x,n+1) + n·binom(x,n)` over
+`ℤ_p`: the source's one-line computation (RJW TeX line 1074), proved on `ℕ` and
+extended by density. -/
+private lemma mul_choose_eq (x : ℤ_[p]) (n : ℕ) :
+    x * Ring.choose x n
+      = (n + 1 : ℤ_[p]) * Ring.choose x (n + 1) + (n : ℤ_[p]) * Ring.choose x n := by
+  have hnat : ∀ m : ℕ, (m : ℕ) * m.choose n = (n + 1) * m.choose (n + 1) + n * m.choose n := by
+    intro m
+    rcases Nat.lt_or_ge m n with h | h
+    · rw [Nat.choose_eq_zero_of_lt h, Nat.choose_eq_zero_of_lt (h.trans n.lt_succ_self)]
+      simp
+    · have h2 := Nat.choose_succ_right_eq m n
+      zify [h] at h2 ⊢
+      nlinarith [h2]
+  have hc : ∀ m : ℕ, ((m : ℤ_[p])) * Ring.choose (m : ℤ_[p]) n
+      = (n + 1 : ℤ_[p]) * Ring.choose ((m : ℤ_[p])) (n + 1)
+        + (n : ℤ_[p]) * Ring.choose ((m : ℤ_[p])) n := by
+    intro m
+    simp only [Ring.choose_natCast]
+    exact_mod_cast hnat m
+  exact congrFun
+    (PadicInt.denseRange_natCast.equalizer
+      (by fun_prop : Continuous fun x : ℤ_[p] => x * Ring.choose x n)
+      (by fun_prop :
+        Continuous fun x : ℤ_[p] =>
+          (n + 1 : ℤ_[p]) * Ring.choose x (n + 1) + (n : ℤ_[p]) * Ring.choose x n)
+      (funext hc)) x
+
+/-- The coefficients of `∂F = (1+T)F′`: `(∂F)_n = (n+1)F_{n+1} + n·F_n`. -/
+private lemma coeff_del (F : PowerSeries ℤ_[p]) (n : ℕ) :
+    PowerSeries.coeff n (del p F)
+      = (n + 1 : ℤ_[p]) * PowerSeries.coeff (n + 1) F
+        + (n : ℤ_[p]) * PowerSeries.coeff n F := by
+  rw [del, one_add_mul, map_add, coeff_derivativeFun]
+  rcases n with - | m
+  · rw [coeff_zero_X_mul]
+    push_cast
+    ring
+  · rw [coeff_succ_X_mul, coeff_derivativeFun]
+    push_cast
+    ring
+
 /-- Multiplication by `x` on measures corresponds to `∂` on Mahler transforms:
 `𝓐_{xμ} = ∂ 𝓐_μ`. Proof: `x·binom(x,n) = (n+1)·binom(x,n+1) + n·binom(x,n)`.
 
 Source: RJW Lem. 3.24 (`LemmaMultiplicationbyx`, TeX lines 1066–1075). -/
 theorem mahlerTransform_cmul_X (μ : PadicMeasure p ℤ_[p]) :
     mahlerTransform p (cmul p (ContinuousMap.id ℤ_[p]) μ) = del p (mahlerTransform p μ) := by
-  sorry
+  ext n
+  rw [coeff_mahlerTransform]
+  -- LHS: μ(x·binom(x,n)) via the recurrence
+  have hpt : (ContinuousMap.id ℤ_[p] * mahler n : C(ℤ_[p], ℤ_[p]))
+      = (n + 1 : ℤ_[p]) • mahler (n + 1) + (n : ℤ_[p]) • mahler n := by
+    ext x
+    simp only [ContinuousMap.mul_apply, ContinuousMap.id_apply, mahler_apply,
+      ContinuousMap.add_apply, ContinuousMap.smul_apply, smul_eq_mul]
+    exact mul_choose_eq p x n
+  show μ (ContinuousMap.id ℤ_[p] * mahler n) = _
+  rw [hpt, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, coeff_del,
+    coeff_mahlerTransform, coeff_mahlerTransform]
 
 /-- The monomial `x ↦ x^k` as a continuous map. -/
 def powCM (k : ℕ) : C(ℤ_[p], ℤ_[p]) := ⟨fun x => x ^ k, by fun_prop⟩
@@ -62,7 +115,19 @@ def powCM (k : ℕ) : C(ℤ_[p], ℤ_[p]) := ⟨fun x => x ^ k, by fun_prop⟩
 Source: RJW Cor. 3.25 (`cor:eval at x^k`, TeX lines 1079–1082). -/
 theorem apply_powCM (μ : PadicMeasure p ℤ_[p]) (k : ℕ) :
     μ (powCM p k) = PowerSeries.constantCoeff ((del p)^[k] (mahlerTransform p μ)) := by
-  sorry
+  induction k generalizing μ with
+  | zero =>
+    have h1 : powCM p 0 = (mahler 0 : C(ℤ_[p], ℤ_[p])) := by
+      ext x
+      simp [powCM, mahler_apply]
+    rw [Function.iterate_zero_apply, h1, ← coeff_mahlerTransform,
+      PowerSeries.coeff_zero_eq_constantCoeff]
+  | succ m ih =>
+    have h1 : powCM p (m + 1) = ContinuousMap.id ℤ_[p] * powCM p m := by
+      ext x
+      simp [powCM, pow_succ, mul_comm]
+    rw [h1, ← cmul_apply, ih (cmul p (ContinuousMap.id ℤ_[p]) μ), mahlerTransform_cmul_X,
+      Function.iterate_succ_apply]
 
 end cmul
 
@@ -86,7 +151,16 @@ Source: RJW §3.5.4 (TeX line 1129): "we can write X ... as a disjoint union". -
 theorem res_union {U V : Set ℤ_[p]} (hU : IsClopen U) (hV : IsClopen V)
     (hUV : Disjoint U V) (μ : PadicMeasure p ℤ_[p]) :
     res p (hU.union hV) μ = res p hU μ + res p hV μ := by
-  sorry
+  have hchar : (LocallyConstant.charFn ℤ_[p] (hU.union hV) : C(ℤ_[p], ℤ_[p]))
+      = (LocallyConstant.charFn ℤ_[p] hU : C(ℤ_[p], ℤ_[p]))
+        + (LocallyConstant.charFn ℤ_[p] hV : C(ℤ_[p], ℤ_[p])) := by
+    ext x
+    simp only [LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn,
+      ContinuousMap.add_apply]
+    exact congrFun (Set.indicator_union_of_disjoint hUV 1) x
+  refine LinearMap.ext fun f => ?_
+  show μ (_ * f) = μ (_ * f) + μ (_ * f)
+  rw [← map_add, ← add_mul, hchar]
 
 end res
 
@@ -125,20 +199,68 @@ theorem mahlerTransform_phi (μ : PadicMeasure p ℤ_[p]) :
       PowerSeries.subst ((1 + PowerSeries.X) ^ p - 1) (mahlerTransform p μ) := by
   sorry
 
+/-- The canonical digit of `x` mod `p`, lifted back to `ℤ_p`. -/
+noncomputable def digit (x : ℤ_[p]) : ℤ_[p] :=
+  (((PadicInt.toZModPow 1 x).val : ℕ) : ℤ_[p])
+
+lemma sub_digit_mem_span (x : ℤ_[p]) :
+    x - digit p x ∈ (Ideal.span {(p : ℤ_[p]) ^ 1} : Ideal ℤ_[p]) := by
+  rw [← PadicInt.ker_toZModPow, RingHom.mem_ker, map_sub, digit, map_natCast,
+    ZMod.natCast_rightInverse (PadicInt.toZModPow 1 x), sub_self]
+
+private lemma shiftDiv_mem (x : ℤ_[p]) :
+    ‖((x : ℚ_[p]) - (digit p x : ℚ_[p])) / (p : ℚ_[p])‖ ≤ 1 := by
+  have hle : ‖x - digit p x‖ ≤ (p : ℝ) ^ (-1 : ℤ) :=
+    (PadicInt.norm_le_pow_iff_mem_span_pow _ 1).2 (sub_digit_mem_span p x)
+  have hcast : (x : ℚ_[p]) - (digit p x : ℚ_[p]) = ((x - digit p x : ℤ_[p]) : ℚ_[p]) := by
+    push_cast
+    ring
+  have hppos : (0 : ℝ) < ‖(p : ℚ_[p])‖ := by
+    rw [Padic.norm_p]
+    exact inv_pos.2 (by exact_mod_cast hp.out.pos)
+  rw [hcast, norm_div, ← PadicInt.norm_def, div_le_one hppos, Padic.norm_p]
+  simpa [zpow_neg, zpow_one] using hle
+
 /-- The canonical "digit shift" `x ↦ (x − [x mod p])/p` as a continuous map, where
-`[x mod p]` is the canonical lift `PadicInt.appr x 1`. Satisfies `shiftDiv (p*x) = x`.
+`[x mod p]` is the canonical lift of `x mod p`. Satisfies `shiftDiv (p*x) = x`.
 Auxiliary for the `ψ` operator. -/
 noncomputable def shiftDiv : C(ℤ_[p], ℤ_[p]) where
-  toFun x := ⟨((x : ℚ_[p]) - (x.appr 1 : ℚ_[p])) / (p : ℚ_[p]), by sorry⟩
-  continuous_toFun := by sorry
+  toFun x := ⟨((x : ℚ_[p]) - (digit p x : ℚ_[p])) / (p : ℚ_[p]), shiftDiv_mem p x⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    exact (continuous_subtype_val.sub
+      (continuous_subtype_val.comp
+        (isLocallyConstant_toZModPow_val p 1).continuous)).div_const _
 
 @[simp]
 lemma shiftDiv_mul (x : ℤ_[p]) : shiftDiv p ((p : ℤ_[p]) * x) = x := by
-  sorry
+  have hdig : digit p ((p : ℤ_[p]) * x) = 0 := by
+    have hpz : PadicInt.toZModPow 1 (((p : ℕ) : ℤ_[p])) = 0 := by
+      rw [map_natCast]
+      have hcast : ((p : ℕ) : ZMod (p ^ 1)) = ((p ^ 1 : ℕ) : ZMod (p ^ 1)) := by
+        norm_num
+      rw [hcast, ZMod.natCast_self]
+    have hp0 : PadicInt.toZModPow 1 ((p : ℤ_[p]) * x) = 0 := by
+      rw [map_mul, hpz, zero_mul]
+    rw [digit, hp0, ZMod.val_zero, Nat.cast_zero]
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 hp.out.ne_zero
+  refine Subtype.ext ?_
+  show ((((p : ℤ_[p]) * x : ℤ_[p]) : ℚ_[p]) - (digit p ((p : ℤ_[p]) * x) : ℚ_[p]))
+      / (p : ℚ_[p]) = (x : ℚ_[p])
+  rw [hdig]
+  push_cast
+  rw [sub_zero, mul_comm, mul_div_assoc, div_self hp0, mul_one]
 
 /-- `pℤ_p ⊆ ℤ_p` is clopen (it is the closed ball of radius `1/p`). -/
 lemma isClopen_pZp : IsClopen {x : ℤ_[p] | ‖x‖ < 1} := by
-  sorry
+  have heq : {x : ℤ_[p] | ‖x‖ < 1} = Metric.closedBall 0 ((p : ℝ) ^ (-1 : ℤ)) := by
+    ext x
+    simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+    rw [PadicInt.norm_le_pow_iff_norm_lt_pow_add_one]
+    norm_num
+  refine ⟨?_, isOpen_lt continuous_norm continuous_const⟩
+  rw [heq]
+  exact Metric.isClosed_closedBall
 
 /-- The operator `ψ`: `∫ f d(ψμ) = ∫_{pℤ_p} f(p⁻¹x) dμ`.
 
@@ -147,8 +269,10 @@ noncomputable def psi (μ : PadicMeasure p ℤ_[p]) : PadicMeasure p ℤ_[p] whe
   toFun f :=
     μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
       f.comp (shiftDiv p))
-  map_add' _ _ := by sorry
-  map_smul' _ _ := by sorry
+  map_add' f g := by
+    rw [ContinuousMap.add_comp, mul_add, map_add]
+  map_smul' c f := by
+    rw [ContinuousMap.smul_comp, mul_smul_comm, map_smul, RingHom.id_apply]
 
 /-- `ψ ∘ φ = id`. Source: RJW TeX lines 1149–1150, first display. -/
 @[simp]
@@ -162,7 +286,12 @@ theorem phi_psi (μ : PadicMeasure p ℤ_[p]) :
 
 /-- `ℤ_p^× ⊆ ℤ_p` (the units, i.e. `‖x‖ = 1`) is clopen. -/
 lemma isClopen_units : IsClopen {x : ℤ_[p] | IsUnit x} := by
-  sorry
+  have heq : {x : ℤ_[p] | IsUnit x} = {x : ℤ_[p] | ‖x‖ < 1}ᶜ := by
+    ext x
+    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, PadicInt.isUnit_iff, not_lt]
+    exact ⟨fun h => h.ge, fun h => le_antisymm (PadicInt.norm_le_one x) h⟩
+  rw [heq]
+  exact (isClopen_pZp p).compl
 
 /-- `Res_{ℤ_p^×} = 1 − φ∘ψ` — Eq. (3.10) (`res to Zp`).
 

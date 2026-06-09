@@ -98,8 +98,6 @@ end degree
 
 section finiteLevel
 
-instance (n : ℕ) : NeZero (p ^ n) := ⟨pow_ne_zero n hp.out.ne_zero⟩
-
 /-- Reduction `ℤ_p^× → (ℤ/p^n)^×` (units functor applied to `PadicInt.toZModPow`). -/
 noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →* (ZMod (p ^ n))ˣ :=
   Units.map (PadicInt.toZModPow n).toMonoidHom
