@@ -1,0 +1,11 @@
+title: An introduction to p-adic L-functions — Lean blueprint
+description: by Chris Birkbeck
+baseurl: ""
+url: "https://CBirkbeck.github.io/padic-L-functions"
+github_username: CBirkbeck
+repository: CBirkbeck/padic-L-functions
+
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-github-metadata

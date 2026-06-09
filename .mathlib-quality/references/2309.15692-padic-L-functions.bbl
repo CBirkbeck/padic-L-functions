@@ -1,0 +1,498 @@
+\newcommand{\etalchar}[1]{$^{#1}$}
+\begin{thebibliography}{KNQD98}
+
+\bibitem[AG94]{AG94}
+Avner Ash and David Ginzburg.
+\newblock {$p$}-adic {$L$}-functions for {${\rm GL}(2n)$}.
+\newblock {\em Invent. Math.}, 116(1-3):27--73, 1994.
+
+\bibitem[AV75]{AV75}
+Yvette Amice and Jacques V\'{e}lu.
+\newblock Distributions {$p$}-adiques associ\'{e}es aux s\'{e}ries de {H}ecke.
+\newblock In {\em Journ\'{e}es {A}rithm\'{e}tiques de {B}ordeaux ({C}onf.,
+  {U}niv. {B}ordeaux, {B}ordeaux, 1974)}, pages 119--131. Ast\'{e}risque, Nos.
+  24--25. 1975.
+
+\bibitem[BD05]{BD05}
+M.~Bertolini and H.~Darmon.
+\newblock Iwasawa's main conjecture for elliptic curves over anticyclotomic
+  {$\Bbb Z_p$}-extensions.
+\newblock {\em Ann. of Math. (2)}, 162(1):1--64, 2005.
+
+\bibitem[BDR{\etalchar{+}}22]{DiagonalAsterisque}
+Massimo Bertolini, Henri Darmon, Victor Rotger, Marco~Adamo Seveso, and Rodolfo
+  Venerucci.
+\newblock {\em Heegner points, {S}tark-{H}eegner points, and diagonal classes}.
+\newblock Soci\'{e}t\'{e} Math\'{e}matique de France, Paris, 2022.
+\newblock Ast\'{e}risque {\bf 2022}, no. 434.
+
+\bibitem[Bel09]{Bel09}
+Jo\"{e}l Bella\"{i}che.
+\newblock An introduction to the conjecture of {B}loch and {K}ato.
+\newblock Unpublished, 2009.
+
+\bibitem[Bel12]{Bel12}
+Jo\"{e}l Bella\"{i}che.
+\newblock Critical $p$-adic {$L$}-functions.
+\newblock {\em Invent. Math.}, 189:1 -- 60, 2012.
+
+\bibitem[Bel21]{Eigenbook}
+Jo\"{e}l Bella\"{\i}che.
+\newblock {\em The eigenbook---eigenvarieties, families of {G}alois
+  representations, {$p$}-adic {$L$}-functions}.
+\newblock Pathways in Mathematics. Birkh\"{a}user/Springer, Cham, 2021.
+
+\bibitem[Ben22]{Ben22}
+Denis Benois.
+\newblock An introduction to {$p$}-adic {H}odge theory.
+\newblock In {\em Perfectoid spaces}, Infosys Sci. Found. Ser., pages 69--219.
+  Springer, Singapore, 2022.
+
+\bibitem[Ber02]{Ber02}
+Laurent Berger.
+\newblock An introduction to the theory of $p$-adic representations.
+\newblock Unpublished lecture notes, 2002.
+
+\bibitem[BGR84]{BGR}
+S.~Bosch, U.~G\"{u}ntzer, and R.~Remmert.
+\newblock {\em Non-{A}rchimedean analysis}, volume 261 of {\em Grundlehren der
+  Mathematischen Wissenschaften [Fundamental Principles of Mathematical
+  Sciences]}.
+\newblock Springer-Verlag, Berlin, 1984.
+\newblock A systematic approach to rigid analytic geometry.
+
+\bibitem[Cas86]{cassels}
+J.~W.~S. Cassels.
+\newblock {\em Local fields}, volume~3 of {\em London Mathematical Society
+  Student Texts}.
+\newblock Cambridge University Press, Cambridge, 1986.
+
+\bibitem[CGLS22]{CGLS22}
+Francesc Castella, Giada Grossi, Jaehoon Lee, and Christopher Skinner.
+\newblock On the anticyclotomic {I}wasawa theory of rational elliptic curves at
+  {E}isenstein primes.
+\newblock {\em Invent. Math.}, 227(2):517--580, 2022.
+
+\bibitem[CH22]{CastellaHsieh}
+Francesc Castella and Ming-Lun Hsieh.
+\newblock On the nonvanishing of generalised {Kato} classes for elliptic curves
+  of rank 2.
+\newblock {\em Forum Math. Sigma}, 10:32, 2022.
+\newblock Id/No e12.
+
+\bibitem[Coa89]{coates89}
+John Coates.
+\newblock On {$p$}-adic {$L$}-functions attached to motives over {${\bf Q}$}.
+  {II}.
+\newblock {\em Bol. Soc. Brasil. Mat. (N.S.)}, 20(1):101--112, 1989.
+
+\bibitem[Col]{ColCourse}
+Pierre Colmez.
+\newblock La fonction zeta $p$-adique, notes du cours de {M}2.
+\newblock Unpublished notes.
+
+\bibitem[Col82]{Colemandilog}
+Robert~F. Coleman.
+\newblock Dilogarithms, regulators and p-adic l-functions.
+\newblock {\em Inventiones mathematicae}, 69:171--208, 1982.
+
+\bibitem[Col00]{ColmezFonctL}
+P.~Colmez.
+\newblock Fonctions {$L$} {$p$}-adiques.
+\newblock {\em Ast\'erisque}, (266):Exp.\ No.\ 851, 3, 21--58, 2000.
+\newblock S{\'e}minaire Bourbaki, Vol. 1998/99.
+
+\bibitem[Col04]{ColmezBSDpadique}
+Pierre Colmez.
+\newblock La conjecture de {B}irch et {S}winnerton-{D}yer {$p$}-adique.
+\newblock In {\em S\'eminaire Bourbaki. Volume 2002/2003. Expos\'es 909--923},
+  pages 251--319, ex. Paris: Soci{\'e}t{\'e} Math{\'e}matique de France, 2004.
+
+\bibitem[Col10a]{Colm10}
+Pierre Colmez.
+\newblock Fonctions d'une variable $p$-adique.
+\newblock {\em Asterisque}, 330:13--59, 2010.
+
+\bibitem[Col10b]{Colm10b}
+Pierre Colmez.
+\newblock Repr{\'e}sentations de {GL$_2(\mathbf{Q}_p)$} et {$(\varphi,
+  \Gamma)$}-modules.
+\newblock {\em Asterisque}, 330:281--509, 2010.
+
+\bibitem[CPR89]{coatesperrinriou89}
+John Coates and Bernadette Perrin-Riou.
+\newblock On {$p$}-adic {$L$}-functions attached to motives over {${\bf Q}$}.
+\newblock In {\em Algebraic number theory}, volume~17 of {\em Adv. Stud. Pure
+  Math.}, pages 23--54. Academic Press, Boston, MA, 1989.
+
+\bibitem[CS06]{CS06}
+J.~Coates and R.~Sujatha.
+\newblock {\em Cyclotomic fields and zeta values}.
+\newblock Springer Monographs in Mathematics. Springer, 2006.
+
+\bibitem[Dar01]{Dar01}
+Henri Darmon.
+\newblock Integration on $\mathcal{H}_p\times\mathcal{H}$ and arithmetic
+  applications.
+\newblock {\em Ann. of Math.}, 154:589--639, 2001.
+
+\bibitem[Dar04]{DarmonBook}
+Henri Darmon.
+\newblock {\em Rational points on modular elliptic curves}, volume 101 of {\em
+  CBMS Regional Conference Series in Mathematics}.
+\newblock Published for the Conference Board of the Mathematical Sciences,
+  Washington, DC; by the American Mathematical Society, Providence, RI, 2004.
+
+\bibitem[Dar06]{DarmonICM}
+Henri Darmon.
+\newblock Heegner points, {Stark}-{Heegner} points, and values of
+  {{\(L\)}}-series.
+\newblock In {\em Proceedings of the international congress of mathematicians
+  (ICM), Madrid, Spain, August 22--30, 2006. Volume II: Invited lectures},
+  pages 313--345. Z{\"u}rich: European Mathematical Society (EMS), 2006.
+
+\bibitem[Del79]{Del79}
+Pierre Deligne.
+\newblock Valeurs de fonctions {$L$} et p\'{e}riodes d’int\'{e}grales.
+\newblock {\em Proc. Symp. Pure Math.}, 33:313--346, 1979.
+
+\bibitem[Del98]{Delbourgo}
+Daniel Delbourgo.
+\newblock Iwasawa theory for elliptic curves at unstable primes.
+\newblock {\em Compos. Math.}, 113(2):123--153, 1998.
+
+\bibitem[DR14]{DR14}
+Henri Darmon and Victor Rotger.
+\newblock Diagonal cycles and euler systems {I}: A $p$-adic {G}ross-{Z}agier
+  formula.
+\newblock {\em Annales scientifiques de l'{\'{E}}cole Normale Sup\'{e}rieure},
+  47(4):779--832, 2014.
+
+\bibitem[DR16]{DR16}
+Henri Darmon and Victor Rotger.
+\newblock Elliptic curves of rank two and generalised {K}ato classes.
+\newblock {\em Res. Math. Sci.}, 3:Paper No. 27, 32, 2016.
+
+\bibitem[DS05]{DS05}
+Fred Diamond and Jerry Shurman.
+\newblock {\em A First Course in Modular Forms}.
+\newblock Graduate Studies in Mathematics, 2005.
+
+\bibitem[EHLS20]{EHLS16}
+Ellen Eischen, Michael Harris, Jianshu Li, and Christopher Skinner.
+\newblock {$p$}-adic {$L$}-functions for unitary groups.
+\newblock {\em Forum Math. Pi}, 8:e9, 160, 2020.
+
+\bibitem[FK06]{FukayaKato}
+Takako Fukaya and Kazuya Kato.
+\newblock A formulation of conjectures on {{\(p\)}}-adic zeta functions in
+  noncommutative {Iwasawa} theory.
+\newblock In {\em Proceedings of the St. Petersburg Mathematical Society. Vol.
+  XII. Transl. from the Russian}, pages 1--85. Providence, RI: American
+  Mathematical Society (AMS), 2006.
+
+\bibitem[FW]{FouquetWan}
+Olivier Fouquet and Xin Wan.
+\newblock {The Iwasawa Main Conjecture for universal families of modular
+  motives}.
+\newblock Preprint: \url{https://arxiv.org/pdf/2107.13726}.
+
+\bibitem[GH11]{GoldfeldHundley}
+Dorian Goldfeld and Joseph Hundley.
+\newblock {\em Automorphic representations and {{\(L\)}}-functions for the
+  general linear group. {Volume} 1. {With} exercises by {Xander} {Faber}},
+  volume 129 of {\em Camb. Stud. Adv. Math.}
+\newblock Cambridge: Cambridge University Press, 2011.
+
+\bibitem[Gre76]{Gre76}
+Ralph Greenberg.
+\newblock On the {I}wasawa invariants of totally realy number fields.
+\newblock {\em Amer. J. Math.}, 98(1):263--284, 1976.
+
+\bibitem[Gre89]{Gre89}
+Ralph Greenberg.
+\newblock Iwasawa theory for {$p$}-adic representations.
+\newblock In {\em Algebraic number theory}, volume~17 of {\em Adv. Stud. Pure
+  Math.}, pages 97--137. Academic Press, Boston, MA, 1989.
+
+\bibitem[Gro90]{GrossyntomicI}
+Michel Gros.
+\newblock R\'egulateurs syntomiques et valeurs de fonctions {$L$} {$p$}-adiques
+  {$I$}.
+\newblock {\em Invent. Math.}, 99(2):293--320, 1990.
+
+\bibitem[GS93]{GS93}
+Ralph Greenberg and Glenn Stevens.
+\newblock $p$-adic {$L$}-functions and $p$-adic periods of modular forms.
+\newblock {\em Invent. Math.}, 111:407 -- 447, 1993.
+
+\bibitem[GZ86]{GZ86}
+Benedict Gross and Don Zagier.
+\newblock Heegner points and derivatives of {$L$}-series.
+\newblock {\em Invent. Math.}, 84:225--320, 1986.
+
+\bibitem[Hid90]{Hid90}
+Haruzo Hida.
+\newblock {$p$}-adic {$L$}-functions for base change lifts of {${\rm GL}_2$} to
+  {${\rm GL}_3$}.
+\newblock In {\em Automorphic forms, {S}himura varieties, and {$L$}-functions,
+  {V}ol. {II} ({A}nn {A}rbor, {MI}, 1988)}, volume~11 of {\em Perspect. Math.},
+  pages 93--142. Academic Press, Boston, MA, 1990.
+
+\bibitem[Hid93]{HidE}
+Haruzo Hida.
+\newblock {\em Elementary theory of {$L$}-functions and {E}isenstein series},
+  volume~26 of {\em LMS Student Texts}.
+\newblock Cambridge University Press, 1993.
+
+\bibitem[HK03]{HK}
+Annette Huber and Guido Kings.
+\newblock Bloch-{K}ato conjecture and main conjecture of {I}wasawa theory for
+  {D}irichlet characters.
+\newblock {\em Duke Mat. J.}, 119, no. 3:393--464, 2003.
+
+\bibitem[Iwa52]{Iwa52}
+Kenkichi Iwasawa.
+\newblock Some properties of ${L}$-groups.
+\newblock {\em Proceedings of the International Congress of Mathematicians,
+  Cambridge Mass., 1950}, 1952.
+
+\bibitem[Jan24]{Jan-Non-Abelian}
+Fabian Januszewski.
+\newblock Non-abelian {$p$}-adic {R}ankin-{S}elberg {$L$}-functions and
+  non-vanishing of central {$L$}-values.
+\newblock {\em Amer. J. Math.}, 146(2):495--578, 2024.
+
+\bibitem[JSW17]{JSW15}
+Dimitar Jetchev, Christopher Skinner, and Xin Wan.
+\newblock The {B}irch and {S}winnerton-{D}yer formula for elliptic curves of
+  analytic rank one.
+\newblock {\em Camb. J. Math.}, 5(3):369--434, 2017.
+
+\bibitem[Kat93]{KatoIwasawa}
+Kazuya Kato.
+\newblock Lectures on the approach to {Iwasawa} theory for {Hasse}-{Weil}
+  {{\(L\)}}-functions via {{\(B_{dR}\)}}.
+\newblock In {\em Arithmetic algebraic geometry. Lectures given at the 2nd
+  session of the Centro Internazionale Matematico Estivo (C.I.M.E.), held in
+  Trento, Italy, June 24 - July 2, 1991}, pages 50--163. Berlin:
+  Springer-Verlag, 1993.
+
+\bibitem[Kat04a]{Kat04}
+Kazuya Kato.
+\newblock $p$-adic {H}odge theory and values of zeta functions of modular
+  forms.
+\newblock {\em Ast\'{e}risque}, 295:117--290, 2004.
+
+\bibitem[Kat04b]{kato98}
+Kazuya Kato.
+\newblock $p$-adic {H}odge theory and values of zeta functions of modular
+  forms.
+\newblock {\em Ast\'{e}risque}, 295:117--290, 2004.
+
+\bibitem[KLZ17]{KLZ17}
+Guido Kings, David Loeffler, and Sarah~Livia Zerbes.
+\newblock Rankin-{E}isenstein classes and explicit reciprocity laws.
+\newblock {\em Camb. J. Math.}, 5(1):1--122, 2017.
+
+\bibitem[KMS00]{KMS00}
+D.~Kazhdan, B.~Mazur, and C.-G. Schmidt.
+\newblock Relative modular symbols and {R}ankin-{S}elberg convolutions.
+\newblock {\em J. Reine Angew. Math.}, 519:97--141, 2000.
+
+\bibitem[KNQD98]{MTsyntomic}
+Manfred Kolster and Thong Nguyen Quang~Do.
+\newblock Syntomic regulators and special values of {{\(p\)}}-adic
+  {{\(L\)}}-functions.
+\newblock {\em Invent. Math.}, 133(2):417--447, 1998.
+
+\bibitem[Kol88]{Kol88}
+Victor Kolyvagin.
+\newblock Finiteness of {$E(\Q)$} and {$\Sha(E/\Q)$} for a subclass of {W}eil
+  curves.
+\newblock {\em Izv. Akad. Nauk. USSR ser. Matem.}, 52, 1988.
+\newblock In Russian.
+
+\bibitem[Lan90]{Lan90}
+Serge Lang.
+\newblock {\em Cyclotomic fields {I} and {II}}, volume 121 of {\em Graduate
+  Texts in Mathematics}.
+\newblock Springer-Verlag, 1990.
+
+\bibitem[Liu20]{Liu16}
+Zheng Liu.
+\newblock {$p$}-adic {$L$}-functions for ordinary families on symplectic
+  groups.
+\newblock {\em J. Inst. Math. Jussieu}, 19(4):1287--1347, 2020.
+
+\bibitem[LLZ14]{LLZ14}
+Antonio Lei, David Loeffler, and Sarah~Livia Zerbes.
+\newblock Euler systems for {R}ankin-{S}elberg convolutions of modular forms.
+\newblock {\em Ann. of Math. (2)}, 180(2):653--771, 2014.
+
+\bibitem[LPSZ21]{LPSZ19}
+David Loeffler, Vincent Pilloni, Christopher Skinner, and Sarah~Livia Zerbes.
+\newblock Higher {H}ida theory and {$p$}-adic {$L$}-functions for
+  {$\mathrm{GSp}_4$}.
+\newblock {\em Duke Math. J.}, 170(18):4033--4121, 2021.
+
+\bibitem[LR]{LoefflerRiveroEisenstein}
+David Loeffler and \`Oscar Rivero.
+\newblock Eisenstein degeneration of {E}uler systems.
+\newblock {\em J. Reine Angew Math.}
+\newblock To appear: \url{https://arxiv.org/abs/2201.02078}.
+
+\bibitem[LSZ22]{LSZ17}
+David Loeffler, Christopher Skinner, and Sarah~Livia Zerbes.
+\newblock Euler systems for {${\mathrm{GSp}}(4)$}.
+\newblock {\em J. Eur. Math. Soc. (JEMS)}, 24(2):669--733, 2022.
+
+\bibitem[LW]{LW-GL3}
+David Loeffler and Chris Williams.
+\newblock $p$-adic ${L}$-functions for {GL}$(3)$.
+\newblock Preprint.
+
+\bibitem[LZ]{LZ20}
+David Loeffler and Sarah~Livia Zerbes.
+\newblock On the {B}loch--{K}ato conjecture for $\mathrm{{GSp}}(4)$.
+\newblock Preprint: \url{https://arxiv.org/abs/2003.05960}.
+
+\bibitem[MM91]{MM91}
+M.~Ram Murty and V.~Kumar Murty.
+\newblock Mean values of derivatives of modular {$L$}-series.
+\newblock {\em Ann. of Math.}, 133:447--475, 1991.
+
+\bibitem[MSD74]{MSD74}
+Barry Mazur and Peter Swinnerton-Dyer.
+\newblock Arithmetic of {W}eil curves.
+\newblock {\em Invent. Math.}, 25:1 -- 61, 1974.
+
+\bibitem[MTT86]{MTT86}
+Barry Mazur, John Tate, and Jeremy Teitelbaum.
+\newblock On $p$-adic analogues of the {B}irch and {S}winnerton-{D}yer
+  conjecture.
+\newblock {\em Invent. Math.}, 84:1 -- 48, 1986.
+
+\bibitem[MW84]{MW84}
+Barry Mazur and Andrew Wiles.
+\newblock Class fields of abelian extensions of $\mathbb{Q}$.
+\newblock {\em Invent. Math.}, 76(2):179--330, 1984.
+
+\bibitem[Neu07]{NeuirchANT}
+J{\"u}rgen Neukirch.
+\newblock {\em Algebraische {Zahlentheorie}}.
+\newblock Berlin: Springer, reprint of the 1992 original edition, 2007.
+
+\bibitem[NSW99]{NSW99}
+J\"{u}rgen Neukirch, Alexander Schmidt, and Kay Wingberg.
+\newblock {\em Cohomology of Number Fields}.
+\newblock Springer, 1999.
+
+\bibitem[Pan94]{Pan94}
+Alexei~A. Panchishkin.
+\newblock Motives over totally real fields and {$p$}-adic {$L$}-functions.
+\newblock {\em Ann. Inst. Fourier (Grenoble)}, 44(4):989--1023, 1994.
+
+\bibitem[PR95a]{PR}
+B.~Perrin-Riou.
+\newblock Fonctions {$L$} {$p$}-adiques des repr\'esentations {$p$}-adiques.
+\newblock {\em Ast\'erisque}, (229):198, 1995.
+
+\bibitem[PR95b]{PerrinRiou}
+Bernadette Perrin-Riou.
+\newblock {\em Fonctions $L p$-adiques des repr\'esentations $p$-adiques}.
+\newblock Number 229 in Ast\'erisque. Soci\'et\'e math\'ematique de France,
+  1995.
+
+\bibitem[PS13]{PS12}
+Robert Pollack and Glenn Stevens.
+\newblock Critical slope {$p$}-adic {$L$}-functions.
+\newblock {\em J. Lond. Math. Soc. (2)}, 87(2):428--452, 2013.
+
+\bibitem[RJ18]{RodriguesPhiGamma}
+Joaqu{\'{\i}}n Rodrigues~Jacinto.
+\newblock {{\((\varphi,\Gamma)\)}}-modules de de {Rham} et fonctions {{\(L\)}}
+  {{\(p\)}}-adiques.
+\newblock {\em Algebra Number Theory}, 12(4):885--934, 2018.
+
+\bibitem[Rub00]{Rub00}
+Karl Rubin.
+\newblock {\em Euler Systems}.
+\newblock Annals of Mathematics Studies. Princeton University Press, 2000.
+
+\bibitem[Sch85]{Schneiderpadicheight}
+Peter Schneider.
+\newblock {{\(p\)}}-adic height pairings. {II}.
+\newblock {\em Invent. Math.}, 79:329--374, 1985.
+
+\bibitem[Sch88]{Sch88}
+C.-G. Schmidt.
+\newblock {$p$}-adic measures attached to automorphic representations of {${\rm
+  GL}(3)$}.
+\newblock {\em Invent. Math.}, 92(3):597--631, 1988.
+
+\bibitem[Ser73]{SerreFormesModulairesetZeta}
+Jean-Pierre Serre.
+\newblock {F}ormes modulaires et fonctions z{\^e}ta {$p$}-adiques.
+\newblock Modular {Functions} of one {Variable} {III}, {Proc}. internat.
+  {Summer} {School}, {Univ}. {Antwerp} 1972, {Lect}. {Notes} {Math}. 350,
+  191-268 (1973)., 1973.
+
+\bibitem[Ser98]{Serre89}
+Jean-Pierre Serre.
+\newblock {\em Abelian {$l$}-adic representations and elliptic curves},
+  volume~7 of {\em Research Notes in Mathematics}.
+\newblock A K Peters, Ltd., Wellesley, MA, 1998.
+\newblock With the collaboration of Willem Kuyk and John Labute, Revised
+  reprint of the 1968 original.
+
+\bibitem[Ski18]{Ski18}
+Christopher Skinner.
+\newblock Lectures on the {I}wasawa theory of elliptic curves.
+\newblock Lecture notes from the 2018 Arizona Winter School,
+  http://swc.math.arizona.edu/aws/2018/, 2018.
+
+\bibitem[Ski20]{Ski20}
+Christopher Skinner.
+\newblock A converse to a theorem of {G}ross, {Z}agier, and {K}olyvagin.
+\newblock {\em Ann. of Math. (2)}, 191(2):329--354, 2020.
+
+\bibitem[SU14]{SU14}
+Christopher Skinner and Eric Urban.
+\newblock The {I}wasawa {M}ain {C}onjectures for {GL}$(2)$.
+\newblock {\em Invent. Math.}, 195 (1):1--277, 2014.
+
+\bibitem[Tat50]{Tat50}
+John Tate.
+\newblock {\em Fourier analysis in number fields and Hecke's zeta functions}.
+\newblock PhD thesis, Princeton, 1950.
+
+\bibitem[Vis76]{Vis76}
+M.~M. Visik.
+\newblock Nonarchimedean measures associated with {D}irichlet series.
+\newblock {\em Mat. Sb. (N.S.)}, 99(141)(2):248--260, 296, 1976.
+
+\bibitem[Was82]{Washington}
+Larry Washington.
+\newblock {\em Introduction to {C}yclotomic {F}ields}, volume~83 of {\em
+  Graduate texts in mathematics}.
+\newblock Springer, 1982.
+
+\bibitem[Was97]{Washington2}
+Lawrence~C. Washington.
+\newblock {\em Introduction to cyclotomic fields.}, volume~83 of {\em Grad.
+  Texts Math.}
+\newblock New York, NY: Springer, 2nd ed. edition, 1997.
+
+\bibitem[Wei71]{Wei71}
+André Weil.
+\newblock {\em Dirichlet Series and Automorphic Forms}, volume 189 of {\em
+  Lecture Notes in Math.}
+\newblock Springer, 1971.
+
+\bibitem[Wil90]{Wil90}
+A.~Wiles.
+\newblock The {I}wasawa conjecture for totally real fields.
+\newblock {\em Ann. of Math. (2)}, 131(3):493--540, 1990.
+
+\end{thebibliography}
