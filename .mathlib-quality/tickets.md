@@ -549,7 +549,7 @@ RJW Rem. 3.33, TeX 1171–1172.
 ---
 
 ### [T018] Fubini: clopen-box decomposition of locally constant functions
-- **Status**: open | **File**: Measure/Fubini.lean | **Depends on**: none
+- **Status**: done (2026-06-10; REPLANNED per beastmode replan-and-continue: clopen-box decomposition replaced by locally-constant approximation of the CURRIED map — new lemma exists_locallyConstant_norm_sub_le' (general ultrametric target, mathlib PR candidate); the box lemma was dropped as unnecessary, and integral_swap lost its T2/TotallyDisconnected hypotheses. decomposition.md L5.1 superseded accordingly) | **File**: Measure/Fubini.lean | **Depends on**: none
 - **Parallel**: yes (anytime) | **Type**: theorem | **Leaf**: L5.1
 
 #### Statement
@@ -585,7 +585,7 @@ Expansion of RJW line 910 "One checks…" via the Rem. 3.8 technique (decomposit
 ---
 
 ### [T019] Fubini: integral_swap
-- **Status**: open | **File**: Fubini.lean | **Depends on**: T018, T002, T001
+- **Status**: done (2026-06-10; swap via finite fibre sums of the locally constant approximation; ultrametric dist_triangle_max closes) | **File**: Fubini.lean | **Depends on**: T018, T002, T001
 - **Type**: theorem | **Leaf**: L5.2
 
 #### Statement
@@ -609,7 +609,7 @@ compact-open) and ν is continuous (T001) — composition.
 Expansion of RJW Rem. 3.11 "One checks", TeX 910; technique = Rem. 3.8.
 
 ### [CLEANUP-8] Run /cleanup on Fubini.lean (final)
-- **Status**: open | **Depends on**: T019 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode) | **Depends on**: T019 | **Type**: cleanup
 
 ---
 
