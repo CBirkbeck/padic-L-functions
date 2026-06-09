@@ -105,12 +105,55 @@ if `‖f‖ ≤ p^{-m}` then `f = p^m • g` for a continuous `g`, so `‖μ f�
 Source: RJW Def. 3.6, footnote (boundedness of measures; TeX line 759), combined with
 the `𝒪_L`-valuedness convention of line 765. -/
 theorem norm_apply_le (μ : PadicMeasure p X) (f : C(X, ℤ_[p])) : ‖μ f‖ ≤ ‖f‖ := by
-  sorry
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have hf : f = 0 := by ext x; exact (IsEmpty.false x).elim
+    simp [hf]
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  -- the sup norm is attained, and is a power of `p`
+  obtain ⟨x₀, -, hx₀'⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty
+    ((map_continuous f).norm.continuousOn)
+  have hx₀ : ∀ x, ‖f x‖ ≤ ‖f x₀‖ := fun x => hx₀' (Set.mem_univ x)
+  have hfx₀ : f x₀ ≠ 0 := by
+    intro h
+    refine hf (ContinuousMap.ext fun x => norm_le_zero_iff.1 ?_)
+    simpa [h] using hx₀ x
+  have hnorm : ‖f‖ = ‖f x₀‖ :=
+    le_antisymm ((f.norm_le (norm_nonneg _)).2 hx₀) (f.norm_coe_le_norm x₀)
+  set n := (f x₀).valuation with hn
+  have hval : ‖f x₀‖ = (p : ℝ) ^ (-n : ℤ) := PadicInt.norm_eq_zpow_neg_valuation hfx₀
+  -- every value of `f` is divisible by `p ^ n`, so `f = p ^ n • g`
+  have hple : ∀ x, ‖f x‖ ≤ (p : ℝ) ^ (-n : ℤ) := fun x => by
+    rw [← hval, ← hnorm]; exact f.norm_coe_le_norm x
+  have hpn : ((p : ℚ_[p]) ^ n) ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.2 hp.out.ne_zero)
+  have hbound : ∀ x : X, ‖(f x : ℚ_[p]) / (p : ℚ_[p]) ^ n‖ ≤ 1 := fun x => by
+    rw [norm_div, Padic.norm_p_pow,
+      div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _), ← PadicInt.norm_def]
+    exact hple x
+  set g : C(X, ℤ_[p]) :=
+    ⟨fun x => ⟨(f x : ℚ_[p]) / (p : ℚ_[p]) ^ n, hbound x⟩,
+      Continuous.subtype_mk
+        ((continuous_subtype_val.comp (map_continuous f)).div_const _) hbound⟩ with hg
+  have hfg : f = (p : ℤ_[p]) ^ n • g := by
+    ext x
+    refine Subtype.ext ?_
+    simp only [hg, ContinuousMap.smul_apply, smul_eq_mul, PadicInt.coe_mul, PadicInt.coe_pow,
+      PadicInt.coe_natCast, ContinuousMap.coe_mk]
+    field_simp
+  calc ‖μ f‖ = ‖(p : ℤ_[p]) ^ n * μ g‖ := by rw [hfg, map_smul, smul_eq_mul]
+    _ = ‖(p : ℤ_[p]) ^ n‖ * ‖μ g‖ := norm_mul _ _
+    _ ≤ (p : ℝ) ^ (-n : ℤ) * 1 := by
+        rw [PadicInt.norm_p_pow]
+        exact mul_le_mul_of_nonneg_left (PadicInt.norm_le_one _)
+          (zpow_nonneg (Nat.cast_nonneg p) _)
+    _ = ‖f‖ := by rw [mul_one, hnorm, hval]
 
 /-- Measures are automatically continuous (the source's "measures are continuous (or
 equivalently, bounded)", TeX line 765). -/
-theorem continuous (μ : PadicMeasure p X) : Continuous μ := by
-  sorry
+theorem continuous (μ : PadicMeasure p X) : Continuous μ :=
+  (LipschitzWith.of_dist_le_mul (K := 1) fun f g => by
+    simpa only [dist_eq_norm, ← map_sub, NNReal.coe_one, one_mul] using
+      norm_apply_le p μ (f - g)).continuous
 
 /-- **Density of locally constant functions**: any continuous `f : X → ℤ_[p]` on a
 compact space is uniformly approximated by locally constant functions. The preimages of
@@ -122,7 +165,38 @@ function `φ ∈ 𝒞(G, 𝒪_L)` can be p-adically approximated by its locally 
 truncations". Not in mathlib (verified absent); PR candidate. -/
 theorem exists_locallyConstant_norm_sub_le (f : C(X, ℤ_[p])) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : LocallyConstant X ℤ_[p], ‖f - (g : C(X, ℤ_[p]))‖ ≤ ε := by
-  sorry
+  obtain ⟨k, hk⟩ := PadicInt.exists_pow_neg_lt p hε
+  haveI : NeZero (p ^ k) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+  -- residue discs mod `p^k` are open
+  have hopen : ∀ a : ZMod (p ^ k), IsOpen {z : ℤ_[p] | PadicInt.toZModPow k z = a} := by
+    intro a
+    rw [Metric.isOpen_iff]
+    intro z hz
+    refine ⟨(p : ℝ) ^ (-k : ℤ), zpow_pos (by exact_mod_cast hp.out.pos) _, fun y hy => ?_⟩
+    have hmem : PadicInt.toZModPow k (y - z) = 0 := by
+      rw [← RingHom.mem_ker, PadicInt.ker_toZModPow]
+      exact (PadicInt.norm_le_pow_iff_mem_span_pow _ k).1
+        (le_of_lt (by simpa [Metric.mem_ball, dist_eq_norm] using hy))
+    rw [map_sub, sub_eq_zero] at hmem
+    simpa only [Set.mem_setOf_eq, hmem] using hz
+  -- the mod-`p^k` reduction of `f` is locally constant
+  set q : X → ZMod (p ^ k) := fun x => PadicInt.toZModPow k (f x) with hq
+  have hlc : IsLocallyConstant q := fun s => by
+    rw [← Set.biUnion_preimage_singleton]
+    exact isOpen_biUnion fun a _ => (hopen a).preimage (map_continuous f)
+  -- lift back via the canonical representatives
+  refine ⟨⟨fun x => ((q x).val : ℤ_[p]), hlc.comp fun a => ((a.val : ℕ) : ℤ_[p])⟩,
+    ((f - _).norm_le hε.le).2 fun x => ?_⟩
+  have hgx : PadicInt.toZModPow k (((q x).val : ℤ_[p])) = q x := by
+    rw [map_natCast]
+    exact ZMod.natCast_rightInverse (q x)
+  have hle : ‖f x - ((q x).val : ℤ_[p])‖ ≤ (p : ℝ) ^ (-k : ℤ) := by
+    rw [PadicInt.norm_le_pow_iff_mem_span_pow, ← PadicInt.ker_toZModPow, RingHom.mem_ker,
+      map_sub, hgx, sub_self]
+  calc ‖(f - _) x‖ = ‖f x - ((q x).val : ℤ_[p])‖ := by
+        simp [ContinuousMap.sub_apply]
+    _ ≤ (p : ℝ) ^ (-k : ℤ) := hle
+    _ ≤ ε := hk.le
 
 /-- A measure is determined by its values on locally constant functions.
 
@@ -131,7 +205,19 @@ an isomorphism `ℳ(G, 𝒪_L) ≅ ℳ^lc(G, 𝒪_L)`; injectivity is this state
 theorem ext_locallyConstant {μ ν : PadicMeasure p X}
     (h : ∀ g : LocallyConstant X ℤ_[p], μ (g : C(X, ℤ_[p])) = ν (g : C(X, ℤ_[p]))) :
     μ = ν := by
-  sorry
+  refine LinearMap.ext fun f => eq_of_forall_dist_le fun ε hε => ?_
+  obtain ⟨g, hg⟩ := exists_locallyConstant_norm_sub_le p f hε
+  have key : μ f - ν f = μ (f - (g : C(X, ℤ_[p]))) - ν (f - (g : C(X, ℤ_[p]))) := by
+    simp only [map_sub, h g]
+    ring
+  rw [dist_eq_norm, key, sub_eq_add_neg]
+  calc ‖μ (f - (g : C(X, ℤ_[p]))) + -(ν (f - (g : C(X, ℤ_[p]))))‖
+      ≤ max ‖μ (f - (g : C(X, ℤ_[p])))‖ ‖-(ν (f - (g : C(X, ℤ_[p]))))‖ :=
+        IsUltrametricDist.norm_add_le_max _ _
+    _ ≤ ‖f - (g : C(X, ℤ_[p]))‖ := by
+        rw [norm_neg]
+        exact max_le (norm_apply_le p μ _) (norm_apply_le p ν _)
+    _ ≤ ε := hg
 
 end compact
 

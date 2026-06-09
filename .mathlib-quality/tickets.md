@@ -19,7 +19,7 @@ but the skeleton is canonical. `lake build` green at board creation.
 ---
 
 ### [T001] Prove norm_apply_le + continuous (automatic boundedness)
-- **Status**: open | **File**: PadicLFunctions/Measure/Basic.lean | **Depends on**: none
+- **Status**: done (2026-06-09; both lemmas proved: max-attainment + p^n-division; LipschitzWith 1) | **File**: PadicLFunctions/Measure/Basic.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: lemma ×2 | **Leaves**: L1.1, L1.2
 
 #### Statement
@@ -52,7 +52,7 @@ RJW Def. 3.6 + footnote, TeX 759–765 (quote: decomposition L1.1).
 ---
 
 ### [T002] Prove density of locally constant functions
-- **Status**: open | **File**: Basic.lean | **Depends on**: none
+- **Status**: done (2026-06-09; via toZModPow-factorisation: q := toZModPow k ∘ f is locally constant, lift by ZMod.val; error controlled by ker_toZModPow — simpler than the planned cover-disjointification) | **File**: Basic.lean | **Depends on**: none
 - **Parallel**: yes (with T001) | **Type**: lemma | **Leaf**: L1.3
 
 #### Statement
@@ -87,7 +87,7 @@ target — note as a "for mathlib, generalise target" comment but do NOT widen n
 ---
 
 ### [T003] Prove ext_locallyConstant
-- **Status**: open | **File**: Basic.lean | **Depends on**: T001, T002 | **Type**: lemma | **Leaf**: L1.4
+- **Status**: done (2026-06-09; eq_of_forall_dist_le + ultrametric norm_add_le_max + T001/T002) | **File**: Basic.lean | **Depends on**: T001, T002 | **Type**: lemma | **Leaf**: L1.4
 
 #### Statement
 `ext_locallyConstant {μ ν} (h : ∀ g : LocallyConstant X ℤ_[p], μ ↑g = ν ↑g) : μ = ν`
@@ -110,7 +110,7 @@ RJW Rem. 3.8, Eq. (3.1), TeX 787–799.
 As skeleton.
 
 ### [CLEANUP-1] Run /cleanup on PadicLFunctions/Measure/Basic.lean
-- **Status**: open | **Depends on**: T003 | **Type**: cleanup
+- **Status**: done (2026-06-09; degraded mode: lean-lsp MCP unavailable this session — mathlib linter set is ON in lakefile and the file builds with zero warnings; axioms standard on all 4 decls; full-tooling pass deferred to CLEANUP-FINAL) | **Depends on**: T003 | **Type**: cleanup
 - 3rd proof ticket on the file + final per-file cleanup (T001–T003 complete the file).
 
 ---
