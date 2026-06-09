@@ -116,7 +116,7 @@ As skeleton.
 ---
 
 ### [T004] Prove the evaluation formula apply_eq_tsum
-- **Status**: open | **File**: Measure/MahlerTransform.lean | **Depends on**: CLEANUP-1
+- **Status**: done (2026-06-10; HasSum.map through toAddMonoidHom) | **File**: Measure/MahlerTransform.lean | **Depends on**: CLEANUP-1
 - **Type**: lemma | **Leaf**: L2.1
 
 #### Statement
@@ -146,7 +146,7 @@ RJW Thm. 3.20 proof, TeX 995–998 (quote: decomposition L2.1).
 ---
 
 ### [T005] Prove mahlerTransform_dirac (𝓐 δ_a = (1+T)^a)
-- **Status**: open | **File**: MahlerTransform.lean | **Depends on**: CLEANUP-1
+- **Status**: done (2026-06-10; simp with binomialSeries_coeff) | **File**: MahlerTransform.lean | **Depends on**: CLEANUP-1
 - **Parallel**: yes (with T004) | **Type**: lemma | **Leaf**: L2.2
 
 #### Statement
@@ -172,7 +172,7 @@ As skeleton.
 ---
 
 ### [T006] Prove ofPowerSeries well-defined + mahlerTransform_ofPowerSeries
-- **Status**: open | **File**: MahlerTransform.lean | **Depends on**: T004
+- **Status**: done (2026-06-10; summable helper + δ-identity transport) | **File**: MahlerTransform.lean | **Depends on**: T004
 - **Type**: def-fields + lemma | **Leaf**: L2.4
 
 #### Statement
@@ -205,12 +205,12 @@ RJW Thm. 3.20 proof, TeX 1000–1004 (quote: decomposition L2.4).
 As skeleton.
 
 ### [CLEANUP-2] Run /cleanup on MahlerTransform.lean (cadence)
-- **Status**: open | **Depends on**: T006 | **Type**: cleanup (after 3rd ticket on file)
+- **Status**: done (2026-06-10; degraded mode — linters on, zero warnings) | **Depends on**: T006 | **Type**: cleanup (after 3rd ticket on file)
 
 ---
 
 ### [T007] Prove mahlerTransform_injective + assemble mahlerLinearEquiv
-- **Status**: open | **File**: MahlerTransform.lean | **Depends on**: CLEANUP-2
+- **Status**: done (2026-06-10; Thm 3.20 linear part sorry-free) | **File**: MahlerTransform.lean | **Depends on**: CLEANUP-2
 - **Type**: lemma + def-fields | **Leaves**: L2.3, L2.5
 
 #### Statement
@@ -229,7 +229,7 @@ As skeleton.
 RJW Thm. 3.20, TeX 994–1005.
 
 ### [CLEANUP-3] Run /cleanup on MahlerTransform.lean (final)
-- **Status**: open | **Depends on**: T007 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode — linters on, zero warnings) | **Depends on**: T007 | **Type**: cleanup
 
 ---
 

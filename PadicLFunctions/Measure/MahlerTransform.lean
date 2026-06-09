@@ -61,7 +61,15 @@ This is the content of "any measure is uniquely determined by the values
 Source: RJW Thm. 3.20, proof, first display (TeX lines 995–998). -/
 theorem apply_eq_tsum (μ : PadicMeasure p ℤ_[p]) (f : C(ℤ_[p], ℤ_[p])) :
     μ f = ∑' n, Δ_[1]^[n] (⇑f) 0 * mahlerCoeff p μ n := by
-  sorry
+  have hterm : ∀ (a : ℤ_[p]) (n : ℕ),
+      (PadicInt.mahlerTerm a n : C(ℤ_[p], ℤ_[p])) = a • mahler n := by
+    intro a n
+    ext x
+    simp [PadicInt.mahlerTerm_apply, smul_eq_mul, mul_comm]
+  have h2 : HasSum (fun n => μ (PadicInt.mahlerTerm (Δ_[1]^[n] (⇑f) 0) n)) (μ f) :=
+    (PadicInt.hasSum_mahler f).map μ.toAddMonoidHom (continuous p μ)
+  refine h2.tsum_eq.symm.trans (tsum_congr fun n => ?_)
+  rw [hterm, map_smul, smul_eq_mul, mahlerCoeff]
 
 /-- The Mahler transform of the Dirac measure `δ_a` is `(1+T)^a` (the binomial series).
 
@@ -69,13 +77,35 @@ Source: RJW Ex. 3.16 (TeX lines 968–973). -/
 @[simp]
 theorem mahlerTransform_dirac (a : ℤ_[p]) :
     mahlerTransform p (dirac p a) = binomialSeries ℤ_[p] a := by
-  sorry
+  ext n
+  simp [binomialSeries_coeff, mahler_apply, smul_eq_mul]
 
 /-- The Mahler transform is injective: a measure killing every `binom(·,n)` is zero.
 
 Source: RJW Thm. 3.20, proof ("uniquely determined", TeX lines 995–998). -/
 theorem mahlerTransform_injective : Function.Injective (mahlerTransform p) := by
-  sorry
+  intro μ ν h
+  refine LinearMap.ext fun f => ?_
+  rw [apply_eq_tsum p μ f, apply_eq_tsum p ν f]
+  refine tsum_congr fun n => ?_
+  have hn : μ (mahler n) = ν (mahler n) := by
+    simpa using congrArg (PowerSeries.coeff n) h
+  rw [mahlerCoeff, mahlerCoeff, hn]
+
+/-- The summand `Δⁿf(0)·gₙ` of `ofPowerSeries` is summable: the Mahler coefficients
+tend to zero and the power-series coefficients are bounded by 1. -/
+private lemma summable_fwdDiff_mul (f : C(ℤ_[p], ℤ_[p])) (g : PowerSeries ℤ_[p]) :
+    Summable fun n => Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n g := by
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
+  rw [Nat.cofinite_eq_atTop]
+  have h := PadicInt.fwdDiff_tendsto_zero f
+  rw [tendsto_zero_iff_norm_tendsto_zero] at h ⊢
+  refine squeeze_zero (fun n => norm_nonneg _) (fun n => ?_) h
+  calc ‖Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n g‖
+      = ‖Δ_[1]^[n] (⇑f) 0‖ * ‖PowerSeries.coeff n g‖ := norm_mul _ _
+    _ ≤ ‖Δ_[1]^[n] (⇑f) 0‖ * 1 :=
+        mul_le_mul_of_nonneg_left (PadicInt.norm_le_one _) (norm_nonneg _)
+    _ = ‖Δ_[1]^[n] (⇑f) 0‖ := mul_one _
 
 /-- The measure `μ_g` attached to a power series `g`: `φ ↦ ∑' n, Δⁿφ(0) * g_n`.
 The series converges because `Δⁿφ(0) → 0` (mathlib's `PadicInt.fwdDiff_tendsto_zero`)
@@ -84,17 +114,45 @@ and `ℤ_p` is a complete nonarchimedean ring.
 Source: RJW Thm. 3.20, proof, converse direction (TeX lines 1000–1004). -/
 noncomputable def ofPowerSeries (g : PowerSeries ℤ_[p]) : PadicMeasure p ℤ_[p] where
   toFun f := ∑' n, Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n g
-  map_add' _ _ := by sorry
-  map_smul' _ _ := by sorry
+  map_add' f₁ f₂ := by
+    simp only [ContinuousMap.coe_add, fwdDiff_iter_add, Pi.add_apply, add_mul]
+    exact (summable_fwdDiff_mul p f₁ g).tsum_add (summable_fwdDiff_mul p f₂ g)
+  map_smul' c f := by
+    simp only [ContinuousMap.coe_smul, fwdDiff_iter_const_smul, Pi.smul_apply, smul_eq_mul,
+      RingHom.id_apply, mul_assoc]
+    exact (summable_fwdDiff_mul p f g).tsum_mul_left c
+
+/-- `Δⁿ(binom(·,k))(0) = δ_{nk}` over `ℤ_p`: transported from mathlib's
+`fwdDiff_iter_choose_zero` (over `ℕ → ℤ`) along the finite-sum formula for iterated
+forward differences. -/
+private lemma fwdDiff_iter_mahler_zero (n k : ℕ) :
+    Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0 = if n = k then 1 else 0 := by
+  have key : Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0
+      = ((Δ_[1]^[n] (fun x => (x.choose k : ℤ)) 0 : ℤ) : ℤ_[p]) := by
+    rw [fwdDiff_iter_eq_sum_shift, fwdDiff_iter_eq_sum_shift, Int.cast_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    have h1 : (0 : ℤ_[p]) + i • (1 : ℤ_[p]) = (i : ℤ_[p]) := by
+      rw [zero_add, nsmul_eq_mul, mul_one]
+    have h2 : 0 + i • 1 = i := by simp
+    rw [h1, h2, mahler_natCast_eq]
+    simp only [zsmul_eq_mul]
+    push_cast
+    ring
+  rw [key, fwdDiff_iter_choose_zero]
+  split <;> simp
 
 /-- The Mahler coefficients of `ofPowerSeries g` recover `g`: `∫ binom(x,k) dμ_g = g_k`.
-Uses `Δⁿ(binom(·,k))(0) = δ_{nk}`, i.e. `mahler k = mahlerSeries (Pi.single k 1)`.
 
 Source: RJW Thm. 3.20, proof: "Visibly we have 𝓐_{μ_g} = g" (TeX line 1004). -/
 @[simp]
 theorem mahlerTransform_ofPowerSeries (g : PowerSeries ℤ_[p]) :
     mahlerTransform p (ofPowerSeries p g) = g := by
-  sorry
+  ext k
+  rw [coeff_mahlerTransform]
+  show ∑' n, Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0 * PowerSeries.coeff n g
+      = PowerSeries.coeff k g
+  simp_rw [fwdDiff_iter_mahler_zero, ite_mul, one_mul, zero_mul]
+  exact tsum_ite_eq k _
 
 /-- **RJW Theorem 3.20 (`thm:mahler`), linear part**: the Mahler transform is a
 `ℤ_[p]`-linear equivalence `ℳ(ℤ_p, ℤ_p) ≃ ℤ_p[[T]]`. (Upgraded to a ring isomorphism
@@ -102,12 +160,12 @@ in `PadicLFunctions.Measure.Convolution`.) -/
 noncomputable def mahlerLinearEquiv : PadicMeasure p ℤ_[p] ≃ₗ[ℤ_[p]] PowerSeries ℤ_[p] :=
   { mahlerTransformₗ p with
     invFun := ofPowerSeries p
-    left_inv := by
-      intro μ
-      sorry
-    right_inv := by
-      intro g
-      sorry }
+    left_inv := fun μ => by
+      refine LinearMap.ext fun f => ?_
+      show ∑' n, Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n (mahlerTransform p μ) = μ f
+      simp_rw [coeff_mahlerTransform]
+      exact (apply_eq_tsum p μ f).symm
+    right_inv := mahlerTransform_ofPowerSeries p }
 
 @[simp]
 lemma mahlerLinearEquiv_apply (μ : PadicMeasure p ℤ_[p]) :
