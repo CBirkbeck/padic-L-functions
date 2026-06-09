@@ -304,6 +304,64 @@ noncomputable def levelMap (n : ℕ) :
     exact Finset.sum_congr rfl fun g _ => by
       rw [LinearMap.add_apply, MonoidAlgebra.single_add]
 
+/-- The `g`-coefficient of `levelMap n μ` is the measure of the `g`-disc. -/
+lemma levelMap_apply_coeff (n : ℕ) (μ : PadicMeasure p ℤ_[p]ˣ) (g : (ZMod (p ^ n))ˣ) :
+    (levelMap p n μ) g = μ (levelChar p n g) := by
+  classical
+  rw [show (levelMap p n μ) g = (∑ c : (ZMod (p ^ n))ˣ,
+      MonoidAlgebra.single c (μ (levelChar p n c))) g from rfl,
+    show (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (μ (levelChar p n c))) g
+      = ∑ c : (ZMod (p ^ n))ˣ, (MonoidAlgebra.single c (μ (levelChar p n c))) g from
+    map_sum (Finsupp.applyAddHom (M := ℤ_[p]) g) _ _,
+    Finset.sum_eq_single g]
+  · rw [MonoidAlgebra.single_apply, if_pos rfl]
+  · intro c _ hcg
+    rw [MonoidAlgebra.single_apply, if_neg hcg]
+  · exact fun hg => absurd (Finset.mem_univ _) hg
+
+lemma levelMap_eq_zero_iff (n : ℕ) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    levelMap p n μ = 0 ↔ ∀ g : (ZMod (p ^ n))ˣ, μ (levelChar p n g) = 0 := by
+  constructor
+  · intro h g
+    rw [← levelMap_apply_coeff p n μ g, h]
+    rfl
+  · intro h
+    show (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (μ (levelChar p n c))) = 0
+    exact Finset.sum_eq_zero fun c _ => by rw [h c, MonoidAlgebra.single_zero]
+
+/-- The level indicators sum to `1` (partition of `ℤ_p^×` into residue discs). -/
+lemma sum_levelChar (n : ℕ) :
+    (∑ g : (ZMod (p ^ n))ˣ, levelChar p n g) = (1 : C(ℤ_[p]ˣ, ℤ_[p])) := by
+  ext u
+  rw [show (∑ g : (ZMod (p ^ n))ˣ, levelChar p n g) u
+      = ∑ g : (ZMod (p ^ n))ˣ, levelChar p n g u from by
+    simp [Finset.sum_apply], Finset.sum_eq_single (unitsToZModPow p n u)]
+  · rw [levelChar_apply_eq p rfl, ContinuousMap.one_apply]
+  · intro c _ hcu
+    exact levelChar_apply_ne p fun hc => hcu hc.symm
+  · exact fun hu => absurd (Finset.mem_univ _) hu
+
+lemma levelMap_dirac (n : ℕ) (u : ℤ_[p]ˣ) :
+    levelMap p n (dirac p u) = MonoidAlgebra.single (unitsToZModPow p n u) 1 := by
+  show (∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g ((dirac p u) (levelChar p n g))) = _
+  rw [Finset.sum_eq_single (unitsToZModPow p n u)]
+  · rw [dirac_apply, levelChar_apply_eq p rfl]
+  · intro g _ hgu
+    rw [dirac_apply, levelChar_apply_ne p fun hg => hgu hg.symm, MonoidAlgebra.single_zero]
+  · exact fun hu => absurd (Finset.mem_univ _) hu
+
+lemma levelMap_smul (n : ℕ) (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    levelMap p n (c • μ) = c • levelMap p n μ := by
+  show (∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g ((c • μ) (levelChar p n g)))
+      = c • ∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g (μ (levelChar p n g))
+  rw [Finset.smul_sum]
+  refine Finset.sum_congr rfl fun g _ => ?_
+  rw [LinearMap.smul_apply, smul_eq_mul]
+  rw [show c • (MonoidAlgebra.single g (μ (levelChar p n g)) :
+      MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
+      = MonoidAlgebra.single g (c • μ (levelChar p n g)) from
+    MonoidAlgebra.smul_single c g _, smul_eq_mul]
+
 /-- Compatibility of the reductions: level `n` factors through any level `m ≥ n`. -/
 lemma unitsToZModPow_le {n m : ℕ} (h : n ≤ m) (a : ℤ_[p]ˣ) :
     unitsToZModPow p n a
@@ -445,6 +503,150 @@ theorem levelMap_jointly_injective (μ : PadicMeasure p ℤ_[p]ˣ)
   rw [hg, map_sum]
   refine Finset.sum_eq_zero fun c _ => ?_
   rw [map_smul, hcoeff N c, smul_zero]
+
+/-- Refinement: the level-`m` discs inside a level-`n` disc sum to its indicator. -/
+lemma sum_levelChar_fiber {n m : ℕ} (h : n ≤ m) (cbar : (ZMod (p ^ n))ˣ) :
+    (∑ c ∈ Finset.univ.filter
+        (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+      levelChar p m c) = levelChar p n cbar := by
+  classical
+  ext u
+  rw [show (∑ c ∈ Finset.univ.filter
+      (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+      levelChar p m c) u
+      = ∑ c ∈ Finset.univ.filter
+        (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+        levelChar p m c u from by simp [Finset.sum_apply]]
+  by_cases hu : unitsToZModPow p n u = cbar
+  · rw [levelChar_apply_eq p hu, Finset.sum_eq_single (unitsToZModPow p m u)]
+    · exact levelChar_apply_eq p rfl
+    · intro c _ hcu
+      exact levelChar_apply_ne p fun h' => hcu h'.symm
+    · intro hmem
+      exact absurd (Finset.mem_filter.2 ⟨Finset.mem_univ _,
+        by rw [← unitsToZModPow_le p h u, hu]⟩) hmem
+  · rw [levelChar_apply_ne p hu]
+    refine Finset.sum_eq_zero fun c hc => ?_
+    rw [Finset.mem_filter] at hc
+    refine levelChar_apply_ne p fun hqu => hu ?_
+    rw [← hc.2, ← hqu, ← unitsToZModPow_le p h u]
+
+/-- The level maps are compatible with coefficient transport along the reductions. -/
+lemma mapDomain_levelMap {n m : ℕ} (h : n ≤ m) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    Finsupp.mapDomain (ZMod.unitsMap (pow_dvd_pow p h)) (levelMap p m μ)
+      = levelMap p n μ := by
+  classical
+  show Finsupp.mapDomain _
+      (∑ c : (ZMod (p ^ m))ˣ, MonoidAlgebra.single c (μ (levelChar p m c))) = _
+  rw [Finsupp.mapDomain_finsetSum]
+  simp_rw [show ∀ c : (ZMod (p ^ m))ˣ, Finsupp.mapDomain
+      (ZMod.unitsMap (pow_dvd_pow p h)) (MonoidAlgebra.single c (μ (levelChar p m c)))
+      = MonoidAlgebra.single (ZMod.unitsMap (pow_dvd_pow p h) c) (μ (levelChar p m c)) from
+    fun c => Finsupp.mapDomain_single]
+  rw [← Finset.sum_fiberwise_of_maps_to
+    (g := fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c)
+    (t := Finset.univ) (fun c _ => Finset.mem_univ _)]
+  refine Finset.sum_congr rfl fun cbar _ => ?_
+  calc (∑ c ∈ Finset.univ.filter
+      (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+        MonoidAlgebra.single (ZMod.unitsMap (pow_dvd_pow p h) c) (μ (levelChar p m c)))
+      = ∑ c ∈ Finset.univ.filter
+          (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+          MonoidAlgebra.single cbar (μ (levelChar p m c)) :=
+        Finset.sum_congr rfl fun c hc => by rw [(Finset.mem_filter.1 hc).2]
+    _ = MonoidAlgebra.single cbar (∑ c ∈ Finset.univ.filter
+          (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+          μ (levelChar p m c)) :=
+        (map_sum (Finsupp.singleAddHom cbar) _ _).symm
+    _ = MonoidAlgebra.single cbar (μ (∑ c ∈ Finset.univ.filter
+          (fun c : (ZMod (p ^ m))ˣ => ZMod.unitsMap (pow_dvd_pow p h) c = cbar),
+          levelChar p m c)) := by rw [map_sum]
+    _ = MonoidAlgebra.single cbar (μ (levelChar p n cbar)) := by
+        rw [sum_levelChar_fiber p h cbar]
+
+/-- Telescoping: `[c] − 1` lies in the ideal generated by `[g] − 1` whenever `c` is a
+power of `g`. -/
+lemma single_sub_one_mem_span {n : ℕ} {gbar : (ZMod (p ^ n))ˣ}
+    (hg : Subgroup.zpowers gbar = ⊤) (c : (ZMod (p ^ n))ˣ) :
+    (MonoidAlgebra.single c 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
+      ∈ Ideal.span {MonoidAlgebra.single gbar 1 - 1} := by
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, gbar ^ k = c := by
+    have hmem : c ∈ Subgroup.zpowers gbar := hg ▸ Subgroup.mem_top c
+    exact mem_powers_iff_mem_zpowers.2 hmem
+  subst hk
+  induction k with
+  | zero =>
+    simp only [pow_zero, ← MonoidAlgebra.one_def, sub_self]
+    exact Ideal.zero_mem _
+  | succ m ih =>
+    have key : (MonoidAlgebra.single (gbar ^ (m + 1)) 1 - 1 :
+          MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
+        = MonoidAlgebra.single gbar 1 * (MonoidAlgebra.single (gbar ^ m) 1 - 1)
+          + (MonoidAlgebra.single gbar 1 - 1) := by
+      rw [mul_sub, MonoidAlgebra.single_mul_single, mul_one, ← pow_succ']
+      ring
+    rw [key]
+    exact Ideal.add_mem _ (Ideal.mul_mem_left _ _ ih) (Ideal.subset_span rfl)
+
+/-- Reconstruction: a group-ring element is the sum of its single components. -/
+lemma sum_single_coeff {n : ℕ} (y : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ) :
+    (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (y c)) = y := by
+  classical
+  ext d
+  rw [show (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (y c)) d
+      = ∑ c : (ZMod (p ^ n))ˣ, (MonoidAlgebra.single c (y c)) d from
+    map_sum (Finsupp.applyAddHom (M := ℤ_[p]) d) _ _, Finset.sum_eq_single d]
+  · rw [MonoidAlgebra.single_apply, if_pos rfl]
+  · intro c _ hcd
+    rw [MonoidAlgebra.single_apply, if_neg hcd]
+  · exact fun hd => absurd (Finset.mem_univ _) hd
+
+/-- An element of the group ring with vanishing coefficient sum lies in the ideal
+generated by `[g]−1`, for `g` a generator (RJW TeX lines 1265–1268). -/
+lemma mem_span_of_sum_eq_zero {n : ℕ} {gbar : (ZMod (p ^ n))ˣ}
+    (hg : Subgroup.zpowers gbar = ⊤) (x : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
+    (hx : ∑ c : (ZMod (p ^ n))ˣ, x c = 0) :
+    x ∈ Ideal.span {(MonoidAlgebra.single gbar 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)} := by
+  classical
+  have hdecomp : x = ∑ c : (ZMod (p ^ n))ˣ,
+      (x c) • ((MonoidAlgebra.single c 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)) := by
+    calc x = ∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (x c) := (sum_single_coeff p x).symm
+      _ = ∑ c : (ZMod (p ^ n))ˣ,
+          ((x c) • (MonoidAlgebra.single c 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
+            + (x c) • (1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)) := by
+          refine Finset.sum_congr rfl fun c _ => ?_
+          rw [← smul_add, sub_add_cancel]
+          rw [show (x c) • (MonoidAlgebra.single c 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
+              = MonoidAlgebra.single c (x c) from by
+            rw [MonoidAlgebra.smul_single, smul_eq_mul, mul_one]]
+      _ = (∑ c : (ZMod (p ^ n))ˣ,
+            (x c) • (MonoidAlgebra.single c 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ))
+          + (∑ c : (ZMod (p ^ n))ˣ, x c) • (1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ) := by
+          rw [Finset.sum_add_distrib, Finset.sum_smul]
+      _ = ∑ c : (ZMod (p ^ n))ˣ,
+            (x c) • (MonoidAlgebra.single c 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ) := by
+          rw [hx, zero_smul, add_zero]
+  rw [hdecomp]
+  exact Ideal.sum_mem _ fun c _ => by
+    rw [Algebra.smul_def]
+    exact Ideal.mul_mem_left _ _ (single_sub_one_mem_span p hg c)
+
+/-- The coefficient sum of `levelMap n E` is the degree of `E`. -/
+lemma sum_levelMap_coeff (n : ℕ) (E : PadicMeasure p ℤ_[p]ˣ) :
+    ∑ c : (ZMod (p ^ n))ˣ, (levelMap p n E) c = deg p E := by
+  simp_rw [levelMap_apply_coeff]
+  rw [← map_sum E, sum_levelChar]
+  rfl
+
+/-- Evaluation of `([a]−[1])·ν`: translation difference. -/
+lemma dirac_sub_one_mul_apply (a : ℤ_[p]ˣ) (ν : PadicMeasure p ℤ_[p]ˣ)
+    (f : C(ℤ_[p]ˣ, ℤ_[p])) :
+    ((dirac p a - 1) * ν) f
+      = ν ((f.comp (unitsMulCM₂ p)).curry a) - ν ((f.comp (unitsMulCM₂ p)).curry 1) := by
+  show ((dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ))
+      (innerInt p ν (f.comp (unitsMulCM₂ p))) = _
+  rw [LinearMap.sub_apply, dirac_apply, units_one_def, dirac_apply, innerInt_apply,
+    innerInt_apply]
 
 end finiteLevel
 
@@ -700,7 +902,122 @@ pass this to the limit. Source: RJW Lem. 3.38, proof (TeX lines 1264–1282). -/
 theorem augmentationIdeal_eq_span {a : ℤ_[p]ˣ}
     (ha : ∀ n : ℕ, Subgroup.zpowers (unitsToZModPow p n a) = ⊤) :
     augmentationIdeal p = Ideal.span {(dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ)} := by
-  sorry
+  classical
+  apply le_antisymm
+  · -- ker deg ⊆ ([a]−1): produce the quotient by a compactness argument in the weak
+    -- topology of pointwise convergence on functionals
+    intro μ hμ
+    rw [augmentationIdeal, RingHom.mem_ker] at hμ
+    rw [Ideal.mem_span_singleton]
+    set K : Set (C(ℤ_[p]ˣ, ℤ_[p]) → ℤ_[p]) :=
+      (⋂ (f : C(ℤ_[p]ˣ, ℤ_[p])) (g : C(ℤ_[p]ˣ, ℤ_[p])),
+        {φ | φ (f + g) = φ f + φ g}) ∩
+      ⋂ (c : ℤ_[p]) (f : C(ℤ_[p]ˣ, ℤ_[p])), {φ | φ (c • f) = c * φ f} with hK
+    set S : ℕ → Set (C(ℤ_[p]ˣ, ℤ_[p]) → ℤ_[p]) := fun n =>
+      K ∩ ⋂ g : (ZMod (p ^ n))ˣ,
+        {φ | φ (((levelChar p n g).comp (unitsMulCM₂ p)).curry a)
+          - φ (((levelChar p n g).comp (unitsMulCM₂ p)).curry 1)
+          - μ (levelChar p n g) = 0} with hS
+    have hKclosed : IsClosed K := by
+      refine IsClosed.inter (isClosed_iInter fun f => isClosed_iInter fun g => ?_)
+        (isClosed_iInter fun c => isClosed_iInter fun f => ?_)
+      · exact isClosed_eq (continuous_apply (f + g))
+          ((continuous_apply f).add (continuous_apply g))
+      · exact isClosed_eq (continuous_apply (c • f))
+          (continuous_const.mul (continuous_apply f))
+    have hSclosed : ∀ n, IsClosed (S n) := fun n =>
+      hKclosed.inter (isClosed_iInter fun g =>
+        isClosed_eq
+          (((continuous_apply (((levelChar p n g).comp (unitsMulCM₂ p)).curry a)).sub
+            (continuous_apply (((levelChar p n g).comp (unitsMulCM₂ p)).curry 1))).sub
+            continuous_const)
+          continuous_const)
+    have hpack : ∀ φ ∈ K, ∃ ν : PadicMeasure p ℤ_[p]ˣ, ⇑ν = φ := by
+      intro φ hφ
+      rw [hK] at hφ
+      obtain ⟨h1, h2⟩ := hφ
+      simp only [Set.mem_iInter, Set.mem_setOf_eq] at h1 h2
+      exact ⟨IsLinearMap.mk' φ ⟨h1, fun c x => by rw [h2 c x, smul_eq_mul]⟩, rfl⟩
+    have hSmem : ∀ (n : ℕ) (ν : PadicMeasure p ℤ_[p]ˣ),
+        ⇑ν ∈ S n ↔ levelMap p n ((dirac p a - 1) * ν - μ) = 0 := by
+      intro n ν
+      rw [hS]
+      simp only [Set.mem_inter_iff, Set.mem_iInter, Set.mem_setOf_eq]
+      constructor
+      · rintro ⟨-, hcond⟩
+        rw [levelMap_eq_zero_iff]
+        intro g
+        rw [LinearMap.sub_apply, dirac_sub_one_mul_apply]
+        exact hcond g
+      · intro h
+        refine ⟨⟨?_, ?_⟩, fun g => ?_⟩
+        · simp only [Set.mem_iInter, Set.mem_setOf_eq]
+          exact fun f g => map_add ν f g
+        · simp only [Set.mem_iInter, Set.mem_setOf_eq]
+          exact fun c f => by rw [map_smul, smul_eq_mul]
+        · rw [levelMap_eq_zero_iff] at h
+          have hg := h g
+          rw [LinearMap.sub_apply, dirac_sub_one_mul_apply] at hg
+          exact hg
+    have hSsub : ∀ n, S (n + 1) ⊆ S n := by
+      intro n φ hφ
+      obtain ⟨ν, rfl⟩ := hpack φ hφ.1
+      rw [hSmem] at hφ ⊢
+      rw [← mapDomain_levelMap p n.le_succ, hφ]
+      exact Finsupp.mapDomain_zero
+    have hSne : ∀ n, (S n).Nonempty := by
+      intro n
+      rcases Nat.eq_zero_or_pos n with rfl | hn
+      · refine ⟨⇑(0 : PadicMeasure p ℤ_[p]ˣ), ?_⟩
+        rw [hSmem, levelMap_eq_zero_iff]
+        intro g
+        rw [LinearMap.sub_apply, mul_zero, LinearMap.zero_apply, zero_sub, neg_eq_zero]
+        have hg1 : levelChar p 0 g = (1 : C(ℤ_[p]ˣ, ℤ_[p])) := by
+          haveI hsub : Subsingleton (ZMod (p ^ 0))ˣ := by
+            rw [pow_zero]; infer_instance
+          calc levelChar p 0 g = ∑ g' : (ZMod (p ^ 0))ˣ, levelChar p 0 g' := by
+                rw [show (Finset.univ : Finset (ZMod (p ^ 0))ˣ) = {g} from
+                  Finset.eq_singleton_iff_unique_mem.2
+                    ⟨Finset.mem_univ g, fun x _ => Subsingleton.elim x g⟩,
+                  Finset.sum_singleton]
+            _ = 1 := sum_levelChar p 0
+        rw [hg1]
+        exact hμ
+      · have hmem : levelMap p n μ ∈ Ideal.span
+            {(MonoidAlgebra.single (unitsToZModPow p n a) 1 - 1 :
+              MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)} :=
+          mem_span_of_sum_eq_zero p (ha n) _ (by rw [sum_levelMap_coeff]; exact hμ)
+        obtain ⟨y, hy⟩ := Ideal.mem_span_singleton.1 hmem
+        set ν : PadicMeasure p ℤ_[p]ˣ :=
+          ∑ c : (ZMod (p ^ n))ˣ,
+            y c • dirac p ((unitsToZModPow_surjective p n hn c).choose) with hν
+        refine ⟨⇑ν, ?_⟩
+        have hlev : levelMap p n ν = y := by
+          rw [hν, map_sum]
+          simp_rw [levelMap_smul, levelMap_dirac,
+            (unitsToZModPow_surjective p n hn _).choose_spec]
+          calc (∑ c : (ZMod (p ^ n))ˣ, y c • MonoidAlgebra.single c (1 : ℤ_[p]))
+              = ∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (y c) := by
+                refine Finset.sum_congr rfl fun c _ => ?_
+                rw [MonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+            _ = y := sum_single_coeff p y
+        rw [hSmem, map_sub, map_mul, map_sub, levelMap_dirac, map_one, hlev, ← hy,
+          sub_self]
+    obtain ⟨φ, hφ⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
+      S hSsub hSne ((hSclosed 0).isCompact) hSclosed
+    have hφall := Set.mem_iInter.1 hφ
+    obtain ⟨ν, rfl⟩ := hpack φ (hφall 0).1
+    refine ⟨ν, ?_⟩
+    have hzero : (dirac p a - 1) * ν - μ = 0 := by
+      apply levelMap_jointly_injective
+      intro n
+      rw [← hSmem]
+      exact hφall n
+    exact (sub_eq_zero.1 hzero).symm
+  · rw [Ideal.span_le, Set.singleton_subset_iff]
+    show (dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ) ∈ augmentationIdeal p
+    rw [augmentationIdeal, RingHom.mem_ker, map_sub, map_one,
+      show deg p (dirac p a) = 1 from rfl, sub_self]
 
 /-- **RJW Lem. 3.38 (`lem:pseudo-measure existence`)**: for a topological generator `a`
 and any measure `μ`, the quotient `μ/([a]−[1])` is a pseudo-measure. -/
@@ -711,7 +1028,18 @@ theorem isPseudoMeasure_mk' {a : ℤ_[p]ˣ}
     (μ : PadicMeasure p ℤ_[p]ˣ) :
     IsPseudoMeasure p
       (IsLocalization.mk' (QuotientField p) μ ⟨_, hreg⟩) := by
-  sorry
+  intro g
+  have hgmem : (dirac p g - 1 : PadicMeasure p ℤ_[p]ˣ) ∈ augmentationIdeal p := by
+    rw [augmentationIdeal, RingHom.mem_ker, map_sub, map_one,
+      show deg p (dirac p g) = 1 from rfl, sub_self]
+  rw [augmentationIdeal_eq_span p ha, Ideal.mem_span_singleton] at hgmem
+  obtain ⟨ν, hν⟩ := hgmem
+  refine ⟨ν * μ, ?_⟩
+  rw [hν, show algebraMap _ (QuotientField p) ((dirac p a - 1) * ν)
+      = algebraMap _ _ ν * algebraMap _ _ (dirac p a - 1) from by rw [map_mul, mul_comm],
+    mul_assoc, map_mul]
+  congr 1
+  exact IsLocalization.mk'_spec' (QuotientField p) μ ⟨_, hreg⟩
 
 /-- `[a]−[1]` is a non-zero-divisor for a topological generator `a` (its moments are
 `a^k − 1 ≠ 0`). Source: RJW TeX line 1240 ("But `[a]−[1]` satisfies the condition of
@@ -731,7 +1059,15 @@ theorem isPseudoMeasure_iff_exists {a : ℤ_[p]ˣ}
     (q : QuotientField p) :
     IsPseudoMeasure p q ↔
       ∃ μ : PadicMeasure p ℤ_[p]ˣ, q = IsLocalization.mk' (QuotientField p) μ ⟨_, hreg⟩ := by
-  sorry
+  constructor
+  · intro hq
+    obtain ⟨ν, hν⟩ := hq a
+    refine ⟨ν, ?_⟩
+    rw [IsLocalization.eq_mk'_iff_mul_eq]
+    rw [mul_comm] at hν
+    exact hν
+  · rintro ⟨μ, rfl⟩
+    exact isPseudoMeasure_mk' p ha hreg μ
 
 end augmentation
 

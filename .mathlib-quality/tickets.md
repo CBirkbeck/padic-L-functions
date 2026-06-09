@@ -9,7 +9,7 @@ but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
 - Total: 30 work tickets + 12 cleanup tickets
-- Open: 42 | In Progress: 0 | Done: 0
+- Open: 2 (T029, CLEANUP-FINAL) | Done: 40 — ALL PROOF TICKETS DISCHARGED, project sorry-free (2026-06-10)
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -614,7 +614,7 @@ Expansion of RJW Rem. 3.11 "One checks", TeX 910; technique = Rem. 3.8.
 ---
 
 ### [T020] Λ(ℤ_p^×): unitsConv well-defined + CommRing laws
-- **Status**: open | **File**: Measure/PseudoMeasure.lean | **Depends on**: T019, T015
+- **Status**: done (2026-06-10; unitsConv via innerInt; CommRing laws by show-driven defeq + integral_swap for comm) | **File**: Measure/PseudoMeasure.lean | **Depends on**: T019, T015
 - **Type**: def-fields + instance | **Leaf**: L5.5
 
 #### Statement
@@ -648,7 +648,7 @@ orientation (ν inner) is recorded in `units_mul_def`; §4 pass must quote it.
 ---
 
 ### [T021] Λ(ℤ_p^×): Dirac multiplicativity + degree ring hom
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T020
+- **Status**: done (2026-06-10; dirac mult is rfl; deg ring hom) | **File**: PseudoMeasure.lean | **Depends on**: T020
 - **Type**: lemma + def-fields | **Leaves**: L5.5 (tail), L5.6
 
 #### Statement
@@ -668,7 +668,7 @@ RJW Def. 3.37, TeX 1245–1253.
 ---
 
 ### [T022] Λ(ℤ_p^×): finite-level maps (levelMap cluster)
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T020, T003
+- **Status**: done (2026-06-10; levelMap ring hom incl. convolution-of-indicators map_mul; fibre clopen; + coefficient/transition/partition lemmas) | **File**: PseudoMeasure.lean | **Depends on**: T020, T003
 - **Type**: lemma + def-fields ×2 | **Leaf**: L5.7
 
 #### Statement
@@ -705,12 +705,12 @@ RJW TeX 888–892 (quote in decomposition L5.7); the cofinal-chain restriction i
 recorded there (attack [4]).
 
 ### [CLEANUP-9] Run /cleanup on PseudoMeasure.lean (cadence, after 3rd ticket on file)
-- **Status**: open | **Depends on**: T022 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode) | **Depends on**: T022 | **Type**: cleanup
 
 ---
 
 ### [T023] Zero-divisor lemma (i)
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: CLEANUP-9, T017, T014, T011
+- **Status**: done (2026-06-10; descPochhammer X-divisibility + ψ-fixes-δ₀ argument, ξ-free as planned) | **File**: PseudoMeasure.lean | **Depends on**: CLEANUP-9, T017, T014, T011
 - **Type**: theorem | **Leaf**: L5.8
 
 #### Statement
@@ -745,7 +745,7 @@ recorded refinements).
 ---
 
 ### [T024] Zero-divisor lemma (ii) + measures are pseudo-measures
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T023
+- **Status**: done (2026-06-10; multiplicative moments + two-sided nonZeroDivisors) | **File**: PseudoMeasure.lean | **Depends on**: T023
 - **Type**: theorem ×2 | **Leaves**: L5.9, L5.10
 
 #### Statement
@@ -768,7 +768,7 @@ RJW Lem. 3.36(ii) proof, TeX 1232–1234 (verbatim in decomposition L5.9).
 ---
 
 ### [T025] Zero-divisor lemma (iii) for pseudo-measures
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T024
+- **Status**: done (2026-06-10; via (i) + IsLocalization.map_units) | **File**: PseudoMeasure.lean | **Depends on**: T024
 - **Type**: theorem | **Leaf**: L5.11
 
 #### Statement
@@ -793,12 +793,12 @@ RJW Lem. 3.36(ii) proof, TeX 1232–1234 (verbatim in decomposition L5.9).
 RJW Lem. 3.36(iii) proof, TeX 1236–1240 (verbatim in decomposition L5.11).
 
 ### [CLEANUP-10] Run /cleanup on PseudoMeasure.lean (cadence, after 6th ticket on file)
-- **Status**: open | **Depends on**: T025 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode) | **Depends on**: T025 | **Type**: cleanup
 
 ---
 
 ### [T026] Topological generator of ℤ_p^× (p odd)
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T022
+- **Status**: done (2026-06-10; REPLAN NOTE: instead of lifting a primitive root, took the nested-clopen-generator-sets + compactness route — no Teichmüller, no order arithmetic; surjectivity lift via canonical representative) | **File**: PseudoMeasure.lean | **Depends on**: T022
 - **Parallel**: yes (with T023–T025) | **Type**: theorem | **Leaf**: L5.12
 
 #### Statement
@@ -830,7 +830,7 @@ RJW Lem. 3.38 parenthetical, TeX 1257–1258; proof line 1265 "As p is odd".
 ---
 
 ### [T027] Augmentation ideal is principal (finite levels + compactness)
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T026, T022, T021
+- **Status**: done (2026-06-10; finite-level telescoping + ker-deg decomposition; inverse limit step realised as Banach–Alaoglu-style compactness of the functional space Π_f ℤ_p with closed linearity+level conditions; levelMap_jointly_injective closes) | **File**: PseudoMeasure.lean | **Depends on**: T026, T022, T021
 - **Type**: theorem | **Leaf**: L5.14 (cluster L5.14a–c)
 
 #### Statement
@@ -874,7 +874,7 @@ RJW Lem. 3.38 proof, TeX 1264–1272 (verbatim in decomposition L5.14).
 ---
 
 ### [T028] Pseudo-measure existence and shape (Lem. 3.38 + converse)
-- **Status**: open | **File**: PseudoMeasure.lean | **Depends on**: T027, T024
+- **Status**: done (2026-06-10; mk'_spec' + eq_mk'_iff_mul_eq; regularity from torsion-free moments) | **File**: PseudoMeasure.lean | **Depends on**: T027, T024
 - **Type**: theorem ×3 | **Leaves**: L5.13, L5.15
 
 #### Statement
@@ -899,7 +899,7 @@ RJW Lem. 3.38 proof, TeX 1264–1272 (verbatim in decomposition L5.14).
 RJW Lem. 3.38 proof + lines 1284–1285 (verbatim in decomposition L5.15).
 
 ### [CLEANUP-11] Run /cleanup on PseudoMeasure.lean (final)
-- **Status**: open | **Depends on**: T028 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode — show-linter warnings queued for CLEANUP-FINAL) | **Depends on**: T028 | **Type**: cleanup
 
 ---
 
