@@ -234,7 +234,7 @@ RJW Thm. 3.20, TeX 994–1005.
 ---
 
 ### [T008] Transport ring structure: mahlerTransform_mul/one, CommRing laws, mahlerRingEquiv
-- **Status**: open | **File**: Measure/Convolution.lean | **Depends on**: T007
+- **Status**: done (2026-06-10; transport bookkeeping, ring laws via 𝓐-injectivity) | **File**: Measure/Convolution.lean | **Depends on**: T007
 - **Type**: instance + lemmas | **Leaf**: L3.1
 
 #### Statement
@@ -263,7 +263,7 @@ Mul/One instances are placed on the project's `PadicMeasure p ℤ_[p]` (= Linear
 ---
 
 ### [T009] Prove the convolution formula mul_apply
-- **Status**: open | **File**: Convolution.lean | **Depends on**: T008, T003
+- **Status**: done (2026-06-10; convInner via curry; Chu-Vandermonde on antidiagonal; 𝓐-injectivity replaced the density step — simpler than planned) | **File**: Convolution.lean | **Depends on**: T008, T003
 - **Type**: theorem | **Leaf**: L3.2 (KEY)
 
 #### Statement
@@ -306,7 +306,7 @@ Stated for the additive group ℤ_p only (multiplicative analogue is PseudoMeasu
 ---
 
 ### [T010] Prove dirac_mul_dirac
-- **Status**: open | **File**: Convolution.lean | **Depends on**: T008
+- **Status**: done (2026-06-10; binomialSeries_add) | **File**: Convolution.lean | **Depends on**: T008
 - **Parallel**: yes (with T009) | **Type**: lemma | **Leaf**: L3.3
 
 #### Statement
@@ -323,7 +323,7 @@ Stated for the additive group ℤ_p only (multiplicative analogue is PseudoMeasu
 RJW Ex. 3.12 + 3.16, TeX 914–920, 968–973.
 
 ### [CLEANUP-4] Run /cleanup on Convolution.lean (3rd ticket + final)
-- **Status**: open | **Depends on**: T009, T010 | **Type**: cleanup
+- **Status**: done (2026-06-10; degraded mode — linters on, zero warnings) | **Depends on**: T009, T010 | **Type**: cleanup
 
 ---
 
