@@ -304,12 +304,147 @@ noncomputable def levelMap (n : ℕ) :
     exact Finset.sum_congr rfl fun g _ => by
       rw [LinearMap.add_apply, MonoidAlgebra.single_add]
 
+/-- Compatibility of the reductions: level `n` factors through any level `m ≥ n`. -/
+lemma unitsToZModPow_le {n m : ℕ} (h : n ≤ m) (a : ℤ_[p]ˣ) :
+    unitsToZModPow p n a
+      = ZMod.unitsMap (pow_dvd_pow p h) (unitsToZModPow p m a) := by
+  apply Units.ext
+  show PadicInt.toZModPow n (a : ℤ_[p])
+      = ZMod.castHom (pow_dvd_pow p h) _ (PadicInt.toZModPow m (a : ℤ_[p]))
+  exact (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow n m h) _).symm
+
+/-- The reduction `ℤ_p^× → (ℤ/p^n)^×` is surjective: lift the canonical representative. -/
+lemma unitsToZModPow_surjective (n : ℕ) (hn : 0 < n) :
+    Function.Surjective (unitsToZModPow p n) := by
+  intro c
+  set z : ℤ_[p] := (((c : ZMod (p ^ n)).val : ℕ) : ℤ_[p]) with hz
+  have hzc : PadicInt.toZModPow n z = (c : ZMod (p ^ n)) := by
+    rw [hz, map_natCast]
+    exact ZMod.natCast_rightInverse _
+  have hunit : IsUnit z := by
+    rw [PadicInt.isUnit_iff]
+    by_contra hne
+    have hlt : ‖z‖ < 1 := lt_of_le_of_ne (PadicInt.norm_le_one z) hne
+    have hker : PadicInt.toZModPow 1 z = 0 := by
+      have hle : ‖z‖ ≤ (p : ℝ) ^ (-1 : ℤ) := by
+        rw [PadicInt.norm_le_pow_iff_norm_lt_pow_add_one]
+        simpa using hlt
+      have hmem := (PadicInt.norm_le_pow_iff_mem_span_pow z 1).1 hle
+      rwa [← PadicInt.ker_toZModPow, RingHom.mem_ker] at hmem
+    -- but `z` is a unit mod `p^n`, hence a unit mod `p`
+    have hcast : PadicInt.toZModPow 1 z
+        = ZMod.castHom (pow_dvd_pow p hn) _ (PadicInt.toZModPow n z) :=
+      (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow 1 n hn) _).symm
+    rw [hcast, hzc] at hker
+    have hu : IsUnit (ZMod.castHom (pow_dvd_pow p hn) (ZMod (p ^ 1)) (c : ZMod (p ^ n))) :=
+      c.isUnit.map (ZMod.castHom (pow_dvd_pow p hn) (ZMod (p ^ 1)))
+    rw [hker] at hu
+    haveI : Nontrivial (ZMod (p ^ 1)) := by
+      rw [pow_one]; infer_instance
+    exact not_isUnit_zero hu
+  refine ⟨hunit.unit, Units.ext ?_⟩
+  show PadicInt.toZModPow n ((hunit.unit : ℤ_[p])) = (c : ZMod (p ^ n))
+  rw [IsUnit.unit_spec]
+  exact hzc
+
+/-- The level sets `{v | v ≡ u mod p^n}` form a neighbourhood basis in `ℤ_p^×`. -/
+lemma exists_level_subset {u : ℤ_[p]ˣ} {U : Set ℤ_[p]ˣ} (hU : IsOpen U) (hu : u ∈ U) :
+    ∃ n, {v : ℤ_[p]ˣ | unitsToZModPow p n v = unitsToZModPow p n u} ⊆ U := by
+  have himg : IsOpen ((unitsHomeo p) '' U) := (unitsHomeo p).isOpen_image.2 hU
+  obtain ⟨V, hV, hVW⟩ := isOpen_induced_iff.1 himg
+  have humem : ((u : ℤ_[p])) ∈ V := by
+    have hmem : (unitsHomeo p u) ∈ (unitsHomeo p) '' U := Set.mem_image_of_mem _ hu
+    rw [← hVW] at hmem
+    exact hmem
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hV _ humem
+  obtain ⟨n, hn⟩ := PadicInt.exists_pow_neg_lt p hε
+  refine ⟨n, fun v hv => ?_⟩
+  have hnorm : ‖(v : ℤ_[p]) - (u : ℤ_[p])‖ ≤ (p : ℝ) ^ (-n : ℤ) := by
+    rw [PadicInt.norm_le_pow_iff_mem_span_pow, ← PadicInt.ker_toZModPow, RingHom.mem_ker,
+      map_sub, sub_eq_zero]
+    exact congrArg Units.val hv
+  have hvV : ((v : ℤ_[p])) ∈ V :=
+    hball (by rw [Metric.mem_ball, dist_eq_norm]; exact lt_of_le_of_lt hnorm hn)
+  have hmem : (unitsHomeo p v) ∈ (unitsHomeo p) '' U := by
+    rw [← hVW]
+    exact hvV
+  obtain ⟨w, hwU, hw⟩ := hmem
+  rwa [(unitsHomeo p).injective hw] at hwU
+
+/-- Every locally constant function on `ℤ_p^×` factors through a finite level. -/
+lemma exists_level_factorization (g : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
+    ∃ N, 0 < N ∧ ∀ u v : ℤ_[p]ˣ,
+      unitsToZModPow p N u = unitsToZModPow p N v → g u = g v := by
+  classical
+  have hpt : ∀ u : ℤ_[p]ˣ, ∃ n,
+      {v : ℤ_[p]ˣ | unitsToZModPow p n v = unitsToZModPow p n u} ⊆ {v | g v = g u} :=
+    fun u => exists_level_subset p (g.isLocallyConstant.isClopen_fiber (g u)).isOpen rfl
+  choose nfun hnfun using hpt
+  obtain ⟨t, ht⟩ := IsCompact.elim_finite_subcover isCompact_univ
+    (fun u : ℤ_[p]ˣ =>
+      {v : ℤ_[p]ˣ | unitsToZModPow p (nfun u) v = unitsToZModPow p (nfun u) u})
+    (fun u => (isClopen_unitsToZModPow_fiber p (nfun u) (unitsToZModPow p (nfun u) u)).isOpen)
+    (fun u _ => Set.mem_iUnion.2 ⟨u, rfl⟩)
+  refine ⟨max (t.sup nfun) 1, lt_of_lt_of_le one_pos (le_max_right _ _), fun u v huv => ?_⟩
+  obtain ⟨w, hwt, hw⟩ := Set.mem_iUnion₂.1 (ht (Set.mem_univ u))
+  have hn_le : nfun w ≤ max (t.sup nfun) 1 :=
+    le_trans (Finset.le_sup hwt) (le_max_left _ _)
+  have huv' : unitsToZModPow p (nfun w) u = unitsToZModPow p (nfun w) v := by
+    rw [unitsToZModPow_le p hn_le u, unitsToZModPow_le p hn_le v, huv]
+  have hvw : v ∈ {x : ℤ_[p]ˣ | unitsToZModPow p (nfun w) x = unitsToZModPow p (nfun w) w} := by
+    rw [Set.mem_setOf_eq, ← huv']
+    exact hw
+  exact (hnfun w hw).trans (hnfun w hvw).symm
+
 /-- The finite-level maps are jointly injective: a measure vanishing on every
 finite-level indicator is zero (locally constant functions on `ℤ_p^×` factor through
 some level). Source: RJW Rem. 3.8 + Prop. 3.10 (inverse-limit description). -/
 theorem levelMap_jointly_injective (μ : PadicMeasure p ℤ_[p]ˣ)
     (h : ∀ n, levelMap p n μ = 0) : μ = 0 := by
-  sorry
+  classical
+  have hcoeff : ∀ (n : ℕ) (g : (ZMod (p ^ n))ˣ), μ (levelChar p n g) = 0 := by
+    intro n g
+    have hsum : (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (μ (levelChar p n c))) g
+        = μ (levelChar p n g) := by
+      rw [show (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (μ (levelChar p n c))) g
+          = ∑ c : (ZMod (p ^ n))ˣ, (MonoidAlgebra.single c (μ (levelChar p n c))) g from
+        map_sum (Finsupp.applyAddHom (M := ℤ_[p]) g) _ _]
+      rw [Finset.sum_eq_single g]
+      · rw [MonoidAlgebra.single_apply, if_pos rfl]
+      · intro c _ hcg
+        rw [MonoidAlgebra.single_apply, if_neg hcg]
+      · exact fun hg => absurd (Finset.mem_univ _) hg
+    have happ : (levelMap p n μ) g = 0 := by rw [h n]; rfl
+    rw [show (levelMap p n μ) g = (∑ c : (ZMod (p ^ n))ˣ,
+      MonoidAlgebra.single c (μ (levelChar p n c))) g from rfl, hsum] at happ
+    exact happ
+  refine ext_locallyConstant p fun g => ?_
+  rw [LinearMap.zero_apply]
+  obtain ⟨N, hN, hfac⟩ := exists_level_factorization p g
+  have hg : (g : C(ℤ_[p]ˣ, ℤ_[p]))
+      = ∑ c : (ZMod (p ^ N))ˣ,
+          g ((unitsToZModPow_surjective p N hN c).choose) • levelChar p N c := by
+    ext u
+    have hval : (∑ c : (ZMod (p ^ N))ˣ,
+        g ((unitsToZModPow_surjective p N hN c).choose) • levelChar p N c) u
+        = ∑ c : (ZMod (p ^ N))ˣ,
+          g ((unitsToZModPow_surjective p N hN c).choose) * levelChar p N c u := by
+      simp only [ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.coe_smul,
+        Pi.smul_apply, smul_eq_mul]
+    rw [hval]
+    have hsum : (∑ c : (ZMod (p ^ N))ˣ,
+        g ((unitsToZModPow_surjective p N hN c).choose) * levelChar p N c u) = g u := by
+      rw [Finset.sum_eq_single (unitsToZModPow p N u)]
+      · rw [levelChar_apply_eq p rfl, mul_one]
+        exact hfac _ u ((unitsToZModPow_surjective p N hN _).choose_spec)
+      · intro c _ hcu
+        rw [levelChar_apply_ne p fun hc => hcu hc.symm, mul_zero]
+      · exact fun hu => absurd (Finset.mem_univ _) hu
+    rw [hsum]
+    rfl
+  rw [hg, map_sum]
+  refine Finset.sum_eq_zero fun c _ => ?_
+  rw [map_smul, hcoeff N c, smul_zero]
 
 end finiteLevel
 
@@ -512,49 +647,6 @@ end pseudoMeasure
 
 section augmentation
 
-/-- The reductions are compatible: level `n` factors through level `n+1`. -/
-lemma unitsToZModPow_succ (n : ℕ) (a : ℤ_[p]ˣ) :
-    unitsToZModPow p n a
-      = ZMod.unitsMap (pow_dvd_pow p n.le_succ) (unitsToZModPow p (n + 1) a) := by
-  apply Units.ext
-  show PadicInt.toZModPow n (a : ℤ_[p])
-      = ZMod.castHom (pow_dvd_pow p n.le_succ) _ (PadicInt.toZModPow (n + 1) (a : ℤ_[p]))
-  exact (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow n (n + 1) n.le_succ) _).symm
-
-/-- The reduction `ℤ_p^× → (ℤ/p^n)^×` is surjective: lift the canonical representative. -/
-lemma unitsToZModPow_surjective (n : ℕ) (hn : 0 < n) :
-    Function.Surjective (unitsToZModPow p n) := by
-  intro c
-  set z : ℤ_[p] := (((c : ZMod (p ^ n)).val : ℕ) : ℤ_[p]) with hz
-  have hzc : PadicInt.toZModPow n z = (c : ZMod (p ^ n)) := by
-    rw [hz, map_natCast]
-    exact ZMod.natCast_rightInverse _
-  have hunit : IsUnit z := by
-    rw [PadicInt.isUnit_iff]
-    by_contra hne
-    have hlt : ‖z‖ < 1 := lt_of_le_of_ne (PadicInt.norm_le_one z) hne
-    have hker : PadicInt.toZModPow 1 z = 0 := by
-      have hle : ‖z‖ ≤ (p : ℝ) ^ (-1 : ℤ) := by
-        rw [PadicInt.norm_le_pow_iff_norm_lt_pow_add_one]
-        simpa using hlt
-      have hmem := (PadicInt.norm_le_pow_iff_mem_span_pow z 1).1 hle
-      rwa [← PadicInt.ker_toZModPow, RingHom.mem_ker] at hmem
-    -- but `z` is a unit mod `p^n`, hence a unit mod `p`
-    have hcast : PadicInt.toZModPow 1 z
-        = ZMod.castHom (pow_dvd_pow p hn) _ (PadicInt.toZModPow n z) :=
-      (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow 1 n hn) _).symm
-    rw [hcast, hzc] at hker
-    have hu : IsUnit (ZMod.castHom (pow_dvd_pow p hn) (ZMod (p ^ 1)) (c : ZMod (p ^ n))) :=
-      c.isUnit.map (ZMod.castHom (pow_dvd_pow p hn) (ZMod (p ^ 1)))
-    rw [hker] at hu
-    haveI : Nontrivial (ZMod (p ^ 1)) := by
-      rw [pow_one]; infer_instance
-    exact not_isUnit_zero hu
-  refine ⟨hunit.unit, Units.ext ?_⟩
-  show PadicInt.toZModPow n ((hunit.unit : ℤ_[p])) = (c : ZMod (p ^ n))
-  rw [IsUnit.unit_spec]
-  exact hzc
-
 /-- For odd `p` there is a *topological generator* of `ℤ_p^×`: an `a` whose image
 generates `(ℤ/p^n)^×` for every `n`. The hypothesis `p ≠ 2` is essential:
 `(ZMod 8)ˣ` is not cyclic. Proof: the per-level generator sets are nonempty nested
@@ -569,7 +661,7 @@ theorem exists_topological_generator (hp2 : p ≠ 2) :
   have hsub : ∀ n, t (n + 1) ⊆ t n := by
     intro n a hagen
     show Subgroup.zpowers (unitsToZModPow p n a) = ⊤
-    rw [unitsToZModPow_succ p n a, ← MonoidHom.map_zpowers, hagen]
+    rw [unitsToZModPow_le p n.le_succ a, ← MonoidHom.map_zpowers, hagen]
     exact Subgroup.map_top_of_surjective _
       (ZMod.unitsMap_surjective (pow_dvd_pow p n.le_succ))
   have hne : ∀ n, (t n).Nonempty := by
