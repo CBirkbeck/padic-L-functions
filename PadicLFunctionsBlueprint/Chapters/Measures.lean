@@ -75,7 +75,7 @@ compact this is well-defined, induces the sup norm, and makes $`\cC(G, L)` an
 $`L`-Banach space in the sense of {uses "meas-banach"}[].
 :::
 
-:::definition "p-adic-measure"
+:::definition "p-adic-measure" (lean := "PadicMeasure")
 The space $`\sM(G, L)` of *$`L`-valued measures on $`G`* is the continuous dual
 $`\cC(G, L)^* = \mathrm{Hom}_{\mathrm{cts}}(\cC(G,L), L)`, using
 {uses "meas-cts-functions"}[]. The pairing of $`\mu \in \sM(G,L)` with
@@ -87,12 +87,12 @@ a functional with $`G = \Zp`. (All of this applies verbatim to any subset
 $`X \subseteq G` with the subspace topology, $`X` no longer needing to be a group.)
 :::
 
-:::definition "meas-dirac"
+:::definition "meas-dirac" (lean := "PadicMeasure.dirac")
 For $`g \in G`, the *Dirac measure* $`\delta_g \in \sM(G, \OL)` is evaluation at
 $`g`, i.e. $`\delta_g(\phi) = \phi(g)`. It depends on {uses "p-adic-measure"}[].
 :::
 
-:::proposition "meas-locally-constant"
+:::proposition "meas-locally-constant" (lean := "PadicMeasure.exists_locallyConstant_norm_sub_le, PadicMeasure.ext_locallyConstant")
 Let $`\cClc(G, \OL)` be the locally constant functions $`G \to \OL`, a dense
 subspace of $`\cC(G, \OL)`, and $`\sMlc(G, \OL) = \cClc(G, \OL)^*` its dual.
 Restriction induces a canonical isomorphism
@@ -177,7 +177,7 @@ suppressed from the notation). By {uses "meas-iwasawa-inverse-limit"}[] it is
 canonically isomorphic to $`\sM(G, \OL)`.
 :::
 
-:::definition "meas-convolution"
+:::definition "meas-convolution" (lean := "PadicMeasure.mul_apply")
 Transporting the $`\OL`-algebra structure of $`\Lam(G)` to $`\sM(G, \OL)` via
 {uses "iwasawa-algebra"}[], the product is *convolution of measures*: for
 $`\mu, \lambda \in \sM(G, \OL)`,
@@ -194,13 +194,13 @@ on $`\cC(G,L)`, additive functions on open compact subsets, and elements of
 $`\Lam(G)`. Specialising to $`G = \Zp`, we give a fourth, via the power series ring
 $`\OL[[T]]`.
 
-:::definition "meas-binomial-polynomials"
+:::definition "meas-binomial-polynomials" (lean := "mahler")
 For $`x \in \Zp` and $`n \geq 1` set
 $`\binomc{x}{n} = \tfrac{x(x-1)\cdots(x-n+1)}{n!}`, with $`\binomc{x}{0} = 1`. Each
 $`x \mapsto \binomc{x}{n}` lies in $`\cC(\Zp, \Zp)` with $`\vC = 0`.
 :::
 
-:::theorem "meas-mahler-basis"
+:::theorem "meas-mahler-basis" (lean := "PadicInt.mahlerEquiv, PadicInt.hasSum_mahler")
 *(Mahler.)* Every continuous $`\phi : \Zp \to L` has a unique expansion
 $$`\phi(x) = \sum_{n \geq 0} a_n(\phi)\, \binomc{x}{n}, \qquad a_n(\phi) \in L,\ a_n(\phi) \to 0,`
 and $`\vC(\phi) = \inf_{n} \vp(a_n(\phi))`. Equivalently, the binomial polynomials
@@ -219,7 +219,7 @@ orthonormal basis; uniqueness follows because the basis is free over
 $`\ell^0_\infty(\N, L)`.
 :::
 
-:::definition "mahler-transform"
+:::definition "mahler-transform" (lean := "PadicMeasure.mahlerTransform")
 The *Mahler transform* (or *Amice transform*) of a measure
 $`\mu \in \sM(\Zp, \OL)` is the power series
 $$`\Am_\mu(T) := \int_{\Zp} (1+T)^x \cdot \mu(x) = \sum_{n \geq 0}\left(\int_{\Zp} \binomc{x}{n} \cdot \mu\right) T^n \in \OL[[T]].`
@@ -228,7 +228,7 @@ using {uses "p-adic-measure"}[]. For a Dirac measure {uses "meas-dirac"}[] one h
 $`\Am_{\delta_a}(T) = \sum_n \binomc{a}{n} T^n = (1+T)^a`.
 :::
 
-:::theorem "iwasawa-isomorphism"
+:::theorem "iwasawa-isomorphism" (lean := "PadicMeasure.mahlerRingEquiv")
 The Mahler transform is an isomorphism of $`\OL`-algebras
 $$`\Am : \sM(\Zp, \OL) \xrightarrow{\ \sim\ } \OL[[T]].`
 Combined with {uses "iwasawa-algebra"}[] it gives the *Iwasawa isomorphism*
@@ -254,7 +254,7 @@ the top arrow $`\delta_a \mapsto \Am_{\delta_a} = (1+T)^a`. Inverting $`p` gives
 $`\sM(\Zp, L) \cong \OL[[T]][1/p]`.
 :::
 
-:::definition "meas-power-series-measure"
+:::definition "meas-power-series-measure" (lean := "PadicMeasure.ofPowerSeries")
 For $`g \in \OL[[T]]` we write $`\mu_g \in \sM(\Zp, \OL)` for the corresponding
 $`\OL`-valued measure, characterised by $`\Am_{\mu_g} = g` via
 {uses "iwasawa-isomorphism"}[]. The first moments are
@@ -276,7 +276,7 @@ Natural operations on measures correspond, under the Mahler transform, to
 operators on power series. We henceforth freely conflate $`\sM(G, \OL)` with
 $`\Lam(G)`, writing $`\mu \in \Lam(G)` for a measure.
 
-:::proposition "meas-mult-by-x"
+:::proposition "meas-mult-by-x" (lean := "PadicMeasure.mahlerTransform_cmul_X")
 For a measure $`\mu` on $`\Zp`, define $`x\mu` by
 $`\int_{\Zp} f \cdot x\mu = \int_{\Zp} xf \cdot \mu`. Then
 $$`\Am_{x\mu} = \partial\, \Am_\mu, \qquad \partial := (1+T)\tfrac{d}{dT}.`
@@ -292,7 +292,7 @@ applying $`\partial`, since $`\partial` acts on $`T^n` exactly as
 $`T^n \mapsto (1+T)\,nT^{n-1} = nT^{n-1} + nT^n`, matching the two terms above.
 :::
 
-:::corollary "meas-eval-xk"
+:::corollary "meas-eval-xk" (lean := "PadicMeasure.apply_powCM")
 For $`\mu \in \Lam(\Zp)` and $`k \geq 0`,
 $$`\int_{\Zp} x^k \cdot \mu = (\partial^k \Am_\mu)(0).`
 This is immediate from {uses "meas-mult-by-x"}[].
@@ -314,7 +314,7 @@ since $`\Am_\mu((1+T)z - 1) = \int_{\Zp}((1+T)z)^x \cdot \mu` is by definition t
 Mahler transform of $`z^x\mu`. Uses {uses "mahler-transform"}[].
 :::
 
-:::definition "meas-restriction"
+:::definition "meas-restriction" (lean := "PadicMeasure.res, PadicMeasure.res_union")
 For an open compact $`X \subseteq \Zp` with characteristic function $`\one_X`, the
 *restriction* $`\Res_X(\mu)` is the measure with
 $`\int_{\Zp} f \cdot \Res_X(\mu) := \int_{\Zp} f\one_X \cdot \mu`, also written
@@ -331,7 +331,7 @@ An arbitrary open compact $`X` (or its complement, as here for $`\Zpx`) is a fin
 disjoint union of such balls, so its restriction formula is obtained by summing.
 :::
 
-:::definition "meas-sigma-phi-psi"
+:::definition "meas-sigma-phi-psi" (lean := "PadicMeasure.sigma, PadicMeasure.phi, PadicMeasure.psi, PadicMeasure.mahlerTransform_sigma, PadicMeasure.mahlerTransform_phi")
 For $`a \in \Zpx` define $`\sigma_a(\mu)` by
 $`\int_{\Zp} f(x) \cdot \sigma_a(\mu) = \int_{\Zp} f(ax) \cdot \mu`. Testing against
 $`f(x) = (1+T)^x` (so $`f(ax) = ((1+T)^a)^x`) shows
@@ -343,7 +343,7 @@ $`\int_{\Zp} f(x) \cdot \psi(\mu) = \int_{p\Zp} f(p^{-1}x) \cdot \mu`. These use
 {uses "meas-restriction"}[] and {uses "mahler-transform"}[].
 :::
 
-:::proposition "meas-phi-psi-identities"
+:::proposition "meas-phi-psi-identities" (lean := "PadicMeasure.psi_phi, PadicMeasure.phi_psi, PadicMeasure.res_units_eq")
 The operators of {uses "meas-sigma-phi-psi"}[] satisfy $`\psi \circ \varphi = \mathrm{id}`
 and $`\varphi \circ \psi(\mu) = \Res_{p\Zp}(\mu)`, whence
 $$`\Res_{\Zpx}(\mu) = (1 - \varphi\circ\psi)(\mu).`
@@ -361,7 +361,7 @@ $`b=0,n=1` restriction formula of {uses "meas-restriction"}[]; transporting thro
 $`\Am` yields the stated power-series formula.
 :::
 
-:::corollary "meas-supported-on-units"
+:::corollary "meas-supported-on-units" (lean := "PadicMeasure.isSupportedOn_units_iff_psi_eq_zero")
 A measure $`\mu \in \Lam(\Zp)` is supported on $`\Zpx` iff $`\psi(\Am_\mu) = 0`.
 :::
 
@@ -371,7 +371,7 @@ $`\Am_\mu = \Am_\mu - \varphi\psi(\Am_\mu)`, i.e. $`\varphi\psi(\Am_\mu) = 0`. A
 $`\varphi` is injective on power series this is equivalent to $`\psi(\Am_\mu) = 0`.
 :::
 
-:::proposition "meas-iota-units"
+:::proposition "meas-iota-units" (lean := "PadicMeasure.iota, PadicMeasure.iota_injective, PadicMeasure.mem_range_iota_iff")
 There is an injection $`\iota : \Lam(\Zpx) \hookrightarrow \Lam(\Zp)` with
 $`\int_{\Zp} \phi \cdot \iota(\mu) = \int_{\Zpx} \phi|_{\Zpx} \cdot \mu`,
 identifying $`\Lam(\Zpx)` with the measures supported on $`\Zpx`, i.e. those with
@@ -395,7 +395,7 @@ The Mahler transform matches measures with *bounded* analytic functions on the o
 unit disc. The Riemann zeta function has a simple pole at $`s = 1`, so we must allow
 simple poles on the $`p`-adic side; this is the role of pseudo-measures.
 
-:::definition "pseudo-measure"
+:::definition "pseudo-measure" (lean := "PadicMeasure.IsPseudoMeasure")
 Let $`G` be profinite abelian and $`Q(G)` the ring of fractions of the Iwasawa
 algebra {uses "iwasawa-algebra"}[]. A *pseudo-measure* on $`G` is an element
 $`\lambda \in Q(G)` such that $`([g] - [1])\lambda \in \Lam(G)` for every
@@ -424,7 +424,7 @@ the homomorphism $`\Lam(G) \to \Cp` extends uniquely to $`Q(G) \to \Cp`, and its
 value on $`\lambda` is the expression above.
 :::
 
-:::proposition "meas-pseudo-determined"
+:::proposition "meas-pseudo-determined" (lean := "PadicMeasure.eq_zero_of_forall_unitsPowCM_eq_zero, PadicMeasure.mem_nonZeroDivisors_of_forall_unitsPowCM_ne_zero, PadicMeasure.pseudoMeasure_eq_zero_of_moments")
 Let $`\mu \in \Lam(\Zpx)`. (i) If $`\int_{\Zpx} x^k \cdot \mu = 0` for all $`k > 0`,
 then $`\mu = 0`. (ii) If $`\int_{\Zpx} x^k \cdot \mu \neq 0` for all $`k > 0`, then
 $`\mu` is not a zero divisor in $`\Lam(\Zpx)`. (iii) Part (i) holds more generally
@@ -448,14 +448,14 @@ $`\int_{\Zpx} x^k \lambda = (a^k - 1)\int_{\Zpx} x^k \mu = 0`, so $`\lambda = 0`
 (i); since $`[a]-[1]` satisfies (ii) it is not a zero divisor, forcing $`\mu = 0`.
 :::
 
-:::definition "meas-augmentation-ideal"
+:::definition "meas-augmentation-ideal" (lean := "PadicMeasure.deg, PadicMeasure.augmentationIdeal")
 The *augmentation ideal* $`I((\Z/p^n\Z)^\times) \subset \OL[(\Z/p^n\Z)^\times]` is the
 kernel of the degree map $`\sum_a c_a [a] \mapsto \sum_a c_a`. These assemble into a
 degree map $`\Lam(\Zpx) \to \OL`, whose kernel is the *augmentation ideal*
 $`I(\Zpx) \subset \Lam(\Zpx)`, and $`I(\Zpx) \cong \varprojlim_n I((\Z/p^n\Z)^\times)`.
 :::
 
-:::proposition "meas-pseudo-existence"
+:::proposition "meas-pseudo-existence" (lean := "PadicMeasure.exists_topological_generator, PadicMeasure.augmentationIdeal_eq_span, PadicMeasure.isPseudoMeasure_mk', PadicMeasure.isPseudoMeasure_iff_exists")
 Let $`a` be a topological generator of $`\Zpx` and $`\mu \in \Lam(\Zpx)` a measure.
 Then $`\mu' := \mu / ([a] - [1]) \in Q(\Zpx)` is a pseudo-measure. Conversely every
 pseudo-measure has this shape. This uses {uses "pseudo-measure"}[] and

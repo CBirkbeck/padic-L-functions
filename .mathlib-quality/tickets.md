@@ -904,7 +904,7 @@ RJW Lem. 3.38 proof + lines 1284–1285 (verbatim in decomposition L5.15).
 ---
 
 ### [T029] Wire blueprint refs for §3 (Measures chapter)
-- **Status**: open | **File**: PadicLFunctionsBlueprint/Chapters/Measures.lean
+- **Status**: done (2026-06-10; 20 nodes wired to project/mathlib decls, blueprint builds, site re-rendered; deferred nodes — §3.1 prelims, projlim description, ξ-formulas, §3.7 — left unwired per plan.md) | **File**: PadicLFunctionsBlueprint/Chapters/Measures.lean
 - **Depends on**: none (can run anytime; refs to sorry-decls render "in progress")
 - **Type**: blueprint wiring (no proofs)
 
@@ -923,7 +923,7 @@ description, ξ-formulas, locally analytic — per plan.md Deferred).
 ---
 
 ### [CLEANUP-FINAL] Run /cleanup-all on the whole project
-- **Status**: open | **Depends on**: all above | **Type**: cleanup-all
+- **Status**: open — BLOCKED on tooling (requires a session with lean-lsp MCP connected for /cleanup-all's per-decl golf workers; the mathlib linter set already runs green on every build; known cosmetic debt: a handful of `show`-should-be-`change` style warnings) | **Depends on**: all above | **Type**: cleanup-all
 - Then `/pre-submit` when the user wants a checkpointed milestone.
 
 ---
