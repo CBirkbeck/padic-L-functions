@@ -39,6 +39,32 @@ noncomputable def innerInt [CompactSpace Y] (ν : PadicMeasure p Y) (F : C(X × 
 lemma innerInt_apply [CompactSpace Y] (ν : PadicMeasure p Y) (F : C(X × Y, ℤ_[p])) (x : X) :
     innerInt p ν F x = ν (F.curry x) := rfl
 
+@[simp]
+lemma innerInt_add [CompactSpace Y] (ν : PadicMeasure p Y) (F G : C(X × Y, ℤ_[p])) :
+    innerInt p ν (F + G) = innerInt p ν F + innerInt p ν G :=
+  ContinuousMap.ext fun x => by
+    have hcurry : (F + G).curry x = F.curry x + G.curry x := ContinuousMap.ext fun y => rfl
+    simp [hcurry]
+
+@[simp]
+lemma innerInt_smul [CompactSpace Y] (c : ℤ_[p]) (ν : PadicMeasure p Y)
+    (F : C(X × Y, ℤ_[p])) :
+    innerInt p ν (c • F) = c • innerInt p ν F :=
+  ContinuousMap.ext fun x => by
+    have hcurry : (c • F).curry x = c • F.curry x := ContinuousMap.ext fun y => rfl
+    simp [hcurry]
+
+@[simp]
+lemma innerInt_measure_add [CompactSpace Y] (ν₁ ν₂ : PadicMeasure p Y)
+    (F : C(X × Y, ℤ_[p])) :
+    innerInt p (ν₁ + ν₂) F = innerInt p ν₁ F + innerInt p ν₂ F :=
+  ContinuousMap.ext fun x => rfl
+
+@[simp]
+lemma innerInt_measure_zero [CompactSpace Y] (F : C(X × Y, ℤ_[p])) :
+    innerInt p (0 : PadicMeasure p Y) F = 0 :=
+  ContinuousMap.ext fun x => rfl
+
 /-- **Density of locally constant maps, general ultrametric target**: any continuous
 map from a compact space to an ultrametric seminormed group is uniformly approximated
 by locally constant maps. (Generalises `exists_locallyConstant_norm_sub_le`, whose
