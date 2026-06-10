@@ -1063,7 +1063,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     builds green. Cleanup: degraded mode — proofs 1–6 lines, hand-audited.
 
 ### [T032] Dirac-sum identity + `Λ(ℤ_p)` is a domain
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
 - **Depends on**: T031
 - **Parallel**: yes (with T033 after T031)
@@ -1095,6 +1095,13 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
 - **Blueprint**: no node (infrastructure).
 - **Cleanup**: `/cleanup` immediately; flag the instance's final home.
 - **Progress**:
+  - 2026-06-10: DONE — dirac_natCast_sub_one_mul_muA (via mahlerTransform_injective +
+    new simp lemmas mahlerTransform_sub/smul, map_sum through mahlerTransformₗ with
+    rfl-coe bridges), instIsDomain (MulEquiv.isDomain via mahlerRingEquiv.toMulEquiv),
+    dirac_natCast_sub_one_ne_zero (coeff-1 of (1+X)^a = a via Polynomial.coeff_one_add_X_pow
+    through toPowerSeries). Axioms standard (3/3). ne_zero proof avoided
+    binomialSeries_coeff (Ring.choose-free route). Cleanup: degraded mode; flag —
+    mahlerTransform_sub/smul belong in Convolution.lean at next tooled cleanup.
 
 ### [T033] Bernoulli moments: `∫x^k dμ_a = (−1)^k(1−a^{k+1})ζ(−k)`
 - **Status**: open

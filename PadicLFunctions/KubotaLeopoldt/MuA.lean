@@ -105,21 +105,54 @@ def muA (a : ℕ) : PadicMeasure p ℤ_[p] :=
 lemma mahlerTransform_muA (a : ℕ) : mahlerTransform p (muA p a) = Fa p a :=
   (mahlerLinearEquiv p).apply_symm_apply (Fa p a)
 
+@[simp]
+lemma mahlerTransform_sub (μ ν : PadicMeasure p ℤ_[p]) :
+    mahlerTransform p (μ - ν) = mahlerTransform p μ - mahlerTransform p ν :=
+  map_sub (mahlerTransformₗ p) μ ν
+
+@[simp]
+lemma mahlerTransform_smul (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]) :
+    mahlerTransform p (c • μ) = c • mahlerTransform p μ :=
+  map_smul (mahlerTransformₗ p) c μ
+
 /-- The convolution form of the characterising identity:
 `([a] − [0])·μ_a = Σ_{i<a} [i] − a·[0]` in `Λ(ℤ_p)`. (mathlib's `binomialSeries_nat`
 identifies `𝓐(δ_a) = (1+T)^a`.) -/
 lemma dirac_natCast_sub_one_mul_muA {a : ℕ} (hpa : ¬ p ∣ a) :
     (dirac p ((a : ℕ) : ℤ_[p]) - 1) * muA p a
       = (∑ i ∈ Finset.range a, dirac p ((i : ℕ) : ℤ_[p])) - (a : ℤ_[p]) • 1 := by
-  sorry
+  have hsum : mahlerTransform p (∑ i ∈ Finset.range a, dirac p ((i : ℕ) : ℤ_[p]))
+      = geomSum p a := by
+    rw [show mahlerTransform p (∑ i ∈ Finset.range a, dirac p ((i : ℕ) : ℤ_[p]))
+        = mahlerTransformₗ p (∑ i ∈ Finset.range a, dirac p ((i : ℕ) : ℤ_[p])) from rfl,
+      map_sum, geomSum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [show mahlerTransformₗ p (dirac p ((i : ℕ) : ℤ_[p]))
+        = mahlerTransform p (dirac p ((i : ℕ) : ℤ_[p])) from rfl,
+      mahlerTransform_dirac, binomialSeries_nat]
+  apply mahlerTransform_injective p
+  rw [mahlerTransform_mul, mahlerTransform_sub, mahlerTransform_one, mahlerTransform_dirac,
+    binomialSeries_nat, mahlerTransform_muA, one_add_X_pow_sub_one_mul_Fa p hpa,
+    mahlerTransform_sub, mahlerTransform_smul, mahlerTransform_one, hsum,
+    PowerSeries.smul_eq_C_mul, mul_one, ← map_natCast (PowerSeries.C (R := ℤ_[p])) a]
 
 /-- `Λ(ℤ_p)` is a domain (transport along `mahlerRingEquiv` from `ℤ_p⟦T⟧`). -/
-instance instIsDomain : IsDomain (PadicMeasure p ℤ_[p]) := by
-  sorry
+instance instIsDomain : IsDomain (PadicMeasure p ℤ_[p]) :=
+  MulEquiv.isDomain (PowerSeries ℤ_[p]) (mahlerRingEquiv p).toMulEquiv
 
 lemma dirac_natCast_sub_one_ne_zero {a : ℕ} (ha : a ≠ 0) :
     (dirac p ((a : ℕ) : ℤ_[p]) - 1 : PadicMeasure p ℤ_[p]) ≠ 0 := by
-  sorry
+  intro h
+  have h2 := congrArg (mahlerTransform p) h
+  rw [mahlerTransform_sub, mahlerTransform_one, mahlerTransform_dirac, mahlerTransform_zero,
+    binomialSeries_nat, sub_eq_zero] at h2
+  have h3 := congrArg (PowerSeries.coeff 1) h2
+  rw [show ((1 : PowerSeries ℤ_[p]) + X) ^ a = ((1 + Polynomial.X : Polynomial ℤ_[p]) ^ a :
+      Polynomial ℤ_[p]).toPowerSeries by push_cast [Polynomial.coe_one, Polynomial.coe_X]; ring]
+    at h3
+  rw [Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow] at h3
+  simp at h3
+  omega
 
 /-! ## Moments of `μ_a`: the Bernoulli computation (RJW Lem. 4.2/4.3, Prop. 4.6)
 
