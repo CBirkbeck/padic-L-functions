@@ -130,21 +130,16 @@ CLAUDE.md                         the standing rules (binding)
 
 ## 6. Open items (do not lose these)
 
-1. **Blueprint remote hosting (user request, IN FLIGHT).** The user asked
-   "can we put it [the blueprint] on github so i can see it remotely?".
-   Facts established so far: rendered site is 36 MB at `_out/site/html-multi/`
-   (`_out/` is gitignored); workflows `.github/workflows/pages.yml` +
-   `blueprint-pages.yml` already exist and build the site in CI (elan +
-   `lake exe cache get` warm cache) **but trigger on a `development` branch
-   that does not exist**; the repo is **PRIVATE**, and GitHub Pages on private
-   repos needs a paid plan — and the published site is PUBLIC regardless (the
-   user chose "keep private" for the repo, so surface this trade-off before
-   publishing). Sensible options: (a) flip the workflow trigger to `main` +
-   enable Pages if the plan allows — site becomes public; (b) a separate
-   public repo holding only the rendered HTML; (c) keep private and view
-   locally. **Ask the user which they want, or check `gh api /user` for the
-   plan and present the options.** Do not publish without confirming — the
-   repo-privacy choice signals caution.
+1. **Blueprint remote hosting — RESOLVED 2026-06-10.** User chose to make the
+   whole repo **public** (option presented and confirmed via AskUserQuestion;
+   trade-offs — public site, public source — were surfaced first). Repo
+   visibility flipped to public, Pages enabled with `build_type=workflow`,
+   `pages.yml` trigger fixed `development` → `main`. Site:
+   **https://cbirkbeck.github.io/padic-L-functions/** — deploys on every push
+   to main via `.github/workflows/pages.yml` (cancel-in-progress concurrency,
+   so frequent per-ticket pushes just supersede each other). Note: the repo
+   redistributes the RJW paper TeX in `.mathlib-quality/references/` — flagged
+   to the user at publication time; remove/gitignore if the authors object.
 2. **CLEANUP-FINAL** (ticket, open/blocked): full `/cleanup-all` needs a
    lean-lsp-connected session. Queued debt (all cosmetic, build is green):
    `show`-linter warnings (project-wide pattern), flexible-simp at

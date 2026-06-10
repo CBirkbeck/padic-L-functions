@@ -37,6 +37,10 @@ p-adic L-functions* (arXiv:2309.15692). Source TeX:
    (decomposition.md); proofs may take Lean-friendlier routes only when recorded as a
    replan note in the ticket (see T018/T026 for the pattern). p = 2 is excluded
    wherever the source assumes p odd — never silently drop that hypothesis.
+   User re-affirmed 2026-06-10: "we follow the paper as closely as possible" — when a
+   Lean-friendlier route is tempting, prefer the paper's route; replan notes are the
+   exception, not the rule, and statements/definitions must match the paper's even
+   when mathlib offers a different-but-equivalent formulation.
 
 6. **Coefficients**: ℤ_p for now; the O_L generalisation is a dedicated pass when §5
    needs it (plan.md "Generality Decisions"). Don't widen ad hoc.

@@ -3,7 +3,7 @@ name: Blueprint Pages
 on:
   push:
     branches:
-      - development
+      - main
   workflow_dispatch:
 
 permissions:
