@@ -73,7 +73,7 @@ Because $`\chi` is supported on $`\Zpx`, the measure $`\mu_\chi` is automaticall
 supported on $`\Zpx`.
 :::
 
-:::definition "interp-gauss-sum"
+:::definition "interp-gauss-sum" (lean := "gaussSum")
 Let $`\chi` be a primitive Dirichlet character of conductor $`p^n`, $`n \geq 1`.
 The *Gauss sum* of $`\chi` is
 $$`G(\chi) := \sum_{c \in (\Z/p^n\Z)^\times} \chi(c)\,\eps_{p^n}^{\,c},`

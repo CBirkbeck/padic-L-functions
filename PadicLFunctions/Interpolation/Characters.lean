@@ -86,7 +86,35 @@ rewrite each summand by `gaussSum_mulShift_of_isPrimitive`, swap sums, and
 collapse with primitive-character orthogonality `∑_b e(b·c) = N·δ_{c,0}`. -/
 theorem gaussSum_mul_gaussSum_inv {χ : DirichletCharacter R N}
     (hχ : χ.IsPrimitive) {e : AddChar (ZMod N) R} (he : e.IsPrimitive) :
-    gaussSum χ e * gaussSum χ⁻¹ e⁻¹ = (N : R) := by sorry
+    gaussSum χ e * gaussSum χ⁻¹ e⁻¹ = (N : R) := by
+  classical
+  rw [mul_comm, gaussSum, Finset.sum_mul]
+  calc ∑ b, χ⁻¹ b * e⁻¹ b * gaussSum χ e
+      = ∑ b, e⁻¹ b * gaussSum χ (e.mulShift b) := by
+        refine Finset.sum_congr rfl fun b _ => ?_
+        rw [gaussSum_mulShift_of_isPrimitive e hχ b]
+        ring
+    _ = ∑ b, ∑ a, χ a * (e (b * a) * e (-b)) := by
+        refine Finset.sum_congr rfl fun b _ => ?_
+        rw [gaussSum, Finset.mul_sum]
+        refine Finset.sum_congr rfl fun a _ => ?_
+        rw [AddChar.mulShift_apply, AddChar.inv_apply]
+        ring
+    _ = ∑ a, χ a * ∑ b, e (b * (a - 1)) := by
+        rw [Finset.sum_comm]
+        refine Finset.sum_congr rfl fun a _ => ?_
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun b _ => ?_
+        rw [← AddChar.map_add_eq_mul]
+        ring_nf
+    _ = ∑ a, χ a * (if a - 1 = 0 then (Fintype.card (ZMod N) : R) else 0) := by
+        refine Finset.sum_congr rfl fun a _ => ?_
+        rw [AddChar.sum_mulShift _ he]
+        simp [apply_ite (Nat.cast : ℕ → R)]
+    _ = (N : R) := by
+        simp only [sub_eq_zero, mul_ite, mul_zero]
+        rw [Finset.sum_ite_eq' Finset.univ (1 : ZMod N)]
+        simp [ZMod.card]
 
 end gaussSum
 
@@ -94,6 +122,20 @@ section gaussSumNorm
 
 variable (L : Type*) [NormedField L] [NormedAlgebra ℚ_[p] L]
   [IsUltrametricDist L] [CompleteSpace L]
+
+omit [hp : Fact p.Prime] in
+/-- Roots of unity in a normed field have norm one (the `ℂ`-version is
+mathlib's `Complex.norm_eq_one_of_pow_eq_one`). -/
+lemma norm_eq_one_of_pow_eq_one {x : L} {m : ℕ} (h : x ^ m = 1) (hm : m ≠ 0) :
+    ‖x‖ = 1 := by
+  have h1 : ‖x‖ ^ m = 1 := by rw [← norm_pow, h, norm_one]
+  refine le_antisymm ?_ ?_
+  · by_contra hc
+    push Not at hc
+    exact absurd h1 (one_lt_pow₀ hc hm).ne'
+  · by_contra hc
+    push Not at hc
+    exact absurd h1 (pow_lt_one₀ (norm_nonneg x) hc hm).ne
 
 /-- For `η` primitive of conductor `D` coprime to `p` (and a primitive `D`-th
 root of unity `ζ` in `L`), the Gauss sum has norm one — in particular it is a
@@ -106,7 +148,55 @@ ultrametric triangle inequality (root-of-unity values), and
 theorem norm_gaussSum_eq_one {D : ℕ} [NeZero D] {η : DirichletCharacter L D}
     (hη : η.IsPrimitive) (hD : ¬ (p : ℕ) ∣ D) {ζ : L}
     (hζ : IsPrimitiveRoot ζ D) :
-    ‖gaussSum η (AddChar.zmodChar D (hζ.pow_eq_one))‖ = 1 := by sorry
+    ‖gaussSum η (AddChar.zmodChar D (hζ.pow_eq_one))‖ = 1 := by
+  classical
+  set e : AddChar (ZMod D) L := AddChar.zmodChar D (hζ.pow_eq_one) with he
+  have htot : Nat.totient D ≠ 0 := (Nat.totient_pos.2 (NeZero.pos D)).ne'
+  -- any Gauss sum of a `D`-torsion pair has norm at most one
+  have hval : ∀ (ψ : DirichletCharacter L D) (e' : AddChar (ZMod D) L),
+      (∀ b, e' b ^ D = 1) → ‖gaussSum ψ e'‖ ≤ 1 := by
+    intro ψ e' hroots
+    obtain ⟨a, -, ha⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty
+      (t := (Finset.univ : Finset (ZMod D))) Finset.univ_nonempty
+      (fun a => ψ a * e' a)
+    refine ha.trans ?_
+    rw [norm_mul]
+    have he' : ‖e' a‖ = 1 := norm_eq_one_of_pow_eq_one (L := L) (hroots a) (NeZero.ne D)
+    rcases eq_or_ne (ψ a) 0 with h0 | h0
+    · rw [h0, norm_zero, zero_mul]
+      norm_num
+    · have hu : IsUnit (a : ZMod D) := by
+        by_contra hu
+        exact h0 (ψ.map_nonunit hu)
+      have hpow : ψ a ^ Nat.totient D = 1 := by
+        rw [← map_pow]
+        obtain ⟨u, rfl⟩ := hu
+        rw [show ((u : ZMod D)) ^ Nat.totient D = ((u ^ Nat.totient D : (ZMod D)ˣ) : ZMod D)
+            from (Units.val_pow_eq_pow_val u (Nat.totient D)).symm,
+          ZMod.pow_totient, Units.val_one, map_one]
+      have hψa : ‖ψ a‖ = 1 := norm_eq_one_of_pow_eq_one (L := L) hpow htot
+      rw [hψa, he', mul_one]
+  -- the value-torsion hypotheses for `e` and `e⁻¹`
+  have hroote : ∀ b, e b ^ D = 1 := fun b => by
+    rw [← AddChar.map_nsmul_eq_pow]
+    have hb : (D : ℕ) • b = 0 := by
+      simp [nsmul_eq_mul, ZMod.natCast_self]
+    rw [hb, AddChar.map_zero_eq_one]
+  have hrootei : ∀ b, e⁻¹ b ^ D = 1 := fun b => by
+    rw [AddChar.inv_apply, ← AddChar.map_nsmul_eq_pow]
+    have hb : (D : ℕ) • (-b) = 0 := by
+      simp [nsmul_eq_mul, ZMod.natCast_self]
+    rw [hb, AddChar.map_zero_eq_one]
+  -- product formula + norm-1 of `D` force equality
+  have hprod : ‖gaussSum η e‖ * ‖gaussSum η⁻¹ e⁻¹‖ = 1 := by
+    rw [← norm_mul, gaussSum_mul_gaussSum_inv hη]
+    · rw [show ((D : ℕ) : L) = algebraMap ℚ_[p] L ((D : ℕ) : ℚ_[p]) by
+        simp [map_natCast], norm_algebraMap', Padic.norm_natCast_eq_one_iff]
+      exact (Nat.Prime.coprime_iff_not_dvd hp.out).2 hD
+    · exact AddChar.zmodChar_primitive_of_primitive_root D hζ
+  have h1 := hval η e hroote
+  have h2 := hval η⁻¹ e⁻¹ hrootei
+  nlinarith [norm_nonneg (gaussSum η e), norm_nonneg (gaussSum η⁻¹ e⁻¹)]
 
 end gaussSumNorm
 

@@ -1709,7 +1709,17 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Status**: open | **Depends on**: TW6 | **Type**: cleanup (final per-file ×6)
 
 ### [T501] Gauss sums: product formula at general level + norm-one
-- **Status**: open | **File**: Interpolation/Characters.lean | **Depends on**: none
+- **Status**: done (2026-06-10T21:40Z)
+- **Progress**: BOTH lemmas proven, zero sorries in their section.
+  gaussSum_mul_gaussSum_inv (Rem 5.3(i) at general level N, domain target —
+  the planned 4-sum collapse: mulShift-of-primitive backwards, sum swap,
+  AddChar.sum_mulShift orthogonality; MATHLIB-PR CANDIDATE).
+  norm_gaussSum_eq_one (torsion-values ultrametric bound + product formula +
+  ‖D‖=1; helper norm_eq_one_of_pow_eq_one for normed fields, also PR-shape).
+  BLUEPRINT: interp-gauss-sum → mathlib gaussSum; interp-gauss-sum-properties
+  → {PadicLFunctions.gaussSum_mul_gaussSum_inv, gaussSum_mulShift_of_isPrimitive}
+  with prose note on the cleared form; blueprint builds. VERIFICATION:
+  axioms standard (lean_verify), build green. | **File**: Interpolation/Characters.lean | **Depends on**: none
 - **Parallel**: yes (chain B head) | **Type**: lemmas (mathlib-PR candidates)
 - **Statement**: skeleton `gaussSum_mul_gaussSum_inv` (L5.1.5),
   `norm_gaussSum_eq_one`, + any zmodChar-primitivity bridge sub-lemmas needed.
