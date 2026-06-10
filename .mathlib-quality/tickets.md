@@ -1896,7 +1896,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~60 LOC.
 
 ### [T506] Twist by χ + z-twist transform formula
-- **Status**: open | **File**: Interpolation/Twist.lean (TW6 skeleton) | **Depends on**: TW6, T502
+- **Status**: done | **File**: Interpolation/Twist.lean (TW6 skeleton) | **Depends on**: TW6, T502
 - **Type**: def + lemmas
 - **Statement** (from TW6 skeleton; signatures fixed there per decomposition
   L5.1.2/L5.1.6): `PadicMeasure.twist`, `twist_apply`, `twist_powCM`,
@@ -1910,6 +1910,21 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sources**: TeX 1637–1641 (verbatim at L5.1.2), TeX 1084–1090 (z-twist).
 - **Blueprint**: wire `interp-twist` → `PadicMeasure.twist`.
 - **Sizing**: twist API ~40; charTwist ~90 (T014 ran ~80).
+- **Progress**: DONE 2026-06-10. `isClopen_toZModPow_fiber` delegated to the
+  pre-existing `PadicMeasure.isClopen_toZModPow_fiber` (PseudoMeasure.lean —
+  planner had restated it). `twist_res_units` via χ̃·1_{units} = χ̃ pointwise
+  (unit: indicator 1; non-unit: `toContinuousMapZp_eq_zero`), with the
+  congrArg-Subtype.val bridge after `ext`. `mahlerTransform_charTwist`
+  (coefficientwise z-twist formula): apply_eq_tsum + per-m finite identity
+  Δ^m[κ_r·binom(·,n)](0) = [X^n]((1+X)(1+r)−1)^m — both sides expanded to
+  Σ_{i≤m} (−1)^{m−i}·C(m,i)·(1+r)^i·C(i,n) via fwdDiff_iter_eq_sum_shift and
+  Commute.add_pow; new API `charCM_natCast` (κ_r(↑k) = (1+r)^k, the
+  onePAdicPow_natCast pattern); coeff of (1+X)^i via Polynomial-cast
+  (binomialSeries route blocked: no BinomialRing instance on integerRing K).
+  Linter clean (omits added, show→change). Verification: zero errors, only
+  T507/T508 sorries remain in the file; axioms = {propext, Classical.choice,
+  Quot.sound} on mahlerTransform_charTwist. Blueprint: `interp-twist` wired to
+  {MeasureR.twist, MeasureR.twist_res_units} with prose note; build green.
 
 ### [T507] Cleared restriction formula (EqRestrictionFormula)
 - **Status**: open | **File**: Twist.lean | **Depends on**: T506 | **Type**: lemma

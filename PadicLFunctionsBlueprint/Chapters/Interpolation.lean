@@ -64,13 +64,18 @@ $`\int_{\Zpx}\chi(x)x^k\cdot\zetap = L(\chi,1-k)`, as claimed.
 We first record the twisting operation and the classical Gauss-sum input it
 requires, then compute the Mahler transform of a twist.
 
-:::definition "interp-twist"
+:::definition "interp-twist" (lean := "PadicLFunctions.MeasureR.twist, PadicLFunctions.MeasureR.twist_res_units")
 Let $`\mu` be a measure on $`\Zp` and $`\chi` a locally constant character of
 $`\Zpx`. The *twist of $`\mu` by $`\chi`* is the measure $`\mu_\chi` on $`\Zp`
 defined by
 $$`\int_{\Zp} f(x)\cdot\mu_\chi = \int_{\Zp}\chi(x)f(x)\cdot\mu.`
 Because $`\chi` is supported on $`\Zpx`, the measure $`\mu_\chi` is automatically
 supported on $`\Zpx`.
+
+The formalisation defines the twist by an arbitrary continuous function
+(`MeasureR.twist`, specialised to Dirichlet characters through their
+zero-extension `DirichletCharacter.toContinuousMapZp`); the automatic support
+statement is the restriction-invariance lemma `twist_res_units`.
 :::
 
 :::definition "interp-gauss-sum" (lean := "gaussSum")
