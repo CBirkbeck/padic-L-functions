@@ -537,6 +537,90 @@ lemma X_mul_sum_char_inv_subst {n : ℕ} (hn : 1 ≤ n)
     - (PowerSeries.C (gaussSum (toFieldChar χ)⁻¹
       (AddChar.zmodChar (p ^ n) hζK.pow_eq_one))) * hB
 
+section fieldBridge
+
+open PowerSeries
+
+/-- `∂ = (1+t)·d/dt` over the coefficient field `K` (the `delQ`-analogue;
+to be merged with `MeasureR.del`/`PadicMeasure.delQ` at cleanup). -/
+noncomputable def delField (G : PowerSeries K) : PowerSeries K :=
+  (1 + X) * PowerSeries.derivativeFun G
+
+omit [CompleteSpace K] [CharZero K] in
+lemma map_subtype_derivativeFun (F : PowerSeries (integerRing K)) :
+    PowerSeries.map (integerRing K).subtype (PowerSeries.derivativeFun F)
+      = PowerSeries.derivativeFun (PowerSeries.map (integerRing K).subtype F) := by
+  ext n
+  simp [coeff_derivativeFun]
+
+lemma map_subtype_del (F : PowerSeries (integerRing K)) :
+    PowerSeries.map (integerRing K).subtype (del K F)
+      = delField (PowerSeries.map (integerRing K).subtype F) := by
+  rw [del, delField, map_mul, map_add, map_one, PowerSeries.map_X,
+    map_subtype_derivativeFun]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+lemma hasSubst_exp_sub_one_K : HasSubst (exp K - 1) :=
+  HasSubst.of_constantCoeff_zero' (by simp)
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- Chain rule for the substitution `T = e^t − 1` over `K`. -/
+lemma derivativeFun_subst_exp_K (F : PowerSeries K) :
+    PowerSeries.derivativeFun (F.subst (exp K - 1))
+      = (delField F).subst (exp K - 1) := by
+  have hg := hasSubst_exp_sub_one_K (K := K)
+  have hone : (1 : PowerSeries K).subst (exp K - 1) = 1 := by
+    rw [← coe_substAlgHom hg, map_one]
+  have hder : d⁄dX K (exp K - 1) = exp K := by
+    rw [map_sub, derivative_exp, Derivation.map_one_eq_zero, sub_zero]
+  calc PowerSeries.derivativeFun (F.subst (exp K - 1))
+      = d⁄dX K (F.subst (exp K - 1)) := rfl
+    _ = (d⁄dX K F).subst (exp K - 1) * d⁄dX K (exp K - 1) :=
+        derivative_subst K hg
+    _ = (delField F).subst (exp K - 1) := by
+        rw [hder, delField, subst_mul hg, subst_add hg, subst_X hg, hone]
+        ring_nf
+        rfl
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+lemma constantCoeff_subst_exp_K (F : PowerSeries K) :
+    constantCoeff (F.subst (exp K - 1)) = constantCoeff F := by
+  rw [show (constantCoeff (F.subst (exp K - 1)) : K)
+      = MvPowerSeries.constantCoeff (F.subst (exp K - 1)) from rfl,
+    constantCoeff_subst (hasSubst_exp_sub_one_K (K := K)),
+    finsum_eq_single _ 0 fun d hd => by
+      have h0 : MvPowerSeries.constantCoeff (exp K - 1) = (0 : K) := by
+        have h1 : PowerSeries.constantCoeff (exp K - 1) = (0 : K) := by simp
+        exact h1
+      rw [map_pow, h0, zero_pow hd, smul_zero]]
+  simp
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+lemma constantCoeff_iterate_derivativeFun_K (k : ℕ) (G : PowerSeries K) :
+    constantCoeff (PowerSeries.derivativeFun^[k] G)
+      = (k.factorial : K) * coeff k G := by
+  induction k generalizing G with
+  | zero => simp [PowerSeries.coeff_zero_eq_constantCoeff]
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, ih, coeff_derivativeFun, Nat.factorial_succ]
+    push_cast
+    ring
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- `(∂^k F)(0) = k!·[t^k](F(e^t−1))` over `K`. -/
+lemma constantCoeff_iterate_delField (k : ℕ) (F : PowerSeries K) :
+    constantCoeff (delField^[k] F)
+      = (k.factorial : K) * coeff k (F.subst (exp K - 1)) := by
+  induction k generalizing F with
+  | zero => simp [constantCoeff_subst_exp_K, PowerSeries.coeff_zero_eq_constantCoeff]
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, ih (delField F), ← derivativeFun_subst_exp_K,
+      coeff_derivativeFun, Nat.factorial_succ]
+    push_cast
+    ring
+
+end fieldBridge
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
