@@ -327,14 +327,250 @@ theorem muEtaCleared_moments {D : ℕ} [NeZero D] (hD1 : 1 < D)
   push_cast
   ring
 
+omit [CharZero K] in
+/-- The denominator series `w·(1+T) − 1` read back through the Mahler
+isomorphism is the measure `w·δ_1 − δ_0`. -/
+lemma symm_denom_eq (w : integerRing K) :
+    (mahlerRingEquiv p K).symm
+        (PowerSeries.C w * (1 + PowerSeries.X) - 1)
+      = w • dirac K ℤ_[p] 1 - 1 := by
+  apply (mahlerRingEquiv p K).injective
+  rw [RingEquiv.apply_symm_apply, map_sub, map_one,
+    show (mahlerRingEquiv p K) (w • dirac K ℤ_[p] 1)
+      = mahlerTransform p K (w • dirac K ℤ_[p] 1) from rfl,
+    mahlerTransform_smul, mahlerTransform_dirac,
+    show (1 : ℤ_[p]) = ((1 : ℕ) : ℤ_[p]) from (Nat.cast_one).symm,
+    binomialSeries_nat, pow_one, map_add, map_one, PowerSeries.map_X]
+
+omit [CharZero K] in
+/-- ψ of the inverse-denominator measure: `ψ(γ_m) = γ_{pm}` (decomposition
+L5.2.4 steps (i)–(iii): geometric telescope, then the projection formula
+`psi_phi_mul`, then cancellation of the unit `ε^{pm}δ_1 − δ_0`). -/
+lemma psi_symm_inverse_denom {ζ : integerRing K} {D : ℕ}
+    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) {m : ℕ} (hm : ¬ D ∣ m) :
+    psi p K ((mahlerRingEquiv p K).symm
+        (Ring.inverse (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) - 1)))
+      = (mahlerRingEquiv p K).symm
+          (Ring.inverse (PowerSeries.C (ζ ^ (p * m))
+            * (1 + PowerSeries.X) - 1)) := by
+  have hcop : Nat.Coprime D p :=
+    Nat.coprime_comm.mp ((hp.out.coprime_iff_not_dvd).mpr hD)
+  have hpm : ¬ D ∣ p * m := fun h => hm (hcop.dvd_of_dvd_mul_left h)
+  have humA : IsUnit (PowerSeries.C (ζ ^ (p * m)) * (1 + PowerSeries.X) - 1 :
+      PowerSeries (integerRing K)) := isUnit_root_mul_one_add_X_sub_one hζ hD hpm
+  have humγ : IsUnit (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) - 1 :
+      PowerSeries (integerRing K)) := isUnit_root_mul_one_add_X_sub_one hζ hD hm
+  set A : MeasureR K ℤ_[p] := (ζ ^ (p * m)) • dirac K ℤ_[p] 1 - 1 with hA
+  set γ : MeasureR K ℤ_[p] := (mahlerRingEquiv p K).symm
+    (Ring.inverse (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) - 1)) with hγ
+  -- (i) the geometric telescope `φ(A)·γ = Σ_{j<p} ζ^{mj}·δ_j`
+  have hphiA : phi p K A
+      = (ζ ^ (p * m)) • dirac K ℤ_[p] ((p : ℕ) : ℤ_[p]) - 1 := by
+    rw [hA, map_sub, map_smul,
+      show (1 : MeasureR K ℤ_[p]) = dirac K ℤ_[p] 0 from rfl,
+      show phi p K (dirac K ℤ_[p] 1)
+        = dirac K ℤ_[p] ((p : ℤ_[p]) * 1) from rfl,
+      show phi p K (dirac K ℤ_[p] 0)
+        = dirac K ℤ_[p] ((p : ℤ_[p]) * 0) from rfl,
+      mul_one, mul_zero]
+  have htel : phi p K A * γ = ∑ j ∈ Finset.range p,
+      (ζ ^ (m * j)) • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p]) := by
+    apply mahlerTransform_injective
+    have hγtr : mahlerTransform p K γ
+        = Ring.inverse (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) - 1) :=
+      (mahlerRingEquiv p K).apply_symm_apply _
+    rw [mahlerTransform_mul, hphiA, mahlerTransform_sub, mahlerTransform_smul,
+      mahlerTransform_dirac, binomialSeries_nat, mahlerTransform_one, hγtr,
+      show mahlerTransform p K (∑ j ∈ Finset.range p,
+            (ζ ^ (m * j)) • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p]))
+          = ∑ j ∈ Finset.range p, PowerSeries.C (ζ ^ (m * j))
+              * PowerSeries.map (algebraMap ℤ_[p] (integerRing K))
+                  (binomialSeries ℤ_[p] ((j : ℕ) : ℤ_[p])) from by
+        rw [show mahlerTransform p K (∑ j ∈ Finset.range p,
+              (ζ ^ (m * j)) • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p]))
+            = (mahlerTransformₗ p K) (∑ j ∈ Finset.range p,
+              (ζ ^ (m * j)) • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p])) from rfl,
+          map_sum]
+        exact Finset.sum_congr rfl fun j _ => by
+          rw [show (mahlerTransformₗ p K) ((ζ ^ (m * j))
+                • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p]))
+              = mahlerTransform p K ((ζ ^ (m * j))
+                • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p])) from rfl,
+            mahlerTransform_smul, mahlerTransform_dirac],
+      show PowerSeries.map (algebraMap ℤ_[p] (integerRing K))
+            ((1 + PowerSeries.X) ^ p)
+          = (1 + PowerSeries.X) ^ p from by
+        rw [map_pow, map_add, map_one, PowerSeries.map_X]]
+    have hx : PowerSeries.C (ζ ^ (p * m)) * (1 + PowerSeries.X) ^ p
+        = (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X)) ^ p := by
+      rw [mul_pow, ← map_pow, ← pow_mul, mul_comm m p]
+    have hgs := geom_sum_mul
+      (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) :
+        PowerSeries (integerRing K)) p
+    calc (PowerSeries.C (ζ ^ (p * m)) * (1 + PowerSeries.X) ^ p - 1)
+            * Ring.inverse (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) - 1)
+        = (∑ j ∈ Finset.range p,
+            (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X)) ^ j)
+            * ((PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X) - 1)
+              * Ring.inverse (PowerSeries.C (ζ ^ m)
+                * (1 + PowerSeries.X) - 1)) := by
+          rw [hx, ← hgs]
+          ring
+      _ = ∑ j ∈ Finset.range p,
+            (PowerSeries.C (ζ ^ m) * (1 + PowerSeries.X)) ^ j := by
+          rw [Ring.mul_inverse_cancel _ humγ, mul_one]
+      _ = ∑ j ∈ Finset.range p, PowerSeries.C (ζ ^ (m * j))
+            * PowerSeries.map (algebraMap ℤ_[p] (integerRing K))
+                (binomialSeries ℤ_[p] ((j : ℕ) : ℤ_[p])) := by
+          refine Finset.sum_congr rfl fun j _ => ?_
+          rw [binomialSeries_nat,
+            show PowerSeries.map (algebraMap ℤ_[p] (integerRing K))
+                ((1 + PowerSeries.X) ^ j)
+              = (1 + PowerSeries.X) ^ j from by
+              rw [map_pow, map_add, map_one, PowerSeries.map_X],
+            mul_pow, ← map_pow, ← pow_mul]
+  -- (ii) ψ of the telescope is `δ_0 = 1`
+  have hψtel : psi p K (∑ j ∈ Finset.range p,
+      (ζ ^ (m * j)) • dirac K ℤ_[p] ((j : ℕ) : ℤ_[p])) = 1 := by
+    rw [psi_sum]
+    rw [Finset.sum_eq_single 0]
+    · rw [Nat.cast_zero, psi_smul, psi_dirac_zero, mul_zero, pow_zero, one_smul]
+      rfl
+    · intro j hj hj0
+      have hju : IsUnit ((j : ℕ) : ℤ_[p]) := by
+        rw [PadicInt.isUnit_iff, PadicInt.norm_def]
+        push_cast
+        rw [Padic.norm_natCast_eq_one_iff]
+        exact (hp.out.coprime_iff_not_dvd).mpr fun hdvd =>
+          hj0 (Nat.eq_zero_of_dvd_of_lt hdvd (Finset.mem_range.mp hj))
+      rw [psi_smul, psi_dirac_of_isUnit hju, smul_zero]
+    · intro h0
+      exact absurd (Finset.mem_range.mpr hp.out.pos) h0
+  -- (iii) cancel the unit `A`
+  have hkey := psi_phi_mul A γ
+  rw [htel, hψtel] at hkey
+  have hAd := symm_denom_eq (p := p) (K := K) (ζ ^ (p * m))
+  have hAγ : A * (mahlerRingEquiv p K).symm
+      (Ring.inverse (PowerSeries.C (ζ ^ (p * m))
+        * (1 + PowerSeries.X) - 1)) = 1 := by
+    rw [hA, ← hAd, ← map_mul, Ring.mul_inverse_cancel _ humA, map_one]
+  have hAunit : IsUnit A := by
+    rw [hA, ← hAd]
+    exact humA.map (mahlerRingEquiv p K).symm
+  exact hAunit.mul_left_cancel (hkey.symm.trans hAγ.symm)
+
+omit [CharZero K] in
 /-- L5.2.4 (RJW Lem 5.10, TeX 1812–1813): "We have `ψ(F_η) = η(p)F_η`."
 Proved by the recorded ξ-free route (decomposition L5.2.4: γ-telescope +
-projection formula + reindexing `c ↦ pc` on `(ℤ/D)^×`). -/
+projection formula + reindexing `c ↦ pc` on `(ℤ/D)^×`; primitivity of `η`
+is not needed). -/
 theorem psi_muEtaCleared {D : ℕ} [NeZero D] (hD1 : 1 < D)
-    {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
+    {η : DirichletCharacter (integerRing K) D}
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) :
     psi p K (muEtaCleared p K η hζ hD)
-      = η ((p : ℕ) : ZMod D) • muEtaCleared p K η hζ hD := by sorry
+      = η ((p : ℕ) : ZMod D) • muEtaCleared p K η hζ hD := by
+  classical
+  haveI : Fact (1 < D) := ⟨hD1⟩
+  set g : ZMod D → MeasureR K ℤ_[p] := fun x =>
+    (mahlerRingEquiv p K).symm
+      (Ring.inverse (PowerSeries.C (ζ ^ x.val) * (1 + PowerSeries.X) - 1))
+    with hgdef
+  -- μ̃ as the ZMod-indexed weighted sum of the `γ`s
+  have hmu : muEtaCleared p K η hζ hD = -∑ x : ZMod D, η⁻¹ x • g x := by
+    rw [muEtaCleared, map_neg, map_sum, neg_inj]
+    refine Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod D)) (fun x => x.val)
+      ?_ ?_ ?_ ?_ ?_
+    · intro c _
+      exact Finset.mem_univ _
+    · intro x _
+      exact Finset.mem_range.mpr (ZMod.val_lt x)
+    · intro c hc
+      exact ZMod.val_natCast_of_lt (Finset.mem_range.mp hc)
+    · intro x _
+      exact ZMod.natCast_zmod_val x
+    · intro c hc
+      rw [show g ((c : ℕ) : ZMod D) = (mahlerRingEquiv p K).symm
+            (Ring.inverse (PowerSeries.C (ζ ^ (((c : ℕ) : ZMod D)).val)
+              * (1 + PowerSeries.X) - 1)) from rfl,
+        ZMod.val_natCast_of_lt (Finset.mem_range.mp hc),
+        ← PowerSeries.smul_eq_C_mul,
+        show (mahlerRingEquiv p K).symm ((η⁻¹ ((c : ℕ) : ZMod D)) •
+            Ring.inverse (PowerSeries.C (ζ ^ c) * (1 + PowerSeries.X) - 1))
+          = (η⁻¹ ((c : ℕ) : ZMod D)) • (mahlerRingEquiv p K).symm
+              (Ring.inverse (PowerSeries.C (ζ ^ c)
+                * (1 + PowerSeries.X) - 1)) from
+          map_smul (mahlerLinearEquiv p K).symm _ _]
+  -- ψ acts on the family by the index shift `x ↦ p·x`
+  have hred : ∀ a : ℕ, ζ ^ a = ζ ^ (a % D) := fun a => by
+    conv_lhs => rw [← Nat.div_add_mod a D]
+    rw [pow_add, pow_mul, hζ.pow_eq_one, one_pow, one_mul]
+  have hpsig : ∀ x : ZMod D, x ≠ 0 →
+      psi p K (g x) = g (((p : ℕ) : ZMod D) * x) := by
+    intro x hx
+    have hm : ¬ D ∣ x.val := by
+      intro h
+      exact hx ((ZMod.val_eq_zero x).mp
+        (Nat.eq_zero_of_dvd_of_lt h (ZMod.val_lt x)))
+    have hval : (((p : ℕ) : ZMod D) * x).val = (p * x.val) % D := by
+      rw [show ((p : ℕ) : ZMod D) * x = ((p * x.val : ℕ) : ZMod D) from by
+          push_cast [ZMod.natCast_val, ZMod.cast_id]
+          rfl,
+        ZMod.val_natCast]
+    rw [show g x = (mahlerRingEquiv p K).symm
+          (Ring.inverse (PowerSeries.C (ζ ^ x.val)
+            * (1 + PowerSeries.X) - 1)) from rfl,
+      psi_symm_inverse_denom hζ hD hm,
+      show g (((p : ℕ) : ZMod D) * x) = (mahlerRingEquiv p K).symm
+          (Ring.inverse (PowerSeries.C (ζ ^ ((((p : ℕ) : ZMod D) * x).val))
+            * (1 + PowerSeries.X) - 1)) from rfl,
+      show ζ ^ (p * x.val) = ζ ^ ((((p : ℕ) : ZMod D) * x).val) from by
+        rw [hval, ← hred]]
+  -- the unit `p` reindexes the sum, twisting the weight by `η(p)`
+  obtain ⟨u, hpu⟩ : IsUnit ((p : ℕ) : ZMod D) :=
+    (ZMod.isUnit_iff_coprime p D).mpr ((hp.out.coprime_iff_not_dvd).mpr hD)
+  have hweight : ∀ y : ZMod D,
+      η⁻¹ (((u⁻¹ : (ZMod D)ˣ) : ZMod D) * y)
+        = η ((p : ℕ) : ZMod D) * η⁻¹ y := by
+    intro y
+    rw [map_mul]
+    congr 1
+    rw [MulChar.inv_apply, Ring.inverse_unit u⁻¹, inv_inv, hpu]
+  -- assemble: push ψ through the (negated) sum and reindex
+  have hψneg : ∀ ν : MeasureR K ℤ_[p], psi p K (-ν) = -psi p K ν := fun ν => by
+    rw [← zero_sub, psi_sub, psi_zero, zero_sub]
+  rw [hmu, hψneg, psi_sum,
+    show ∑ x : ZMod D, psi p K (η⁻¹ x • g x)
+        = ∑ x : ZMod D, η⁻¹ x • g (((p : ℕ) : ZMod D) * x) from
+      Finset.sum_congr rfl fun x _ => by
+        rcases eq_or_ne x 0 with rfl | hx
+        · rw [η⁻¹.map_nonunit not_isUnit_zero, zero_smul, psi_zero, zero_smul]
+        · rw [psi_smul, hpsig x hx],
+    show ∑ x : ZMod D, η⁻¹ x • g (((p : ℕ) : ZMod D) * x)
+        = ∑ y : ZMod D, (η ((p : ℕ) : ZMod D) * η⁻¹ y) • g y from by
+      refine Finset.sum_nbij' (fun x => ((p : ℕ) : ZMod D) * x)
+        (fun y => ((u⁻¹ : (ZMod D)ˣ) : ZMod D) * y) ?_ ?_ ?_ ?_ ?_
+      · intro x _
+        exact Finset.mem_univ _
+      · intro y _
+        exact Finset.mem_univ _
+      · intro x _
+        rw [← hpu, ← mul_assoc, ← Units.val_mul, inv_mul_cancel,
+          Units.val_one, one_mul]
+      · intro y _
+        rw [← hpu, ← mul_assoc, ← Units.val_mul, mul_inv_cancel,
+          Units.val_one, one_mul]
+      · intro x _
+        have h1 := hweight (((p : ℕ) : ZMod D) * x)
+        rw [show ((u⁻¹ : (ZMod D)ˣ) : ZMod D) * (((p : ℕ) : ZMod D) * x)
+            = x from by
+          rw [← hpu, ← mul_assoc, ← Units.val_mul, inv_mul_cancel,
+            Units.val_one, one_mul]] at h1
+        rw [← h1],
+    show ∑ y : ZMod D, (η ((p : ℕ) : ZMod D) * η⁻¹ y) • g y
+        = η ((p : ℕ) : ZMod D) • ∑ y : ZMod D, η⁻¹ y • g y from by
+      rw [Finset.smul_sum]
+      exact Finset.sum_congr rfl fun y _ => mul_smul _ _ _,
+    smul_neg]
 
 /-- L5.2.5 (RJW Lem 5.11, TeX 1831–1834): the unit-restricted moments carry
 the Euler factor: `∫_{ℤ_p^×} x^k dμ_η = (1−η(p)p^k)·L(η,−k)` (cleared). -/

@@ -2351,7 +2351,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   genBernoulliPowerSeries_mul, complex Mellin half quarantined unfomalised).
 
 ### [T513] ψ-invariance: ψ(μ_η) = η(p)·μ_η (Lem 5.10)
-- **Status**: open | **File**: NonTame.lean | **Depends on**: T511 | **Type**: lemma
+- **Status**: done | **File**: NonTame.lean | **Depends on**: T511 | **Type**: lemma
 - **Statement**: `psi_muEta` (L5.2.4).
 - **Proof sketch**: the **recorded ξ-free replan** (decomposition L5.2.4:
   γ-telescope + projection formula + (ℤ/D)ˣ reindex; end-to-end trace at
@@ -2363,6 +2363,39 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Blueprint**: wire the chapter's ψ-invariance node (locate label; prose
   note: proof via the cleared trace identity).
 - **Sizing**: source proof 10 lines ⟹ ~110 LOC.
+- **Progress**: DONE 2026-06-11, `psi_muEtaCleared` exactly by the ξ-free
+  route. NEW W-grade API (Tier-A spawns, proven inline): Toolbox.lean gains
+  `psi_phi_mul` (PROJECTION FORMULA ψ(φν·μ) = ν·ψμ — proof on test functions
+  through mul_apply/convInner; pointwise case split on y ∈ pℤ_p with
+  sd(px+y) = x+sd(y) via mul_shiftDiv_of_mem/shiftDiv_mul; NOTE no
+  IsUltrametricDist.norm_sub_le_max in mathlib — use norm_add_le_max with
+  −(px) + norm_neg), ψ-linearity pack (psi_add/smul/zero/sum — LinearMap.ext
+  one-liners), `psi_dirac_of_isUnit` (via isSupportedOn_units_iff, which sits
+  LATER in the file — order matters), `psi_dirac_zero`;
+  MahlerTransform.lean gains `mahlerTransform_smul`/`mahlerTransform_sub`
+  (via mahlerTransformₗ map_smul/map_sub). NonTame: `symm_denom_eq`
+  (w(1+T)−1 read back = w•δ₁ − δ₀; binomialSeries_nat at d = 1),
+  `psi_symm_inverse_denom` (ψ(γ_m) = γ_{pm}: telescope via geom_sum_mul +
+  Ring.mul_inverse_cancel transform-side, ψ(Σ_j ζ^{mj}δ_j) = δ₀ via
+  Finset.sum_eq_single + PadicInt.isUnit_iff/Padic.norm_natCast_eq_one_iff,
+  unit-cancel IsUnit.mul_left_cancel), then the ZMod-indexed assembly
+  (range↔ZMod nbij', ψ-shift x ↦ p̂x, unit-reindex). STATEMENT NOTE: hη
+  (primitivity) DROPPED — the proof never uses it (linter caught it;
+  generalisation recorded). LEAN NOTES: (1) `set g := fun x => ...` lambdas
+  do NOT beta-reduce under rw — bridge every g-application with
+  `show g a = <body> from rfl`; (2) keep `map_pow` OUT of rw-lists touching
+  C(ζ^k)·(map f ((1+X)^k)) — it splits the C-of-pow first; use targeted
+  `show map f ((1+X)^k) = (1+X)^k from by rw [map_pow, map_add, ...]`;
+  (3) `rw [← hpu]` with hpu : ↑hu.unit = p̂ is MOTIVE-ILLEGAL (hu's type
+  mentions p̂) — `obtain ⟨u, hpu⟩ := hu` first; (4) RingEquiv.symm has no
+  map_smul — bridge to (mahlerLinearEquiv p K).symm via `show ... from
+  map_smul ...` (defeq). Verification: lake build green (code + blueprint);
+  axioms = {propext, Classical.choice, Quot.sound} on psi_muEtaCleared,
+  psi_symm_inverse_denom, psi_phi_mul (one stale-LSP sorryAx artifact,
+  clean on re-verify — 4th occurrence). Blueprint: `interp-psi-twisted`
+  wired → psi_muEtaCleared + psi_phi_mul + psi_symm_inverse_denom with
+  prose note (μ_p-free cleared-telescope route vs the node's displayed
+  trace computation; η not required primitive).
 
 ### [CLEANUP-52] /cleanup on NonTame.lean (cadence: 3 tickets on file)
 - **Status**: open | **Depends on**: T513 | **Type**: cleanup

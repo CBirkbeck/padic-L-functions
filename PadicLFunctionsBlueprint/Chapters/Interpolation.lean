@@ -300,10 +300,21 @@ $`L(\eta,-k)` vanishes unless $`\eta(-1)(-1)^k = -1`, on which locus the prefact
 $`-(-1)^k\eta(-1)` equals $`1`; hence $`\int_{\Zp}x^k\cdot\mu_\eta = L(\eta,-k)`.
 :::
 
-:::lemma_ "interp-psi-twisted"
+:::lemma_ "interp-psi-twisted" (lean := "PadicLFunctions.MeasureR.psi_muEtaCleared, PadicLFunctions.MeasureR.psi_phi_mul, PadicLFunctions.MeasureR.psi_symm_inverse_denom")
 The power series $`F_\eta` of {uses "interp-mu-eta"}[] satisfies $`\psi(F_\eta) =
 \eta(p)\,F_\eta`, where $`\psi` is the trace-like operator on power series adjoint
 to $`\varphi : G(T) \mapsto G((1+T)^p - 1)`. This uses {uses "interp-mu-eta"}[].
+
+The formalised proof (`psi_muEtaCleared`, stated for the cleared measure)
+takes a $`\mu_p`-free route equivalent to the displayed trace computation:
+the cleared identity $`\varphi(\eps^{pc}\delta_1 - \delta_0)\cdot\gamma_c =
+\sum_{j<p}\eps^{cj}\delta_j` (geometric telescope), the projection formula
+$`\psi(\varphi(\nu)\mu) = \nu\,\psi(\mu)` (`psi_phi_mul`), and
+$`\psi(\delta_j) = 0` for `j` a unit give `psi_symm_inverse_denom`
+($`\psi(\gamma_c) = \gamma_{pc}`); the reindex `c ↦ pc` on $`\Z/D` then
+twists the weight by $`\eta(p)`. This avoids adjoining the $`p`-th roots
+of unity that the displayed $`\frac1p\sum_{\xi\in\mu_p}` computation needs,
+and `η` need not be primitive.
 :::
 
 :::proof "interp-psi-twisted"

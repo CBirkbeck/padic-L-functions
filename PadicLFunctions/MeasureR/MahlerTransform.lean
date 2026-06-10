@@ -191,6 +191,21 @@ def mahlerLinearEquiv :
       exact (apply_eq_tsum μ f).symm
     right_inv := mahlerTransform_ofPowerSeries (p := p) (K := K) }
 
+omit [CompleteSpace K] in
+@[simp]
+lemma mahlerTransform_smul (w : integerRing K) (μ : MeasureR K ℤ_[p]) :
+    mahlerTransform p K (w • μ)
+      = PowerSeries.C w * mahlerTransform p K μ := by
+  rw [← PowerSeries.smul_eq_C_mul]
+  exact map_smul (mahlerTransformₗ p K) w μ
+
+omit [CompleteSpace K] in
+@[simp]
+lemma mahlerTransform_sub (μ ν : MeasureR K ℤ_[p]) :
+    mahlerTransform p K (μ - ν)
+      = mahlerTransform p K μ - mahlerTransform p K ν :=
+  map_sub (mahlerTransformₗ p K) μ ν
+
 @[simp]
 lemma mahlerLinearEquiv_apply (μ : MeasureR K ℤ_[p]) :
     mahlerLinearEquiv p K μ = mahlerTransform p K μ := rfl

@@ -228,6 +228,43 @@ lemma psi_sub (μ ν : MeasureR K ℤ_[p]) :
     psi p K (μ - ν) = psi p K μ - psi p K ν :=
   LinearMap.ext fun _f => LinearMap.sub_apply μ ν _
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
+lemma psi_add (μ ν : MeasureR K ℤ_[p]) :
+    psi p K (μ + ν) = psi p K μ + psi p K ν :=
+  LinearMap.ext fun _f => LinearMap.add_apply μ ν _
+
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
+lemma psi_smul (r : integerRing K) (μ : MeasureR K ℤ_[p]) :
+    psi p K (r • μ) = r • psi p K μ :=
+  LinearMap.ext fun _f => LinearMap.smul_apply r μ _
+
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
+lemma psi_zero : psi p K (0 : MeasureR K ℤ_[p]) = 0 :=
+  LinearMap.ext fun _f => rfl
+
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
+lemma psi_sum {ι : Type*} (s : Finset ι) (μ : ι → MeasureR K ℤ_[p]) :
+    psi p K (∑ i ∈ s, μ i) = ∑ i ∈ s, psi p K (μ i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [psi_zero]
+  | insert a s ha ih => rw [Finset.sum_insert ha, psi_add, ih, Finset.sum_insert ha]
+
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
+/-- `ψ(δ_0) = δ_0`. -/
+lemma psi_dirac_zero : psi p K (dirac K ℤ_[p] 0) = dirac K ℤ_[p] 0 := by
+  refine LinearMap.ext fun f => ?_
+  change dirac K ℤ_[p] 0 (charFnCM K ℤ_[p] (PadicMeasure.isClopen_pZp p)
+    * f.comp (PadicMeasure.shiftDiv p)) = dirac K ℤ_[p] 0 f
+  rw [dirac_apply, dirac_apply, ContinuousMap.mul_apply, charFnCM_apply,
+    ContinuousMap.comp_apply,
+    Set.indicator_of_mem (show (0 : ℤ_[p]) ∈ {y : ℤ_[p] | ‖y‖ < 1} from by
+      simp [Set.mem_setOf_eq]),
+    Pi.one_apply, one_mul,
+    show PadicMeasure.shiftDiv p (0 : ℤ_[p]) = 0 from by
+      have h := PadicMeasure.shiftDiv_mul p (0 : ℤ_[p])
+      rwa [mul_zero] at h]
+
 /-- **RJW Cor 3.32** over `R`: supported on `ℤ_p^×` iff `ψμ = 0`
 (TeX 1161–1167). -/
 theorem isSupportedOn_units_iff_psi_eq_zero (μ : MeasureR K ℤ_[p]) :
@@ -240,6 +277,68 @@ theorem isSupportedOn_units_iff_psi_eq_zero (μ : MeasureR K ℤ_[p]) :
     exact hres.symm
   · intro h
     rw [res_units_eq, h, map_zero, sub_zero]
+
+/-- `ψ(δ_u) = 0` for a unit `u`: the Dirac measure at a unit is supported on
+`ℤ_p^×` (RJW Cor 3.32 instance). -/
+lemma psi_dirac_of_isUnit {u : ℤ_[p]} (hu : IsUnit u) :
+    psi p K (dirac K ℤ_[p] u) = 0 := by
+  rw [← isSupportedOn_units_iff_psi_eq_zero, IsSupportedOn]
+  refine LinearMap.ext fun f => ?_
+  change dirac K ℤ_[p] u (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * f)
+    = dirac K ℤ_[p] u f
+  rw [dirac_apply, dirac_apply, ContinuousMap.mul_apply, charFnCM_apply,
+    Set.indicator_of_mem (show u ∈ {y : ℤ_[p] | IsUnit y} from hu), Pi.one_apply,
+    one_mul]
+
+/-- **The projection formula** `ψ(φ(ν)·μ) = ν·ψ(μ)` (the cleared form of
+RJW's trace identity Eq. (3.12); used by §5.2's ξ-free route for
+`ψ(μ_η) = η(p)μ_η`, decomposition L5.2.4). Proof on test functions through
+the convolution formula: both sides integrate
+`y ↦ 1_{pℤ_p}(y)·f(x + y/p)` against `μ` in the inner variable. -/
+theorem psi_phi_mul (ν μ : MeasureR K ℤ_[p]) :
+    psi p K (phi p K ν * μ) = ν * psi p K μ := by
+  refine LinearMap.ext fun f => ?_
+  rw [show (psi p K (phi p K ν * μ)) f
+      = (phi p K ν * μ) (charFnCM K ℤ_[p] (PadicMeasure.isClopen_pZp p)
+          * f.comp (PadicMeasure.shiftDiv p)) from rfl,
+    mul_apply, mul_apply]
+  change ν ((convInner p K μ (charFnCM K ℤ_[p] (PadicMeasure.isClopen_pZp p)
+      * f.comp (PadicMeasure.shiftDiv p))).comp (PadicMeasure.mulCM p (p : ℤ_[p])))
+    = ν (convInner p K (psi p K μ) f)
+  congr 1
+  ext x
+  rw [ContinuousMap.comp_apply, convInner_apply, convInner_apply]
+  rw [show (psi p K μ) (f.comp (⟨fun y => x + y, by fun_prop⟩ : C(ℤ_[p], ℤ_[p])))
+      = μ (charFnCM K ℤ_[p] (PadicMeasure.isClopen_pZp p)
+          * (f.comp (⟨fun y => x + y, by fun_prop⟩ : C(ℤ_[p], ℤ_[p]))).comp
+              (PadicMeasure.shiftDiv p)) from rfl]
+  refine congrArg Subtype.val (congrArg μ (ContinuousMap.ext fun y => ?_))
+  simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply, charFnCM_apply,
+    PadicMeasure.mulCM, ContinuousMap.coe_mk]
+  by_cases hy : ‖y‖ < 1
+  · have hpx : ((p : ℤ_[p]) * x) ∈ {z : ℤ_[p] | ‖z‖ < 1} :=
+      PadicMeasure.mem_pZp_of_mul p
+    have hsum : ((p : ℤ_[p]) * x + y) ∈ {z : ℤ_[p] | ‖z‖ < 1} :=
+      lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt hpx hy)
+    rw [Set.indicator_of_mem hsum, Set.indicator_of_mem
+        (show y ∈ {z : ℤ_[p] | ‖z‖ < 1} from hy),
+      Pi.one_apply, Pi.one_apply, one_mul, one_mul]
+    congr 1
+    rw [show (p : ℤ_[p]) * x + y = (p : ℤ_[p]) * (x + PadicMeasure.shiftDiv p y)
+        from by rw [mul_add, PadicMeasure.mul_shiftDiv_of_mem p hy],
+      PadicMeasure.shiftDiv_mul]
+  · have hsum : ((p : ℤ_[p]) * x + y) ∉ {z : ℤ_[p] | ‖z‖ < 1} := by
+      intro hmem
+      refine hy ?_
+      have hpx : ‖(p : ℤ_[p]) * x‖ < 1 := PadicMeasure.mem_pZp_of_mul p
+      calc ‖y‖ = ‖(p : ℤ_[p]) * x + y + -((p : ℤ_[p]) * x)‖ := by
+            rw [show (p : ℤ_[p]) * x + y + -((p : ℤ_[p]) * x) = y from by ring]
+        _ ≤ max ‖(p : ℤ_[p]) * x + y‖ ‖-((p : ℤ_[p]) * x)‖ :=
+            IsUltrametricDist.norm_add_le_max _ _
+        _ = max ‖(p : ℤ_[p]) * x + y‖ ‖(p : ℤ_[p]) * x‖ := by rw [norm_neg]
+        _ < 1 := max_lt hmem hpx
+    rw [Set.indicator_of_notMem hsum, Set.indicator_of_notMem
+      (show y ∉ {z : ℤ_[p] | ‖z‖ < 1} from hy), zero_mul, zero_mul]
 
 end phipsi
 
