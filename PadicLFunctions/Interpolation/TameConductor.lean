@@ -813,17 +813,97 @@ theorem twist_muA_moments {n : ℕ} (hn : 1 ≤ n)
   push_cast
   ring
 
+/-- Multiplying `ι(ζ-numerator)` by `x` recovers the unit-restriction of
+`μ_a` (the `x⁻¹`-shift, RJW eq. 4.11 transported through `ι`). -/
+lemma cmul_powCM_one_iota_zetaNum (a : ℕ) :
+    PadicMeasure.cmul p (PadicMeasure.powCM p 1)
+        (PadicMeasure.iota p (PadicMeasure.zetaNum p a))
+      = PadicMeasure.res p (PadicMeasure.isClopen_units p)
+          (PadicMeasure.muA p a) := by
+  rw [← PadicMeasure.iota_muAUnits]
+  refine LinearMap.ext fun f => ?_
+  change PadicMeasure.muAUnits p a
+      (PadicMeasure.invCM p
+        * ((PadicMeasure.powCM p 1 * f).comp (PadicMeasure.unitsValCM p)))
+    = PadicMeasure.muAUnits p a (f.comp (PadicMeasure.unitsValCM p))
+  congr 1
+  ext u
+  change ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * ((u : ℤ_[p]) ^ 1 * f ((u : ℤ_[p])))
+    = f ((u : ℤ_[p]))
+  rw [pow_one, ← mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mul]
+
 /-- **RJW Theorem 5.1**, θ-form — the source's own engine (TeX 1757–1761:
 "`∫_{ℤ_p^×}χ(x)x^k · x^{-1}μ_a = −(1−χ(a)a^k)L(χ,1−k)`"): the χ-twisted
 `k`-th moment of the base change of the §4 unit-side measure
-`zetaNum a = x⁻¹·Res_{ℤ_p^×}(μ_a)` is `−(1−χ(a)a^k)·L(χ,1−k)`. -/
+`zetaNum a = x⁻¹·Res_{ℤ_p^×}(μ_a)` is `−(1−χ(a)a^k)·L(χ,1−k)`.
+
+`hζ` mirrors the source's ambient `ε_{p^n}` (statement replan, as in
+`twist_muA_moments`). -/
 theorem tame_conductor_theta {n : ℕ} (hn : 1 ≤ n)
     {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n))
     {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a) {k : ℕ} (hk : 0 < k) :
     ((baseChange p K (PadicMeasure.iota p (PadicMeasure.zetaNum p a))
         (χ.toContinuousMapZp * powCM p K k) : integerRing K) : K)
       = -(1 - (χ (a : ZMod (p ^ n)) : K) * (a : K) ^ k)
-          * LvalNeg (toFieldChar χ) (k - 1) := by sorry
+          * LvalNeg (toFieldChar χ) (k - 1) := by
+  -- split one power of `x` off the test function
+  have hsplit : χ.toContinuousMapZp * powCM p K k
+      = algCM K (PadicMeasure.powCM p 1)
+        * (χ.toContinuousMapZp * powCM p K (k - 1)) := by
+    ext x
+    refine congrArg Subtype.val ?_
+    change χ.toContinuousMapZp x * algebraMap ℤ_[p] (integerRing K) (x ^ k)
+      = algebraMap ℤ_[p] (integerRing K) (x ^ 1)
+        * (χ.toContinuousMapZp x * algebraMap ℤ_[p] (integerRing K) (x ^ (k - 1)))
+    rw [pow_one,
+      show x ^ k = x ^ (k - 1) * x from by rw [← pow_succ, Nat.sub_add_cancel hk],
+      map_mul]
+    ring
+  -- shift through the base-changed measure and restore `μ_a`
+  rw [hsplit,
+    show baseChange p K (PadicMeasure.iota p (PadicMeasure.zetaNum p a))
+        (algCM K (PadicMeasure.powCM p 1)
+          * (χ.toContinuousMapZp * powCM p K (k - 1)))
+      = cmul p K (algCM K (PadicMeasure.powCM p 1))
+          (baseChange p K (PadicMeasure.iota p (PadicMeasure.zetaNum p a)))
+          (χ.toContinuousMapZp * powCM p K (k - 1)) from rfl,
+    ← baseChange_cmul, cmul_powCM_one_iota_zetaNum, baseChange_res]
+  -- restriction is invisible to the χ-twist
+  have hres : res p K (PadicMeasure.isClopen_units p)
+        (baseChange p K (PadicMeasure.muA p a))
+        (χ.toContinuousMapZp * powCM p K (k - 1))
+      = twist p K χ.toContinuousMapZp
+          (baseChange p K (PadicMeasure.muA p a)) (powCM p K (k - 1)) := by
+    have hcomm : twist p K χ.toContinuousMapZp
+        (res p K (PadicMeasure.isClopen_units p)
+          (baseChange p K (PadicMeasure.muA p a)))
+        = res p K (PadicMeasure.isClopen_units p)
+            (twist p K χ.toContinuousMapZp
+              (baseChange p K (PadicMeasure.muA p a))) := by
+      refine LinearMap.ext fun h => ?_
+      change baseChange p K (PadicMeasure.muA p a)
+          (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p)
+            * (χ.toContinuousMapZp * h))
+        = baseChange p K (PadicMeasure.muA p a)
+            (χ.toContinuousMapZp
+              * (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * h))
+      congr 1
+      ring
+    calc res p K (PadicMeasure.isClopen_units p)
+          (baseChange p K (PadicMeasure.muA p a))
+          (χ.toContinuousMapZp * powCM p K (k - 1))
+        = twist p K χ.toContinuousMapZp
+            (res p K (PadicMeasure.isClopen_units p)
+              (baseChange p K (PadicMeasure.muA p a))) (powCM p K (k - 1)) := rfl
+      _ = res p K (PadicMeasure.isClopen_units p)
+            (twist p K χ.toContinuousMapZp
+              (baseChange p K (PadicMeasure.muA p a))) (powCM p K (k - 1)) := by
+          rw [hcomm]
+      _ = twist p K χ.toContinuousMapZp
+            (baseChange p K (PadicMeasure.muA p a)) (powCM p K (k - 1)) := by
+          rw [twist_res_units (p := p) (K := K) hn]
+  rw [hres, twist_muA_moments hn hχ hζ hpa (k - 1), Nat.sub_add_cancel hk]
 
 /-- **RJW Theorem 5.1** (`thm:tame conductor`, TeX 1619–1622), witness form
 mirroring `PadicMeasure.kubotaLeopoldt`'s encoding: for every unit `b` and
