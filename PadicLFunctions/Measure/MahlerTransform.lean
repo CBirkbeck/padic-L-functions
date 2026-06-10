@@ -125,7 +125,7 @@ noncomputable def ofPowerSeries (g : PowerSeries ℤ_[p]) : PadicMeasure p ℤ_[
 /-- `Δⁿ(binom(·,k))(0) = δ_{nk}` over `ℤ_p`: transported from mathlib's
 `fwdDiff_iter_choose_zero` (over `ℕ → ℤ`) along the finite-sum formula for iterated
 forward differences. -/
-private lemma fwdDiff_iter_mahler_zero (n k : ℕ) :
+lemma fwdDiff_iter_mahler_zero (n k : ℕ) :
     Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0 = if n = k then 1 else 0 := by
   have key : Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0
       = ((Δ_[1]^[n] (fun x => (x.choose k : ℤ)) 0 : ℤ) : ℤ_[p]) := by

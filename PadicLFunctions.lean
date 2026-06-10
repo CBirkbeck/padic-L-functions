@@ -12,6 +12,7 @@ import PadicLFunctions.KubotaLeopoldt.MuA
 import PadicLFunctions.KubotaLeopoldt.ZetaP
 import PadicLFunctions.Coefficients
 import PadicLFunctions.MeasureR.Basic
+import PadicLFunctions.MeasureR.MahlerTransform
 import PadicLFunctions.Interpolation.Characters
 import PadicLFunctions.Interpolation.GenBernoulli
 import PadicLFunctions.Interpolation.GenBernoulliComplex

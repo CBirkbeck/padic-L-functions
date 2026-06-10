@@ -1612,7 +1612,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sources**: RJW Def 3.6 TeX 755–765 (§3 tree quotes).
 
 ### [TW3] Widen MahlerTransform.lean + Convolution.lean
-- **Status**: open | **Depends on**: TW2 | **Type**: refactor
+- **Status**: in_progress (2026-06-10T17:50Z) | **Depends on**: TW2 | **Type**: refactor
 - **Contract**: W-r3 — mathlib `mahlerEquiv` is already E-general; re-parametrise
   `mahlerCoeff/mahlerTransform/ofPowerSeries/mahlerLinearEquiv/mahlerRingEquiv`
   and the convolution transport to R. Re-check each `PadicInt.*`-specific call
