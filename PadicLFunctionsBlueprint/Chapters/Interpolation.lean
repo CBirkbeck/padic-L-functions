@@ -208,7 +208,7 @@ genuine measure interpolating the twisted values $`L(\chi\eta, 1-k)`. Because
 $`L`-functions of non-trivial characters are entire, no smoothing factor is needed
 and one obtains a measure rather than a pseudo-measure.
 
-:::definition "interp-mu-eta"
+:::definition "interp-mu-eta" (lean := "PadicLFunctions.MeasureR.muEtaCleared, PadicLFunctions.MeasureR.mahlerTransform_muEtaCleared, PadicLFunctions.MeasureR.isUnit_root_mul_one_add_X_sub_one, PadicLFunctions.MeasureR.gaussSum_isUnit_of_coprime")
 Let $`D > 1` be coprime to $`p` and $`\eta` a primitive Dirichlet character of
 conductor $`D`. Because no smoothing factor is needed (the relevant $`L`-function
 is entire), set
@@ -226,6 +226,16 @@ $`G(\eta)G(\eta^{-1}) = \eta(-1)D` with $`D` coprime to $`p`, and $`\eps_D^c - 1
 \in \cO_L^\times` (its norm divides $`D`). Let $`\mu_\eta \in \Lam(\Zp)` be the
 measure with Mahler transform $`\Am_{\mu_\eta} = F_\eta`. This uses
 {uses "interp-gauss-sum"}[] and {uses "mahler-transform"}[].
+
+In the formalisation the measure is carried in cleared form:
+`muEtaCleared` is $`-G(\eta^{-1})\,F_\eta` read back through the Mahler
+isomorphism (`mahlerTransform_muEtaCleared`), so the Gauss-sum
+normalisation appears explicitly in each statement rather than as a
+division in the definition. The two unit facts of the node are
+`isUnit_root_mul_one_add_X_sub_one` ($`(1+T)\eps_D^c-1 \in
+\cO_L[[T]]^\times`) and `gaussSum_isUnit_of_coprime` ($`G(\eta^{-1}) \in
+\cO_L^\times`); the sum ranges over all of $`\Z/D\Z`, the non-unit terms
+vanishing since $`\eta^{-1}` is zero there.
 :::
 
 :::theorem "interp-nontame"

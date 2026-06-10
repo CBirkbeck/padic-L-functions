@@ -623,13 +623,13 @@ end fieldBridge
 
 omit [CompleteSpace K] [CharZero K] [NormedAlgebra ℚ_[p] K] in
 /-- The `K`-coercion of the integral Gauss sum is the `K`-valued Gauss sum of
-the induced character. -/
-lemma coe_gaussSum_zmodChar {n : ℕ}
-    (χ : DirichletCharacter (integerRing K) (p ^ n)) {ζ : integerRing K}
-    (hζ : IsPrimitiveRoot ζ (p ^ n)) (hζK : IsPrimitiveRoot ((ζ : K)) (p ^ n)) :
-    ((gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hζ.pow_eq_one) : integerRing K) : K)
+the induced character (any modulus). -/
+lemma coe_gaussSum_zmodChar {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter (integerRing K) N) {ζ : integerRing K}
+    (hζ : IsPrimitiveRoot ζ N) (hζK : IsPrimitiveRoot ((ζ : K)) N) :
+    ((gaussSum χ⁻¹ (AddChar.zmodChar N hζ.pow_eq_one) : integerRing K) : K)
       = gaussSum (toFieldChar χ)⁻¹
-          (AddChar.zmodChar (p ^ n) hζK.pow_eq_one) := by
+          (AddChar.zmodChar N hζK.pow_eq_one) := by
   rw [gaussSum, gaussSum, AddSubmonoidClass.coe_finsetSum]
   refine Finset.sum_congr rfl fun c _ => ?_
   push_cast

@@ -31,13 +31,39 @@ namespace MeasureR
 
 variable {p K}
 
+omit [CompleteSpace K] [CharZero K] in
 /-- L5.2.1: for `ζ` a primitive `D`-th root of unity with `p ∤ D` and
 `D ∤ c`, the power series `ζ^c·(1+X) − 1` is a unit of `R⟦X⟧` (constant
 coefficient `ζ^c − 1` is a unit by W3; TeX 1798). -/
 theorem isUnit_root_mul_one_add_X_sub_one {ζ : integerRing K} {D : ℕ}
     (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) {c : ℕ} (hc : ¬ D ∣ c) :
     IsUnit ((PowerSeries.C (ζ ^ c)) * (1 + PowerSeries.X) - 1 :
-      PowerSeries (integerRing K)) := by sorry
+      PowerSeries (integerRing K)) := by
+  rw [PowerSeries.isUnit_iff_constantCoeff]
+  simp only [map_sub, map_mul, map_add, map_one, PowerSeries.constantCoeff_C,
+    PowerSeries.constantCoeff_X, add_zero, mul_one]
+  refine integerRing.isUnit_of_norm_eq_one ?_
+  have hζK : IsPrimitiveRoot ((ζ : K)) D :=
+    hζ.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  simpa using hζK.norm_pow_sub_one_eq_one (p := p) hD hc
+
+omit [CompleteSpace K] [CharZero K] in
+/-- The Gauss sum `G(η⁻¹)` of a primitive character of conductor `D` coprime
+to `p` is a unit of the integer ring (TeX 1798: "the Gauss sum is a `p`-adic
+unit (indeed, we have `G(η)G(η⁻¹) = η(−1)D` and `D` is coprime to `p`)"). -/
+theorem gaussSum_isUnit_of_coprime {D : ℕ} [NeZero D]
+    {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) :
+    IsUnit (gaussSum η⁻¹ (AddChar.zmodChar D hζ.pow_eq_one)) := by
+  have hζK : IsPrimitiveRoot ((ζ : K)) D :=
+    hζ.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  refine integerRing.isUnit_of_norm_eq_one ?_
+  rw [coe_gaussSum_zmodChar η hζ hζK]
+  have hηK : (toFieldChar η).IsPrimitive :=
+    (DirichletCharacter.isPrimitive_ringHomComp_iff η
+      (fun _ _ h => Subtype.ext h)).mpr hη
+  exact norm_gaussSum_eq_one K
+    ((DirichletCharacter.conductor_inv _).trans hηK) hD hζK
 
 variable (p K)
 
@@ -55,6 +81,19 @@ def muEtaCleared {D : ℕ} [NeZero D] (η : DirichletCharacter (integerRing K) D
           Ring.inverse ((PowerSeries.C (ζ ^ c)) * (1 + PowerSeries.X) - 1)))
 
 variable {p K}
+
+omit [CharZero K] in
+/-- The Mahler transform of `muEtaCleared` is the defining series `−G(η⁻¹)F_η`
+(EquationFeta, TeX 1793–1795, cleared of its Gauss-sum denominator). -/
+@[simp]
+lemma mahlerTransform_muEtaCleared {D : ℕ} [NeZero D]
+    (η : DirichletCharacter (integerRing K) D) {ζ : integerRing K}
+    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) :
+    mahlerTransform p K (muEtaCleared p K η hζ hD)
+      = -(∑ c ∈ Finset.range D,
+          PowerSeries.C (η⁻¹ (c : ZMod D)) *
+            Ring.inverse ((PowerSeries.C (ζ ^ c)) * (1 + PowerSeries.X) - 1)) :=
+  (mahlerRingEquiv p K).apply_symm_apply _
 
 /-- L5.2.3 (RJW Lem 5.9, TeX 1801–1804): the moments of `μ_η` are the
 `L`-values: `G(η⁻¹) · ∫x^k dμ_η`-cleared form,

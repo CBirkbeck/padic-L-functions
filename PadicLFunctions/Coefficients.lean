@@ -125,6 +125,16 @@ lemma charZero_of_qpAlgebra (q : ℕ) [Fact q.Prime] {M : Type*} [NormedField M]
     [NormedAlgebra ℚ_[q] M] : CharZero M :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[q] M).injective
 
+omit [NormedAlgebra ℚ_[p] L] [CompleteSpace L] in
+/-- An element of the integer ring of norm one is a unit: its field inverse
+again has norm one, hence lies in the integer ring. -/
+theorem integerRing.isUnit_of_norm_eq_one {x : integerRing L}
+    (hx : ‖(x : L)‖ = 1) : IsUnit x := by
+  have hx0 : (x : L) ≠ 0 := norm_ne_zero_iff.1 (by rw [hx]; exact one_ne_zero)
+  refine IsUnit.of_mul_eq_one
+    ⟨(x : L)⁻¹, show ‖(x : L)⁻¹‖ ≤ 1 by rw [norm_inv, hx, inv_one]⟩ ?_
+  exact Subtype.ext (mul_inv_cancel₀ hx0)
+
 omit [IsUltrametricDist L] [CompleteSpace L] in
 /-- In a normed `ℚ_[p]`-algebra, `‖p‖ = p⁻¹ < 1` (the algebra map is an
 isometry on scalars). -/

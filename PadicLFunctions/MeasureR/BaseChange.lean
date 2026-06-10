@@ -117,11 +117,13 @@ theorem baseChange_algCM (μ : PadicMeasure p ℤ_[p]) (f : C(ℤ_[p], ℤ_[p]))
         (hsum.map_tsum (algebraMap ℤ_[p] (integerRing K))
           (integerRing.isometry_algebraMap p K).continuous).symm
 
+omit [CompleteSpace K] in
 /-- `algCM` is multiplicative. -/
 lemma algCM_mul (f g : C(ℤ_[p], ℤ_[p])) :
     algCM K (f * g) = algCM K f * algCM K g :=
   ContinuousMap.ext fun x => by simp [algCM_apply]
 
+omit [CompleteSpace K] in
 /-- The inclusion of a `ℤ_p`-valued indicator is the `R`-valued indicator. -/
 lemma algCM_charFn {U : Set ℤ_[p]} (hU : IsClopen U) :
     algCM K (LocallyConstant.charFn ℤ_[p] hU : C(ℤ_[p], ℤ_[p]))
@@ -134,6 +136,7 @@ lemma algCM_charFn {U : Set ℤ_[p]} (hU : IsClopen U) :
       map_one]
   · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, map_zero]
 
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 /-- A locally constant `R`-valued function is an `R`-linear combination of
 indicators of its (clopen) fibres. -/
 lemma locallyConstant_eq_sum_smul_charFn (Φ : LocallyConstant ℤ_[p] (integerRing K)) :

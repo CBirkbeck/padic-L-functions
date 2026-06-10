@@ -2283,13 +2283,38 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   unchanged on twist_muA_moments and PadicMeasure.kubotaLeopoldt.
 
 ### [T511] F_η and μ_η (conductor D coprime to p)
-- **Status**: open | **File**: Interpolation/NonTame.lean (TW6 skeleton) | **Depends on**: TW6, T501
+- **Status**: done | **File**: Interpolation/NonTame.lean (TW6 skeleton) | **Depends on**: TW6, T501
 - **Type**: def + lemmas
 - **Statement**: `etaDenomUnit` (L5.2.1), `muEta` + transform characterisation
   (L5.2.2; G(η⁻¹)-unit via T501's norm lemma).
 - **Sources**: TeX 1793–1798 (verbatim at L5.2.2).
 - **Blueprint**: wire `interp-mu-eta`.
 - **Sizing**: ~70 LOC.
+- **Progress**: DONE 2026-06-10. Four declarations: (1) NEW
+  `integerRing.isUnit_of_norm_eq_one` (Coefficients.lean — norm-1 element of
+  the unit ball is a unit; field inverse has norm 1; NOTE mathlib renamed
+  `isUnit_of_mul_eq_one` → `IsUnit.of_mul_eq_one` with {a} implicit, (b)
+  explicit, and an [IsDedekindFiniteMonoid] instance arg); (2)
+  `isUnit_root_mul_one_add_X_sub_one` = L5.2.1/etaDenomUnit via
+  `PowerSeries.isUnit_iff_constantCoeff` + W3
+  (`IsPrimitiveRoot.norm_pow_sub_one_eq_one`, needs (p := p) named since p is
+  implicit there) + prim-root coe-transport `map_of_injective (f :=
+  (integerRing K).subtype)`; (3) `gaussSum_isUnit_of_coprime` (the L5.2.2
+  sub-leaf) via GENERALISED `coe_gaussSum_zmodChar` (TameConductor.lean:
+  p^n → arbitrary [NeZero N], proof verbatim modulus-agnostic, call sites
+  unchanged) + `norm_gaussSum_eq_one K` (L explicit section var!) +
+  conductor_inv/isPrimitive_ringHomComp_iff primitivity transport; (4)
+  `mahlerTransform_muEtaCleared` @[simp] characterisation 𝓐(muEtaCleared) =
+  −Σ_c η⁻¹(c)·(ζ^c(1+X)−1)⁻¹ via `(mahlerRingEquiv p K).apply_symm_apply`
+  (muEtaCleared def itself was sorry-free in the TW6 skeleton). Cleanup
+  inline: omits added (also retro-fixed 3 unused-section-var warnings in
+  BaseChange.lean from T510's additions), show-from wrapper golfed to direct
+  rw, have-then-simpa collapsed. Verification: lake build green project-wide;
+  axioms = {propext, Classical.choice, Quot.sound} on all four (one stale-LSP
+  empty-axioms artifact, clean on re-verify). Blueprint: `interp-mu-eta`
+  wired → all four decls with prose note (cleared-form encoding
+  −G(η⁻¹)F_η, full ℤ/D sum with η⁻¹-vanishing off units); blueprint build
+  green (3833 jobs).
 
 ### [T512] Moments of μ_η (Lem 5.9, p-adic half)
 - **Status**: open | **File**: NonTame.lean | **Depends on**: T511, T504 | **Type**: lemma
