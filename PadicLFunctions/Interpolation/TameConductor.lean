@@ -905,6 +905,63 @@ theorem tame_conductor_theta {n : ℕ} (hn : 1 ≤ n)
           rw [twist_res_units (p := p) (K := K) hn]
   rw [hres, twist_muA_moments hn hχ hζ hpa (k - 1), Nat.sub_add_cancel hk]
 
+/-- Pushing a units-Dirac convolution through `ι` is the dilation `σ_w`. -/
+lemma iota_dirac_mul (w : ℤ_[p]ˣ) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    PadicMeasure.iota p (PadicMeasure.dirac p w * μ)
+      = PadicMeasure.sigma p w (PadicMeasure.iota p μ) := by
+  refine LinearMap.ext fun f => ?_
+  change (PadicMeasure.dirac p w * μ) (f.comp (PadicMeasure.unitsValCM p))
+    = PadicMeasure.iota p μ (f.comp (PadicMeasure.mulCM p ((w : ℤ_[p]ˣ) : ℤ_[p])))
+  rw [PadicMeasure.units_mul_apply, PadicMeasure.dirac_apply,
+    PadicMeasure.innerInt_apply]
+  rfl
+
+omit [CharZero K] in
+/-- Base change commutes with pushforward along `ℤ_p`-self-maps. -/
+theorem baseChange_pushforward (h : C(ℤ_[p], ℤ_[p])) (μ : PadicMeasure p ℤ_[p]) :
+    baseChange p K (PadicMeasure.pushforward p h μ)
+      = pushforward K ℤ_[p] ℤ_[p] h (baseChange p K μ) := by
+  refine ext_locallyConstant fun Φ => ?_
+  rw [locallyConstant_eq_sum_smul_charFn (K := K) Φ, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  rw [map_smul, map_smul]
+  congr 1
+  rw [← algCM_charFn (K := K) (Φ.isLocallyConstant.isClopen_fiber v),
+    show pushforward K ℤ_[p] ℤ_[p] h (baseChange p K μ)
+        (algCM K (LocallyConstant.charFn ℤ_[p]
+          (Φ.isLocallyConstant.isClopen_fiber v) : C(ℤ_[p], ℤ_[p])))
+      = baseChange p K μ ((algCM K (LocallyConstant.charFn ℤ_[p]
+          (Φ.isLocallyConstant.isClopen_fiber v) : C(ℤ_[p], ℤ_[p]))).comp h)
+      from rfl,
+    show (algCM K (LocallyConstant.charFn ℤ_[p]
+        (Φ.isLocallyConstant.isClopen_fiber v) : C(ℤ_[p], ℤ_[p]))).comp h
+      = algCM K ((LocallyConstant.charFn ℤ_[p]
+        (Φ.isLocallyConstant.isClopen_fiber v) : C(ℤ_[p], ℤ_[p])).comp h) from rfl,
+    baseChange_algCM, baseChange_algCM]
+  rfl
+
+omit [CompleteSpace K] [CharZero K] in
+/-- The character-monomial is a `w`-dilation eigenfunction:
+`(χ̃·x^k)(w·x) = χ̃(w)w^k·(χ̃·x^k)(x)`. -/
+lemma char_pow_comp_mulCM {n : ℕ} (χ : DirichletCharacter (integerRing K) (p ^ n))
+    (w : ℤ_[p]ˣ) (k : ℕ) :
+    (χ.toContinuousMapZp * powCM p K k).comp
+        (PadicMeasure.mulCM p ((w : ℤ_[p]ˣ) : ℤ_[p]))
+      = (χ.toContinuousMapZp ((w : ℤ_[p]))
+          * powCM p K k ((w : ℤ_[p])))
+        • (χ.toContinuousMapZp * powCM p K k) := by
+  ext x
+  refine congrArg Subtype.val ?_
+  change χ.toContinuousMapZp ((w : ℤ_[p]) * x)
+      * algebraMap ℤ_[p] (integerRing K) (((w : ℤ_[p]) * x) ^ k)
+    = (χ.toContinuousMapZp ((w : ℤ_[p]))
+        * algebraMap ℤ_[p] (integerRing K) ((w : ℤ_[p]) ^ k))
+      * (χ.toContinuousMapZp x * algebraMap ℤ_[p] (integerRing K) (x ^ k))
+  rw [DirichletCharacter.toContinuousMapZp_apply,
+    DirichletCharacter.toContinuousMapZp_apply,
+    DirichletCharacter.toContinuousMapZp_apply, map_mul, map_mul, mul_pow, map_mul]
+  ring
+
 /-- **RJW Theorem 5.1** (`thm:tame conductor`, TeX 1619–1622), witness form
 mirroring `PadicMeasure.kubotaLeopoldt`'s encoding: for every unit `b` and
 every measure-witness `ν` of `([b]−[1])·ζ_p`, the χ-twisted `k`-th moment of
