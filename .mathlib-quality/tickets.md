@@ -1984,10 +1984,17 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: source proof 12 lines ⟹ ~110 LOC.
 
 ### [CLEANUP-51] /cleanup on Twist.lean (cadence: 3 tickets)
-- **Status**: open | **Depends on**: T508 | **Type**: cleanup
+- **Status**: done | **Depends on**: T508 | **Type**: cleanup
+- **Progress**: DONE 2026-06-10 (inline during T506–T508 + final sweep): zero
+  diagnostics (all unused-section-var omits added, show→change, unused
+  hypotheses underscored), all lines ≤ 100, naming conventions verified,
+  docstrings on all public declarations, module docstring current. Golf note
+  for CLEANUP-FINAL: the two Continuous.ext_on-over-ℕ frames (T507/T508
+  hpoint) could share a `ContinuousMap.ext_natCast` helper if a third use
+  appears.
 
 ### [T509] Moments of the twisted measure (F_{χ,a}-values)
-- **Status**: open | **File**: Interpolation/TameConductor.lean (+GenBernoulli) | **Depends on**: CLEANUP-51, T504
+- **Status**: in_progress | **File**: Interpolation/TameConductor.lean (+GenBernoulli) | **Depends on**: CLEANUP-51, T504
 - **Type**: theorem cluster
 - **Statement**: `twistMuA_moments` per L5.1.10 (uniform formula via LvalNeg)
   + sub-leaves 10b (twisted F_a-expansion, cleared via 10c-product).
@@ -2000,6 +2007,29 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   reads the node and decides per rule 2, records.
 - **Sizing**: the big one — source spans TeX 1694–1740 ⟹ ~200 LOC across 3
   declarations.
+- **Progress** (2026-06-10, route analysis at execution start): the assembly
+  needs the substitution `F ↦ F(C(1+r)·(1+X) − 1)` as a RING HOM on
+  `(integerRing K)⟦X⟧` (the decomposition's PRIMARY eval₂ route for L5.1.6 —
+  T506 took the coefficientwise fallback, which does not compose through the
+  product-identities of the F_a algebra). Plan: (i) sub-step `substAffine`:
+  mathlib `PowerSeries.eval₂`-style topological evaluation
+  (Mathlib.RingTheory.PowerSeries.Evaluation — verify exact API: eval₂Hom /
+  HasEval) at `a := C(1+r)·(1+X) − 1 ∈ R⟦X⟦` over the Pi-topology
+  (WithPiTopology instances; R = integerRing K is complete + IsLinearTopology
+  by TW1/Coefficients.lean; `a` is topologically nilpotent since r is —
+  coefficientwise r-power bounds); (ii) upgrade: `mahlerTransform_charTwist'`:
+  `𝓐(κ_r μ) = substAffine r (𝓐 μ)` — coefficientwise from the T506 tsum
+  formula vs the eval₂-coefficient limit; (iii) per-c: apply substAffine to
+  §4's cleared F_a-identity (`one_add_X_pow_sub_one_mul_Fa`, base-changed to
+  K) to get the c-shifted cleared identities — NOTE: individual divisibility
+  `(1+X)ζ^c−1 ∣ (1+X)^{p^n}−1` is parity-free (geom-factorisation), the
+  Odd-M product formula (10c, `prod_primitiveRoot_mul_sub_one`) may be
+  avoidable; (iv) Σ_c with χ⁻¹-weights + T508 identifies
+  `G(χ⁻¹)·𝓐(twist χ̃ μ_a)`; (v) ∘(e^t−1) (formal, HasSubst ✓) + T504's
+  `genBernoulliPowerSeries_mul` + §4 bridge `constantCoeff_iterate_delQ` +
+  `apply_powCM` (MeasureR) extract the moment. Sub-steps (i)/(ii) are the next
+  concrete edits (new section in Twist.lean or a new SubstAffine.lean file —
+  prefer new file `PadicLFunctions/MeasureR/SubstAffine.lean`).
 
 ### [T510] **MILESTONE: RJW Theorem 5.1** — ∫χ(x)x^k·ζ_p = L(χ,1−k)
 - **Status**: open | **File**: TameConductor.lean | **Depends on**: CLEANUP-ALL-3
