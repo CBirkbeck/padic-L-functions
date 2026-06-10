@@ -99,7 +99,7 @@ The next observation turns the analytic object $`\fa` into a $`p`-adic power
 series. Under $`e^t = T+1` the operator $`d/dt` becomes
 $`\pa = (1+T)\frac{d}{dT}`.
 
-:::lemma_ "kl-define-Fa"
+:::lemma_ "kl-define-Fa" (lean := "PadicMeasure.constantCoeff_iterate_delQ")
 Under the substitution $`e^t = T+1`, the derivative $`d/dt` corresponds to the
 operator $`\pa = (1+T)\frac{d}{dT}`. Setting
 $$`\Fa(T) := \frac{1}{T} - \frac{a}{(1+T)^a - 1},`$$
@@ -151,7 +151,7 @@ on $`\Zp` whose Mahler transform is $`\Am_{\mua} = \Fa(T)`; this exists by
 of measures with $`\Zp[[T]]`.
 :::
 
-:::proposition "kl-mua-interpolation"
+:::proposition "kl-mua-interpolation" (lean := "PadicMeasure.muA_apply_powCM")
 For all $`k \ge 0`,
 $$`\int_{\Zp} x^k \cdot \mua = (-1)^k\,(1 - a^{k+1})\,\zeta(-k).`$$
 :::

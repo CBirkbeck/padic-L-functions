@@ -1104,7 +1104,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     mahlerTransform_sub/smul belong in Convolution.lean at next tooled cleanup.
 
 ### [T033] Bernoulli moments: `∫x^k dμ_a = (−1)^k(1−a^{k+1})ζ(−k)`
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
 - **Depends on**: T030, T031
 - **Parallel**: yes (with T032, T034 modulo deps)
@@ -1167,6 +1167,17 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   (Mellin half is §2) — add the rationale comment.
 - **Cleanup**: `/cleanup` the eight declarations immediately after.
 - **Progress**:
+  - 2026-06-10: DONE — 9 declarations (added map_derivativeFun helper): map_del,
+    hasSubst_exp_sub_one, derivativeFun_subst_exp (calc via derivative_subst — NB
+    mathlib's takes A *explicitly*: `derivative_subst ℚ_[p] hg`), constantCoeff_subst_exp
+    (finsum_eq_single at 0, Mv/PS-constantCoeff rfl-bridge), constantCoeff_iterate_
+    derivativeFun + _delQ (inductions), X_mul_subst_exp_Fa (multiply-and-cancel by
+    rescale a exp − 1, per decomposition L2.6 plan — worked exactly as planned),
+    muA_apply_powCM (final algebra: parity cases on (−1)^k + field_simp + push_cast +
+    ring; algebraMap-vs-Nat-cast needed map_add in the distribution simp). Axioms
+    standard (3 spot-checked incl. the theorem). Blueprint: kl-mua-interpolation →
+    muA_apply_powCM, kl-define-Fa → constantCoeff_iterate_delQ; builds green.
+    Cleanup: degraded mode — delQ-merge debt re-flagged for tooled pass.
 
 ### [T034] ψ-invariance: projection formula + `ψ(μ_a) = μ_a`
 - **Status**: open

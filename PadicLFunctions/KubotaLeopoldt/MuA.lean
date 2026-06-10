@@ -166,29 +166,60 @@ latter is generalised to arbitrary commutative rings — cleanup note in tickets
 def delQ (G : PowerSeries ℚ_[p]) : PowerSeries ℚ_[p] :=
   (1 + X) * PowerSeries.derivativeFun G
 
+lemma map_derivativeFun (F : PowerSeries ℤ_[p]) :
+    PowerSeries.map PadicInt.Coe.ringHom (PowerSeries.derivativeFun F)
+      = PowerSeries.derivativeFun (PowerSeries.map PadicInt.Coe.ringHom F) := by
+  ext n
+  simp [coeff_derivativeFun]
+
 lemma map_del (F : PowerSeries ℤ_[p]) :
     PowerSeries.map PadicInt.Coe.ringHom (del p F)
       = delQ p (PowerSeries.map PadicInt.Coe.ringHom F) := by
-  sorry
+  rw [del, delQ, map_mul, map_add, map_one, PowerSeries.map_X, map_derivativeFun]
 
-lemma hasSubst_exp_sub_one : HasSubst (exp ℚ_[p] - 1) := by
-  sorry
+lemma hasSubst_exp_sub_one : HasSubst (exp ℚ_[p] - 1) :=
+  HasSubst.of_constantCoeff_zero' (by simp)
 
 /-- Chain rule for the substitution `T = e^t − 1`: `d/dt (F(e^t−1)) = (∂F)(e^t−1)`.
 Source: RJW Lem. 4.3 ("the derivative `d/dt` becomes the operator `∂`"). -/
 lemma derivativeFun_subst_exp (F : PowerSeries ℚ_[p]) :
     PowerSeries.derivativeFun (F.subst (exp ℚ_[p] - 1))
       = (delQ p F).subst (exp ℚ_[p] - 1) := by
-  sorry
+  have hg := hasSubst_exp_sub_one p
+  have hone : (1 : PowerSeries ℚ_[p]).subst (exp ℚ_[p] - 1) = 1 := by
+    rw [← coe_substAlgHom hg, map_one]
+  have hder : d⁄dX ℚ_[p] (exp ℚ_[p] - 1) = exp ℚ_[p] := by
+    rw [map_sub, derivative_exp, Derivation.map_one_eq_zero, sub_zero]
+  calc PowerSeries.derivativeFun (F.subst (exp ℚ_[p] - 1))
+      = d⁄dX ℚ_[p] (F.subst (exp ℚ_[p] - 1)) := rfl
+    _ = (d⁄dX ℚ_[p] F).subst (exp ℚ_[p] - 1) * d⁄dX ℚ_[p] (exp ℚ_[p] - 1) :=
+        derivative_subst ℚ_[p] hg
+    _ = (delQ p F).subst (exp ℚ_[p] - 1) := by
+        rw [hder, delQ, subst_mul hg, subst_add hg, subst_X hg, hone]
+        ring_nf
+        rfl
 
 lemma constantCoeff_subst_exp (F : PowerSeries ℚ_[p]) :
     constantCoeff (F.subst (exp ℚ_[p] - 1)) = constantCoeff F := by
-  sorry
+  rw [show (constantCoeff (F.subst (exp ℚ_[p] - 1)) : ℚ_[p])
+      = MvPowerSeries.constantCoeff (F.subst (exp ℚ_[p] - 1)) from rfl,
+    constantCoeff_subst (hasSubst_exp_sub_one p),
+    finsum_eq_single _ 0 fun d hd => by
+      have h0 : MvPowerSeries.constantCoeff (exp ℚ_[p] - 1) = (0 : ℚ_[p]) := by
+        have h1 : PowerSeries.constantCoeff (exp ℚ_[p] - 1) = (0 : ℚ_[p]) := by simp
+        exact h1
+      rw [map_pow, h0, zero_pow hd, smul_zero]]
+  simp
 
 lemma constantCoeff_iterate_derivativeFun (k : ℕ) (G : PowerSeries ℚ_[p]) :
     constantCoeff (PowerSeries.derivativeFun^[k] G)
       = (k.factorial : ℚ_[p]) * coeff k G := by
-  sorry
+  induction k generalizing G with
+  | zero => simp [PowerSeries.coeff_zero_eq_constantCoeff]
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, ih, coeff_derivativeFun, Nat.factorial_succ]
+    push_cast
+    ring
 
 /-- `(∂^k F)(0) = k! · [t^k](F(e^t−1))`: evaluating iterated `∂` at `0` extracts
 Taylor coefficients after the exponential substitution (RJW eq. between Lem. 4.3
@@ -196,7 +227,13 @@ and Prop. 4.6). -/
 lemma constantCoeff_iterate_delQ (k : ℕ) (F : PowerSeries ℚ_[p]) :
     constantCoeff ((delQ p)^[k] F)
       = (k.factorial : ℚ_[p]) * coeff k (F.subst (exp ℚ_[p] - 1)) := by
-  sorry
+  induction k generalizing F with
+  | zero => simp [constantCoeff_subst_exp, PowerSeries.coeff_zero_eq_constantCoeff]
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, ih (delQ p F), ← derivativeFun_subst_exp,
+      coeff_derivativeFun, Nat.factorial_succ]
+    push_cast
+    ring
 
 /-- The Bernoulli evaluation `t·f_a(t) = B(t) − B(at)` where `B` is the Bernoulli
 generating function and `f_a = F_a(e^t−1)`: the algebraic content of RJW Lem. 4.2
@@ -204,13 +241,110 @@ generating function and `f_a = F_a(e^t−1)`: the algebraic content of RJW Lem. 
 lemma X_mul_subst_exp_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
     X * (PowerSeries.map PadicInt.Coe.ringHom (Fa p a)).subst (exp ℚ_[p] - 1)
       = bernoulliPowerSeries ℚ_[p] - rescale (a : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]) := by
-  sorry
+  have hg := hasSubst_exp_sub_one p
+  have haN : a ≠ 0 := fun h => hpa (h ▸ dvd_zero p)
+  have ha0 : ((a : ℕ) : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 haN
+  -- the cancellation factor e^{at} − 1 ≠ 0
+  have hreg : rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1 ≠ 0 := by
+    intro h
+    have h1 := congrArg (PowerSeries.coeff 1) h
+    rw [map_sub, coeff_rescale, PowerSeries.coeff_exp, PowerSeries.coeff_one] at h1
+    simp [Nat.factorial] at h1
+    exact haN h1
+  have hX : (substAlgHom hg) (X : PowerSeries ℚ_[p]) = exp ℚ_[p] - 1 := by
+    rw [show ⇑(substAlgHom hg) = PowerSeries.subst (exp ℚ_[p] - 1) from coe_substAlgHom hg]
+    exact subst_X hg
+  -- ℚ_p-side characterising identity (T031 mapped along ℤ_p → ℚ_p)
+  have hQ : ((1 + X) ^ a - 1) * PowerSeries.map PadicInt.Coe.ringHom (Fa p a)
+      = (∑ i ∈ Finset.range a, (1 + X) ^ i) - (a : PowerSeries ℚ_[p]) := by
+    have h0 := congrArg (PowerSeries.map PadicInt.Coe.ringHom)
+      (one_add_X_pow_sub_one_mul_Fa p hpa)
+    rw [map_mul, map_sub, map_pow, map_add, map_one, PowerSeries.map_X, map_sub,
+      map_natCast] at h0
+    rw [h0]
+    congr 1
+    simp only [geomSum, map_sum, map_pow, map_add, map_one, PowerSeries.map_X]
+  -- substitute T = e^t − 1: (e^{at} − 1) · f̂_a = Σ_{i<a} e^{it} − a
+  have hsub := congrArg (substAlgHom hg) hQ
+  simp only [map_mul, map_sub, map_pow, map_add, map_one, map_sum, map_natCast, hX,
+    show (1 : PowerSeries ℚ_[p]) + (exp ℚ_[p] - 1) = exp ℚ_[p] by ring,
+    exp_pow_eq_rescale_exp, coe_substAlgHom hg] at hsub
+  -- Bernoulli side: (B − rescale_a B)·(e^{at} − 1) = X·(Σ_{i<a} e^{it} − a)
+  have hb1 : bernoulliPowerSeries ℚ_[p] * (exp ℚ_[p] - 1) = X :=
+    bernoulliPowerSeries_mul_exp_sub_one ℚ_[p]
+  have hfac : rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1
+      = (exp ℚ_[p] - 1) * ∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]) := by
+    have h2 := geom_sum_mul (exp ℚ_[p]) a
+    simp only [exp_pow_eq_rescale_exp] at h2
+    rw [← h2]
+    ring
+  have hresc : rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p])
+      * (rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1) = (a : PowerSeries ℚ_[p]) * X := by
+    rw [show rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1
+        = rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p] - 1) by rw [map_sub, map_one],
+      ← map_mul, hb1, rescale_X, map_natCast]
+  have hB : (bernoulliPowerSeries ℚ_[p] - rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]))
+      * (rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1)
+      = X * ((∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]))
+        - (a : PowerSeries ℚ_[p])) := by
+    rw [sub_mul, hresc]
+    nth_rewrite 1 [hfac]
+    rw [← mul_assoc, hb1]
+    ring
+  refine mul_right_cancel₀ hreg ?_
+  calc X * (PowerSeries.map PadicInt.Coe.ringHom (Fa p a)).subst (exp ℚ_[p] - 1)
+      * (rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1)
+      = X * ((rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1)
+        * (PowerSeries.map PadicInt.Coe.ringHom (Fa p a)).subst (exp ℚ_[p] - 1)) := by
+        ring
+    _ = X * ((∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]))
+        - (a : PowerSeries ℚ_[p])) := by rw [hsub]
+    _ = (bernoulliPowerSeries ℚ_[p] - rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]))
+        * (rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1) := hB.symm
 
 /-- **RJW Prop. 4.6**: `∫_{ℤ_p} x^k dμ_a = (−1)^k (1 − a^{k+1}) ζ(−k)` in `ℚ_p`. -/
 theorem muA_apply_powCM {a : ℕ} (hpa : ¬ p ∣ a) (k : ℕ) :
     ((muA p a (powCM p k) : ℤ_[p]) : ℚ_[p])
       = (-1) ^ k * (1 - (a : ℚ_[p]) ^ (k + 1)) * ((zetaNeg k : ℚ) : ℚ_[p]) := by
-  sorry
+  rw [apply_powCM, mahlerTransform_muA,
+    show ((PowerSeries.constantCoeff ((del p)^[k] (Fa p a)) : ℤ_[p]) : ℚ_[p])
+      = PowerSeries.constantCoeff
+        (PowerSeries.map PadicInt.Coe.ringHom ((del p)^[k] (Fa p a))) from by
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+        ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
+      rfl]
+  have hiter : PowerSeries.map PadicInt.Coe.ringHom ((del p)^[k] (Fa p a))
+      = (delQ p)^[k] (PowerSeries.map PadicInt.Coe.ringHom (Fa p a)) := by
+    induction k with
+    | zero => rfl
+    | succ k ih =>
+      rw [Function.iterate_succ_apply', Function.iterate_succ_apply', map_del, ih]
+  rw [hiter, constantCoeff_iterate_delQ]
+  -- coefficient extraction from the Bernoulli identity
+  have hcoeff : coeff k ((PowerSeries.map PadicInt.Coe.ringHom (Fa p a)).subst (exp ℚ_[p] - 1))
+      = (1 - (a : ℚ_[p]) ^ (k + 1))
+        * algebraMap ℚ ℚ_[p] (bernoulli (k + 1) / (k + 1).factorial) := by
+    have h := congrArg (PowerSeries.coeff (k + 1)) (X_mul_subst_exp_Fa p hpa)
+    rw [coeff_succ_X_mul, map_sub, coeff_rescale,
+      show coeff (k + 1) (bernoulliPowerSeries ℚ_[p])
+        = algebraMap ℚ ℚ_[p] (bernoulli (k + 1) / (k + 1).factorial) from coeff_mk _ _] at h
+    rw [h]
+    ring
+  rw [hcoeff,
+    show ((zetaNeg k : ℚ) : ℚ_[p]) = algebraMap ℚ ℚ_[p] (zetaNeg k) from
+      (eq_ratCast _ _).symm,
+    zetaNeg]
+  simp only [map_div₀, map_mul, map_pow, map_neg, map_add, map_one, map_natCast]
+  have hfact : (((k + 1).factorial : ℕ) : ℚ_[p])
+      = ((k + 1 : ℕ) : ℚ_[p]) * (k.factorial : ℚ_[p]) := by
+    rw [Nat.factorial_succ]
+    push_cast
+    ring
+  have hk1 : (((k + 1 : ℕ)) : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero k)
+  have hkf : ((k.factorial : ℕ) : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 k.factorial_ne_zero
+  rw [hfact]
+  rcases Nat.even_or_odd k with hk | hk <;> rw [hk.neg_one_pow] <;> field_simp <;>
+    push_cast <;> ring
 
 /-! ## `ψ`-invariance of `μ_a` (RJW Lem. 4.7) -/
 
