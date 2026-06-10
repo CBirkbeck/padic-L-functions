@@ -1003,7 +1003,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     a tooled session via CLEANUP-FINAL.
 
 ### [T031] `F_a`, `μ_a` and the characterising identity
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
 - **Depends on**: none
 - **Parallel**: yes (with T030)
@@ -1052,6 +1052,15 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   wire `measure-mu-a` → `PadicMeasure.muA`. Blueprint build green.
 - **Cleanup**: `/cleanup` the nine declarations immediately after.
 - **Progress**:
+  - 2026-06-10: DONE — 8 declarations proven (isUnit_natCast_of_not_dvd,
+    constantCoeff_geomSum, geomSum_mul_X, isUnit_geomSum, X_mul_FaNum, geomSum_mul_Fa,
+    one_add_X_pow_sub_one_mul_Fa, mahlerTransform_muA). `binomialSeries_natCast`
+    DELETED from skeleton — mathlib already has it as `binomialSeries_nat` (simp,
+    Binomial.lean:69); T032's sketch updated to use the mathlib name. Off-script:
+    add_sub_cancel_left via have+rw (simp would not fire it); natCast-coeff handled
+    via ← map_natCast C then coeff_C (simp re-reverses map_natCast — rw before simp).
+    Axioms standard (3 spot-checked). Blueprint: kl-Fa-in-Zp + measure-mu-a wired,
+    builds green. Cleanup: degraded mode — proofs 1–6 lines, hand-audited.
 
 ### [T032] Dirac-sum identity + `Λ(ℤ_p)` is a domain
 - **Status**: open

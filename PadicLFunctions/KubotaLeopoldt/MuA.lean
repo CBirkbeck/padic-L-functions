@@ -34,7 +34,9 @@ namespace PadicInt
 /-- A natural number not divisible by `p` is a unit of `ℤ_p`. -/
 lemma isUnit_natCast_of_not_dvd {p : ℕ} [hp : Fact p.Prime] {a : ℕ} (hpa : ¬ p ∣ a) :
     IsUnit (a : ℤ_[p]) := by
-  sorry
+  rw [PadicInt.isUnit_iff]
+  refine le_antisymm (PadicInt.norm_le_one _) (not_lt.1 fun h => hpa ?_)
+  exact_mod_cast (PadicInt.norm_int_lt_one_iff_dvd (a : ℤ)).1 (by simpa using h)
 
 end PadicInt
 
@@ -51,13 +53,16 @@ def geomSum (a : ℕ) : PowerSeries ℤ_[p] :=
 
 @[simp]
 lemma constantCoeff_geomSum (a : ℕ) : constantCoeff (geomSum p a) = (a : ℤ_[p]) := by
-  sorry
+  simp [geomSum]
 
 lemma geomSum_mul_X (a : ℕ) : geomSum p a * X = (1 + X) ^ a - 1 := by
-  sorry
+  have h := geom_sum_mul (1 + X : PowerSeries ℤ_[p]) a
+  rw [add_sub_cancel_left] at h
+  exact h
 
 lemma isUnit_geomSum {a : ℕ} (hpa : ¬ p ∣ a) : IsUnit (geomSum p a) := by
-  sorry
+  rw [PowerSeries.isUnit_iff_constantCoeff, constantCoeff_geomSum]
+  exact PadicInt.isUnit_natCast_of_not_dvd hpa
 
 /-- The numerator `(geomSum a − a)/T` of `F_a`. -/
 def FaNum (a : ℕ) : PowerSeries ℤ_[p] :=
@@ -65,7 +70,13 @@ def FaNum (a : ℕ) : PowerSeries ℤ_[p] :=
 
 lemma X_mul_FaNum (a : ℕ) :
     X * FaNum p a = geomSum p a - (a : PowerSeries ℤ_[p]) := by
-  sorry
+  ext n
+  cases n with
+  | zero => simp
+  | succ n =>
+    rw [coeff_succ_X_mul, map_sub, ← map_natCast (PowerSeries.C (R := ℤ_[p])) a,
+      PowerSeries.coeff_C]
+    simp [FaNum]
 
 /-- **RJW Prop. 4.4 (`PropFaT`)**: the power series
 `F_a = 1/T − a/((1+T)^a−1) ∈ ℤ_p⟦T⟧`, realised as `((geomSum a − a)/T)·geomSum a⁻¹`.
@@ -75,13 +86,15 @@ def Fa (a : ℕ) : PowerSeries ℤ_[p] :=
 
 lemma geomSum_mul_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
     geomSum p a * Fa p a = FaNum p a := by
-  sorry
+  rw [Fa, ← mul_assoc, mul_comm (geomSum p a) (FaNum p a), mul_assoc,
+    Ring.mul_inverse_cancel _ (isUnit_geomSum p hpa), mul_one]
 
 /-- The characterising identity `((1+T)^a − 1)·F_a = geomSum a − a`, the formal
 content of `F_a = 1/T − a/((1+T)^a−1)`. Source: RJW Lem. 4.3 (TeX line 1475). -/
 lemma one_add_X_pow_sub_one_mul_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
     ((1 + X) ^ a - 1) * Fa p a = geomSum p a - (a : PowerSeries ℤ_[p]) := by
-  sorry
+  rw [← geomSum_mul_X, mul_comm (geomSum p a) X, mul_assoc, geomSum_mul_Fa p hpa,
+    X_mul_FaNum]
 
 /-- **RJW Def. 4.5 (`DefinitionMeasuremua`)**: the measure `μ_a` on `ℤ_p` whose Mahler
 transform is `F_a`. -/
@@ -89,15 +102,12 @@ def muA (a : ℕ) : PadicMeasure p ℤ_[p] :=
   (mahlerLinearEquiv p).symm (Fa p a)
 
 @[simp]
-lemma mahlerTransform_muA (a : ℕ) : mahlerTransform p (muA p a) = Fa p a := by
-  sorry
-
-lemma binomialSeries_natCast (a : ℕ) :
-    binomialSeries ℤ_[p] ((a : ℕ) : ℤ_[p]) = (1 + X) ^ a := by
-  sorry
+lemma mahlerTransform_muA (a : ℕ) : mahlerTransform p (muA p a) = Fa p a :=
+  (mahlerLinearEquiv p).apply_symm_apply (Fa p a)
 
 /-- The convolution form of the characterising identity:
-`([a] − [0])·μ_a = Σ_{i<a} [i] − a·[0]` in `Λ(ℤ_p)`. -/
+`([a] − [0])·μ_a = Σ_{i<a} [i] − a·[0]` in `Λ(ℤ_p)`. (mathlib's `binomialSeries_nat`
+identifies `𝓐(δ_a) = (1+T)^a`.) -/
 lemma dirac_natCast_sub_one_mul_muA {a : ℕ} (hpa : ¬ p ∣ a) :
     (dirac p ((a : ℕ) : ℤ_[p]) - 1) * muA p a
       = (∑ i ∈ Finset.range a, dirac p ((i : ℕ) : ℤ_[p])) - (a : ℤ_[p]) • 1 := by

@@ -125,7 +125,7 @@ integrals of monomials in terms of the Mahler transform $`\Am_\mu`. This motivat
 seeking a measure $`\mua` with $`\Am_{\mua} = \Fa`; for that we first check $`\Fa`
 is a bounded power series.
 
-:::proposition "kl-Fa-in-Zp"
+:::proposition "kl-Fa-in-Zp" (lean := "PadicMeasure.one_add_X_pow_sub_one_mul_Fa")
 The function $`\Fa(T)` lies in $`\Zp[[T]]`.
 :::
 
@@ -144,7 +144,7 @@ each term of which is divisible by $`T`. Dividing by $`T` therefore cancels the
 pole and leaves a power series with $`\Zp`-coefficients, so $`\Fa(T)\in\Zp[[T]]`.
 :::
 
-:::definition "measure-mu-a"
+:::definition "measure-mu-a" (lean := "PadicMeasure.muA")
 Fix an integer $`a` coprime to $`p`. Let $`\mua` be the (unique) $`p`-adic measure
 on $`\Zp` whose Mahler transform is $`\Am_{\mua} = \Fa(T)`; this exists by
 {uses "kl-Fa-in-Zp"}[] together with the {uses "mahler-transform"}[] identification
