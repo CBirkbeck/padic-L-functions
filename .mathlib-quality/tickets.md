@@ -1527,7 +1527,19 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   (Branches, no W dependency). §5.1/§5.2 assembly tickets need (A).
 
 ### [TW1] Coefficients: integerRing + instances + root-of-unity norms
-- **Status**: open | **File**: PadicLFunctions/Coefficients.lean | **Depends on**: none
+- **Status**: done (2026-06-10T17:05Z)
+- **Progress**: 2026-06-10: all 8 skeleton sorries discharged. W1 integerRing +
+  4 instances (ultrametric/complete/Algebra ℤ_[p]/IsLinearTopology via ballIdeal +
+  mk_of_hasBasis'); helper norm_natCast_self_lt_one; W2 norm_sub_one_lt
+  (binomial + Nat.Prime.dvd_choose_pow + exists_norm_finsetSum_le_of_nonempty);
+  W2' tendsto; W3 norm_pow_sub_one_eq_one (prod_one_sub_pow_eq_order +
+  Padic.norm_natCast_eq_one_iff + erase-product argument). VERIFICATION: zero
+  diagnostics; #print axioms = {propext, Classical.choice, Quot.sound} on both
+  headline theorems (lean_verify); lake build green project-wide (3517 jobs).
+  CLEANUP: tooled-inline at authoring (zero linter warnings incl. show/push_neg/
+  longLine/unusedSectionVars all fixed; import order corrected); formal 10-phase
+  file pass runs at CLEANUP-W1 per board placement. Mathlib-gap notes: no
+  norm-unit-ball subring in mathlib (integerRing is a PR candidate, as are W2/W3). | **File**: PadicLFunctions/Coefficients.lean | **Depends on**: none
 - **Parallel**: yes (chain A head) | **Type**: def + instances + lemmas
 - **Statement**: fill the skeleton sorries at Coefficients.lean (integerRing
   subring fields; IsUltrametricDist/CompleteSpace/Algebra ℤ_[p]/IsLinearTopology
