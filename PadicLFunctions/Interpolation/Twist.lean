@@ -244,7 +244,7 @@ trace at decomposition L5.1.8 attack [2]): for `χ` primitive mod `p^n`
 Source (verbatim, TeX 1675–1678): "The Mahler transform of `μ_χ` is
 `𝓐_{μ_χ}(T) = (1/G(χ⁻¹)) ∑_c χ(c)⁻¹ 𝓐_μ((1+T)ε^c − 1)`" — multiplied
 through by the Gauss sum. -/
-theorem mahler_twist_formula {n : ℕ} (_hn : 1 ≤ n)
+theorem mahler_twist_formula {n : ℕ}
     {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n)) (μ : MeasureR K ℤ_[p]) :
     gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) (hζ.pow_eq_one)) •

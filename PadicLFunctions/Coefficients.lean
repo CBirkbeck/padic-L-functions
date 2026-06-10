@@ -126,6 +126,18 @@ lemma charZero_of_qpAlgebra (q : ℕ) [Fact q.Prime] {M : Type*} [NormedField M]
   charZero_of_injective_algebraMap (algebraMap ℚ_[q] M).injective
 
 omit [NormedAlgebra ℚ_[p] L] [CompleteSpace L] in
+/-- Elements of norm `< 1` are not units of the integer ring. -/
+theorem integerRing.not_isUnit_of_norm_lt_one {x : integerRing L}
+    (hx : ‖(x : L)‖ < 1) : ¬ IsUnit x := fun h => by
+  obtain ⟨y, hy⟩ := h.exists_right_inv
+  have h1 : ((x : L)) * ((y : L)) = 1 := by exact_mod_cast congrArg Subtype.val hy
+  have h2 : ‖(x : L)‖ * ‖(y : L)‖ = 1 := by rw [← norm_mul, h1, norm_one]
+  have h3 : ‖(x : L)‖ * ‖(y : L)‖ ≤ ‖(x : L)‖ :=
+    mul_le_of_le_one_right (norm_nonneg _) y.2
+  rw [h2] at h3
+  exact absurd (h3.trans_lt hx) (lt_irrefl _)
+
+omit [NormedAlgebra ℚ_[p] L] [CompleteSpace L] in
 /-- An element of the integer ring of norm one is a unit: its field inverse
 again has norm one, hence lies in the integer ring. -/
 theorem integerRing.isUnit_of_norm_eq_one {x : integerRing L}

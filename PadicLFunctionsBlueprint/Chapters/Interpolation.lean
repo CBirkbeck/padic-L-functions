@@ -349,13 +349,25 @@ p^k)\int_{\Zp}x^k\cdot\mu_\eta`, and the result follows from
 {uses "interp-eta-mellin"}[].
 :::
 
-:::lemma_ "interp-mahler-theta"
+:::lemma_ "interp-mahler-theta" (lean := "PadicLFunctions.MeasureR.mahlerTransform_charTwist_muEtaCleared, PadicLFunctions.MeasureR.X_mul_twist_muEtaCleared_subst, PadicLFunctions.MeasureR.twist_muEtaCleared_moments")
 Let $`\chi` be a Dirichlet character of conductor $`p^n`, $`n\geq 0`, and set
 $`\theta := \chi\eta`, a Dirichlet character of conductor $`Dp^n`. Then the measure
 $`\mu_\theta := (\mu_\eta)_\chi` has Mahler transform
 $$`F_\theta(T) = \frac{-1}{G(\theta^{-1})}\sum_{c\in(\Z/Dp^n\Z)^\times}
 \frac{\theta(c)^{-1}}{(1+T)\eps_{Dp^n}^{\,c} - 1}.`
 This uses {uses "interp-mahler-twist"}[] and {uses "interp-mu-eta"}[].
+
+The formalisation keeps the transform in the two-index form
+`mahlerTransform_charTwist_muEtaCleared` (the `ε_{p^n}^b`-line twists of
+the `ε_D^c`-denominators, i.e. the CRT-resolved shape of the displayed
+$`(\Z/Dp^n)^\times`-sum, with `θ⁻¹(c)` realised as `η⁻¹(c)χ⁻¹(b)`) and
+extracts the consequences directly: the master identity
+`X_mul_twist_muEtaCleared_subst` ($`t\,G(\eta^{-1})G(\chi^{-1})f_\theta`
+collapses to the generalised-Bernoulli generating function of $`\theta`,
+with $`G(\chi^{-1})` cancelling) and the moment formula
+`twist_muEtaCleared_moments` ($`\int\chi(x)x^m\,d\mu_\eta =
+G(\eta^{-1})L(\theta,-m)`, cleared). The single-root closed form is not
+restated separately.
 :::
 
 :::proof "interp-mahler-theta"
@@ -368,13 +380,23 @@ the product character $`\theta^{-1}` and the root of unity $`\eps_{Dp^n} =
 \eps_D\eps_{p^n}`, giving the stated closed form.
 :::
 
-:::definition "interp-zeta-eta"
+:::definition "interp-zeta-eta" (lean := "PadicLFunctions.MeasureR.zetaEta_twisted_moments")
 With $`\mu_\eta` the measure of {uses "interp-mu-eta"}[] attached to $`\eta`,
 define
 $$`\zeta_\eta := x^{-1}\,\Res_{\Zpx}(\mu_\eta) \in \Lam(\Zpx).`
 This is directly analogous to the construction of $`\zetap`, except that
 $`\zeta_\eta` is a genuine measure (no pseudo-measure denominator is needed). This
 uses {uses "interp-mu-eta"}[] and {uses "interp-eta-restriction"}[].
+
+In the formalisation the `x⁻¹`-shift is realised by the index shift
+`k ↦ k−1` in the moment statements (the T036 pattern):
+`zetaEta_twisted_moments` states the final display
+$`\int\chi(x)x^k\cdot\zeta_\eta = (1-\theta(p)p^{k-1})L(\theta,1-k)`
+directly as the $`(k-1)`-st χ-twisted moment of
+$`\Res_{\Zpx}(\mu_\eta)` (cleared by $`G(\eta^{-1})`); the Euler factor
+arises uniformly from $`\Res = 1 - \varphi\circ\psi`, with no case split
+on $`n`. An ambient primitive `p^n`-th root of unity is assumed,
+mirroring the source's $`\eps_{p^n}`.
 :::
 
 # Analytic functions on Zp via the Mellin transform

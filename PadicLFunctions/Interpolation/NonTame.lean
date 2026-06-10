@@ -95,15 +95,114 @@ lemma mahlerTransform_muEtaCleared {D : ℕ} [NeZero D]
             Ring.inverse ((PowerSeries.C (ζ ^ c)) * (1 + PowerSeries.X) - 1)) :=
   (mahlerRingEquiv p K).apply_symm_apply _
 
+omit [CompleteSpace K] [CharZero K] in
+/-- L5.2.6 bookkeeping: for `ζ` a primitive `D`-th root (`p ∤ D`, `D ∤ c`)
+and `w` with `‖w − 1‖ < 1` (e.g. any `p`-power-order root of unity), the
+product denominator `ζ^c·w·(1+T) − 1` is a unit of `R⟦T⟧`: its constant
+coefficient `ζ^c·w − 1 = (ζ^c − 1) + ζ^c(w − 1)` has norm one by the
+ultrametric dominance of the prime-to-`p` part. -/
+theorem isUnit_root_mul_pow_one_add_X_sub_one {ζ : integerRing K} {D : ℕ}
+    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) {c : ℕ} (hc : ¬ D ∣ c)
+    {w : integerRing K} (hw : ‖((w : K)) - 1‖ < 1) :
+    IsUnit ((PowerSeries.C (ζ ^ c * w)) * (1 + PowerSeries.X) - 1 :
+      PowerSeries (integerRing K)) := by
+  have hD0 : D ≠ 0 := fun h => hD (h ▸ dvd_zero _)
+  rw [PowerSeries.isUnit_iff_constantCoeff]
+  simp only [map_sub, map_mul, map_add, map_one, PowerSeries.constantCoeff_C,
+    PowerSeries.constantCoeff_X, add_zero, mul_one]
+  refine integerRing.isUnit_of_norm_eq_one ?_
+  have hζK : IsPrimitiveRoot ((ζ : K)) D :=
+    hζ.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  have h1 : ‖(ζ : K) ^ c - 1‖ = 1 := hζK.norm_pow_sub_one_eq_one (p := p) hD hc
+  have hζ1 : ‖(ζ : K) ^ c‖ = 1 :=
+    norm_eq_one_of_pow_eq_one (L := K)
+      (by rw [← pow_mul, mul_comm c D, pow_mul, hζK.pow_eq_one, one_pow]) hD0
+  have h2 : ‖(ζ : K) ^ c * ((w : K) - 1)‖ < 1 := by
+    rw [norm_mul, hζ1, one_mul]
+    exact hw
+  have hsplit : ((ζ ^ c * w - 1 : integerRing K) : K)
+      = ((ζ : K) ^ c - 1) + (ζ : K) ^ c * ((w : K) - 1) := by
+    push_cast
+    ring
+  rw [hsplit]
+  refine le_antisymm ((IsUltrametricDist.norm_add_le_max _ _).trans
+    (by rw [h1]; exact max_le le_rfl h2.le)) ?_
+  by_contra hcon
+  push Not at hcon
+  have hb := IsUltrametricDist.norm_add_le_max
+    ((ζ : K) ^ c - 1 + (ζ : K) ^ c * ((w : K) - 1))
+    (-((ζ : K) ^ c * ((w : K) - 1)))
+  rw [add_neg_cancel_right, norm_neg, h1] at hb
+  exact absurd (hb.trans_lt (max_lt hcon h2)) (lt_irrefl _)
+
+/-- Ring homomorphisms commute with `Ring.inverse` at units. -/
+lemma map_ring_inverse_of_isUnit {R S : Type*} [Semiring R] [Semiring S]
+    (f : R →+* S) {u : R} (hu : IsUnit u) :
+    f (Ring.inverse u) = Ring.inverse (f u) := by
+  have h1 := congrArg f (Ring.mul_inverse_cancel u hu)
+  rw [map_mul, map_one] at h1
+  exact (hu.map f).mul_left_cancel
+    (h1.trans (Ring.mul_inverse_cancel _ (hu.map f)).symm)
+
+omit [CharZero K] in
+/-- The `ε^b`-line twist of `μ̃_η` has the product-root denominators
+(L5.2.6's CRT bookkeeping: the `ε_{p^n}`-twists multiply the `ε_D`-units
+inside the `γ`s; the `c = 0` line is `0` on both sides since neither
+`X` nor a norm-small denominator is invertible). -/
+lemma mahlerTransform_charTwist_muEtaCleared {D : ℕ} [NeZero D]
+    (η : DirichletCharacter (integerRing K) D) {ζ : integerRing K}
+    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
+    {N : ℕ} {ε : integerRing K} (hε : IsPrimitiveRoot ε (p ^ N)) (b : ℕ) :
+    mahlerTransform p K (twist p K
+        (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+        (muEtaCleared p K η hζ hD))
+      = -(∑ c ∈ Finset.range D,
+          PowerSeries.C (η⁻¹ (c : ZMod D)) *
+            Ring.inverse (PowerSeries.C (ζ ^ c * ε ^ b)
+              * (1 + PowerSeries.X) - 1)) := by
+  rw [mahlerTransform_charTwist_eq_substAffine, mahlerTransform_muEtaCleared,
+    map_neg, map_sum, neg_inj]
+  refine Finset.sum_congr rfl fun c hcr => ?_
+  rw [map_mul, substAffine_C]
+  congr 1
+  have himage : substAffine (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b)
+      (PowerSeries.C (ζ ^ c) * (1 + PowerSeries.X) - 1)
+      = PowerSeries.C (ζ ^ c * ε ^ b) * (1 + PowerSeries.X) - 1 := by
+    rw [map_sub, map_mul, map_one, substAffine_C, substAffine_one_add_X,
+      show (1 + (ε ^ b - 1) : integerRing K) = ε ^ b from by ring, map_mul]
+    ring
+  rcases eq_or_ne c 0 with rfl | hc0
+  · -- both inverses vanish: `X` and the norm-small denominator are non-units
+    rw [show Ring.inverse (PowerSeries.C ((ζ : integerRing K) ^ 0)
+          * (1 + PowerSeries.X) - 1) = (0 : PowerSeries (integerRing K)) from by
+        rw [pow_zero, map_one, one_mul]
+        exact Ring.inverse_non_unit _ (by
+          rw [PowerSeries.isUnit_iff_constantCoeff]
+          simp only [map_sub, map_add, map_one, PowerSeries.constantCoeff_X,
+            add_zero, sub_self]
+          exact not_isUnit_zero),
+      map_zero]
+    refine (Ring.inverse_non_unit _ ?_).symm
+    rw [PowerSeries.isUnit_iff_constantCoeff]
+    simp only [map_sub, map_mul, map_add, map_one, PowerSeries.constantCoeff_C,
+      PowerSeries.constantCoeff_X, add_zero, mul_one, pow_zero, one_mul]
+    refine integerRing.not_isUnit_of_norm_lt_one ?_
+    simpa using norm_pow_sub_one_lt_one hε b
+  · have hcd : ¬ D ∣ c :=
+      fun h => hc0 (Nat.eq_zero_of_dvd_of_lt h (Finset.mem_range.mp hcr))
+    rw [map_ring_inverse_of_isUnit _ (isUnit_root_mul_one_add_X_sub_one hζ hD hcd),
+      himage]
+
 omit [CompleteSpace K] in
-/-- L5.2.3 step 1: the denominator-unit identity (T511) transported to
-`K⟦t⟧` by the coefficient inclusion and the substitution `T = e^t − 1`:
-`(ζ^c·e^t − 1)·G_c = 1` with `G_c` the exp-substituted formal inverse. -/
-lemma muEta_term_exp_identity {ζ : integerRing K} {D : ℕ}
-    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) {c : ℕ} (hc : ¬ D ∣ c) :
-    (PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K - 1)
+/-- L5.2.3 step 1 (abstract denominator): the unit identity
+`(w(1+T)−1)·(w(1+T)−1)⁻¹ = 1` transported to `K⟦t⟧` by the coefficient
+inclusion and the substitution `T = e^t − 1`: `(w·e^t − 1)·G_w = 1`. -/
+lemma unit_denom_exp_identity {w : integerRing K}
+    (hw : IsUnit (PowerSeries.C w * (1 + PowerSeries.X) - 1 :
+      PowerSeries (integerRing K))) :
+    (PowerSeries.C ((w : K)) * PowerSeries.exp K - 1)
         * (PowerSeries.map (integerRing K).subtype
-            (Ring.inverse (PowerSeries.C (ζ ^ c) * (1 + PowerSeries.X) - 1))).subst
+            (Ring.inverse (PowerSeries.C w * (1 + PowerSeries.X) - 1))).subst
             (PowerSeries.exp K - 1)
       = 1 := by
   have hg := hasSubst_exp_sub_one_K (K := K)
@@ -116,9 +215,9 @@ lemma muEta_term_exp_identity {ζ : integerRing K} {D : ℕ}
   have hC : ∀ x : K, (PowerSeries.substAlgHom hg) (PowerSeries.C x)
       = PowerSeries.C x := fun x => (PowerSeries.substAlgHom hg).commutes x
   have hK := congrArg (PowerSeries.map (integerRing K).subtype)
-    (Ring.mul_inverse_cancel _ (isUnit_root_mul_one_add_X_sub_one hζ hD hc))
+    (Ring.mul_inverse_cancel _ hw)
   simp only [map_mul, map_sub, map_add, map_one, PowerSeries.map_X,
-    PowerSeries.map_C, Subring.coe_subtype, SubmonoidClass.coe_pow] at hK
+    PowerSeries.map_C, Subring.coe_subtype] at hK
   have hsub := congrArg (PowerSeries.substAlgHom hg) hK
   simpa only [map_mul, map_sub, map_add, map_one, hX, hC,
     show (1 : PowerSeries K) + (PowerSeries.exp K - 1) = PowerSeries.exp K
@@ -126,11 +225,66 @@ lemma muEta_term_exp_identity {ζ : integerRing K} {D : ℕ}
     PowerSeries.coe_substAlgHom hg] using hsub
 
 omit [CompleteSpace K] in
-/-- L5.2.3 step 2: clearing the denominator `e^{Dt} − 1` against `G_c`
-recovers the geometric numerator `Σ_{j<D} ζ^{cj}·e^{jt}` (the formal
-expansion of TeX 1797 with the denominators multiplied out). -/
+/-- L5.2.3 step 1, the `μ_η`-instance: `(ζ^c·e^t − 1)·G_c = 1`. -/
+lemma muEta_term_exp_identity {ζ : integerRing K} {D : ℕ}
+    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) {c : ℕ} (hc : ¬ D ∣ c) :
+    (PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K - 1)
+        * (PowerSeries.map (integerRing K).subtype
+            (Ring.inverse (PowerSeries.C (ζ ^ c) * (1 + PowerSeries.X) - 1))).subst
+            (PowerSeries.exp K - 1)
+      = 1 := by
+  have h := unit_denom_exp_identity (isUnit_root_mul_one_add_X_sub_one hζ hD hc)
+  simpa only [SubmonoidClass.coe_pow] using h
+
+omit [CompleteSpace K] in
+/-- L5.2.3 step 2 (abstract denominator): clearing `e^{Mt} − 1` against
+`G_w` recovers the geometric numerator `Σ_{j<M} w^j·e^{jt}`, for any
+`M`-torsion `w` with `w(1+T) − 1` a unit. -/
+lemma rescale_exp_sub_one_mul_unit_denom {w : integerRing K} {M : ℕ}
+    (hwM : w ^ M = 1)
+    (hw : IsUnit (PowerSeries.C w * (1 + PowerSeries.X) - 1 :
+      PowerSeries (integerRing K))) :
+    (PowerSeries.rescale ((M : ℕ) : K) (PowerSeries.exp K) - 1)
+        * (PowerSeries.map (integerRing K).subtype
+            (Ring.inverse (PowerSeries.C w * (1 + PowerSeries.X) - 1))).subst
+            (PowerSeries.exp K - 1)
+      = ∑ j ∈ Finset.range M,
+          PowerSeries.C ((w : K) ^ j)
+            * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
+  have hwK : ((w : K)) ^ M = 1 := by
+    rw [← SubmonoidClass.coe_pow, hwM, OneMemClass.coe_one]
+  have hx : (PowerSeries.C ((w : K)) * PowerSeries.exp K) ^ M
+      = PowerSeries.rescale ((M : ℕ) : K) (PowerSeries.exp K) := by
+    rw [mul_pow, ← map_pow, hwK, map_one, one_mul,
+      PowerSeries.exp_pow_eq_rescale_exp]
+  have hgs := geom_sum_mul (PowerSeries.C ((w : K)) * PowerSeries.exp K) M
+  calc (PowerSeries.rescale ((M : ℕ) : K) (PowerSeries.exp K) - 1)
+        * (PowerSeries.map (integerRing K).subtype
+            (Ring.inverse (PowerSeries.C w * (1 + PowerSeries.X) - 1))).subst
+            (PowerSeries.exp K - 1)
+      = (∑ j ∈ Finset.range M,
+            (PowerSeries.C ((w : K)) * PowerSeries.exp K) ^ j)
+          * ((PowerSeries.C ((w : K)) * PowerSeries.exp K - 1)
+            * (PowerSeries.map (integerRing K).subtype
+                (Ring.inverse (PowerSeries.C w * (1 + PowerSeries.X) - 1))).subst
+                (PowerSeries.exp K - 1)) := by
+        rw [← hx, ← hgs]
+        ring
+    _ = ∑ j ∈ Finset.range M,
+          (PowerSeries.C ((w : K)) * PowerSeries.exp K) ^ j := by
+        rw [unit_denom_exp_identity hw, mul_one]
+    _ = ∑ j ∈ Finset.range M,
+          PowerSeries.C ((w : K) ^ j)
+            * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [mul_pow, ← map_pow, PowerSeries.exp_pow_eq_rescale_exp]
+
+omit [CompleteSpace K] in
+/-- L5.2.3 step 2, the `μ_η`-instance: clearing `e^{Dt} − 1` against `G_c`
+recovers `Σ_{j<D} ζ^{cj}·e^{jt}` (the formal expansion of TeX 1797 with the
+denominators multiplied out). -/
 lemma rescale_exp_sub_one_mul_muEta_term {ζ : integerRing K} {D : ℕ}
-    (hζK : IsPrimitiveRoot ((ζ : K)) D) (hζ : IsPrimitiveRoot ζ D)
+    (hζ : IsPrimitiveRoot ζ D)
     (hD : ¬ (p : ℕ) ∣ D) {c : ℕ} (hc : ¬ D ∣ c) :
     (PowerSeries.rescale ((D : ℕ) : K) (PowerSeries.exp K) - 1)
         * (PowerSeries.map (integerRing K).subtype
@@ -139,31 +293,53 @@ lemma rescale_exp_sub_one_mul_muEta_term {ζ : integerRing K} {D : ℕ}
       = ∑ j ∈ Finset.range D,
           PowerSeries.C ((ζ : K) ^ (c * j))
             * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
-  have hx : (PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K) ^ D
-      = PowerSeries.rescale ((D : ℕ) : K) (PowerSeries.exp K) := by
-    rw [mul_pow, ← map_pow, ← pow_mul, mul_comm c D, pow_mul, hζK.pow_eq_one,
-      one_pow, map_one, one_mul, PowerSeries.exp_pow_eq_rescale_exp]
-  have hgs := geom_sum_mul (PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K) D
-  calc (PowerSeries.rescale ((D : ℕ) : K) (PowerSeries.exp K) - 1)
-        * (PowerSeries.map (integerRing K).subtype
-            (Ring.inverse (PowerSeries.C (ζ ^ c) * (1 + PowerSeries.X) - 1))).subst
-            (PowerSeries.exp K - 1)
-      = (∑ j ∈ Finset.range D,
-            (PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K) ^ j)
-          * ((PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K - 1)
-            * (PowerSeries.map (integerRing K).subtype
-                (Ring.inverse (PowerSeries.C (ζ ^ c) * (1 + PowerSeries.X) - 1))).subst
-                (PowerSeries.exp K - 1)) := by
-        rw [← hx, ← hgs]
-        ring
-    _ = ∑ j ∈ Finset.range D,
-          (PowerSeries.C ((ζ : K) ^ c) * PowerSeries.exp K) ^ j := by
-        rw [muEta_term_exp_identity hζ hD hc, mul_one]
-    _ = ∑ j ∈ Finset.range D,
-          PowerSeries.C ((ζ : K) ^ (c * j))
-            * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [mul_pow, ← map_pow, ← pow_mul, PowerSeries.exp_pow_eq_rescale_exp]
+  have h := rescale_exp_sub_one_mul_unit_denom
+    (w := ζ ^ c) (M := D) (by rw [← pow_mul, mul_comm c D, pow_mul,
+      hζ.pow_eq_one, one_pow])
+    (isUnit_root_mul_one_add_X_sub_one hζ hD hc)
+  simpa only [SubmonoidClass.coe_pow, ← pow_mul] using h
+
+omit [CompleteSpace K] in
+/-- Distributing the coefficient inclusion and the exponential substitution
+over a constant multiple. -/
+lemma subst_map_C_mul (w : integerRing K) (F : PowerSeries (integerRing K)) :
+    (PowerSeries.map (integerRing K).subtype
+        (PowerSeries.C w * F)).subst (PowerSeries.exp K - 1)
+      = PowerSeries.C ((w : K))
+          * (PowerSeries.map (integerRing K).subtype F).subst
+              (PowerSeries.exp K - 1) := by
+  have hg := hasSubst_exp_sub_one_K (K := K)
+  rw [map_mul, PowerSeries.map_C, ← PowerSeries.coe_substAlgHom hg, map_mul,
+    show (PowerSeries.substAlgHom hg)
+        (PowerSeries.C ((integerRing K).subtype w))
+      = PowerSeries.C ((integerRing K).subtype w) from
+      (PowerSeries.substAlgHom hg).commutes _,
+    PowerSeries.coe_substAlgHom hg]
+  rfl
+
+omit [CompleteSpace K] in
+/-- Distributing the coefficient inclusion and the exponential substitution
+over a finite sum. -/
+lemma subst_map_sum {ι : Type*} (s : Finset ι)
+    (F : ι → PowerSeries (integerRing K)) :
+    (PowerSeries.map (integerRing K).subtype
+        (∑ i ∈ s, F i)).subst (PowerSeries.exp K - 1)
+      = ∑ i ∈ s, (PowerSeries.map (integerRing K).subtype (F i)).subst
+          (PowerSeries.exp K - 1) := by
+  have hg := hasSubst_exp_sub_one_K (K := K)
+  rw [map_sum, ← PowerSeries.coe_substAlgHom hg, map_sum]
+
+omit [CompleteSpace K] in
+/-- Distributing the coefficient inclusion and the exponential substitution
+over a negation. -/
+lemma subst_map_neg (F : PowerSeries (integerRing K)) :
+    (PowerSeries.map (integerRing K).subtype (-F)).subst
+        (PowerSeries.exp K - 1)
+      = -(PowerSeries.map (integerRing K).subtype F).subst
+          (PowerSeries.exp K - 1) := by
+  have hg := hasSubst_exp_sub_one_K (K := K)
+  rw [map_neg, ← PowerSeries.coe_substAlgHom hg, map_neg,
+    PowerSeries.coe_substAlgHom hg]
 
 /-- L5.2.3 step 3, the master identity: `X·H_η = −G(η⁻¹)·genBPS_{η_K}` in
 `K⟦t⟧`, with `H_η` the exp-substituted `K`-valued Mahler transform of
@@ -237,7 +413,7 @@ lemma X_mul_muEtaCleared_subst {D : ℕ} [NeZero D] (hD1 : 1 < D)
         simp
       · have hdvd : ¬ D ∣ c :=
           fun h => hc0 (Nat.eq_zero_of_dvd_of_lt h (Finset.mem_range.mp hcr))
-        rw [mul_left_comm, rescale_exp_sub_one_mul_muEta_term hζK hζ hD hdvd,
+        rw [mul_left_comm, rescale_exp_sub_one_mul_muEta_term hζ hD hdvd,
           Finset.mul_sum]
         refine Finset.sum_congr rfl fun j _ => ?_
         rw [map_mul]
@@ -601,25 +777,506 @@ theorem res_units_muEtaCleared_moments {D : ℕ} [NeZero D] (hD1 : 1 < D)
     hcoe, muEtaCleared_moments hD1 hη hζ hD k]
   ring
 
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K]
+  [CharZero K] in
+/-- The product character `θ = η·χ` (coprime moduli `D` and `p^n`) evaluates
+at naturals as the product of the component values (both sides vanish
+simultaneously off the units, by coprimality on each component). -/
+lemma toFieldChar_prod_natCast {D : ℕ}
+    {η : DirichletCharacter (integerRing K) D}
+    {n : ℕ} {χ : DirichletCharacter (integerRing K) (p ^ n)}
+    {θ : DirichletCharacter (integerRing K) (D * p ^ n)}
+    (hθ : θ = (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η)
+        * (DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ)) (j : ℕ) :
+    (toFieldChar θ) ((j : ℕ) : ZMod (D * p ^ n))
+      = (toFieldChar η) ((j : ℕ) : ZMod D)
+        * (toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)) := by
+  have hsplitU : IsUnit ((j : ℕ) : ZMod (D * p ^ n))
+      ↔ IsUnit ((j : ℕ) : ZMod D) ∧ IsUnit ((j : ℕ) : ZMod (p ^ n)) := by
+    rw [ZMod.isUnit_iff_coprime, ZMod.isUnit_iff_coprime,
+      ZMod.isUnit_iff_coprime, Nat.coprime_mul_iff_right]
+  change ((θ ((j : ℕ) : ZMod (D * p ^ n)) : integerRing K) : K) = _
+  by_cases hj : IsUnit ((j : ℕ) : ZMod (D * p ^ n))
+  · obtain ⟨u, hu⟩ := hj
+    rw [hθ, MulChar.mul_apply, ← hu,
+      DirichletCharacter.changeLevel_eq_cast_of_dvd η _ u,
+      DirichletCharacter.changeLevel_eq_cast_of_dvd χ _ u, hu,
+      ZMod.cast_natCast (Dvd.intro _ rfl),
+      ZMod.cast_natCast (Dvd.intro_left _ rfl)]
+    push_cast
+    rfl
+  · rw [θ.map_nonunit hj]
+    rcases not_and_or.mp (fun hc => hj (hsplitU.mpr hc)) with h | h
+    · rw [show (toFieldChar η) ((j : ℕ) : ZMod D)
+          = ((η ((j : ℕ) : ZMod D) : integerRing K) : K) from rfl,
+        η.map_nonunit h]
+      simp
+    · rw [show (toFieldChar χ) ((j : ℕ) : ZMod (p ^ n))
+          = ((χ ((j : ℕ) : ZMod (p ^ n)) : integerRing K) : K) from rfl,
+        χ.map_nonunit h]
+      simp
+
+/-- L5.2.6, the twisted master identity (Lem 5.12 in cleared exp-substituted
+form): `X·H_θ = −G(η⁻¹)·genBPS_{θ_K}` with `H_θ` the exp-substituted
+`K`-valued Mahler transform of `μ_θ = (μ̃_η)_χ`. The `G(χ⁻¹)`-smearing of
+the twist into `ε^b`-lines (T508), each line's product-root clearing, and
+the double Gauss collapse at the two coprime moduli; both `e^{Dp^nt} − 1`
+and `G(χ⁻¹)` cancel. The ambient roots `hζ`/`hε` mirror the source's
+`ε_D`, `ε_{p^n}` (statement replan as in `twist_muA_moments`). -/
+lemma X_mul_twist_muEtaCleared_subst {D : ℕ} [NeZero D] (hD1 : 1 < D)
+    {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D)
+    (hζK : IsPrimitiveRoot ((ζ : K)) D) (hD : ¬ (p : ℕ) ∣ D)
+    {n : ℕ} {χ : DirichletCharacter (integerRing K) (p ^ n)}
+    (hχ : χ.IsPrimitive) {ε : integerRing K}
+    (hε : IsPrimitiveRoot ε (p ^ n)) (hεK : IsPrimitiveRoot ((ε : K)) (p ^ n))
+    {θ : DirichletCharacter (integerRing K) (D * p ^ n)}
+    (hθ : θ = (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η)
+        * (DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ)) :
+    PowerSeries.X * (PowerSeries.map (integerRing K).subtype
+          (mahlerTransform p K (twist p K χ.toContinuousMapZp
+            (muEtaCleared p K η hζ hD)))).subst
+          (PowerSeries.exp K - 1)
+      = -(PowerSeries.C (gaussSum (toFieldChar η)⁻¹
+              (AddChar.zmodChar D hζK.pow_eq_one))
+          * PowerSeries.mk fun k =>
+              (toFieldChar θ).genBernoulli k * (k.factorial : K)⁻¹) := by
+  classical
+  haveI : Fact (1 < D) := ⟨hD1⟩
+  haveI : NeZero (D * p ^ n) :=
+    ⟨Nat.mul_ne_zero (NeZero.ne D) (pow_ne_zero _ hp.out.ne_zero)⟩
+  have hM1 : 1 < D * p ^ n :=
+    lt_of_lt_of_le hD1 (Nat.le_mul_of_pos_right D (pow_pos hp.out.pos n))
+  have hηK : (toFieldChar η).IsPrimitive :=
+    (DirichletCharacter.isPrimitive_ringHomComp_iff η
+      (fun _ _ h => Subtype.ext h)).mpr hη
+  have hχK : (toFieldChar χ).IsPrimitive :=
+    (DirichletCharacter.isPrimitive_ringHomComp_iff χ
+      (fun _ _ h => Subtype.ext h)).mpr hχ
+  -- the pointwise value of the product character at naturals
+  have hθval := toFieldChar_prod_natCast (η := η) (χ := χ) hθ
+  -- abbreviations
+  set H : PowerSeries K := (PowerSeries.map (integerRing K).subtype
+      (mahlerTransform p K (twist p K χ.toContinuousMapZp
+        (muEtaCleared p K η hζ hD)))).subst (PowerSeries.exp K - 1) with hHdef
+  set S : ℕ → PowerSeries K := fun b => (PowerSeries.map (integerRing K).subtype
+      (mahlerTransform p K (twist p K
+        (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+        (muEtaCleared p K η hζ hD)))).subst (PowerSeries.exp K - 1) with hSdef
+  set GχR : integerRing K :=
+    gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hε.pow_eq_one) with hGχR
+  -- (A) the G(χ⁻¹)-smearing of `H` into the `ε^b`-lines
+  have hA : PowerSeries.C ((GχR : K)) * H
+      = ∑ b ∈ Finset.range (p ^ n),
+          PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))) * S b := by
+    have h508 := mahler_twist_formula hχ hε (muEtaCleared p K η hζ hD)
+    have htr : PowerSeries.C GχR * mahlerTransform p K
+          (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+        = ∑ b ∈ Finset.range (p ^ n),
+            PowerSeries.C (χ⁻¹ ((b : ℕ) : ZMod (p ^ n)))
+              * mahlerTransform p K (twist p K
+                (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+                (muEtaCleared p K η hζ hD)) := by
+      rw [← mahlerTransform_smul, h508,
+        show mahlerTransform p K (∑ b ∈ Finset.range (p ^ n),
+              χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) • twist p K
+                (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+                (muEtaCleared p K η hζ hD))
+            = (mahlerTransformₗ p K) (∑ b ∈ Finset.range (p ^ n),
+              χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) • twist p K
+                (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+                (muEtaCleared p K η hζ hD)) from rfl,
+        map_sum]
+      refine Finset.sum_congr rfl fun b _ => ?_
+      rw [show (mahlerTransformₗ p K) (χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) • twist p K
+            (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+            (muEtaCleared p K η hζ hD))
+          = mahlerTransform p K (χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) • twist p K
+            (charCM (ε ^ b - 1) (tendsto_pow_pow_sub_one hε b))
+            (muEtaCleared p K η hζ hD)) from rfl,
+        mahlerTransform_smul]
+    have h1 := congrArg (fun F => (PowerSeries.map (integerRing K).subtype
+        F).subst (PowerSeries.exp K - 1)) htr
+    simp only [subst_map_C_mul, subst_map_sum] at h1
+    rw [← hHdef] at h1
+    refine h1.trans (Finset.sum_congr rfl fun b _ => ?_)
+    rw [show (toFieldChar χ)⁻¹ = toFieldChar χ⁻¹ from MulChar.ringHomComp_inv χ _]
+    rfl
+  -- (B) clearing `e^{Mt} − 1` against the smeared sum: the double collapse
+  have hclear : (PowerSeries.rescale ((D * p ^ n : ℕ) : K)
+        (PowerSeries.exp K) - 1) * (PowerSeries.C ((GχR : K)) * H)
+      = -(PowerSeries.C ((GχR : K)
+            * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one))
+          * ∑ j ∈ Finset.range (D * p ^ n),
+              PowerSeries.C ((toFieldChar θ) ((j : ℕ) : ZMod (D * p ^ n)))
+                * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)) := by
+    rw [hA, Finset.mul_sum]
+    have hperb : ∀ b ∈ Finset.range (p ^ n),
+        (PowerSeries.rescale ((D * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1)
+            * (PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))) * S b)
+          = -∑ c ∈ Finset.range D,
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D))
+                * ∑ j ∈ Finset.range (D * p ^ n),
+                    PowerSeries.C (((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+                      * PowerSeries.rescale ((j : ℕ) : K)
+                          (PowerSeries.exp K) := by
+      intro b _
+      have hSb : S b = -∑ c ∈ Finset.range D,
+          PowerSeries.C ((toFieldChar η)⁻¹ ((c : ℕ) : ZMod D))
+            * (PowerSeries.map (integerRing K).subtype
+                (Ring.inverse (PowerSeries.C (ζ ^ c * ε ^ b)
+                  * (1 + PowerSeries.X) - 1))).subst
+                (PowerSeries.exp K - 1) := by
+        rw [hSdef]
+        simp only [mahlerTransform_charTwist_muEtaCleared η hζ hD hε b,
+          subst_map_neg, subst_map_sum, subst_map_C_mul]
+        rw [neg_inj]
+        refine Finset.sum_congr rfl fun c _ => ?_
+        rw [show (toFieldChar η)⁻¹ = toFieldChar η⁻¹ from
+          MulChar.ringHomComp_inv η _]
+        rfl
+      rw [hSb, mul_neg, Finset.mul_sum, mul_neg, Finset.mul_sum, neg_inj]
+      refine Finset.sum_congr rfl fun c hcr => ?_
+      rcases eq_or_ne c 0 with rfl | hc0
+      · rw [show ((0 : ℕ) : ZMod D) = 0 from Nat.cast_zero,
+          (toFieldChar η)⁻¹.map_nonunit not_isUnit_zero]
+        simp
+      · have hcd : ¬ D ∣ c :=
+          fun h => hc0 (Nat.eq_zero_of_dvd_of_lt h (Finset.mem_range.mp hcr))
+        have hwM : (ζ ^ c * ε ^ b) ^ (D * p ^ n) = 1 := by
+          rw [mul_pow, ← pow_mul, ← pow_mul,
+            show c * (D * p ^ n) = D * (c * p ^ n) from by ring,
+            show b * (D * p ^ n) = p ^ n * (b * D) from by ring,
+            pow_mul ζ D (c * p ^ n), pow_mul ε (p ^ n) (b * D),
+            hζ.pow_eq_one, hε.pow_eq_one, one_pow, one_pow, one_mul]
+        have hwu : IsUnit (PowerSeries.C (ζ ^ c * ε ^ b)
+            * (1 + PowerSeries.X) - 1 : PowerSeries (integerRing K)) := by
+          refine isUnit_root_mul_pow_one_add_X_sub_one hζ hD hcd ?_
+          simpa using norm_pow_sub_one_lt_one hε b
+        have hcl := rescale_exp_sub_one_mul_unit_denom hwM hwu
+        simp only [MulMemClass.coe_mul, SubmonoidClass.coe_pow] at hcl
+        rw [show (PowerSeries.rescale ((D * p ^ n : ℕ) : K)
+                (PowerSeries.exp K) - 1)
+              * (PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n)))
+                * (PowerSeries.C ((toFieldChar η)⁻¹ ((c : ℕ) : ZMod D))
+                  * (PowerSeries.map (integerRing K).subtype
+                      (Ring.inverse (PowerSeries.C (ζ ^ c * ε ^ b)
+                        * (1 + PowerSeries.X) - 1))).subst
+                      (PowerSeries.exp K - 1)))
+            = (PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n)))
+                * PowerSeries.C ((toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)))
+              * ((PowerSeries.rescale ((D * p ^ n : ℕ) : K)
+                  (PowerSeries.exp K) - 1)
+                * (PowerSeries.map (integerRing K).subtype
+                    (Ring.inverse (PowerSeries.C (ζ ^ c * ε ^ b)
+                      * (1 + PowerSeries.X) - 1))).subst
+                    (PowerSeries.exp K - 1)) from by ring,
+          hcl, ← map_mul]
+    rw [Finset.sum_congr rfl hperb]
+    -- merge the coefficients into the `j`-sums and swap the summations
+    have hbc : ∀ b ∈ Finset.range (p ^ n),
+        -∑ c ∈ Finset.range D,
+            PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D))
+              * ∑ j ∈ Finset.range (D * p ^ n),
+                  PowerSeries.C (((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+                    * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
+          = -∑ c ∈ Finset.range D, ∑ j ∈ Finset.range (D * p ^ n),
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+                  * ((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+                * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
+      intro b _
+      rw [neg_inj]
+      refine Finset.sum_congr rfl fun c _ => ?_
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun j _ => by rw [← mul_assoc, ← map_mul]
+    rw [Finset.sum_congr rfl hbc, Finset.sum_neg_distrib,
+      show ∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+            ∑ j ∈ Finset.range (D * p ^ n),
+            PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+                * ((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+              * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
+          = ∑ j ∈ Finset.range (D * p ^ n), ∑ b ∈ Finset.range (p ^ n),
+              ∑ c ∈ Finset.range D,
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+                  * ((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+                * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) from by
+        rw [show (∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+              ∑ j ∈ Finset.range (D * p ^ n),
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+                  * ((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+                * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K))
+            = ∑ b ∈ Finset.range (p ^ n), ∑ j ∈ Finset.range (D * p ^ n),
+              ∑ c ∈ Finset.range D,
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+                  * ((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+                * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) from
+          Finset.sum_congr rfl fun b _ => Finset.sum_comm,
+          Finset.sum_comm],
+      neg_inj,
+      show PowerSeries.C ((GχR : K)
+            * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one))
+          * ∑ j ∈ Finset.range (D * p ^ n),
+              PowerSeries.C ((toFieldChar θ) ((j : ℕ) : ZMod (D * p ^ n)))
+                * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
+        = ∑ j ∈ Finset.range (D * p ^ n),
+            PowerSeries.C ((GχR : K)
+                * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one)
+                * (toFieldChar θ) ((j : ℕ) : ZMod (D * p ^ n)))
+              * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) from by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => by rw [← mul_assoc, ← map_mul]]
+    -- per `j`: factor the two character sums and collapse the Gauss sums
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hfac : ∀ b ∈ Finset.range (p ^ n), ∀ c ∈ Finset.range D,
+        (toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+            * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+            * ((ζ : K) ^ c * (ε : K) ^ b) ^ j
+          = ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n)) * (ε : K) ^ (b * j))
+            * ((toFieldChar η)⁻¹ ((c : ℕ) : ZMod D) * (ζ : K) ^ (c * j)) := by
+      intro b _ c _
+      rw [mul_pow, ← pow_mul, ← pow_mul]
+      ring
+    calc ∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+          PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+              * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D)
+              * ((ζ : K) ^ c * (ε : K) ^ b) ^ j)
+            * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
+        = PowerSeries.C ((∑ b ∈ Finset.range (p ^ n),
+              (toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n)) * (ε : K) ^ (b * j))
+            * ∑ c ∈ Finset.range D,
+              (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D) * (ζ : K) ^ (c * j))
+            * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
+          rw [Finset.sum_mul_sum, map_sum]
+          rw [Finset.sum_mul]
+          refine Finset.sum_congr rfl fun b hb => ?_
+          rw [map_sum, Finset.sum_mul]
+          refine Finset.sum_congr rfl fun c hc => ?_
+          rw [hfac b hb c hc]
+      _ = PowerSeries.C ((GχR : K)
+              * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one)
+              * (toFieldChar θ) ((j : ℕ) : ZMod (D * p ^ n)))
+            * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K) := by
+          rw [sum_inv_char_zeta_pow hχK hεK j, sum_inv_char_zeta_pow hηK hζK j,
+            coe_gaussSum_zmodChar χ hε hεK, hθval j]
+          ring_nf
+  -- (C) multiply by `X`, insert T504 at level `D·p^n`, cancel both factors
+  have h504 := X_mul_sum_char_rescale_exp (K := K) hM1 (toFieldChar θ)
+  have hreg : (PowerSeries.rescale ((D * p ^ n : ℕ) : K) (PowerSeries.exp K)
+      - 1 : PowerSeries K) ≠ 0 := by
+    intro h0
+    have h1 := congrArg (PowerSeries.coeff 1) h0
+    rw [map_sub, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
+      PowerSeries.coeff_one] at h1
+    simp only [Nat.factorial_one, Nat.cast_one, map_one, div_one, pow_one,
+      if_neg one_ne_zero, sub_zero, map_zero] at h1
+    exact NeZero.ne (D * p ^ n) (by simpa using h1)
+  have hGχne : ((GχR : K)) ≠ 0 := by
+    rw [hGχR, coe_gaussSum_zmodChar χ hε hεK]
+    exact gaussSum_inv_ne_zero hχK hεK
+  have hmain : PowerSeries.X * (PowerSeries.C ((GχR : K)) * H)
+      = -(PowerSeries.C ((GχR : K)
+            * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one))
+          * PowerSeries.mk fun k =>
+              (toFieldChar θ).genBernoulli k * (k.factorial : K)⁻¹) := by
+    refine mul_right_cancel₀ hreg ?_
+    calc PowerSeries.X * (PowerSeries.C ((GχR : K)) * H)
+          * (PowerSeries.rescale ((D * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1)
+        = PowerSeries.X
+            * ((PowerSeries.rescale ((D * p ^ n : ℕ) : K) (PowerSeries.exp K)
+                - 1) * (PowerSeries.C ((GχR : K)) * H)) := by ring
+      _ = -(PowerSeries.C ((GχR : K)
+              * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one))
+            * (PowerSeries.X * ∑ j ∈ Finset.range (D * p ^ n),
+                PowerSeries.C ((toFieldChar θ) ((j : ℕ) : ZMod (D * p ^ n)))
+                  * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K))) := by
+          rw [hclear]
+          ring
+      _ = -(PowerSeries.C ((GχR : K)
+              * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one))
+            * PowerSeries.mk fun k =>
+                (toFieldChar θ).genBernoulli k * (k.factorial : K)⁻¹)
+            * (PowerSeries.rescale ((D * p ^ n : ℕ) : K) (PowerSeries.exp K)
+              - 1) := by
+          rw [h504]
+          ring
+  have hCne : (PowerSeries.C ((GχR : K)) : PowerSeries K) ≠ 0 := fun h =>
+    hGχne (by simpa using congrArg PowerSeries.constantCoeff h)
+  refine mul_left_cancel₀ hCne ?_
+  calc PowerSeries.C ((GχR : K)) * (PowerSeries.X * H)
+      = PowerSeries.X * (PowerSeries.C ((GχR : K)) * H) := by ring
+    _ = -(PowerSeries.C ((GχR : K)
+            * gaussSum (toFieldChar η)⁻¹ (AddChar.zmodChar D hζK.pow_eq_one))
+          * PowerSeries.mk fun k =>
+              (toFieldChar θ).genBernoulli k * (k.factorial : K)⁻¹) := hmain
+    _ = PowerSeries.C ((GχR : K))
+          * -(PowerSeries.C (gaussSum (toFieldChar η)⁻¹
+                (AddChar.zmodChar D hζK.pow_eq_one))
+              * PowerSeries.mk fun k =>
+                  (toFieldChar θ).genBernoulli k * (k.factorial : K)⁻¹) := by
+        rw [map_mul]
+        ring
+
+/-- L5.2.6, the moments of `μ_θ = (μ̃_η)_χ` (RJW TeX 1854–1856: "via a
+calculation essentially identical to the cases already seen"):
+`∫χ̃(x)x^m dμ̃_η = G(η⁻¹)·L(θ,−m)` (cleared). -/
+theorem twist_muEtaCleared_moments {D : ℕ} [NeZero D] (hD1 : 1 < D)
+    {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
+    {n : ℕ} {χ : DirichletCharacter (integerRing K) (p ^ n)}
+    (hχ : χ.IsPrimitive) {ε : integerRing K}
+    (hε : IsPrimitiveRoot ε (p ^ n))
+    {θ : DirichletCharacter (integerRing K) (D * p ^ n)}
+    (hθ : θ = (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η)
+        * (DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
+    (m : ℕ) :
+    ((twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)
+        (powCM p K m) : integerRing K) : K)
+      = ((gaussSum η⁻¹ (AddChar.zmodChar D (hζ.pow_eq_one)) : integerRing K) : K)
+          * LvalNeg (toFieldChar θ) m := by
+  have hζK : IsPrimitiveRoot ((ζ : K)) D :=
+    hζ.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  have hεK : IsPrimitiveRoot ((ε : K)) (p ^ n) :=
+    hε.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  have hmom : ((twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)
+        (powCM p K m) : integerRing K) : K)
+      = (m.factorial : K) * PowerSeries.coeff m
+          ((PowerSeries.map (integerRing K).subtype
+            (mahlerTransform p K (twist p K χ.toContinuousMapZp
+              (muEtaCleared p K η hζ hD)))).subst
+            (PowerSeries.exp K - 1)) := by
+    rw [apply_powCM]
+    rw [show ((PowerSeries.constantCoeff ((del K)^[m] (mahlerTransform p K
+          (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))))
+            : integerRing K) : K)
+        = PowerSeries.constantCoeff (PowerSeries.map (integerRing K).subtype
+            ((del K)^[m] (mahlerTransform p K (twist p K χ.toContinuousMapZp
+              (muEtaCleared p K η hζ hD))))) from by
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+        ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
+      rfl]
+    rw [map_subtype_del_iterate, constantCoeff_iterate_delField]
+  have hmaster := congrArg (PowerSeries.coeff (m + 1))
+    (X_mul_twist_muEtaCleared_subst hD1 hη hζ hζK hD hχ hε hεK hθ)
+  rw [PowerSeries.coeff_succ_X_mul, map_neg, PowerSeries.coeff_C_mul,
+    PowerSeries.coeff_mk] at hmaster
+  rw [hmom, hmaster, coe_gaussSum_zmodChar η hζ hζK, LvalNeg]
+  have hk1 : ((m + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero m)
+  have hkf : ((m.factorial : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 m.factorial_ne_zero
+  have hfact : (((m + 1).factorial : ℕ) : K)
+      = ((m + 1 : ℕ) : K) * (m.factorial : K) := by
+    rw [Nat.factorial_succ]
+    push_cast
+    ring
+  field_simp [hfact]
+  rw [hfact]
+  push_cast
+  ring
+
 /-- L5.2.6/L5.2.7 (RJW Def TeX 1866–1868 + final display 1870–1873): the
 χ-twisted moments of `ζ_η := x⁻¹·Res_{ℤ_p^×}(μ_η)`, in the moment form the
 theorem quantifies (the `x⁻¹`-shift realised by the index shift `k ↦ k−1`):
 for `χ` primitive mod `p^n` (`n ≥ 0`) and `k > 0`,
-`∫ χ(x)x^k dζ_η = (1 − χη(p)p^{k−1})·L(χη, 1−k)` (cleared). -/
+`∫ χ(x)x^k dζ_η = (1 − χη(p)p^{k−1})·L(χη, 1−k)` (cleared). The Euler factor
+arises uniformly from `Res = 1 − φ∘ψ` (no case split on `n`: for `n ≥ 1` it
+degenerates through `χ(p) = 0`). `hε` mirrors the source's ambient
+`ε_{p^n}` (statement replan as in `twist_muA_moments`). -/
 theorem zetaEta_twisted_moments {D : ℕ} [NeZero D] (hD1 : 1 < D)
     {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
     {n : ℕ} {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ε : integerRing K} (hε : IsPrimitiveRoot ε (p ^ n))
     {θ : DirichletCharacter (integerRing K) (D * p ^ n)}
     (hθ : θ = (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η)
         * (DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
-    {k : ℕ} (hk : 0 < k) :
+    {k : ℕ} (_hk : 0 < k) :
     ((twist p K χ.toContinuousMapZp
         (res p K (PadicMeasure.isClopen_units p) (muEtaCleared p K η hζ hD))
         (powCM p K (k - 1)) : integerRing K) : K)
       = ((gaussSum η⁻¹ (AddChar.zmodChar D (hζ.pow_eq_one)) : integerRing K) : K)
           * (1 - (θ ((p : ℕ) : ZMod (D * p ^ n)) : K) * (p : K) ^ (k - 1))
-          * LvalNeg (toFieldChar θ) (k - 1) := by sorry
+          * LvalNeg (toFieldChar θ) (k - 1) := by
+  classical
+  set m : ℕ := k - 1 with hm
+  -- `Res = 1 − φ∘ψ` on the applied values
+  rw [show twist p K χ.toContinuousMapZp
+        (res p K (PadicMeasure.isClopen_units p) (muEtaCleared p K η hζ hD))
+        (powCM p K m)
+      = (res p K (PadicMeasure.isClopen_units p) (muEtaCleared p K η hζ hD))
+          (χ.toContinuousMapZp * powCM p K m) from rfl,
+    res_units_eq, LinearMap.sub_apply, psi_muEtaCleared hD1 hζ hD, map_smul,
+    LinearMap.smul_apply]
+  -- the φ-term picks up the Euler factor `χ(p)·η(p)·p^m`
+  have hfun : (χ.toContinuousMapZp * powCM p K m).comp
+        (PadicMeasure.mulCM p (p : ℤ_[p]))
+      = (χ ((p : ℕ) : ZMod (p ^ n))
+          * algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ m))
+          • (χ.toContinuousMapZp * powCM p K m) := by
+    ext x
+    refine congrArg Subtype.val ?_
+    change χ.toContinuousMapZp ((p : ℤ_[p]) * x)
+        * algebraMap ℤ_[p] (integerRing K) (((p : ℤ_[p]) * x) ^ m)
+      = (χ ((p : ℕ) : ZMod (p ^ n))
+          * algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ m))
+        * (χ.toContinuousMapZp x
+          * algebraMap ℤ_[p] (integerRing K) (x ^ m))
+    rw [DirichletCharacter.toContinuousMapZp_mul, mul_pow, map_mul,
+      show χ.toContinuousMapZp ((p : ℤ_[p]))
+        = χ ((p : ℕ) : ZMod (p ^ n)) from by
+        rw [DirichletCharacter.toContinuousMapZp_apply]
+        congr 1
+        exact map_natCast _ p]
+    ring
+  have hphi : phi p K (muEtaCleared p K η hζ hD)
+        (χ.toContinuousMapZp * powCM p K m)
+      = (χ ((p : ℕ) : ZMod (p ^ n))
+          * algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ m))
+        * (muEtaCleared p K η hζ hD)
+            (χ.toContinuousMapZp * powCM p K m) := by
+    change (muEtaCleared p K η hζ hD)
+        ((χ.toContinuousMapZp * powCM p K m).comp
+          (PadicMeasure.mulCM p (p : ℤ_[p]))) = _
+    rw [hfun, map_smul, smul_eq_mul]
+  rw [hphi]
+  -- coerce and insert the twisted moments
+  have hcoe : ((algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ m)
+      : integerRing K) : K) = (p : K) ^ m := by
+    change algebraMap ℚ_[p] K ((((p : ℤ_[p]) ^ m : ℤ_[p])) : ℚ_[p]) = (p : K) ^ m
+    push_cast
+    rfl
+  have hmoments := twist_muEtaCleared_moments hD1 hη hζ hD hχ hε hθ m
+  rw [show twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)
+        (powCM p K m)
+      = (muEtaCleared p K η hζ hD) (χ.toContinuousMapZp * powCM p K m)
+      from rfl] at hmoments
+  rw [show ((((muEtaCleared p K η hζ hD)
+          (χ.toContinuousMapZp * powCM p K m)
+        - η ((p : ℕ) : ZMod D)
+          • ((χ ((p : ℕ) : ZMod (p ^ n))
+              * algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ m))
+            * (muEtaCleared p K η hζ hD)
+                (χ.toContinuousMapZp * powCM p K m))) : integerRing K) : K)
+      = (((muEtaCleared p K η hζ hD)
+            (χ.toContinuousMapZp * powCM p K m) : integerRing K) : K)
+        - ((η ((p : ℕ) : ZMod D) : integerRing K) : K)
+          * (((χ ((p : ℕ) : ZMod (p ^ n)) : integerRing K) : K)
+            * ((algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ m)
+                : integerRing K) : K)
+            * (((muEtaCleared p K η hζ hD)
+                (χ.toContinuousMapZp * powCM p K m) : integerRing K) : K))
+      from by push_cast [smul_eq_mul]; ring,
+    hcoe, hmoments,
+    show (θ ((p : ℕ) : ZMod (D * p ^ n)) : K)
+      = ((η ((p : ℕ) : ZMod D) : integerRing K) : K)
+        * ((χ ((p : ℕ) : ZMod (p ^ n)) : integerRing K) : K) from
+      toFieldChar_prod_natCast hθ p]
+  ring
 
 /-- L5.2.8 (determinacy, the uniqueness half of **RJW Thm 5.7**): a measure
 on `ℤ_p` supported on the units and killing every `χ(x)·x^k` (all primitive

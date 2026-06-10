@@ -633,6 +633,27 @@ lemma constantCoeff_iterate_delField (k : ℕ) (F : PowerSeries K) :
 
 end fieldBridge
 
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
+  [CompleteSpace K] in
+/-- The Gauss sum of a primitive character (against a primitive additive
+character) is nonzero, by `G(χ)G(χ⁻¹) = N` (any modulus). -/
+lemma gaussSum_inv_ne_zero {N : ℕ} [NeZero N]
+    {χK : DirichletCharacter K N} (hχK : χK.IsPrimitive)
+    {ζ' : K} (hζ' : IsPrimitiveRoot ζ' N) :
+    gaussSum χK⁻¹ (AddChar.zmodChar N hζ'.pow_eq_one) ≠ 0 := by
+  have hprim_e : (AddChar.zmodChar N hζ'.pow_eq_one).IsPrimitive :=
+    AddChar.zmodChar_primitive_of_primitive_root _ hζ'
+  have hχinv : χK⁻¹.IsPrimitive :=
+    (DirichletCharacter.conductor_inv _).trans hχK
+  have hmul := gaussSum_mul_gaussSum_inv hχK hprim_e
+  have hne2 : gaussSum χK⁻¹ ((AddChar.zmodChar N hζ'.pow_eq_one))⁻¹ ≠ 0 := by
+    intro h0
+    rw [h0, mul_zero] at hmul
+    exact (Nat.cast_ne_zero.2 (NeZero.ne N)) hmul.symm
+  rw [AddChar.inv_mulShift, gaussSum_mulShift_of_isPrimitive _ hχinv,
+    inv_inv] at hne2
+  exact right_ne_zero_of_mul hne2
+
 omit [CompleteSpace K] [CharZero K] [NormedAlgebra ℚ_[p] K] in
 /-- The `K`-coercion of the integral Gauss sum is the `K`-valued Gauss sum of
 the induced character (any modulus). -/
@@ -652,7 +673,7 @@ lemma coe_gaussSum_zmodChar {N : ℕ} [NeZero N]
 /-- T509 (v-f) transport: the `χ̄⁻¹`-weighted sum of the `H_c` is the
 `K`-coerced Gauss sum times `H_χ` (T508 carried through `𝓐`, the coefficient
 inclusion, and the exponential substitution). -/
-lemma sum_char_inv_H_eq {n : ℕ} (hn : 1 ≤ n)
+lemma sum_char_inv_H_eq {n : ℕ}
     {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n)) {a : ℕ} :
     ∑ c ∈ Finset.range (p ^ n),
@@ -687,7 +708,7 @@ lemma sum_char_inv_H_eq {n : ℕ} (hn : 1 ≤ n)
     simp only [show ∀ y : K, (PowerSeries.substAlgHom hg) (PowerSeries.C y)
         = PowerSeries.C y from fun y => (PowerSeries.substAlgHom hg).commutes y,
       PowerSeries.coe_substAlgHom hg]
-  have h508 := mahler_twist_formula hn hχ hζ
+  have h508 := mahler_twist_formula hχ hζ
     (baseChange p K (PadicMeasure.muA p a))
   -- mahlerTransform of smul/sum (it is `mahlerTransformₗ` as a linear map)
   have h𝓐' : gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hζ.pow_eq_one) •
@@ -757,20 +778,8 @@ theorem twist_muA_moments {n : ℕ} (hn : 1 ≤ n)
   haveI : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (by omega) hp.out.one_lt⟩
   -- the Gauss sum is nonzero
   have hG'ne : gaussSum (toFieldChar χ)⁻¹
-      (AddChar.zmodChar (p ^ n) hζK.pow_eq_one) ≠ 0 := by
-    have hprim_e : (AddChar.zmodChar (p ^ n) hζK.pow_eq_one).IsPrimitive :=
-      AddChar.zmodChar_primitive_of_primitive_root _ hζK
-    have hχKinv : (toFieldChar χ)⁻¹.IsPrimitive :=
-      (DirichletCharacter.conductor_inv _).trans hχK
-    have hmul := gaussSum_mul_gaussSum_inv hχK hprim_e
-    have hne2 : gaussSum (toFieldChar χ)⁻¹
-        ((AddChar.zmodChar (p ^ n) hζK.pow_eq_one))⁻¹ ≠ 0 := by
-      intro h0
-      rw [h0, mul_zero] at hmul
-      exact (Nat.cast_ne_zero.2 (pow_ne_zero _ hp.out.ne_zero)) hmul.symm
-    rw [AddChar.inv_mulShift,
-      gaussSum_mulShift_of_isPrimitive _ hχKinv, inv_inv] at hne2
-    exact right_ne_zero_of_mul hne2
+      (AddChar.zmodChar (p ^ n) hζK.pow_eq_one) ≠ 0 :=
+    gaussSum_inv_ne_zero hχK hζK
   -- the moment as `k!·[t^k] H_χ`
   have hmom : ((twist p K χ.toContinuousMapZp
         (baseChange p K (PadicMeasure.muA p a)) (powCM p K k)
@@ -794,7 +803,7 @@ theorem twist_muA_moments {n : ℕ} (hn : 1 ≤ n)
   -- the `(k+1)`-st coefficient of FINAL-10b
   have h10b := congrArg (PowerSeries.coeff (k + 1))
     (X_mul_sum_char_inv_subst hn hχ hζ hζK hpa)
-  rw [PowerSeries.coeff_succ_X_mul, sum_char_inv_H_eq hn hχ hζ,
+  rw [PowerSeries.coeff_succ_X_mul, sum_char_inv_H_eq hχ hζ,
     coe_gaussSum_zmodChar χ hζ hζK, PowerSeries.coeff_C_mul,
     PowerSeries.coeff_C_mul, map_sub, PowerSeries.coeff_mk,
     PowerSeries.coeff_C_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_mk]

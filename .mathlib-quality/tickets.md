@@ -2432,7 +2432,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   blueprint build green.
 
 ### [T515] μ_θ, its moments and restriction; ζ_η and its interpolation
-- **Status**: open | **File**: NonTame.lean | **Depends on**: T514, T508 | **Type**: cluster
+- **Status**: done | **File**: NonTame.lean | **Depends on**: T514, T508 | **Type**: cluster
 - **Statement**: `muTheta` (:= twist χ̃ μ_η) + Lem 5.12 cleared transform +
   moments + Res-formula (L5.2.6 — ROUTE per the corrected attack: ψ-of-twist
   via support for n ≥ 1, L5.2.4 for n = 0); `zetaEta` + final display
@@ -2440,6 +2440,50 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sources**: TeX 1845–1875 (verbatim quotes at L5.2.6/7).
 - **Blueprint**: wire `interp-nontame`-adjacent definition nodes (μ_θ/ζ_η).
 - **Sizing**: ~160 LOC.
+- **Progress**: DONE 2026-06-11 (~480 LOC, the largest single-ticket chain
+  since T509). `zetaEta_twisted_moments` = L5.2.7's final display proven
+  with a route improvement over the planned n-split: the Euler factor
+  arises UNIFORMLY from Res = 1−φψ + the φ-twist function identity
+  ((χ̃·x^m)∘mulCM p = (χ(p̄)·alg(p^m))•(χ̃·x^m)) — for n ≥ 1 it degenerates
+  via χ(p̄) = 0; NO support-vs-telescope case split needed (the planned
+  L5.2.6 ψ-route became unnecessary). Chain: (1)
+  `isUnit_root_mul_pow_one_add_X_sub_one` — product-root denominators
+  ζ_D^c·w (‖w−1‖<1) are units by ultrametric dominance (le_antisymm with
+  norm_add_le_max twice); NEW Coefficients helper
+  `integerRing.not_isUnit_of_norm_lt_one`; (2) `map_ring_inverse_of_isUnit`
+  (ring homs commute with Ring.inverse at units — mathlib gap, PR
+  candidate); (3) `mahlerTransform_charTwist_muEtaCleared` — the ε^b-line
+  twists via mahlerTransform_charTwist_eq_substAffine; c = 0 line is 0 on
+  BOTH sides (Ring.inverse of X resp. of a norm-small denominator); (4)
+  REFACTOR: T512's step lemmas abstracted to `unit_denom_exp_identity` +
+  `rescale_exp_sub_one_mul_unit_denom` (abstract unit-denominator + M-torsion
+  w), old names kept as instances; subst-distributors `subst_map_C_mul`/
+  `subst_map_sum`/`subst_map_neg` factored; (5) `toFieldChar_prod_natCast`
+  (θ(j) = η(j)χ(j) pointwise at naturals; non-units via
+  Nat.coprime_mul_iff_right split; units via changeLevel_eq_cast_of_dvd +
+  ZMod.cast_natCast); (6) `X_mul_twist_muEtaCleared_subst` MASTER:
+  G(χ̄)-smearing (mahler_twist_formula, its unused `_hn : 1 ≤ n` REMOVED so
+  n = 0 works uniformly; ditto sum_char_inv_H_eq's hn), per-(c,b) clearing
+  at modulus D·p^n, DOUBLE Gauss collapse (sum_inv_char_zeta_pow at D and
+  at p^n), T504 at D·p^n, cancel (rescale (Dp^n) exp − 1) AND C(G(χ̄))
+  (nonvanishing via NEW factored `gaussSum_inv_ne_zero` in TameConductor,
+  also refactored into twist_muA_moments −13 LOC); (7)
+  `twist_muEtaCleared_moments` (T512-endgame verbatim); (8) final assembly.
+  STATEMENT REPLAN: `(hε : IsPrimitiveRoot ε (p^n))` threaded into
+  twist_muEtaCleared_moments + zetaEta_twisted_moments (the source's ambient
+  ε_{p^n}, as in twist_muA_moments). LEAN NOTES: push_cast at a hypothesis
+  normalises ↑(D·p^n) to ↑D·↑p^n breaking rescale-matching — use targeted
+  `simp only [MulMemClass.coe_mul, SubmonoidClass.coe_pow]`; double-pow_mul
+  rws need explicit args (`pow_mul ζ D (c·p^n)`) or the second fires on the
+  same term; triple-sum Fubini = per-level sum_congr + Finset.sum_comm with
+  fully-spelled shows. Verification: lake build green (code + blueprint);
+  axioms = {propext, Classical.choice, Quot.sound} on the master, moments,
+  and zetaEta_twisted_moments (stale-LSP artifact once, clean re-verify).
+  Blueprint: `interp-mahler-theta` wired → charTwist transform + master +
+  moments (prose note: two-index CRT-resolved form, G(χ̄) cancels,
+  single-root closed form not restated); `interp-zeta-eta` wired →
+  zetaEta_twisted_moments (prose note: x⁻¹ as index shift, uniform Euler
+  factor, ambient root). Only T516's determinacy sorry remains in the file.
 
 ### [T516] **MILESTONE: RJW Theorem 5.7** — ∃! ζ_η
 - **Status**: open | **File**: NonTame.lean | **Depends on**: CLEANUP-ALL-4
