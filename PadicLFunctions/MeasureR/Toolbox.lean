@@ -223,6 +223,20 @@ theorem res_units_eq (μ : MeasureR K ℤ_[p]) :
     rw [Set.indicator_of_mem hu, Set.indicator_of_notMem hnm, Pi.one_apply, add_zero,
       one_mul]
 
+omit [CompleteSpace K] in
+/-- The `φ`-scaling of moments: `∫x^k d(φμ) = p^k·∫x^k dμ` (the `R`-widening
+of the §4 `phi_apply_powCM`). -/
+lemma phi_apply_powCM (μ : MeasureR K ℤ_[p]) (k : ℕ) :
+    phi p K μ (powCM p K k)
+      = algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ k)
+          * μ (powCM p K k) := by
+  change μ ((powCM p K k).comp (PadicMeasure.mulCM p (p : ℤ_[p]))) = _
+  have hfun : (powCM p K k).comp (PadicMeasure.mulCM p (p : ℤ_[p]))
+      = algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ k) • powCM p K k := by
+    ext x
+    simp [PadicMeasure.mulCM, mul_pow]
+  rw [hfun, map_smul, smul_eq_mul]
+
 omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 lemma psi_sub (μ ν : MeasureR K ℤ_[p]) :
     psi p K (μ - ν) = psi p K μ - psi p K ν :=

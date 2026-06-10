@@ -580,7 +580,26 @@ theorem res_units_muEtaCleared_moments {D : ℕ} [NeZero D] (hD1 : 1 < D)
         (powCM p K k) : integerRing K) : K)
       = ((gaussSum η⁻¹ (AddChar.zmodChar D (hζ.pow_eq_one)) : integerRing K) : K)
           * (1 - (η ((p : ℕ) : ZMod D) : K) * (p : K) ^ k)
-          * LvalNeg (toFieldChar η) k := by sorry
+          * LvalNeg (toFieldChar η) k := by
+  rw [res_units_eq, LinearMap.sub_apply, psi_muEtaCleared hD1 hζ hD, map_smul,
+    LinearMap.smul_apply, phi_apply_powCM]
+  have hcoe : ((algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ k)
+      : integerRing K) : K) = (p : K) ^ k := by
+    change algebraMap ℚ_[p] K ((((p : ℤ_[p]) ^ k : ℤ_[p])) : ℚ_[p]) = (p : K) ^ k
+    push_cast
+    rfl
+  rw [show ((muEtaCleared p K η hζ hD (powCM p K k)
+        - η ((p : ℕ) : ZMod D) • (algebraMap ℤ_[p] (integerRing K)
+            ((p : ℤ_[p]) ^ k) * muEtaCleared p K η hζ hD (powCM p K k))
+        : integerRing K) : K)
+      = ((muEtaCleared p K η hζ hD (powCM p K k) : integerRing K) : K)
+        - (η ((p : ℕ) : ZMod D) : K)
+          * (((algebraMap ℤ_[p] (integerRing K) ((p : ℤ_[p]) ^ k)
+              : integerRing K) : K)
+            * ((muEtaCleared p K η hζ hD (powCM p K k)
+              : integerRing K) : K)) from by push_cast [smul_eq_mul]; ring,
+    hcoe, muEtaCleared_moments hD1 hη hζ hD k]
+  ring
 
 /-- L5.2.6/L5.2.7 (RJW Def TeX 1866–1868 + final display 1870–1873): the
 χ-twisted moments of `ζ_η := x⁻¹·Res_{ℤ_p^×}(μ_η)`, in the moment form the

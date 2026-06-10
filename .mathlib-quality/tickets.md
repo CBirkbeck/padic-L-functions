@@ -2412,10 +2412,24 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   3 sorries remain (= T514–T516 scope).
 
 ### [T514] Restriction to units: (1−η(p)p^k)-moments (Lem 5.11)
-- **Status**: open | **File**: NonTame.lean | **Depends on**: CLEANUP-52, T512 | **Type**: lemma
+- **Status**: done | **File**: NonTame.lean | **Depends on**: CLEANUP-52, T512 | **Type**: lemma
 - **Statement**: `res_units_muEta_moments` (L5.2.5).
 - **Sources**: TeX 1831–1843 (verbatim at L5.2.5; T035-pattern).
 - **Sizing**: ~50 LOC.
+- **Progress**: DONE 2026-06-11, `res_units_muEtaCleared_moments` exactly
+  the T035 pattern widened: NEW `MeasureR.phi_apply_powCM` (Toolbox —
+  ∫x^k d(φμ) = algebraMap(p^k)·∫x^k dμ; the function identity
+  (powCM k)∘(mulCM p) = algebraMap(p^k)•powCM k by ext + simp [mulCM,
+  mul_pow]; NOTE the Algebra ℤ_[p] (integerRing K) instance derives from
+  NormedAlgebra ℚ_[p] K, so that can't be omitted), then res_units_eq +
+  T513's psi_muEtaCleared + φ-linearity + coe-bookkeeping
+  (algebraMap-composite `change` per the Coefficients defeq +
+  push_cast/rfl; the smul-coe show needs push_cast [smul_eq_mul]) +
+  T512's muEtaCleared_moments + ring. Verification: lake build green;
+  axioms = {propext, Classical.choice, Quot.sound} (stale-LSP artifact
+  once more, clean on re-verify). Blueprint: `interp-eta-restriction`
+  wired → res_units_muEtaCleared_moments with cleared-form prose note;
+  blueprint build green.
 
 ### [T515] μ_θ, its moments and restriction; ζ_η and its interpolation
 - **Status**: open | **File**: NonTame.lean | **Depends on**: T514, T508 | **Type**: cluster

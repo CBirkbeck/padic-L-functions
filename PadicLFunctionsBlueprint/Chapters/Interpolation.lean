@@ -328,10 +328,15 @@ summand of $`F_\eta` shows $`(\varphi\circ\psi)(F_\eta) = \eta(p)\,\varphi(F_\et
 of $`\varphi` we conclude $`\psi(F_\eta) = \eta(p)F_\eta`.
 :::
 
-:::lemma_ "interp-eta-restriction"
+:::lemma_ "interp-eta-restriction" (lean := "PadicLFunctions.MeasureR.res_units_muEtaCleared_moments")
 For all $`k \geq 0`,
 $$`\int_{\Zpx}x^k\cdot\mu_\eta = \big(1-\eta(p)\,p^k\big)\,L(\eta,-k).`
 This uses {uses "interp-psi-twisted"}[] and {uses "interp-eta-mellin"}[].
+
+Formalised in cleared form (`res_units_muEtaCleared_moments`): the
+Gauss-sum normalisation $`G(\eta^{-1})` multiplies both sides, and the
+value $`L(\eta,-k)` is the generalised Bernoulli expression `LvalNeg`,
+exactly as in the two preceding nodes.
 :::
 
 :::proof "interp-eta-restriction"
