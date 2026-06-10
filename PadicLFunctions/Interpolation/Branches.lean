@@ -3,7 +3,12 @@ Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Perfect
 import Mathlib.NumberTheory.Padics.AddChar
+import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RingTheory.Teichmuller
 import PadicLFunctions.KubotaLeopoldt.ZetaP
 
 /-!
@@ -29,35 +34,99 @@ variable (p : ℕ) [hp : Fact p.Prime]
 
 section teichmuller
 
-/-- L5.3.1: the Teichmüller lift `ω(x) := lim_{n} x^{p^n} ∈ ℤ_[p]`
-(RJW Def 5.15: "ω(x) ≔ Teichmüller lift of the reduction modulo p of x"). -/
-noncomputable def teichmullerFun (x : ℤ_[p]) : ℤ_[p] := sorry
+open IsLocalRing
+
+/-- `ℤ_[p] ⧸ maximalIdeal ℤ_[p] ≃+* ZMod p`: mathlib's `PadicInt.residueField`
+(whose codomain `IsLocalRing.ResidueField ℤ_[p]` is definitionally this
+quotient), restated on the raw quotient to avoid typeclass-resolution friction
+through the wrapper. -/
+noncomputable def maximalIdealQuotientEquivZMod :
+    ℤ_[p] ⧸ maximalIdeal ℤ_[p] ≃+* ZMod p :=
+  PadicInt.residueField
+
+instance : CharP (ℤ_[p] ⧸ maximalIdeal ℤ_[p]) p :=
+  charP_of_injective_ringHom (f := (maximalIdealQuotientEquivZMod p).symm.toRingHom)
+    (maximalIdealQuotientEquivZMod p).symm.injective p
+
+instance : Finite (ℤ_[p] ⧸ maximalIdeal ℤ_[p]) :=
+  Finite.of_equiv _ (maximalIdealQuotientEquivZMod p).symm.toEquiv
+
+/-- L5.3.1 (residue form): the Teichmüller map `ω : ZMod p →*₀ ℤ_[p]`, sending
+a nonzero residue to the unique `(p−1)`-th root of unity reducing to it, and
+`0` to `0`. Built from mathlib's `Perfection.teichmuller₀` through the
+identification of `ZMod p` with (the perfection of) the residue field of
+`ℤ_[p]`; mathlib's construction is the adic limit of `p^n`-th powers of lifts
+— RJW Def 5.15's `lim_n x^{p^n}`. -/
+noncomputable def teichmullerZMod : ZMod p →*₀ ℤ_[p] :=
+  (Perfection.teichmuller₀ p (maximalIdeal ℤ_[p])).comp <|
+    ((PerfectionMap.id p (ℤ_[p] ⧸ maximalIdeal ℤ_[p])).equiv.toRingHom.toMonoidWithZeroHom).comp
+      (maximalIdealQuotientEquivZMod p).symm.toRingHom.toMonoidWithZeroHom
+
+/-- `ω(a) ≡ a (mod p)`: the Teichmüller lift is a section of reduction. -/
+@[simp]
+lemma toZMod_teichmullerZMod (a : ZMod p) : toZMod (teichmullerZMod p a) = a := by
+  change toZMod
+    (Perfection.teichmuller₀ p (maximalIdeal ℤ_[p])
+      ((PerfectionMap.id p (ℤ_[p] ⧸ maximalIdeal ℤ_[p])).equiv
+        ((maximalIdealQuotientEquivZMod p).symm a))) = a
+  rw [PadicInt.toZMod_eq_residueField_comp_residue, RingHom.comp_apply]
+  change PadicInt.residueField (Ideal.Quotient.mk _ _) = a
+  rw [Perfection.mk_teichmuller₀, PerfectionMap.comp_equiv]
+  exact (maximalIdealQuotientEquivZMod p).apply_symm_apply a
+
+lemma teichmullerZMod_pow_card_sub_one {a : ZMod p} (ha : a ≠ 0) :
+    teichmullerZMod p a ^ (p - 1) = 1 := by
+  rw [← map_pow, ZMod.pow_card_sub_one_eq_one ha, map_one]
+
+/-- L5.3.1: the Teichmüller lift `ω(x) ∈ ℤ_[p]` of the reduction of `x` mod `p`
+(RJW Def 5.15: "ω(x) ≔ Teichmüller lift of the reduction modulo p of x");
+through `teichmullerZMod` this is the limit `lim_n x^{p^n}` of the source. -/
+noncomputable def teichmullerFun (x : ℤ_[p]) : ℤ_[p] := teichmullerZMod p (toZMod x)
 
 @[simp]
 lemma teichmullerFun_pow_card_sub_one (x : ℤ_[p]ˣ) :
-    teichmullerFun p (x : ℤ_[p]) ^ (p - 1) = 1 := by sorry
+    teichmullerFun p (x : ℤ_[p]) ^ (p - 1) = 1 := by
+  haveI : Fact (1 < p) := ⟨hp.1.one_lt⟩
+  exact teichmullerZMod_pow_card_sub_one p (x.isUnit.map toZMod).ne_zero
 
 lemma teichmullerFun_sub_self_mem (x : ℤ_[p]) :
-    teichmullerFun p x - x ∈ Ideal.span {(p : ℤ_[p])} := by sorry
+    teichmullerFun p x - x ∈ Ideal.span {(p : ℤ_[p])} := by
+  rw [← PadicInt.maximalIdeal_eq_span_p, ← PadicInt.ker_toZMod, RingHom.mem_ker, map_sub,
+    teichmullerFun, toZMod_teichmullerZMod, sub_self]
 
 lemma teichmullerFun_mul (x y : ℤ_[p]) :
-    teichmullerFun p (x * y) = teichmullerFun p x * teichmullerFun p y := by sorry
+    teichmullerFun p (x * y) = teichmullerFun p x * teichmullerFun p y := by
+  simp [teichmullerFun]
 
 /-- `ω` is locally constant: it only depends on `x mod p`. -/
 lemma teichmullerFun_eq_of_sub_mem {x y : ℤ_[p]}
     (h : x - y ∈ Ideal.span {(p : ℤ_[p])}) :
-    teichmullerFun p x = teichmullerFun p y := by sorry
+    teichmullerFun p x = teichmullerFun p y := by
+  have hxy : toZMod x = toZMod y := by
+    rw [← sub_eq_zero, ← map_sub, ← RingHom.mem_ker, PadicInt.ker_toZMod,
+      PadicInt.maximalIdeal_eq_span_p]
+    exact h
+  rw [teichmullerFun, teichmullerFun, hxy]
 
 /-- `ω(x)` is a unit for `x` a unit. -/
 lemma isUnit_teichmullerFun (x : ℤ_[p]ˣ) :
-    IsUnit (teichmullerFun p (x : ℤ_[p])) := by sorry
+    IsUnit (teichmullerFun p (x : ℤ_[p])) :=
+  IsUnit.of_pow_eq_one (teichmullerFun_pow_card_sub_one p x)
+    (Nat.sub_ne_zero_of_lt hp.1.one_lt)
 
 /-- L5.3.1 (packaged): the Teichmüller character `ω : ℤ_[p]ˣ →* ℤ_[p]ˣ`. -/
-noncomputable def teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ := sorry
+noncomputable def teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ where
+  toFun x := (isUnit_teichmullerFun p x).unit
+  map_one' := by
+    ext
+    simp [teichmullerFun]
+  map_mul' x y := by
+    ext
+    simp [teichmullerFun_mul]
 
 @[simp]
 lemma teichmuller_coe (x : ℤ_[p]ˣ) :
-    (teichmuller p x : ℤ_[p]) = teichmullerFun p (x : ℤ_[p]) := by sorry
+    (teichmuller p x : ℤ_[p]) = teichmullerFun p (x : ℤ_[p]) := rfl
 
 end teichmuller
 

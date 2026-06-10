@@ -1960,17 +1960,37 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Status**: open | **Depends on**: T515 | **Type**: cleanup-all (before T516)
 
 ### [T517] Teichmüller character ω
-- **Status**: open | **File**: Interpolation/Branches.lean | **Depends on**: none
+- **Status**: done | **File**: Interpolation/Branches.lean | **Depends on**: none
+- **Progress**: DONE 2026-06-10. Executed via the flt-regular-bernoulli port
+  (replan note above): `maximalIdealQuotientEquivZMod` + CharP/Finite instances
+  on the residue quotient, `teichmullerZMod : ZMod p →*₀ ℤ_[p]` through
+  `Perfection.teichmuller₀`, `toZMod_teichmullerZMod` (section-of-reduction),
+  `teichmullerZMod_pow_card_sub_one`; skeleton fills `teichmullerFun :=
+  teichmullerZMod ∘ toZMod` + all 6 API lemmas + `teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ`
+  packaging + `teichmuller_coe` (rfl). Compiled FIRST PASS, zero errors.
+  Verification: diagnostics clean on the section; axioms = {propext,
+  Classical.choice, Quot.sound} on PadicInt.teichmuller,
+  toZMod_teichmullerZMod, teichmullerFun_sub_self_mem,
+  teichmullerFun_eq_of_sub_mem. Inline cleanup: golfed isUnit hypothesis to
+  `Nat.sub_ne_zero_of_lt`. Blueprint: node `teichmuller-character` spans Def
+  5.15 in FULL (ω + ⟨·⟩ + factorisation) — wiring deferred to T518 completion
+  per the partial-realisation rule.
 - **Parallel**: yes (chain C head) | **Type**: def + API
 - **Statement**: skeleton `PadicInt.teichmullerFun` + 6 API sorries +
   `teichmuller` packaging (L5.3.1).
-- **Proof sketch**: decomposition L5.3.1 (limit of x^{p^n}; Cauchy via
-  Fermat+binomial induction; fixed points; multiplicativity by limit-algebra;
-  PR candidate `PadicInt.teichmuller`).
-- **Mathlib lemmas**: `CompleteSpace`-limit API (`CauchySeq.tendsto_limUnder`),
-  `ZMod.pow_card_sub_one_eq_one`/Fermat (`ZMod.pow_card`), `PadicInt.toZModPow`
-  congruence API.
-- **Sources**: Def 5.15 TeX 1899–1905 (verbatim at R5.3).
+- **Proof sketch**: REPLANNED (flt-regular-bernoulli survey, plan.md addendum
+  2026-06-10): port their `Characters.lean` construction — `teichmullerZMod :
+  ZMod p →*₀ ℤ_[p]` via mathlib `Perfection.teichmuller₀ p (maximalIdeal ℤ_[p])`
+  composed with `(PerfectionMap.id …).equiv` and `PadicInt.residueField.symm`;
+  then `teichmullerFun p x := teichmullerZMod p (toZMod x)`. Source-faithful:
+  mathlib's `Perfection.teichmullerFun` is itself the limit-of-`x^{p^n}`
+  construction of RJW Def 5.15 (`teichmullerAux n+1 = lift^{p^n}`, adic-Cauchy).
+  Original from-scratch sketch (decomposition L5.3.1) retired.
+- **Mathlib lemmas**: `Perfection.teichmuller₀`, `Perfection.mk_teichmuller₀`,
+  `PadicInt.residueField`, `PadicInt.toZMod_eq_residueField_comp_residue`,
+  `ZMod.pow_card_sub_one_eq_one`, `IsUnit.of_pow_eq_one` (all verified in pin).
+- **Sources**: Def 5.15 TeX 1899–1905 (verbatim at R5.3); port source
+  `flt-regular-bernoulli/BernoulliRegular/Characters.lean` (user's own repo).
 - **Blueprint**: wire the chapter's ω-definition node (§5.3 part — locate
   label in Interpolation.lean tail).
 - **Sizing**: ~120 LOC.
