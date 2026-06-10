@@ -2398,7 +2398,18 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   trace computation; η not required primitive).
 
 ### [CLEANUP-52] /cleanup on NonTame.lean (cadence: 3 tickets on file)
-- **Status**: open | **Depends on**: T513 | **Type**: cleanup
+- **Status**: done | **Depends on**: T513 | **Type**: cleanup
+- **Progress**: DONE 2026-06-11. Audit: copyright/docstring/imports ✓, no
+  dividers, no set_option, 0 linter warnings (code written post-ALL-3
+  discipline, omits + line-packing already in place per-ticket), all
+  public decls docstringed with TeX citations, naming ✓. STRUCTURE:
+  psi_muEtaCleared (~115 ln) and X_mul_muEtaCleared_subst (~110 ln) exceed
+  the 50-line bar but are already decomposed into maximal named
+  have-blocks; further extraction would create single-use 8-arg private
+  lemmas — n/a per the TameConductor/ALL-3 precedent. Chain-step lemmas
+  kept public (reusable at modulus Dp^n in T515). Golf applied:
+  muEta_term_exp_identity tail simp-at/exact → simpa-using. Build green,
+  3 sorries remain (= T514–T516 scope).
 
 ### [T514] Restriction to units: (1−η(p)p^k)-moments (Lem 5.11)
 - **Status**: open | **File**: NonTame.lean | **Depends on**: CLEANUP-52, T512 | **Type**: lemma

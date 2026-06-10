@@ -120,11 +120,10 @@ lemma muEta_term_exp_identity {ζ : integerRing K} {D : ℕ}
   simp only [map_mul, map_sub, map_add, map_one, PowerSeries.map_X,
     PowerSeries.map_C, Subring.coe_subtype, SubmonoidClass.coe_pow] at hK
   have hsub := congrArg (PowerSeries.substAlgHom hg) hK
-  simp only [map_mul, map_sub, map_add, map_one, hX, hC,
+  simpa only [map_mul, map_sub, map_add, map_one, hX, hC,
     show (1 : PowerSeries K) + (PowerSeries.exp K - 1) = PowerSeries.exp K
       by ring,
-    PowerSeries.coe_substAlgHom hg] at hsub
-  exact hsub
+    PowerSeries.coe_substAlgHom hg] using hsub
 
 omit [CompleteSpace K] in
 /-- L5.2.3 step 2: clearing the denominator `e^{Dt} − 1` against `G_c`
