@@ -117,6 +117,72 @@ theorem baseChange_algCM (μ : PadicMeasure p ℤ_[p]) (f : C(ℤ_[p], ℤ_[p]))
         (hsum.map_tsum (algebraMap ℤ_[p] (integerRing K))
           (integerRing.isometry_algebraMap p K).continuous).symm
 
+/-- `algCM` is multiplicative. -/
+lemma algCM_mul (f g : C(ℤ_[p], ℤ_[p])) :
+    algCM K (f * g) = algCM K f * algCM K g :=
+  ContinuousMap.ext fun x => by simp [algCM_apply]
+
+/-- The inclusion of a `ℤ_p`-valued indicator is the `R`-valued indicator. -/
+lemma algCM_charFn {U : Set ℤ_[p]} (hU : IsClopen U) :
+    algCM K (LocallyConstant.charFn ℤ_[p] hU : C(ℤ_[p], ℤ_[p]))
+      = charFnCM K ℤ_[p] hU := by
+  refine ContinuousMap.ext fun x => ?_
+  rw [algCM_apply, charFnCM_apply]
+  change algebraMap ℤ_[p] (integerRing K) (U.indicator 1 x) = U.indicator 1 x
+  by_cases hx : x ∈ U
+  · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx, Pi.one_apply, Pi.one_apply,
+      map_one]
+  · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, map_zero]
+
+/-- A locally constant `R`-valued function is an `R`-linear combination of
+indicators of its (clopen) fibres. -/
+lemma locallyConstant_eq_sum_smul_charFn (Φ : LocallyConstant ℤ_[p] (integerRing K)) :
+    (Φ.toContinuousMap : C(ℤ_[p], integerRing K))
+      = ∑ v ∈ Φ.range_finite.toFinset,
+          v • charFnCM K ℤ_[p] (Φ.isLocallyConstant.isClopen_fiber v) := by
+  refine ContinuousMap.ext fun x => ?_
+  rw [ContinuousMap.sum_apply, Finset.sum_eq_single (Φ x)]
+  · have hx : x ∈ {x' | Φ.toFun x' = Φ x} := rfl
+    rw [ContinuousMap.smul_apply, charFnCM_apply, Set.indicator_of_mem hx,
+      Pi.one_apply, smul_eq_mul, mul_one]
+    rfl
+  · intro v _ hv
+    have hx : x ∉ {x' | Φ.toFun x' = v} :=
+      fun hmem => hv (show Φ x = v from hmem).symm
+    rw [ContinuousMap.smul_apply, charFnCM_apply, Set.indicator_of_notMem hx,
+      smul_zero]
+  · intro hx
+    exact absurd (Φ.range_finite.mem_toFinset.mpr (Set.mem_range_self x)) hx
+
+/-- **Base change commutes with multiplication by `ℤ_p`-valued functions**
+(the W4 naturality leaf for the toolbox operators): checked on locally
+constant functions through the fibre-indicator decomposition. -/
+theorem baseChange_cmul (g : C(ℤ_[p], ℤ_[p])) (μ : PadicMeasure p ℤ_[p]) :
+    baseChange p K (PadicMeasure.cmul p g μ)
+      = cmul p K (algCM K g) (baseChange p K μ) := by
+  refine ext_locallyConstant fun Φ => ?_
+  rw [locallyConstant_eq_sum_smul_charFn (K := K) Φ, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  rw [map_smul, map_smul]
+  congr 1
+  rw [← algCM_charFn (K := K) (Φ.isLocallyConstant.isClopen_fiber v),
+    show cmul p K (algCM K g) (baseChange p K μ)
+        (algCM K (LocallyConstant.charFn ℤ_[p]
+          (Φ.isLocallyConstant.isClopen_fiber v) : C(ℤ_[p], ℤ_[p])))
+      = baseChange p K μ (algCM K g
+        * algCM K (LocallyConstant.charFn ℤ_[p]
+          (Φ.isLocallyConstant.isClopen_fiber v) : C(ℤ_[p], ℤ_[p])))
+    from rfl,
+    ← algCM_mul, baseChange_algCM, baseChange_algCM]
+  rfl
+
+/-- Base change commutes with clopen restriction. -/
+theorem baseChange_res {U : Set ℤ_[p]} (hU : IsClopen U) (μ : PadicMeasure p ℤ_[p]) :
+    baseChange p K (PadicMeasure.res p hU μ)
+      = res p K hU (baseChange p K μ) := by
+  rw [PadicMeasure.res, baseChange_cmul, algCM_charFn]
+  rfl
+
 end MeasureR
 
 end
