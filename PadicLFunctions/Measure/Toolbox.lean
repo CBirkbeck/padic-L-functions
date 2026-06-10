@@ -205,7 +205,7 @@ theorem mahlerTransform_pushforward_mulCM (c : ℤ_[p]) (μ : PadicMeasure p ℤ
       (pow_dvd_pow_of_dvd (PowerSeries.X_dvd_iff.2 hconst) d) n hnd
   ext n
   rw [coeff_mahlerTransform, PowerSeries.coeff_subst' hsub,
-    finsum_eq_finset_sum_of_support_subset _ (s := Finset.range (n + 1)) (by
+    finsum_eq_finsetSum_of_support_subset _ (s := Finset.range (n + 1)) (by
       intro d hd
       simp only [Function.mem_support] at hd
       by_contra hmem

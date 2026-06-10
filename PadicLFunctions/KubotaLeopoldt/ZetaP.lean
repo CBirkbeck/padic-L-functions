@@ -364,6 +364,36 @@ theorem kubotaLeopoldt (hp2 : p ≠ 2) :
           ((ν (unitsPowCM p k) : ℤ_[p]) : ℚ_[p])
             = ((b : ℚ_[p]) ^ k - 1) * (1 - (p : ℚ_[p]) ^ (k - 1))
                 * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) := by
-  sorry
+  classical
+  obtain ⟨hpm, huv, hgen⟩ :=
+    (exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  set u := (exists_nat_topological_generator p hp2).choose_spec.choose with hu
+  refine ⟨padicZeta p hp2, ⟨padicZeta_isPseudoMeasure p hp2,
+    fun b k hk ν hν => padicZeta_moments p hp2 b hk ν hν⟩, ?_⟩
+  rintro q ⟨hq, hmom⟩
+  have hd : IsPseudoMeasure p (q - padicZeta p hp2) :=
+    IsPseudoMeasure.sub p hq (padicZeta_isPseudoMeasure p hp2)
+  have hzero : q - padicZeta p hp2 = 0 := by
+    refine pseudoMeasure_eq_zero_of_moments p (topGen_pow_ne_one p hgen) _ hd ?_
+    intro k hk ν hν
+    obtain ⟨ν₁, hν₁⟩ := hq u
+    obtain ⟨ν₂, hν₂⟩ := padicZeta_isPseudoMeasure p hp2 u
+    have hsplit : ν = ν₁ - ν₂ := by
+      apply IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+      rw [map_sub, ← hν₁, ← hν₂, ← hν]
+      ring
+    have h1 := hmom u k hk ν₁ hν₁
+    have h2 := padicZeta_moments p hp2 u hk ν₂ hν₂
+    rw [hsplit]
+    have hcast : (((ν₁ - ν₂) (unitsPowCM p k) : ℤ_[p]) : ℚ_[p]) = 0 := by
+      rw [LinearMap.sub_apply]
+      push_cast
+      rw [h1, h2]
+      ring
+    refine Subtype.coe_injective ?_
+    show (((ν₁ - ν₂) (unitsPowCM p k) : ℤ_[p]) : ℚ_[p]) = ((0 : ℤ_[p]) : ℚ_[p])
+    rw [hcast]
+    norm_num
+  exact sub_eq_zero.1 hzero
 
 end PadicMeasure

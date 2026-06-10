@@ -1417,7 +1417,12 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     padicZeta_moments; builds green. Cleanup: degraded.
 
 ### [CLEANUP-ALL-2] Pre-milestone `/cleanup-all` (§4)
-- **Status**: open
+- **Status**: done (2026-06-10, degraded mode — no lean-lsp). Swept all four
+  KubotaLeopoldt files + §3: fixed the `finsum_eq_finsetSum_of_support_subset`
+  deprecation in Toolbox.lean; remaining warnings are the standing cosmetic
+  `show`-linter items (§3-pattern, queued for tooled CLEANUP-FINAL) + one
+  flexible-simp note (MuA.lean:260) queued likewise. Blueprint re-render deferred
+  to post-T039 (single render).
 - **Depends on**: T030–T038
 - **Type**: cleanup
 - **Description**: project-wide cleanup before the §4 milestone theorem, per the
@@ -1426,7 +1431,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   (`./scripts/ci-pages.sh`).
 
 ### [T039] **MILESTONE** — Kubota–Leopoldt: existence and uniqueness
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
 - **Depends on**: T038, CLEANUP-ALL-2
 - **Parallel**: no
@@ -1458,6 +1463,26 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   ZetaP.lean, CLEANUP-KL-2 folded in). Then update CLEANUP-FINAL's scope to include
   the §4 files.
 - **Progress**:
+  - 2026-06-10: **DONE — RJW Theorem 4.1 proven.** Existence: padicZeta +
+    padicZeta_isPseudoMeasure + padicZeta_moments. Uniqueness: difference is a
+    pseudo-measure (IsPseudoMeasure.sub) with vanishing witness-moments (witness
+    split via IsFractionRing.injective; both interpolations at b := u subtract to 0;
+    Subtype.coe_injective with a beta-reducing `show` for the ℤ_p-level conclusion),
+    killed by pseudoMeasure_eq_zero_of_moments at the integer generator.
+    `lake build PadicLFunctions` green, ZERO sorries project-wide,
+    #print axioms kubotaLeopoldt = [propext, Classical.choice, Quot.sound].
+    Blueprint: kl-existence-uniqueness → kubotaLeopoldt wired; chapter now 10/11
+    nodes green (kl-values-of-zeta deliberately unwired pending §2 Mellin theory);
+    site re-rendered (ci-pages OK). Final per-file cleanup ZetaP.lean: degraded
+    pass done (show-linter cosmetics queued for tooled CLEANUP-FINAL).
+
+### CLEANUP-FINAL scope note (updated 2026-06-10)
+CLEANUP-FINAL (§3 board) now covers the §4 files too:
+PadicLFunctions/KubotaLeopoldt/{ZetaValues,ZetaValuesComplex,MuA,ZetaP}.lean.
+Queued degraded-mode items: show-linter cosmetics (project-wide pattern),
+flexible-simp at MuA.lean:260, psi-bundling (psi → LinearMap), delQ/del merge
+(generalise del to CommRing), mahlerTransform_sub/smul → Convolution.lean,
+instIsDomain + SMulCommClass placement review. Blocked on a lean-lsp-tooled session.
 
 ## §4 dependency quick-view
 

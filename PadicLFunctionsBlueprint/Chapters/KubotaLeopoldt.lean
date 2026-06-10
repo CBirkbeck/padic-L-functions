@@ -23,7 +23,7 @@ element to remove the auxiliary parameter $`a` and produce a pseudo-measure.
 
 The headline result of the chapter is the following.
 
-:::theorem "kl-existence-uniqueness"
+:::theorem "kl-existence-uniqueness" (lean := "PadicMeasure.kubotaLeopoldt")
 There is a unique pseudo-measure $`\zetap` on $`\Zpx` such that, for all integers
 $`k > 0`,
 $$`\int_{\Zpx} x^k \cdot \zetap = (1-p^{k-1})\,\zeta(1-k).`$$
