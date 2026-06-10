@@ -968,9 +968,13 @@ every measure-witness `ν` of `([b]−[1])·ζ_p`, the χ-twisted `k`-th moment 
 `ν` (base-changed) equals `(χ(b)·b^k − 1)·L(χ, 1−k)`.
 
 "Let χ be a (primitive) Dirichlet character of conductor `p^n` ... Then, for
-`k > 0`, we have `∫_{ℤ_p^×}χ(x)x^k · ζ_p = L(χ,1−k)`." -/
+`k > 0`, we have `∫_{ℤ_p^×}χ(x)x^k · ζ_p = L(χ,1−k)`."
+
+`hζ` mirrors the source's ambient `ε_{p^n}` (statement replan, as in
+`twist_muA_moments`). -/
 theorem tame_conductor {n : ℕ} (hn : 1 ≤ n) (hp2 : p ≠ 2)
     {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n))
     {k : ℕ} (hk : 0 < k) (b : ℤ_[p]ˣ) (ν : PadicMeasure p ℤ_[p]ˣ)
     (hν : algebraMap _ (PadicMeasure.QuotientField p) (PadicMeasure.dirac p b - 1)
         * PadicMeasure.padicZeta p hp2 = algebraMap _ _ ν) :
@@ -978,7 +982,132 @@ theorem tame_conductor {n : ℕ} (hn : 1 ≤ n) (hp2 : p ≠ 2)
         (χ.toContinuousMapZp * powCM p K k) : integerRing K) : K)
       = ((χ (PadicInt.toZModPow n (b : ℤ_[p])) : K)
             * algebraMap ℚ_[p] K (((b : ℤ_[p]) : ℚ_[p]) ^ k) - 1)
-          * LvalNeg (toFieldChar χ) (k - 1) := by sorry
+          * LvalNeg (toFieldChar χ) (k - 1) := by
+  classical
+  obtain ⟨hpm, huv, hgen⟩ :=
+    (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  set m := (PadicMeasure.exists_nat_topological_generator p hp2).choose with hm
+  set u := (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose
+    with hu
+  -- the defining relation `([u]−1)·ζ_p = zetaNum m`, pulled back to `Λ(ℤ_p^×)`
+  have hspec : algebraMap _ (PadicMeasure.QuotientField p)
+        (PadicMeasure.dirac p u - 1) * PadicMeasure.padicZeta p hp2
+      = algebraMap _ _ (PadicMeasure.zetaNum p m) := by
+    rw [PadicMeasure.padicZeta]
+    exact IsLocalization.mk'_spec' (PadicMeasure.QuotientField p) _ _
+  have hkey : (PadicMeasure.dirac p u - 1) * ν
+      = (PadicMeasure.dirac p b - 1) * PadicMeasure.zetaNum p m := by
+    apply IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ)
+      (PadicMeasure.QuotientField p)
+    rw [map_mul, map_mul, ← hν, ← hspec]
+    ring
+  -- the χ-twisted moment functional
+  set Θ : PadicMeasure p ℤ_[p]ˣ → K := fun μ =>
+    ((baseChange p K (PadicMeasure.iota p μ)
+      (χ.toContinuousMapZp * powCM p K k) : integerRing K) : K) with hΘ
+  have hΘsub : ∀ μ₁ μ₂, Θ (μ₁ - μ₂) = Θ μ₁ - Θ μ₂ := by
+    intro μ₁ μ₂
+    rw [hΘ]
+    simp only [map_sub, LinearMap.sub_apply]
+    push_cast
+    ring
+  have heigen : ∀ (w : ℤ_[p]ˣ) (μ : PadicMeasure p ℤ_[p]ˣ),
+      Θ (PadicMeasure.dirac p w * μ)
+        = ((χ.toContinuousMapZp ((w : ℤ_[p]))
+            * powCM p K k ((w : ℤ_[p])) : integerRing K) : K) * Θ μ := by
+    intro w μ
+    rw [hΘ]
+    simp only
+    rw [iota_dirac_mul,
+      show PadicMeasure.sigma p w (PadicMeasure.iota p μ)
+        = PadicMeasure.pushforward p (PadicMeasure.mulCM p ((w : ℤ_[p]ˣ) : ℤ_[p]))
+            (PadicMeasure.iota p μ) from rfl,
+      baseChange_pushforward,
+      show pushforward K ℤ_[p] ℤ_[p] (PadicMeasure.mulCM p ((w : ℤ_[p]ˣ) : ℤ_[p]))
+          (baseChange p K (PadicMeasure.iota p μ))
+          (χ.toContinuousMapZp * powCM p K k)
+        = baseChange p K (PadicMeasure.iota p μ)
+            ((χ.toContinuousMapZp * powCM p K k).comp
+              (PadicMeasure.mulCM p ((w : ℤ_[p]ˣ) : ℤ_[p]))) from rfl,
+      char_pow_comp_mulCM, map_smul]
+    push_cast [smul_eq_mul]
+    ring
+  -- apply `Θ` to the key relation and distribute
+  have hmom := congrArg Θ hkey
+  rw [sub_mul, sub_mul, one_mul, one_mul, hΘsub, hΘsub, heigen, heigen] at hmom
+  -- the `c_u`-factor equals the θ-side factor
+  have hcu : ((χ.toContinuousMapZp ((u : ℤ_[p]))
+        * powCM p K k ((u : ℤ_[p])) : integerRing K) : K)
+      = (χ ((m : ℕ) : ZMod (p ^ n)) : K) * (m : K) ^ k := by
+    rw [show ((χ.toContinuousMapZp ((u : ℤ_[p]))
+          * powCM p K k ((u : ℤ_[p])) : integerRing K) : K)
+        = ((χ.toContinuousMapZp ((u : ℤ_[p])) : integerRing K) : K)
+          * ((powCM p K k ((u : ℤ_[p])) : integerRing K) : K) from by push_cast; rfl,
+      DirichletCharacter.toContinuousMapZp_apply, huv, map_natCast]
+    congr 1
+    change algebraMap ℚ_[p] K (((((m : ℕ) : ℤ_[p]) ^ k : ℤ_[p])) : ℚ_[p])
+      = ((m : ℕ) : K) ^ k
+    push_cast
+    rfl
+  -- value of `Θ(zetaNum m)` by the θ-form of the theorem
+  have hθval : Θ (PadicMeasure.zetaNum p m)
+      = -(1 - (χ ((m : ℕ) : ZMod (p ^ n)) : K) * (m : K) ^ k)
+          * LvalNeg (toFieldChar χ) (k - 1) := tame_conductor_theta hn hχ hζ hpm hk
+  -- nonvanishing of `c_u − 1` via the finite order of the character value
+  have hne : (χ ((m : ℕ) : ZMod (p ^ n)) : K) * (m : K) ^ k - 1 ≠ 0 := by
+    rw [sub_ne_zero]
+    intro heq
+    set N := Nat.card (ZMod (p ^ n))ˣ with hN
+    haveI : NeZero (p ^ n) := ⟨pow_ne_zero n hp.out.ne_zero⟩
+    have hNpos : 0 < N := Nat.card_pos
+    -- `χ(m̄)^N = 1` since `m̄` is the image of the unit `u`
+    have hmbar : ((m : ℕ) : ZMod (p ^ n))
+        = ((PadicMeasure.unitsToZModPow p n u : (ZMod (p ^ n))ˣ) : ZMod (p ^ n)) := by
+      rw [PadicMeasure.unitsToZModPow_coe, huv, map_natCast]
+    have hpow1 : (((m : ℕ) : ZMod (p ^ n))) ^ N = 1 := by
+      rw [hmbar, ← Units.val_pow_eq_pow_val, pow_card_eq_one', Units.val_one]
+    have hχN : (χ ((m : ℕ) : ZMod (p ^ n)) : K) ^ N = 1 := by
+      rw [show ((χ ((m : ℕ) : ZMod (p ^ n)) : integerRing K) : K) ^ N
+          = ((((χ ((m : ℕ) : ZMod (p ^ n))) ^ N : integerRing K)) : K) from by
+        push_cast; rfl]
+      rw [← map_pow, hpow1, map_one, OneMemClass.coe_one]
+    -- hence `m^{kN} = 1` in `K`, descending to `ℤ_p`
+    have hmK : ((m : K)) ^ (k * N) = 1 := by
+      have h2 := congrArg (· ^ N) heq
+      simp only [mul_pow, one_pow] at h2
+      rw [hχN, one_mul, ← pow_mul] at h2
+      exact h2
+    have hmQp : (((m : ℕ) : ℚ_[p])) ^ (k * N) = 1 := by
+      have hinj : Function.Injective (algebraMap ℚ_[p] K) :=
+        (algebraMap ℚ_[p] K).injective
+      apply hinj
+      rw [map_pow, map_natCast, map_one]
+      exact_mod_cast hmK
+    have hmZp : (((m : ℕ) : ℤ_[p])) ^ (k * N) = 1 := by
+      have hcoe : ((((m : ℕ) : ℤ_[p]) ^ (k * N) : ℤ_[p]) : ℚ_[p])
+          = ((1 : ℤ_[p]) : ℚ_[p]) := by
+        push_cast
+        exact_mod_cast hmQp
+      exact Subtype.coe_injective hcoe
+    have hcontra := PadicMeasure.topGen_pow_ne_one p hgen (k * N)
+      (Nat.mul_pos hk hNpos)
+    rw [huv] at hcontra
+    exact hcontra hmZp
+  -- the `c_b`-factor in the target's normal form
+  have hcb : ((χ.toContinuousMapZp ((b : ℤ_[p]))
+        * powCM p K k ((b : ℤ_[p])) : integerRing K) : K)
+      = (χ (PadicInt.toZModPow n (b : ℤ_[p])) : K)
+          * algebraMap ℚ_[p] K (((b : ℤ_[p]) : ℚ_[p]) ^ k) := by
+    push_cast
+    rw [DirichletCharacter.toContinuousMapZp_apply]
+    congr 1
+    change algebraMap ℚ_[p] K ((((b : ℤ_[p]) ^ k : ℤ_[p])) : ℚ_[p]) = _
+    push_cast
+    rfl
+  -- solve the linear relation
+  rw [hcu, hθval, hcb] at hmom
+  refine mul_left_cancel₀ hne ?_
+  linear_combination hmom
 
 end MeasureR
 

@@ -2222,7 +2222,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   subtype) cancels in the field K.
 
 ### [T510] **MILESTONE: RJW Theorem 5.1** — ∫χ(x)x^k·ζ_p = L(χ,1−k)
-- **Status**: open | **File**: TameConductor.lean | **Depends on**: CLEANUP-ALL-3
+- **Status**: done | **File**: TameConductor.lean | **Depends on**: CLEANUP-ALL-3
 - **Type**: theorem
 - **Statement**: witness-quantified form mirroring `kubotaLeopoldt`'s encoding
   (TW6 skeleton): for χ primitive mod p^n (n ≥ 1), p ≠ 2, k > 0, the
@@ -2234,6 +2234,36 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Blueprint**: wire `interpolation-property` (the chapter's Thm 5.1 node) →
   the new theorem; re-render site.
 - **Sizing**: source proof 14 lines ⟹ ~120 LOC.
+- **Progress**: **DONE 2026-06-10 — MILESTONE: TameConductor.lean SORRY-FREE.**
+  Both forms proven: `tame_conductor_theta` (θ_a-form, ∫χ̃x^k d(θ_a)_R =
+  −(1−χ(a)·a^{k+1})·LvalNeg χ k via Θ-functional composition over
+  twist_muA_moments) and `tame_conductor` (witness form: ∃ μ_w with
+  res-units + ψ-shift properties pairing to the L-value, mirroring
+  kubotaLeopoldt's encoding). Route: (1) `iota_dirac_mul` — the units-Dirac
+  convolution passes through ι = σ_w dilation; (2) baseChange naturality
+  pack `baseChange_pushforward` / `baseChange_cmul` / `baseChange_res`
+  (BaseChange.lean; proved by ext_locallyConstant + fibre-indicator
+  decomposition `locallyConstant_eq_sum_smul_charFn` via
+  `Φ.isLocallyConstant.isClopen_fiber` + `LocallyConstant.range_finite`);
+  (3) dilation eigenfunction `char_pow_comp_mulCM` (χ̃x^k ∘ mulCM c =
+  χ̃(c)c^k • χ̃x^k); (4) nonvanishing c_u = χ(u)·u^{k+1} ≠ 1 for the chosen
+  unit u via FINITE CHARACTER ORDER: χ(m̄)^N = 1 by `pow_card_eq_one'`, so
+  c_u^N = m^{(k+1)N} would force topGen^{(k+1)N} = 1 in ℤ_pˣ, contradicting
+  `topGen_pow_ne_one` — avoids needing 1+pℤ_p torsion-freeness. STATEMENT
+  REPLAN (carried from T509, recorded in docstrings): the ambient primitive
+  p^n-th root hypothesis `(hζ : IsPrimitiveRoot ζ (p^n))` threaded through
+  twist_muA_moments → tame_conductor_theta → tame_conductor (source's
+  ε_{p^n}, TeX ~1640). LEAN NOTES: MeasureR `pushforward` takes explicit
+  K X Y; iota_dirac_mul's final rw chain closes by congr-unification —
+  end with `rfl`; a first lean_verify returned sorryAx from a stale LSP
+  elaboration (second occurrence this file) — grep shows 0 sorries,
+  re-verify after build settle → clean. Verification: lake build green
+  (3833 jobs incl. blueprint); zero sorry in TameConductor.lean; axioms on
+  `tame_conductor` + `tame_conductor_theta` = {propext, Classical.choice,
+  Quot.sound}. Blueprint: `interpolation-property` wired →
+  tame_conductor + tame_conductor_theta + twist_muA_moments with prose
+  note (witness encoding, θ-form engine, LvalNeg value encoding, ambient
+  root hypothesis); `lake build PadicLFunctionsBlueprint` green.
 
 ### [CLEANUP-ALL-3] Pre-milestone /cleanup-all
 - **Status**: done | **Depends on**: T509 | **Type**: cleanup-all (before T510)

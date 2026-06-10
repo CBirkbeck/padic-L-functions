@@ -37,12 +37,23 @@ measure is built, its Mahler transform is computed, the corresponding function o
 $`t` is identified with a complex $`L`-function via the Mellin transform, and the
 special-value formula is read off.
 
-:::theorem "interpolation-property"
+:::theorem "interpolation-property" (lean := "PadicLFunctions.MeasureR.tame_conductor, PadicLFunctions.MeasureR.tame_conductor_theta, PadicLFunctions.MeasureR.twist_muA_moments")
 Let $`\chi` be a primitive Dirichlet character of conductor $`p^n`, $`n \geq 1`,
 viewed as a locally constant character of $`\Zpx`. Then for every integer $`k > 0`,
 $$`\int_{\Zpx}\chi(x)\,x^k \cdot \zetap = L(\chi, 1-k).`
 This depends on {uses "kubota-leopoldt"}[], {uses "interp-twist"}[],
 {uses "interp-dirichlet-integral"}[] and {uses "dirichlet-L-function"}[].
+
+In the formalisation the pairing with $`\zetap` follows the witness encoding of
+`PadicMeasure.kubotaLeopoldt`: `tame_conductor` states that every
+measure-witness `ν` of $`([b]-[1])\zetap` has χ-twisted moments
+$`(\chi(b)b^k - 1)\,L(\chi,1-k)`; the engine is the θ-form
+`tame_conductor_theta` ($`\int \chi(x)x^k\,\theta_a = -(1-\chi(a)a^k)L(\chi,1-k)`,
+the source's own display) and the moment formula `twist_muA_moments`. The
+value $`L(\chi,1-k)` is the generalised Bernoulli expression `LvalNeg`
+(complex comparison: `LFunction_neg_nat`), and a primitive `p^n`-th root of
+unity in the coefficient field is assumed, mirroring the source's ambient
+$`\eps_{p^n}`.
 :::
 
 :::proof "interpolation-property"
