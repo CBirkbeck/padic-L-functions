@@ -192,7 +192,7 @@ As $`\varphi` is injective, this forces $`\psi(\tfrac1T) = \tfrac1T`, and hence
 $`\psi(\Fa) = \Fa`, i.e. $`\psi(\mua) = \mua`.
 :::
 
-:::proposition "kl-restriction-interpolation"
+:::proposition "kl-restriction-interpolation" (lean := "PadicMeasure.res_units_muA_apply_powCM")
 For all $`k \ge 0`,
 $$`\int_{\Zpx} x^k \cdot \mua = (-1)^k\,(1 - p^k)\,(1 - a^{k+1})\,\zeta(-k).`$$
 In other words, restricting from $`\Zp` to $`\Zpx` removes the Euler factor at

@@ -547,7 +547,11 @@ theorem psi_muA {a : ℕ} (hpa : ¬ p ∣ a) : psi p (muA p a) = muA p a := by
 
 lemma phi_apply_powCM (μ : PadicMeasure p ℤ_[p]) (k : ℕ) :
     phi p μ (powCM p k) = (p : ℤ_[p]) ^ k * μ (powCM p k) := by
-  sorry
+  show μ ((powCM p k).comp (mulCM p (p : ℤ_[p]))) = (p : ℤ_[p]) ^ k * μ (powCM p k)
+  have hfun : (powCM p k).comp (mulCM p (p : ℤ_[p])) = (p : ℤ_[p]) ^ k • powCM p k := by
+    ext x
+    simp [powCM, mulCM, mul_pow]
+  rw [hfun, map_smul, smul_eq_mul]
 
 /-- **RJW Prop. 4.8 (`PropInterpolation1`)**: restricting to `ℤ_p^×` removes the
 Euler factor at `p`:
@@ -556,6 +560,9 @@ theorem res_units_muA_apply_powCM {a : ℕ} (hpa : ¬ p ∣ a) (k : ℕ) :
     ((res p (isClopen_units p) (muA p a) (powCM p k) : ℤ_[p]) : ℚ_[p])
       = (-1) ^ k * (1 - (p : ℚ_[p]) ^ k) * (1 - (a : ℚ_[p]) ^ (k + 1))
           * ((zetaNeg k : ℚ) : ℚ_[p]) := by
-  sorry
+  rw [res_units_eq, psi_muA p hpa, LinearMap.sub_apply, phi_apply_powCM]
+  push_cast
+  rw [muA_apply_powCM p hpa k]
+  ring
 
 end PadicMeasure

@@ -1236,7 +1236,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     in a tooled pass).
 
 ### [T035] Restriction to `ℤ_p^×`: Euler factor removed
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
 - **Depends on**: T033, T034
 - **Parallel**: no
@@ -1257,6 +1257,15 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   per-file cleanup** for MuA.lean here (= CLEANUP-KL-1 folded in; verify whole-file
   lint).
 - **Progress**:
+  - 2026-06-10: DONE first try — phi_apply_powCM (pushforward show + smul-fun ext),
+    res_units_muA_apply_powCM (res_units_eq + psi_muA + push_cast + T033 + ring).
+    **MuA.lean now sorry-free** (RJW §4.1–§4.2 complete: Prop 4.4/Def 4.5/Prop 4.6/
+    Lem 4.7/Prop 4.8). Axioms standard. Blueprint: kl-restriction-interpolation →
+    res_units_muA_apply_powCM, builds. Final per-file cleanup: degraded pass — build
+    warnings clean except one flexible-simp lint note (line ~259, simp at h1 in
+    X_mul_subst_exp_Fa's hreg) queued for tooled CLEANUP-FINAL; naming + docstrings
+    hand-audited; no long-proof gate breach (psi_muA ~95 lines but structured by
+    haves mirroring the decomposition tree).
 
 ### [T036] Units-side transfer + `x⁻¹`-twist `zetaNum`
 - **Status**: open
