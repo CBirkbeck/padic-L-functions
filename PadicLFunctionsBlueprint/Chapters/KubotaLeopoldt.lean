@@ -234,7 +234,7 @@ $$`\int_{\Zpx} x^k \cdot x^{-1}\mua = \int_{\Zpx} x^{k-1}\cdot\mua = (-1)^k\,(a^
 This uses the {uses "iwasawa-algebra"}[] structure of $`\Lam(\Zpx)`.
 :::
 
-:::definition "kubota-leopoldt"
+:::definition "kubota-leopoldt" (lean := "PadicMeasure.padicZeta")
 Let $`a` be a *topological generator* of $`\Zpx`. The *$`p`-adic zeta function*
 (the Kubota–Leopoldt $`p`-adic $`L`-function) is the element
 $$`\zetap := \frac{x^{-1}\,\Res_{\Zpx}\mua}{\thetaa} \in Q(\Zpx)`$$
@@ -243,7 +243,7 @@ $`\mua` is the measure {uses "measure-mu-a"}[] and $`\thetaa` is the augmentatio
 element {uses "kl-theta-a"}[].
 :::
 
-:::proposition "kl-zetap-interpolation"
+:::proposition "kl-zetap-interpolation" (lean := "PadicMeasure.padicZeta_moments")
 The element $`\zetap` is a well-defined pseudo-measure, independent of the choice
 of topological generator $`a`, satisfying
 $$`\int_{\Zpx} x^k \cdot \zetap = (1 - p^{k-1})\,\zeta(1-k) \qquad \text{for all } k > 0.`$$

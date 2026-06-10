@@ -1371,7 +1371,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     Nat.card_zpowers. Axioms standard. Cleanup: degraded.
 
 ### [T038] `ζ_p`: definition, pseudo-measure property, interpolation
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
 - **Depends on**: T036, T037
 - **Parallel**: no
@@ -1406,6 +1406,15 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   wire `kl-zetap-interpolation` → `PadicMeasure.padicZeta_moments`.
 - **Cleanup**: `/cleanup` immediately after.
 - **Progress**:
+  - 2026-06-10: DONE — IsPseudoMeasure.sub (mul_sub then ← map_sub: order matters),
+    padicZeta_isPseudoMeasure (exact isPseudoMeasure_mk' at the choice-spec),
+    padicZeta_moments (mk'_spec' for the defining relation; witness pullback via
+    IsFractionRing.injective; moments via units_mul_apply_unitsPowCM + dirac_apply
+    rfl + units_one_def; division by u^k−1 via Subtype.coe_injective-torsion-freeness;
+    final algebra: linear_combination (b^k−1)(u^k−1)·hsign — rw [← hsign] fails on
+    associativity, linear_combination is the right tool). Axioms standard.
+    Blueprint: kubota-leopoldt → padicZeta, kl-zetap-interpolation →
+    padicZeta_moments; builds green. Cleanup: degraded.
 
 ### [CLEANUP-ALL-2] Pre-milestone `/cleanup-all` (§4)
 - **Status**: open

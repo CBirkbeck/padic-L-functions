@@ -283,12 +283,16 @@ def padicZeta (hp2 : p ≠ 2) : QuotientField p :=
 lemma IsPseudoMeasure.sub {q₁ q₂ : QuotientField p}
     (h₁ : IsPseudoMeasure p q₁) (h₂ : IsPseudoMeasure p q₂) :
     IsPseudoMeasure p (q₁ - q₂) := by
-  sorry
+  intro g
+  obtain ⟨ν₁, hν₁⟩ := h₁ g
+  obtain ⟨ν₂, hν₂⟩ := h₂ g
+  exact ⟨ν₁ - ν₂, by rw [mul_sub, hν₁, hν₂, ← map_sub]⟩
 
 /-- **RJW Prop. 4.11 (`PropInterpolation2`), first half**: `ζ_p` is a pseudo-measure. -/
 theorem padicZeta_isPseudoMeasure (hp2 : p ≠ 2) :
-    IsPseudoMeasure p (padicZeta p hp2) := by
-  sorry
+    IsPseudoMeasure p (padicZeta p hp2) :=
+  isPseudoMeasure_mk' p
+    (exists_nat_topological_generator p hp2).choose_spec.choose_spec.2.2 _ _
 
 /-- **RJW Prop. 4.11 (`PropInterpolation2`), interpolation**: every witness `ν` of
 `([b]−[1])·ζ_p ∈ Λ(ℤ_p^×)` has moments
@@ -301,7 +305,54 @@ theorem padicZeta_moments (hp2 : p ≠ 2) (b : ℤ_[p]ˣ) {k : ℕ} (hk : 0 < k)
     ((ν (unitsPowCM p k) : ℤ_[p]) : ℚ_[p])
       = ((b : ℚ_[p]) ^ k - 1) * (1 - (p : ℚ_[p]) ^ (k - 1))
           * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) := by
-  sorry
+  classical
+  obtain ⟨hpm, huv, hgen⟩ := (exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  set m := (exists_nat_topological_generator p hp2).choose with hm
+  set u := (exists_nat_topological_generator p hp2).choose_spec.choose with hu
+  -- the defining relation ([u]−1)·ζ_p = zetaNum m
+  have hspec : algebraMap _ (QuotientField p) (dirac p u - 1) * padicZeta p hp2
+      = algebraMap _ _ (zetaNum p m) := by
+    rw [padicZeta]
+    exact IsLocalization.mk'_spec' (QuotientField p) _ _
+  -- pull the witness identity back to Λ(ℤ_p^×)
+  have hkey : (dirac p u - 1) * ν = (dirac p b - 1) * zetaNum p m := by
+    apply IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+    rw [map_mul, map_mul, ← hν, ← hspec]
+    ring
+  -- moments of both sides
+  have hmom := congrArg (fun μ : PadicMeasure p ℤ_[p]ˣ =>
+    ((μ (unitsPowCM p k) : ℤ_[p]) : ℚ_[p])) hkey
+  simp only [units_mul_apply_unitsPowCM, LinearMap.sub_apply] at hmom
+  have hdir : ∀ w : ℤ_[p]ˣ, dirac p w (unitsPowCM p k) = (w : ℤ_[p]) ^ k := fun w => rfl
+  have hone : (1 : PadicMeasure p ℤ_[p]ˣ) (unitsPowCM p k) = 1 := by
+    rw [units_one_def, hdir, Units.val_one, one_pow]
+  rw [hdir, hdir, hone] at hmom
+  push_cast at hmom
+  -- divide by (u^k − 1) ≠ 0
+  have hne : ((u : ℤ_[p]) : ℚ_[p]) ^ k - 1 ≠ 0 := by
+    refine sub_ne_zero.2 fun h => topGen_pow_ne_one p hgen k hk ?_
+    have h2 : (((u : ℤ_[p]) ^ k : ℤ_[p]) : ℚ_[p]) = ((1 : ℤ_[p]) : ℚ_[p]) := by
+      push_cast
+      exact h
+    exact Subtype.coe_injective h2
+  -- value of the numerator moments
+  have hzm := zetaNum_moments p hpm hk
+  -- (m : ℚ_p) = (u : ℚ_p)
+  have hmu : ((m : ℕ) : ℚ_[p]) = ((u : ℤ_[p]) : ℚ_[p]) := by
+    rw [huv]
+    push_cast
+    rfl
+  rw [hzm, hmu] at hmom
+  -- sign removal, cast to ℚ_p
+  have hsign := congrArg (fun q : ℚ => (q : ℚ_[p]))
+    (neg_one_pow_mul_one_sub_pow_mul_zetaNeg (p : ℚ) hk)
+  push_cast at hsign
+  -- solve the linear relation
+  refine mul_left_cancel₀ hne ?_
+  rw [hmom]
+  push_cast
+  linear_combination ((((b : ℤ_[p]) : ℚ_[p])) ^ k - 1)
+    * ((((u : ℤ_[p]) : ℚ_[p])) ^ k - 1) * hsign
 
 /-- **RJW Thm. 4.1 (`thm:kubota leopoldt theorem`)**: there is a unique pseudo-measure
 `ζ_p` on `ℤ_p^×` with `∫_{ℤ_p^×} x^k ζ_p = (1−p^{k−1}) ζ(1−k)` for all `k > 0`
