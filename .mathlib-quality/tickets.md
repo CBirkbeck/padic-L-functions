@@ -2054,7 +2054,19 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   `(C(ζ^{ca})(1+X)^a − 1)·𝓐(κ_{ζ^c−1}(μ_a)_K) = substAffine (ζ^c−1)
   (map geomSum) − a` — proven by hitting the K-mapped §4 identity with the
   substAffine ring hom (simp only [map_*] + the C-power regroup). Build green.
-  NEXT: step (iv)/(v) per the refinement below — the formal subst (exp K − 1)
+  STEP (iv) ALSO DONE (same day): `substAffine_map_geomSum`
+  (S_c(geomSum) = Σ_i C(ζ^{ci})(1+X)^i — NOTE: sequential rw, not simp; simp
+  splits 1+X before the composite substAffine_one_add_X can fire) and
+  `charTwist_muA_exp_identity` (‡c) in TameConductor.lean:
+  `(C(ζ_K^{ca})·rescale a exp − 1)·H_c = Σ_{i<a} C(ζ_K^{ci})·rescale i exp − a`
+  in K⟦t⟧, where H_c := (map subtype 𝓐(κ_c(μ_a)_K)).subst (exp K − 1).
+  Proven by the §4 X_mul_subst_exp_Fa idiom: map-to-K (simp with
+  PowerSeries.map_C + Subring.coe_subtype), then congrArg (substAlgHom hg) with
+  the simp set [hX, hC := (substAlgHom hg).commutes, 1+(exp−1)=exp,
+  exp_pow_eq_rescale_exp, coe_substAlgHom]; final `simpa only [map_pow]`
+  aligns the C-pow normal forms (simp pulls pow out of C). hg over K via
+  HasSubst.of_constantCoeff_zero'. Build green.
+  NEXT: step (v) — the master identity per the refinement below — the formal subst (exp K − 1)
   of (†c) [needs the K-analogue of §4's hasSubst_exp_sub_one + map-to-K of the
   identity], then the master identity.
   ROUTE REFINEMENT for (iii)–(v) (recorded before compaction): PARITY-FREE,

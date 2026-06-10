@@ -64,6 +64,59 @@ lemma charTwist_muA_mahler_identity {ζ : integerRing K} {N : ℕ}
     ← pow_mul] at h5
   exact h5
 
+/-- The `substAffine (ζ^c−1)`-image of the base-changed geometric sum:
+`S_c(Σ_{i<a}(1+X)^i) = Σ_{i<a} ζ^{ci}·(1+X)^i`. -/
+lemma substAffine_map_geomSum {ζ : integerRing K} {N : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ N)) (c : ℕ) (a : ℕ) :
+    substAffine (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c)
+        (PowerSeries.map (algebraMap ℤ_[p] (integerRing K))
+          (PadicMeasure.geomSum p a))
+      = ∑ i ∈ Finset.range a,
+          PowerSeries.C (ζ ^ (c * i)) * (1 + PowerSeries.X) ^ i := by
+  rw [PadicMeasure.geomSum, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [map_pow, map_add, map_one, PowerSeries.map_X, map_pow, substAffine_one_add_X,
+    show (1 + (ζ ^ c - 1) : integerRing K) = ζ ^ c by ring, mul_pow, ← map_pow,
+    ← pow_mul]
+
+/-- T509 step (iv), the t-side identity (‡c): substituting `T = e^t − 1` into
+the `K`-valued (†c): `(ζ^{ca}·e^{at} − 1)·H_c = Σ_{i<a} ζ^{ci}·e^{it} − a`,
+with `H_c` the exp-substituted `K`-valued transform of the twisted measure. -/
+lemma charTwist_muA_exp_identity {ζ : integerRing K} {N : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ N)) (c : ℕ) {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a) :
+    (PowerSeries.C ((ζ : K) ^ (c * a)) * PowerSeries.rescale (a : K)
+          (PowerSeries.exp K) - 1)
+        * (PowerSeries.map (integerRing K).subtype
+            (mahlerTransform p K (twist p K
+              (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+              (baseChange p K (PadicMeasure.muA p a))))).subst
+            (PowerSeries.exp K - 1)
+      = (∑ i ∈ Finset.range a,
+          PowerSeries.C ((ζ : K) ^ (c * i)) * PowerSeries.rescale (i : K)
+            (PowerSeries.exp K))
+        - (a : PowerSeries K) := by
+  have hg : PowerSeries.HasSubst (PowerSeries.exp K - 1) :=
+    PowerSeries.HasSubst.of_constantCoeff_zero' (by simp)
+  have hX : (PowerSeries.substAlgHom hg) (PowerSeries.X : PowerSeries K)
+      = PowerSeries.exp K - 1 := by
+    rw [show ⇑(PowerSeries.substAlgHom hg)
+        = PowerSeries.subst (PowerSeries.exp K - 1) from
+      PowerSeries.coe_substAlgHom hg]
+    exact PowerSeries.subst_X hg
+  have hK := congrArg (PowerSeries.map (integerRing K).subtype)
+    (charTwist_muA_mahler_identity hζ c hpa)
+  rw [substAffine_map_geomSum hζ c a] at hK
+  simp only [map_mul, map_sub, map_pow, map_add, map_one, PowerSeries.map_X,
+    map_sum, map_natCast, PowerSeries.map_C, Subring.coe_subtype] at hK
+  have hC : ∀ x : K, (PowerSeries.substAlgHom hg) (PowerSeries.C x)
+      = PowerSeries.C x := fun x => (PowerSeries.substAlgHom hg).commutes x
+  have hsub := congrArg (PowerSeries.substAlgHom hg) hK
+  simp only [map_mul, map_sub, map_pow, map_add, map_one, map_sum, map_natCast,
+    hX, hC, show (1 : PowerSeries K) + (PowerSeries.exp K - 1) = PowerSeries.exp K
+      by ring,
+    PowerSeries.exp_pow_eq_rescale_exp, PowerSeries.coe_substAlgHom hg] at hsub
+  simpa only [map_pow] using hsub
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
