@@ -36,7 +36,8 @@ noncomputable section
 namespace MeasureR
 
 instance : Mul (MeasureR K ℤ_[p]) :=
-  ⟨fun μ ν => (mahlerLinearEquiv p K).symm (mahlerLinearEquiv p K μ * mahlerLinearEquiv p K ν)⟩
+  ⟨fun μ ν => (mahlerLinearEquiv p K).symm
+    (mahlerLinearEquiv p K μ * mahlerLinearEquiv p K ν)⟩
 
 instance : One (MeasureR K ℤ_[p]) := ⟨dirac K ℤ_[p] 0⟩
 
@@ -56,16 +57,19 @@ theorem mahlerTransform_mul (μ ν : MeasureR K ℤ_[p]) :
   rw [mul_def, ← mahlerLinearEquiv_apply, LinearEquiv.apply_symm_apply,
     mahlerLinearEquiv_apply, mahlerLinearEquiv_apply]
 
+omit [CompleteSpace K] in
 @[simp]
 theorem mahlerTransform_one : mahlerTransform p K (1 : MeasureR K ℤ_[p]) = 1 := by
   rw [one_def, mahlerTransform_dirac, binomialSeries_zero, map_one]
 
+omit [CompleteSpace K] in
 @[simp]
 theorem mahlerTransform_add (μ ν : MeasureR K ℤ_[p]) :
     mahlerTransform p K (μ + ν) = mahlerTransform p K μ + mahlerTransform p K ν := by
   refine PowerSeries.ext fun n => ?_
   simp
 
+omit [CompleteSpace K] in
 @[simp]
 theorem mahlerTransform_zero : mahlerTransform p K (0 : MeasureR K ℤ_[p]) = 0 := by
   refine PowerSeries.ext fun n => ?_

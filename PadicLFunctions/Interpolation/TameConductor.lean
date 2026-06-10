@@ -436,10 +436,9 @@ lemma X_mul_sum_char_inv_subst {n : ℕ} (hn : 1 ≤ n)
     have h1 := congrArg (PowerSeries.coeff 1) h
     rw [map_sub, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
       PowerSeries.coeff_one] at h1
-    simp [Nat.factorial] at h1
-    rcases h1 with h | ⟨hp0, _⟩
-    · exact absurd h (by omega)
-    · exact absurd hp0 hp.out.pos.ne'
+    have h2 : ((a * p ^ n : ℕ) : K) = 0 := by simpa [Nat.factorial] using h1
+    rw [Nat.cast_eq_zero] at h2
+    exact absurd h2 (Nat.mul_ne_zero ha.ne' (pow_ne_zero n hp.out.ne_zero))
   refine mul_left_cancel₀ hreg ?_
   rw [show (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1)
         * (PowerSeries.X * ∑ c ∈ Finset.range (p ^ n), _)
@@ -553,6 +552,7 @@ lemma map_subtype_derivativeFun (F : PowerSeries (integerRing K)) :
   ext n
   simp [coeff_derivativeFun]
 
+omit [CompleteSpace K] [CharZero K] in
 lemma map_subtype_del (F : PowerSeries (integerRing K)) :
     PowerSeries.map (integerRing K).subtype (del K F)
       = delField (PowerSeries.map (integerRing K).subtype F) := by
@@ -621,6 +621,7 @@ lemma constantCoeff_iterate_delField (k : ℕ) (F : PowerSeries K) :
 
 end fieldBridge
 
+omit [CompleteSpace K] [CharZero K] [NormedAlgebra ℚ_[p] K] in
 /-- The `K`-coercion of the integral Gauss sum is the `K`-valued Gauss sum of
 the induced character. -/
 lemma coe_gaussSum_zmodChar {n : ℕ}
@@ -629,12 +630,11 @@ lemma coe_gaussSum_zmodChar {n : ℕ}
     ((gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hζ.pow_eq_one) : integerRing K) : K)
       = gaussSum (toFieldChar χ)⁻¹
           (AddChar.zmodChar (p ^ n) hζK.pow_eq_one) := by
-  rw [gaussSum, gaussSum, AddSubmonoidClass.coe_finset_sum]
+  rw [gaussSum, gaussSum, AddSubmonoidClass.coe_finsetSum]
   refine Finset.sum_congr rfl fun c _ => ?_
   push_cast
   rw [show (toFieldChar χ)⁻¹ = toFieldChar χ⁻¹ from MulChar.ringHomComp_inv χ _,
     AddChar.zmodChar_apply, AddChar.zmodChar_apply]
-  push_cast
   rfl
 
 /-- T509 (v-f) transport: the `χ̄⁻¹`-weighted sum of the `H_c` is the
@@ -666,7 +666,6 @@ lemma sum_char_inv_H_eq {n : ℕ} (hn : 1 ≤ n)
     ext m
     rw [PowerSeries.coeff_map, PowerSeries.coeff_smul, PowerSeries.coeff_C_mul,
       PowerSeries.coeff_map, smul_eq_mul]
-    push_cast
     rfl
   have hsubC : ∀ (x : K) (F : PowerSeries K),
       (PowerSeries.C x * F).subst (PowerSeries.exp K - 1)

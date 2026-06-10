@@ -35,10 +35,12 @@ def innerInt [CompactSpace Y] (ν : MeasureR K Y) (F : C(X × Y, integerRing K))
 
 variable {p K}
 
+omit [CompleteSpace K] in
 @[simp]
 lemma innerInt_apply [CompactSpace Y] (ν : MeasureR K Y) (F : C(X × Y, integerRing K))
     (x : X) : innerInt K ν F x = ν (F.curry x) := rfl
 
+omit [CompleteSpace K] in
 @[simp]
 lemma innerInt_add [CompactSpace Y] (ν : MeasureR K Y) (F G : C(X × Y, integerRing K)) :
     innerInt K ν (F + G) = innerInt K ν F + innerInt K ν G :=
@@ -46,6 +48,7 @@ lemma innerInt_add [CompactSpace Y] (ν : MeasureR K Y) (F G : C(X × Y, integer
     have hcurry : (F + G).curry x = F.curry x + G.curry x := ContinuousMap.ext fun y => rfl
     simp [hcurry]
 
+omit [CompleteSpace K] in
 @[simp]
 lemma innerInt_smul [CompactSpace Y] (c : integerRing K) (ν : MeasureR K Y)
     (F : C(X × Y, integerRing K)) :
@@ -54,17 +57,20 @@ lemma innerInt_smul [CompactSpace Y] (c : integerRing K) (ν : MeasureR K Y)
     have hcurry : (c • F).curry x = c • F.curry x := ContinuousMap.ext fun y => rfl
     simp [hcurry]
 
+omit [CompleteSpace K] in
 @[simp]
 lemma innerInt_measure_add [CompactSpace Y] (ν₁ ν₂ : MeasureR K Y)
     (F : C(X × Y, integerRing K)) :
     innerInt K (ν₁ + ν₂) F = innerInt K ν₁ F + innerInt K ν₂ F :=
-  ContinuousMap.ext fun x => rfl
+  ContinuousMap.ext fun _x => rfl
 
+omit [CompleteSpace K] in
 @[simp]
 lemma innerInt_measure_zero [CompactSpace Y] (F : C(X × Y, integerRing K)) :
     innerInt K (0 : MeasureR K Y) F = 0 :=
-  ContinuousMap.ext fun x => rfl
+  ContinuousMap.ext fun _x => rfl
 
+omit [CompleteSpace K] in
 /-- **Fubini over `R`** (RJW Rem 3.11, TeX 910): the iterated integrals agree. -/
 theorem integral_swap [CompactSpace X] [CompactSpace Y]
     (μ : MeasureR K X) (ν : MeasureR K Y) (F : C(X × Y, integerRing K)) :
@@ -85,14 +91,14 @@ theorem integral_swap [CompactSpace X] [CompactSpace Y]
     intro x w
     rw [Finset.sum_eq_single (Φ x)]
     · rw [show charFnCM K X (Φ.isLocallyConstant.isClopen_fiber (Φ x)) x = 1 from by
-        simp only [charFnCM_apply, LocallyConstant.coe_continuousMap,
-          LocallyConstant.coe_charFn]
+        simp only [charFnCM_apply, 
+          ]
         rw [Set.indicator_of_mem (show x ∈ {y | Φ.toFun y = Φ x} from rfl), Pi.one_apply],
         one_mul]
     · intro g _ hgx
       rw [show charFnCM K X (Φ.isLocallyConstant.isClopen_fiber g) x = 0 from by
-        simp only [charFnCM_apply, LocallyConstant.coe_continuousMap,
-          LocallyConstant.coe_charFn]
+        simp only [charFnCM_apply, 
+          ]
         rw [Set.indicator_of_notMem
           (show x ∉ {y | Φ.toFun y = g} from fun hc => hgx hc.symm)],
         zero_mul]
@@ -133,7 +139,8 @@ theorem integral_swap [CompactSpace X] [CompactSpace Y]
       rw [hmid, map_sum, hSdef]
       refine Finset.sum_congr rfl fun g _ => ?_
       rw [map_smul, smul_eq_mul]
-    have hbound : ‖innerInt K μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂‖ ≤ ε := by
+    have hbound : ‖innerInt K μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂‖
+        ≤ ε := by
       rw [ContinuousMap.norm_le _ hε.le]
       intro y
       set col : C(X, integerRing K) :=

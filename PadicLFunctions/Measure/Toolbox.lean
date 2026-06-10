@@ -52,7 +52,8 @@ extended by density. -/
 lemma mul_choose_eq (x : ℤ_[p]) (n : ℕ) :
     x * Ring.choose x n
       = (n + 1 : ℤ_[p]) * Ring.choose x (n + 1) + (n : ℤ_[p]) * Ring.choose x n := by
-  have hnat : ∀ m : ℕ, (m : ℕ) * m.choose n = (n + 1) * m.choose (n + 1) + n * m.choose n := by
+  have hnat : ∀ m : ℕ,
+      (m : ℕ) * m.choose n = (n + 1) * m.choose (n + 1) + n * m.choose n := by
     intro m
     rcases Nat.lt_or_ge m n with h | h
     · rw [Nat.choose_eq_zero_of_lt h, Nat.choose_eq_zero_of_lt (h.trans n.lt_succ_self)]
@@ -103,7 +104,7 @@ theorem mahlerTransform_cmul_X (μ : PadicMeasure p ℤ_[p]) :
     simp only [ContinuousMap.mul_apply, ContinuousMap.id_apply, mahler_apply,
       ContinuousMap.add_apply, ContinuousMap.smul_apply, smul_eq_mul]
     exact mul_choose_eq p x n
-  show μ (ContinuousMap.id ℤ_[p] * mahler n) = _
+  change μ (ContinuousMap.id ℤ_[p] * mahler n) = _
   rw [hpt, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, coeff_del,
     coeff_mahlerTransform, coeff_mahlerTransform]
 
@@ -159,7 +160,7 @@ theorem res_union {U V : Set ℤ_[p]} (hU : IsClopen U) (hV : IsClopen V)
       ContinuousMap.add_apply]
     exact congrFun (Set.indicator_union_of_disjoint hUV 1) x
   refine LinearMap.ext fun f => ?_
-  show μ (_ * f) = μ (_ * f) + μ (_ * f)
+  change μ (_ * f) = μ (_ * f) + μ (_ * f)
   rw [← map_add, ← add_mul, hchar]
 
 end res
@@ -172,7 +173,8 @@ def mulCM (a : ℤ_[p]) : C(ℤ_[p], ℤ_[p]) := ⟨fun x => a * x, by fun_prop�
 /-- The `ℤ_p^×`-action on measures: `∫ f d(σ_a μ) = ∫ f(ax) dμ`.
 
 Source: RJW §3.5.5 (TeX lines 1135–1136). -/
-noncomputable def sigma (a : ℤ_[p]ˣ) : PadicMeasure p ℤ_[p] →ₗ[ℤ_[p]] PadicMeasure p ℤ_[p] :=
+noncomputable def sigma (a : ℤ_[p]ˣ) :
+    PadicMeasure p ℤ_[p] →ₗ[ℤ_[p]] PadicMeasure p ℤ_[p] :=
   pushforward p (mulCM p (a : ℤ_[p]))
 
 /-- The operator `φ` ("`σ_p`"): `∫ f d(φμ) = ∫ f(px) dμ`.
@@ -244,11 +246,11 @@ theorem mahlerTransform_pushforward_mulCM (c : ℤ_[p]) (μ : PadicMeasure p ℤ
     apply ContinuousMap.coe_injective
     refine PadicInt.denseRange_natCast.equalizer (map_continuous _) (map_continuous _)
       (funext fun k => ?_)
-    show mahler n (c * (k : ℤ_[p])) = _
+    change mahler n (c * (k : ℤ_[p])) = _
     rw [key k]
     simp only [Function.comp_apply, ContinuousMap.coe_sum, Finset.sum_apply,
       ContinuousMap.coe_smul, Pi.smul_apply, smul_eq_mul, mahler_natCast_eq]
-  show μ ((mahler n).comp (mulCM p c)) = _
+  change μ ((mahler n).comp (mulCM p c)) = _
   rw [hfun, map_sum]
   refine Finset.sum_congr rfl fun d _ => ?_
   rw [map_smul, smul_eq_mul, coeff_mahlerTransform, smul_eq_mul, mul_comm]
@@ -317,7 +319,7 @@ lemma shiftDiv_mul (x : ℤ_[p]) : shiftDiv p ((p : ℤ_[p]) * x) = x := by
     rw [digit, hp0, ZMod.val_zero, Nat.cast_zero]
   have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 hp.out.ne_zero
   refine Subtype.ext ?_
-  show ((((p : ℤ_[p]) * x : ℤ_[p]) : ℚ_[p]) - (digit p ((p : ℤ_[p]) * x) : ℚ_[p]))
+  change ((((p : ℤ_[p]) * x : ℤ_[p]) : ℚ_[p]) - (digit p ((p : ℤ_[p]) * x) : ℚ_[p]))
       / (p : ℚ_[p]) = (x : ℚ_[p])
   rw [hdig]
   push_cast
@@ -367,7 +369,7 @@ lemma mul_shiftDiv_of_mem {x : ℤ_[p]} (hx : ‖x‖ < 1) :
     rw [digit, hker, ZMod.val_zero, Nat.cast_zero]
   have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 hp.out.ne_zero
   refine Subtype.ext ?_
-  show (p : ℚ_[p]) * (((x : ℚ_[p]) - (digit p x : ℚ_[p])) / (p : ℚ_[p])) = (x : ℚ_[p])
+  change (p : ℚ_[p]) * (((x : ℚ_[p]) - (digit p x : ℚ_[p])) / (p : ℚ_[p])) = (x : ℚ_[p])
   rw [hdig]
   push_cast
   rw [sub_zero, mul_comm, div_mul_cancel₀ _ hp0]
@@ -376,7 +378,7 @@ lemma mul_shiftDiv_of_mem {x : ℤ_[p]} (hx : ‖x‖ < 1) :
 @[simp]
 theorem psi_phi (μ : PadicMeasure p ℤ_[p]) : psi p (phi p μ) = μ := by
   refine LinearMap.ext fun f => ?_
-  show μ ((((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+  change μ ((((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
       f.comp (shiftDiv p))).comp (mulCM p (p : ℤ_[p]))) = μ f
   congr 1
   ext x
@@ -390,7 +392,7 @@ theorem psi_phi (μ : PadicMeasure p ℤ_[p]) : psi p (phi p μ) = μ := by
 theorem phi_psi (μ : PadicMeasure p ℤ_[p]) :
     phi p (psi p μ) = res p (isClopen_pZp p) μ := by
   refine LinearMap.ext fun f => ?_
-  show μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+  change μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
       (f.comp (mulCM p (p : ℤ_[p]))).comp (shiftDiv p))
     = μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) * f)
   congr 1
@@ -423,7 +425,7 @@ theorem res_units_eq (μ : PadicMeasure p ℤ_[p]) :
     res p (isClopen_units p) μ = μ - phi p (psi p μ) := by
   rw [phi_psi]
   refine LinearMap.ext fun f => ?_
-  show μ (_ * f) = μ f - μ (_ * f)
+  change μ (_ * f) = μ f - μ (_ * f)
   rw [eq_sub_iff_add_eq, ← map_add]
   congr 1
   ext x
@@ -447,7 +449,7 @@ and only if `ψ(μ) = 0`. (Source proof uses injectivity of `φ`, which here fol
 `ψ ∘ φ = id`; TeX lines 1161–1167.) -/
 lemma psi_sub (μ ν : PadicMeasure p ℤ_[p]) :
     psi p (μ - ν) = psi p μ - psi p ν :=
-  LinearMap.ext fun f => LinearMap.sub_apply μ ν _
+  LinearMap.ext fun _f => LinearMap.sub_apply μ ν _
 
 theorem isSupportedOn_units_iff_psi_eq_zero (μ : PadicMeasure p ℤ_[p]) :
     IsSupportedOn p (isClopen_units p) μ ↔ psi p μ = 0 := by

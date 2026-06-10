@@ -21,8 +21,6 @@ mathlib's `gaussSum_mulShift_of_isPrimitive`, and Rem 5.3(i) at non-prime
 level is `gaussSum_mul_gaussSum_inv` below (L5.1.5, a mathlib gap).
 -/
 
-open scoped Classical
-
 namespace PadicLFunctions
 
 variable {p : ℕ} [hp : Fact p.Prime]
@@ -31,6 +29,7 @@ section toContinuousMap
 
 variable {R : Type*} [NormedCommRing R] {n : ℕ}
 
+open Classical in
 /-- L5.1.1: a Dirichlet character mod `p^n` as a continuous (indeed locally
 constant) function `ℤ_[p] → R`, via reduction mod `p^n`. For `n ≥ 1` it
 vanishes on `pℤ_[p]` (the character kills non-units).
@@ -85,6 +84,7 @@ lemma DirichletCharacter.toContinuousMapZp_mul
 lemma DirichletCharacter.isLocallyConstant_toContinuousMapZp
     (χ : DirichletCharacter R (p ^ n)) :
     IsLocallyConstant (χ.toContinuousMapZp : ℤ_[p] → R) := by
+  classical
   refine fun s => ?_
   have : (χ.toContinuousMapZp : ℤ_[p] → R) ⁻¹' s
       = ⋃ b ∈ (Finset.univ.filter fun b : ZMod (p ^ n) => χ b ∈ s),
@@ -159,6 +159,7 @@ variable (L : Type*) [NormedField L] [NormedAlgebra ℚ_[p] L]
   [IsUltrametricDist L] [CompleteSpace L]
 
 omit [hp : Fact p.Prime] in
+omit [IsUltrametricDist L] [CompleteSpace L] in
 /-- Roots of unity in a normed field have norm one (the `ℂ`-version is
 mathlib's `Complex.norm_eq_one_of_pow_eq_one`). -/
 lemma norm_eq_one_of_pow_eq_one {x : L} {m : ℕ} (h : x ^ m = 1) (hm : m ≠ 0) :
@@ -172,6 +173,7 @@ lemma norm_eq_one_of_pow_eq_one {x : L} {m : ℕ} (h : x ^ m = 1) (hm : m ≠ 0)
     push Not at hc
     exact absurd h1 (pow_lt_one₀ (norm_nonneg x) hc hm).ne
 
+omit [CompleteSpace L] in
 /-- For `η` primitive of conductor `D` coprime to `p` (and a primitive `D`-th
 root of unity `ζ` in `L`), the Gauss sum has norm one — in particular it is a
 unit of the integer ring.
@@ -215,12 +217,12 @@ theorem norm_gaussSum_eq_one {D : ℕ} [NeZero D] {η : DirichletCharacter L D}
   have hroote : ∀ b, e b ^ D = 1 := fun b => by
     rw [← AddChar.map_nsmul_eq_pow]
     have hb : (D : ℕ) • b = 0 := by
-      simp [nsmul_eq_mul, ZMod.natCast_self]
+      simp [nsmul_eq_mul]
     rw [hb, AddChar.map_zero_eq_one]
   have hrootei : ∀ b, e⁻¹ b ^ D = 1 := fun b => by
     rw [AddChar.inv_apply, ← AddChar.map_nsmul_eq_pow]
     have hb : (D : ℕ) • (-b) = 0 := by
-      simp [nsmul_eq_mul, ZMod.natCast_self]
+      simp [nsmul_eq_mul]
     rw [hb, AddChar.map_zero_eq_one]
   -- product formula + norm-1 of `D` force equality
   have hprod : ‖gaussSum η e‖ * ‖gaussSum η⁻¹ e⁻¹‖ = 1 := by

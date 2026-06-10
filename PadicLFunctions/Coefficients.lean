@@ -156,7 +156,8 @@ theorem _root_.IsPrimitiveRoot.norm_sub_one_lt {ζ : L} {n : ℕ}
     rw [h1, Finset.sum_range_succ'] at hexp
     simpa using hexp.symm
   -- isolate the top term `x^N`
-  have htop : x ^ N = -∑ k ∈ Finset.range (N - 1), x ^ (k + 1) * ((N.choose (k + 1) : ℕ) : L) := by
+  have htop : x ^ N
+      = -∑ k ∈ Finset.range (N - 1), x ^ (k + 1) * ((N.choose (k + 1) : ℕ) : L) := by
     have hsplit := Finset.sum_range_succ
       (fun k => x ^ (k + 1) * ((N.choose (k + 1) : ℕ) : L)) (N - 1)
     have hN1 : N - 1 + 1 = N := by omega

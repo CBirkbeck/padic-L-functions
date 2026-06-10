@@ -156,7 +156,8 @@ theorem continuous (μ : MeasureR K X) : Continuous μ :=
 /-- Measures agreeing on locally constant functions agree (the density
 half of RJW Rem 3.8; via the general ultrametric approximation lemma). -/
 theorem ext_locallyConstant {μ ν : MeasureR K X}
-    (h : ∀ Φ : LocallyConstant X (integerRing K), μ Φ.toContinuousMap = ν Φ.toContinuousMap) :
+    (h : ∀ Φ : LocallyConstant X (integerRing K),
+      μ Φ.toContinuousMap = ν Φ.toContinuousMap) :
     μ = ν := by
   refine LinearMap.ext fun f => eq_of_forall_dist_le fun ε hε => ?_
   obtain ⟨Φ, hΦ⟩ := PadicMeasure.exists_locallyConstant_norm_sub_le' f hε

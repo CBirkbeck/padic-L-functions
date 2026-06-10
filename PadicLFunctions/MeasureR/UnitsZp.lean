@@ -58,15 +58,16 @@ def extendByZero : C(ℤ_[p]ˣ, integerRing K) →ₗ[integerRing K] C(ℤ_[p], 
   map_add' g₁ g₂ := by
     ext x
     by_cases hx : IsUnit x <;>
-      simp [dif_pos, dif_neg, hx]
+      simp [hx]
   map_smul' c g := by
     ext x
     by_cases hx : IsUnit x <;>
-      simp [dif_pos, dif_neg, hx]
+      simp [hx]
 
 variable {p K}
 
 open Classical in
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 @[simp]
 lemma extendByZero_coe_unit (g : C(ℤ_[p]ˣ, integerRing K)) (u : ℤ_[p]ˣ) :
     extendByZero p K g (u : ℤ_[p]) = g u := by
@@ -84,11 +85,13 @@ def iota : MeasureR K ℤ_[p]ˣ →ₗ[integerRing K] MeasureR K ℤ_[p] :=
 
 variable {p K}
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- Restriction of the zero-extension recovers the original function. -/
 lemma extendByZero_comp_val (g : C(ℤ_[p]ˣ, integerRing K)) :
     (extendByZero p K g).comp (PadicMeasure.unitsValCM p) = g :=
   ContinuousMap.ext fun u => extendByZero_coe_unit g u
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- `ι` is injective (RJW Rem 3.33: "we can identify `Λ(ℤ_p^×)` with its
 image"). -/
 theorem iota_injective : Function.Injective (iota p K) := by
@@ -97,6 +100,7 @@ theorem iota_injective : Function.Injective (iota p K) := by
   have happ := LinearMap.congr_fun h (extendByZero p K g)
   simpa only [iota, pushforward_apply, extendByZero_comp_val] using happ
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- `Res_{ℤ_p^×} ∘ ι = ι` (RJW Rem 3.33). -/
 theorem res_iota (μ : MeasureR K ℤ_[p]ˣ) :
     res p K (PadicMeasure.isClopen_units p) (iota p K μ) = iota p K μ := by
@@ -106,12 +110,13 @@ theorem res_iota (μ : MeasureR K ℤ_[p]ˣ) :
   congr 1
   ext u
   simp only [ContinuousMap.comp_apply, ContinuousMap.mul_apply, charFnCM_apply,
-    LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn,
+    
     PadicMeasure.unitsValCM, ContinuousMap.coe_mk]
   rw [Set.indicator_of_mem (show ((u : ℤ_[p])) ∈ {x : ℤ_[p] | IsUnit x} from u.isUnit),
     Pi.one_apply, one_mul]
 
 open Classical in
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- Zero-extension of a restriction is cutting by the unit indicator. -/
 lemma extendByZero_comp_unitsVal (f : C(ℤ_[p], integerRing K)) :
     extendByZero p K (f.comp (PadicMeasure.unitsValCM p))
@@ -122,13 +127,13 @@ lemma extendByZero_comp_unitsVal (f : C(ℤ_[p], integerRing K)) :
   by_cases hx : IsUnit x
   · rw [dif_pos hx]
     simp only [ContinuousMap.comp_apply, PadicMeasure.unitsValCM, ContinuousMap.coe_mk,
-      ContinuousMap.mul_apply, charFnCM_apply, LocallyConstant.coe_continuousMap,
-      LocallyConstant.coe_charFn]
+      ContinuousMap.mul_apply, charFnCM_apply, 
+      ]
     rw [Set.indicator_of_mem (show x ∈ {y : ℤ_[p] | IsUnit y} from hx), Pi.one_apply,
       one_mul, IsUnit.unit_spec]
   · rw [dif_neg hx]
-    simp only [ContinuousMap.mul_apply, charFnCM_apply, LocallyConstant.coe_continuousMap,
-      LocallyConstant.coe_charFn]
+    simp only [ContinuousMap.mul_apply, charFnCM_apply, 
+      ]
     rw [Set.indicator_of_notMem (show x ∉ {y : ℤ_[p] | IsUnit y} from hx), zero_mul]
 
 /-- **The image of `ι` is `ker ψ`** (RJW Rem 3.33, TeX 1171–1172). -/

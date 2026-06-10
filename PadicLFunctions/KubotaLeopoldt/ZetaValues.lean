@@ -27,8 +27,8 @@ lemma zetaNeg_eq_zero_of_even {k : ℕ} (hk : k ≠ 0) (h : Even k) : zetaNeg k 
 
 /-- Sign removal in the Kubota–Leopoldt interpolation (RJW TeX line 1596: "we may
 remove the `(−1)^k` as `ζ(1−k) ≠ 0` if and only if `k` is even"): for `k > 0`,
-`(−1)^k (1−q^{k−1}) ζ(1−k) = (1−q^{k−1}) ζ(1−k)` — at `k = 1` the factor `1−q⁰`
-vanishes, at even `k` the sign is `+1`, and at odd `k ≥ 3` the zeta value vanishes. -/
+`(−1)^k (1−q^{k−1}) ζ(1−k) = (1−q^{k−1}) ζ(1−k)` — at `k = 1` the factor
+`1−q⁰` vanishes, at even `k` the sign is `+1`, and at odd `k ≥ 3` the zeta value vanishes. -/
 lemma neg_one_pow_mul_one_sub_pow_mul_zetaNeg (q : ℚ) {k : ℕ} (hk : 0 < k) :
     (-1) ^ k * ((1 - q ^ (k - 1)) * zetaNeg (k - 1))
       = (1 - q ^ (k - 1)) * zetaNeg (k - 1) := by

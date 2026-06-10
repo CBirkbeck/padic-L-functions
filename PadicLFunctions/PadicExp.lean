@@ -98,7 +98,8 @@ map converges on `pℤ_p`" — for odd `p`, `pℤ_[p]` lies in the convergence b
 (`‖x‖ ≤ p⁻¹ < p^{−1/(p−1)}`). Stated on `ℤ_[p]` (the `L = ℚ_[p]`-instance
 restricted to integers; `exp` of a multiple of `p` is again integral by the
 isometry). -/
-theorem padicExp_converges_on_pZp (hp2 : p ≠ 2) {x : ℤ_[p]} (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
+theorem padicExp_converges_on_pZp (hp2 : p ≠ 2) {x : ℤ_[p]}
+    (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
     Summable fun n : ℕ => (n.factorial : ℚ_[p])⁻¹ • ((x : ℚ_[p]) ^ n) := by sorry
 
 /-- The integral exponential on `pℤ_p` (odd `p`), valued in `1 + pℤ_p`. -/

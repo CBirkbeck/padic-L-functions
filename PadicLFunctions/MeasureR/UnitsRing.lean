@@ -41,12 +41,15 @@ instance : One (MeasureR K ℤ_[p]ˣ) := ⟨dirac K ℤ_[p]ˣ 1⟩
 
 variable {p K}
 
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 lemma units_mul_def (μ ν : MeasureR K ℤ_[p]ˣ) : μ * ν = unitsConv p K μ ν := rfl
 
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 @[simp]
 lemma units_mul_apply (μ ν : MeasureR K ℤ_[p]ˣ) (f : C(ℤ_[p]ˣ, integerRing K)) :
     (μ * ν) f = μ (innerInt K ν (f.comp (PadicMeasure.unitsMulCM₂ p))) := rfl
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 lemma units_one_def : (1 : MeasureR K ℤ_[p]ˣ) = dirac K ℤ_[p]ˣ 1 := rfl
 
 variable (p K)
@@ -121,11 +124,13 @@ instance : CommRing (MeasureR K ℤ_[p]ˣ) where
 
 variable {p K}
 
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 /-- `[u]·[v] = [uv]` in `Λ_R(ℤ_p^×)`. -/
 @[simp]
 theorem units_dirac_mul_dirac (u v : ℤ_[p]ˣ) :
-    (dirac K ℤ_[p]ˣ u : MeasureR K ℤ_[p]ˣ) * dirac K ℤ_[p]ˣ v = dirac K ℤ_[p]ˣ (u * v) :=
-  LinearMap.ext fun f => rfl
+    (dirac K ℤ_[p]ˣ u : MeasureR K ℤ_[p]ˣ) * dirac K ℤ_[p]ˣ v
+      = dirac K ℤ_[p]ˣ (u * v) :=
+  LinearMap.ext fun _f => rfl
 
 variable (p K)
 

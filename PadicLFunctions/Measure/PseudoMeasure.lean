@@ -68,63 +68,63 @@ Rem. 3.33. -/
 noncomputable instance : CommRing (PadicMeasure p ℤ_[p]ˣ) where
   mul_assoc a b c := by
     refine LinearMap.ext fun f => ?_
-    show a (innerInt p b ((innerInt p c (f.comp (unitsMulCM₂ p))).comp (unitsMulCM₂ p)))
+    change a (innerInt p b ((innerInt p c (f.comp (unitsMulCM₂ p))).comp (unitsMulCM₂ p)))
       = a (innerInt p (unitsConv p b c) (f.comp (unitsMulCM₂ p)))
     congr 1
     ext x
-    show b _ = b _
+    change b _ = b _
     congr 1
     ext y
-    show c _ = c _
+    change c _ = c _
     congr 1
     ext z
-    show f (x * y * z) = f (x * (y * z))
+    change f (x * y * z) = f (x * (y * z))
     rw [mul_assoc]
   one_mul a := by
     refine LinearMap.ext fun f => ?_
-    show a ((f.comp (unitsMulCM₂ p)).curry 1) = a f
+    change a ((f.comp (unitsMulCM₂ p)).curry 1) = a f
     congr 1
     ext y
-    show f (1 * y) = f y
+    change f (1 * y) = f y
     rw [one_mul]
   mul_one a := by
     refine LinearMap.ext fun f => ?_
-    show a (innerInt p (dirac p 1) (f.comp (unitsMulCM₂ p))) = a f
+    change a (innerInt p (dirac p 1) (f.comp (unitsMulCM₂ p))) = a f
     congr 1
     ext x
-    show f (x * 1) = f x
+    change f (x * 1) = f x
     rw [mul_one]
   left_distrib a b c := by
     refine LinearMap.ext fun f => ?_
-    show a (innerInt p (b + c) (f.comp (unitsMulCM₂ p))) = _
+    change a (innerInt p (b + c) (f.comp (unitsMulCM₂ p))) = _
     rw [innerInt_measure_add, map_add]
     rfl
   right_distrib a b c := by
     refine LinearMap.ext fun f => ?_
-    show (a + b) (innerInt p c (f.comp (unitsMulCM₂ p))) = _
+    change (a + b) (innerInt p c (f.comp (unitsMulCM₂ p))) = _
     rw [LinearMap.add_apply]
     rfl
   zero_mul a := LinearMap.ext fun f => rfl
   mul_zero a := by
     refine LinearMap.ext fun f => ?_
-    show a (innerInt p (0 : PadicMeasure p ℤ_[p]ˣ) (f.comp (unitsMulCM₂ p))) = 0
+    change a (innerInt p (0 : PadicMeasure p ℤ_[p]ˣ) (f.comp (unitsMulCM₂ p))) = 0
     rw [innerInt_measure_zero, map_zero]
   mul_comm a b := by
     refine LinearMap.ext fun f => ?_
-    show a (innerInt p b (f.comp (unitsMulCM₂ p))) = b (innerInt p a (f.comp (unitsMulCM₂ p)))
+    change a (innerInt p b (f.comp (unitsMulCM₂ p))) = b (innerInt p a (f.comp (unitsMulCM₂ p)))
     rw [integral_swap]
     congr 1
     ext y
-    show a _ = a _
+    change a _ = a _
     congr 1
     ext x
-    show f (x * y) = f (y * x)
+    change f (x * y) = f (y * x)
     rw [mul_comm]
 
 @[simp]
 theorem units_dirac_mul_dirac (u v : ℤ_[p]ˣ) :
     (dirac p u : PadicMeasure p ℤ_[p]ˣ) * dirac p v = dirac p (u * v) :=
-  LinearMap.ext fun f => rfl
+  LinearMap.ext fun _f => rfl
 
 section degree
 
@@ -135,14 +135,14 @@ inverse-limit degree map is evaluation at the constant function `1`. -/
 noncomputable def deg : PadicMeasure p ℤ_[p]ˣ →+* ℤ_[p] where
   toFun μ := μ 1
   map_one' := by
-    show (1 : C(ℤ_[p]ˣ, ℤ_[p])) 1 = 1
+    change (1 : C(ℤ_[p]ˣ, ℤ_[p])) 1 = 1
     rfl
   map_mul' μ ν := by
-    show μ (innerInt p ν ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p))) = μ 1 * ν 1
+    change μ (innerInt p ν ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p))) = μ 1 * ν 1
     have h1 : innerInt p ν ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p))
         = ν 1 • (1 : C(ℤ_[p]ˣ, ℤ_[p])) := by
       ext x
-      show ν _ = _
+      change ν _ = _
       have hc : ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p)).curry x
           = (1 : C(ℤ_[p]ˣ, ℤ_[p])) := ContinuousMap.ext fun y => rfl
       rw [hc]
@@ -235,7 +235,7 @@ noncomputable def levelMap (n : ℕ) :
           = levelChar p n ((unitsToZModPow p n x)⁻¹ * c) := by
       intro c x
       ext y
-      show levelChar p n c (x * y) = _
+      change levelChar p n c (x * y) = _
       by_cases hy : unitsToZModPow p n y = (unitsToZModPow p n x)⁻¹ * c
       · rw [levelChar_apply_eq p (by rw [map_mul, hy, mul_inv_cancel_left]),
           levelChar_apply_eq p hy]
@@ -326,7 +326,7 @@ lemma levelMap_eq_zero_iff (n : ℕ) (μ : PadicMeasure p ℤ_[p]ˣ) :
     rw [← levelMap_apply_coeff p n μ g, h]
     rfl
   · intro h
-    show (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (μ (levelChar p n c))) = 0
+    change (∑ c : (ZMod (p ^ n))ˣ, MonoidAlgebra.single c (μ (levelChar p n c))) = 0
     exact Finset.sum_eq_zero fun c _ => by rw [h c, MonoidAlgebra.single_zero]
 
 /-- The level indicators sum to `1` (partition of `ℤ_p^×` into residue discs). -/
@@ -343,7 +343,7 @@ lemma sum_levelChar (n : ℕ) :
 
 lemma levelMap_dirac (n : ℕ) (u : ℤ_[p]ˣ) :
     levelMap p n (dirac p u) = MonoidAlgebra.single (unitsToZModPow p n u) 1 := by
-  show (∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g ((dirac p u) (levelChar p n g))) = _
+  change (∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g ((dirac p u) (levelChar p n g))) = _
   rw [Finset.sum_eq_single (unitsToZModPow p n u)]
   · rw [dirac_apply, levelChar_apply_eq p rfl]
   · intro g _ hgu
@@ -352,7 +352,7 @@ lemma levelMap_dirac (n : ℕ) (u : ℤ_[p]ˣ) :
 
 lemma levelMap_smul (n : ℕ) (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]ˣ) :
     levelMap p n (c • μ) = c • levelMap p n μ := by
-  show (∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g ((c • μ) (levelChar p n g)))
+  change (∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g ((c • μ) (levelChar p n g)))
       = c • ∑ g : (ZMod (p ^ n))ˣ, MonoidAlgebra.single g (μ (levelChar p n g))
   rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun g _ => ?_
@@ -367,7 +367,7 @@ lemma unitsToZModPow_le {n m : ℕ} (h : n ≤ m) (a : ℤ_[p]ˣ) :
     unitsToZModPow p n a
       = ZMod.unitsMap (pow_dvd_pow p h) (unitsToZModPow p m a) := by
   apply Units.ext
-  show PadicInt.toZModPow n (a : ℤ_[p])
+  change PadicInt.toZModPow n (a : ℤ_[p])
       = ZMod.castHom (pow_dvd_pow p h) _ (PadicInt.toZModPow m (a : ℤ_[p]))
   exact (RingHom.congr_fun (PadicInt.zmod_cast_comp_toZModPow n m h) _).symm
 
@@ -401,7 +401,7 @@ lemma unitsToZModPow_surjective (n : ℕ) (hn : 0 < n) :
       rw [pow_one]; infer_instance
     exact not_isUnit_zero hu
   refine ⟨hunit.unit, Units.ext ?_⟩
-  show PadicInt.toZModPow n ((hunit.unit : ℤ_[p])) = (c : ZMod (p ^ n))
+  change PadicInt.toZModPow n ((hunit.unit : ℤ_[p])) = (c : ZMod (p ^ n))
   rw [IsUnit.unit_spec]
   exact hzc
 
@@ -536,7 +536,7 @@ lemma mapDomain_levelMap {n m : ℕ} (h : n ≤ m) (μ : PadicMeasure p ℤ_[p]�
     Finsupp.mapDomain (ZMod.unitsMap (pow_dvd_pow p h)) (levelMap p m μ)
       = levelMap p n μ := by
   classical
-  show Finsupp.mapDomain _
+  change Finsupp.mapDomain _
       (∑ c : (ZMod (p ^ m))ˣ, MonoidAlgebra.single c (μ (levelChar p m c))) = _
   rw [Finsupp.mapDomain_finsetSum]
   simp_rw [show ∀ c : (ZMod (p ^ m))ˣ, Finsupp.mapDomain
@@ -606,7 +606,8 @@ generated by `[g]−1`, for `g` a generator (RJW TeX lines 1265–1268). -/
 lemma mem_span_of_sum_eq_zero {n : ℕ} {gbar : (ZMod (p ^ n))ˣ}
     (hg : Subgroup.zpowers gbar = ⊤) (x : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)
     (hx : ∑ c : (ZMod (p ^ n))ˣ, x c = 0) :
-    x ∈ Ideal.span {(MonoidAlgebra.single gbar 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)} := by
+    x ∈ Ideal.span
+      {(MonoidAlgebra.single gbar 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)} := by
   classical
   have hdecomp : x = ∑ c : (ZMod (p ^ n))ˣ,
       (x c) • ((MonoidAlgebra.single c 1 - 1 : MonoidAlgebra ℤ_[p] (ZMod (p ^ n))ˣ)) := by
@@ -643,7 +644,7 @@ lemma dirac_sub_one_mul_apply (a : ℤ_[p]ˣ) (ν : PadicMeasure p ℤ_[p]ˣ)
     (f : C(ℤ_[p]ˣ, ℤ_[p])) :
     ((dirac p a - 1) * ν) f
       = ν ((f.comp (unitsMulCM₂ p)).curry a) - ν ((f.comp (unitsMulCM₂ p)).curry 1) := by
-  show ((dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ))
+  change ((dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ))
       (innerInt p ν (f.comp (unitsMulCM₂ p))) = _
   rw [LinearMap.sub_apply, dirac_apply, units_one_def, dirac_apply, innerInt_apply,
     innerInt_apply]
@@ -678,13 +679,14 @@ theorem eq_zero_of_forall_unitsPowCM_eq_zero (μ : PadicMeasure p ℤ_[p]ˣ)
       rw [Polynomial.smul_pow, zsmul_eq_mul]
       rfl
     have hfun : (n.factorial • mahler n : C(ℤ_[p], ℤ_[p]))
-        = ⟨fun x => (descPochhammer ℤ_[p] n).eval x, (descPochhammer ℤ_[p] n).continuous⟩ := by
+        = ⟨fun x => (descPochhammer ℤ_[p] n).eval x,
+            (descPochhammer ℤ_[p] n).continuous⟩ := by
       ext x
-      show n.factorial • mahler n x = (descPochhammer ℤ_[p] n).eval x
+      change n.factorial • mahler n x = (descPochhammer ℤ_[p] n).eval x
       rw [mahler_apply, hbridge x, Ring.descPochhammer_eq_factorial_smul_choose]
     have hint : (iota p μ) (n.factorial • mahler n) = 0 := by
       rw [hfun]
-      show μ ((⟨fun x => (descPochhammer ℤ_[p] n).eval x,
+      change μ ((⟨fun x => (descPochhammer ℤ_[p] n).eval x,
         (descPochhammer ℤ_[p] n).continuous⟩ : C(ℤ_[p], ℤ_[p])).comp (unitsValCM p)) = 0
       have hcomp : ((⟨fun x => (descPochhammer ℤ_[p] n).eval x,
             (descPochhammer ℤ_[p] n).continuous⟩ : C(ℤ_[p], ℤ_[p])).comp (unitsValCM p))
@@ -701,7 +703,7 @@ theorem eq_zero_of_forall_unitsPowCM_eq_zero (μ : PadicMeasure p ℤ_[p]ˣ)
       rw [map_smul, h (i + 1) (Nat.succ_pos i), smul_zero]
     rw [map_nsmul] at hint
     refine nsmul_right_injective (M := ℤ_[p]) (Nat.factorial_ne_zero n) ?_
-    show n.factorial • ((iota p μ) (mahler n)) = n.factorial • (0 : ℤ_[p])
+    change n.factorial • ((iota p μ) (mahler n)) = n.factorial • (0 : ℤ_[p])
     rw [hint, smul_zero]
   -- Step 2: `𝓐(ιμ)` is constant, so `ιμ` is a multiple of `δ₀`
   set c₀ := (iota p μ) (mahler 0) with hc₀
@@ -724,17 +726,17 @@ theorem eq_zero_of_forall_unitsPowCM_eq_zero (μ : PadicMeasure p ℤ_[p]ˣ)
       have hdig : digit p (0 : ℤ_[p]) = 0 := by
         rw [digit, map_zero, ZMod.val_zero, Nat.cast_zero]
       refine Subtype.ext ?_
-      show (((0 : ℤ_[p]) : ℚ_[p]) - (digit p (0 : ℤ_[p]) : ℚ_[p])) / (p : ℚ_[p])
+      change (((0 : ℤ_[p]) : ℚ_[p]) - (digit p (0 : ℤ_[p]) : ℚ_[p])) / (p : ℚ_[p])
           = ((0 : ℤ_[p]) : ℚ_[p])
       rw [hdig]
       simp
     refine LinearMap.ext fun f => ?_
-    show (c₀ • dirac p 0)
+    change (c₀ • dirac p 0)
         ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
           f.comp (shiftDiv p)) = (c₀ • dirac p 0) f
     rw [LinearMap.smul_apply, LinearMap.smul_apply, dirac_apply, dirac_apply]
     congr 1
-    show (LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) 0 *
+    change (LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) 0 *
         f (shiftDiv p 0) = f 0
     have h0mem : (0 : ℤ_[p]) ∈ {x : ℤ_[p] | ‖x‖ < 1} := by
       simp [Set.mem_setOf_eq]
@@ -760,11 +762,11 @@ lemma units_mul_apply_unitsPowCM (μ ν : PadicMeasure p ℤ_[p]ˣ) (k : ℕ) :
     have hcurry : ((unitsPowCM p k).comp (unitsMulCM₂ p)).curry x
         = ((x : ℤ_[p]) ^ k) • unitsPowCM p k := by
       ext y
-      show ((x * y : ℤ_[p]ˣ) : ℤ_[p]) ^ k = _
+      change ((x * y : ℤ_[p]ˣ) : ℤ_[p]) ^ k = _
       simp only [Units.val_mul, mul_pow, ContinuousMap.smul_apply, unitsPowCM,
         ContinuousMap.coe_mk, smul_eq_mul]
     rw [hcurry, map_smul, smul_eq_mul]
-    show ((x : ℤ_[p])) ^ k * ν (unitsPowCM p k)
+    change ((x : ℤ_[p])) ^ k * ν (unitsPowCM p k)
         = (ν (unitsPowCM p k) • unitsPowCM p k) x
     simp only [ContinuousMap.smul_apply, unitsPowCM, ContinuousMap.coe_mk, smul_eq_mul]
     rw [mul_comm]
@@ -862,7 +864,7 @@ theorem exists_topological_generator (hp2 : p ≠ 2) :
     fun n => {a : ℤ_[p]ˣ | Subgroup.zpowers (unitsToZModPow p n a) = ⊤} with ht
   have hsub : ∀ n, t (n + 1) ⊆ t n := by
     intro n a hagen
-    show Subgroup.zpowers (unitsToZModPow p n a) = ⊤
+    change Subgroup.zpowers (unitsToZModPow p n a) = ⊤
     rw [unitsToZModPow_le p n.le_succ a, ← MonoidHom.map_zpowers, hagen]
     exact Subgroup.map_top_of_surjective _
       (ZMod.unitsMap_surjective (pow_dvd_pow p n.le_succ))
@@ -870,7 +872,7 @@ theorem exists_topological_generator (hp2 : p ≠ 2) :
     intro n
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · refine ⟨1, ?_⟩
-      show Subgroup.zpowers (unitsToZModPow p 0 1) = ⊤
+      change Subgroup.zpowers (unitsToZModPow p 0 1) = ⊤
       haveI : Subsingleton (ZMod (p ^ 0))ˣ := by
         rw [pow_zero]
         infer_instance
@@ -1015,7 +1017,7 @@ theorem augmentationIdeal_eq_span {a : ℤ_[p]ˣ}
       exact hφall n
     exact (sub_eq_zero.1 hzero).symm
   · rw [Ideal.span_le, Set.singleton_subset_iff]
-    show (dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ) ∈ augmentationIdeal p
+    change (dirac p a - 1 : PadicMeasure p ℤ_[p]ˣ) ∈ augmentationIdeal p
     rw [augmentationIdeal, RingHom.mem_ker, map_sub, map_one,
       show deg p (dirac p a) = 1 from rfl, sub_self]
 
@@ -1058,7 +1060,8 @@ theorem isPseudoMeasure_iff_exists {a : ℤ_[p]ˣ}
       nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ))
     (q : QuotientField p) :
     IsPseudoMeasure p q ↔
-      ∃ μ : PadicMeasure p ℤ_[p]ˣ, q = IsLocalization.mk' (QuotientField p) μ ⟨_, hreg⟩ := by
+      ∃ μ : PadicMeasure p ℤ_[p]ˣ,
+        q = IsLocalization.mk' (QuotientField p) μ ⟨_, hreg⟩ := by
   constructor
   · intro hq
     obtain ⟨ν, hν⟩ := hq a

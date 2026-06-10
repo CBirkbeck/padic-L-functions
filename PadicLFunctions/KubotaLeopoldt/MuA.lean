@@ -79,7 +79,8 @@ lemma X_mul_FaNum (a : ℕ) :
     simp [FaNum]
 
 /-- **RJW Prop. 4.4 (`PropFaT`)**: the power series
-`F_a = 1/T − a/((1+T)^a−1) ∈ ℤ_p⟦T⟧`, realised as `((geomSum a − a)/T)·geomSum a⁻¹`.
+`F_a = 1/T − a/((1+T)^a−1) ∈ ℤ_p⟦T⟧`, realised as
+`((geomSum a − a)/T)·geomSum a⁻¹`.
 Junk value (`0` denominator-inverse) when `p ∣ a`. -/
 def Fa (a : ℕ) : PowerSeries ℤ_[p] :=
   FaNum p a * Ring.inverse (geomSum p a)
@@ -142,7 +143,7 @@ instance instIsDomain : IsDomain (PadicMeasure p ℤ_[p]) :=
 
 instance : SMulCommClass ℤ_[p] (PadicMeasure p ℤ_[p]) (PadicMeasure p ℤ_[p]) where
   smul_comm c μ ν := by
-    show c • (μ * ν) = μ * (c • ν)
+    change c • (μ * ν) = μ * (c • ν)
     apply mahlerTransform_injective p
     rw [mahlerTransform_smul, mahlerTransform_mul, mahlerTransform_mul,
       mahlerTransform_smul]
@@ -257,8 +258,8 @@ lemma X_mul_subst_exp_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
     intro h
     have h1 := congrArg (PowerSeries.coeff 1) h
     rw [map_sub, coeff_rescale, PowerSeries.coeff_exp, PowerSeries.coeff_one] at h1
-    simp [Nat.factorial] at h1
-    exact haN h1
+    have h2 : ((a : ℕ) : ℚ_[p]) = 0 := by simpa [Nat.factorial] using h1
+    exact haN (Nat.cast_eq_zero.mp h2)
   have hX : (substAlgHom hg) (X : PowerSeries ℚ_[p]) = exp ℚ_[p] - 1 := by
     rw [show ⇑(substAlgHom hg) = PowerSeries.subst (exp ℚ_[p] - 1) from coe_substAlgHom hg]
     exact subst_X hg
@@ -281,7 +282,8 @@ lemma X_mul_subst_exp_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
   have hb1 : bernoulliPowerSeries ℚ_[p] * (exp ℚ_[p] - 1) = X :=
     bernoulliPowerSeries_mul_exp_sub_one ℚ_[p]
   have hfac : rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1
-      = (exp ℚ_[p] - 1) * ∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]) := by
+      = (exp ℚ_[p] - 1)
+        * ∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]) := by
     have h2 := geom_sum_mul (exp ℚ_[p]) a
     simp only [exp_pow_eq_rescale_exp] at h2
     rw [← h2]
@@ -291,7 +293,8 @@ lemma X_mul_subst_exp_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
     rw [show rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1
         = rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p] - 1) by rw [map_sub, map_one],
       ← map_mul, hb1, rescale_X, map_natCast]
-  have hB : (bernoulliPowerSeries ℚ_[p] - rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]))
+  have hB : (bernoulliPowerSeries ℚ_[p]
+        - rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]))
       * (rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1)
       = X * ((∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]))
         - (a : PowerSeries ℚ_[p])) := by
@@ -307,7 +310,8 @@ lemma X_mul_subst_exp_Fa {a : ℕ} (hpa : ¬ p ∣ a) :
         ring
     _ = X * ((∑ i ∈ Finset.range a, rescale ((i : ℕ) : ℚ_[p]) (exp ℚ_[p]))
         - (a : PowerSeries ℚ_[p])) := by rw [hsub]
-    _ = (bernoulliPowerSeries ℚ_[p] - rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]))
+    _ = (bernoulliPowerSeries ℚ_[p]
+          - rescale ((a : ℕ) : ℚ_[p]) (bernoulliPowerSeries ℚ_[p]))
         * (rescale ((a : ℕ) : ℚ_[p]) (exp ℚ_[p]) - 1) := hB.symm
 
 /-- **RJW Prop. 4.6**: `∫_{ℤ_p} x^k dμ_a = (−1)^k (1 − a^{k+1}) ζ(−k)` in `ℚ_p`. -/
@@ -362,14 +366,15 @@ computation, TeX lines 1517–1524). -/
 theorem psi_phi_mul (ν μ : PadicMeasure p ℤ_[p]) :
     psi p (phi p ν * μ) = ν * psi p μ := by
   refine LinearMap.ext fun f => ?_
-  show (phi p ν * μ) ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+  change (phi p ν * μ) ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
       f.comp (shiftDiv p)) = (ν * psi p μ) f
   rw [mul_apply, mul_apply]
-  show ν ((convInner p μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+  change ν ((convInner p μ
+      ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
       f.comp (shiftDiv p))).comp (mulCM p (p : ℤ_[p]))) = ν (convInner p (psi p μ) f)
   congr 1
   ext x
-  show μ (((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+  change μ (((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
         f.comp (shiftDiv p)).comp ⟨fun y => (p : ℤ_[p]) * x + y, by fun_prop⟩)
       = μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
         (f.comp ⟨fun y => x + y, by fun_prop⟩).comp (shiftDiv p))
@@ -389,7 +394,8 @@ theorem psi_phi_mul (ν μ : PadicMeasure p ℤ_[p]) :
       intro hmem
       apply hy
       calc ‖y‖ = ‖((p : ℤ_[p]) * x + y) + -((p : ℤ_[p]) * x)‖ := by ring_nf
-        _ ≤ max ‖(p : ℤ_[p]) * x + y‖ ‖-((p : ℤ_[p]) * x)‖ := PadicInt.nonarchimedean _ _
+        _ ≤ max ‖(p : ℤ_[p]) * x + y‖ ‖-((p : ℤ_[p]) * x)‖ :=
+            PadicInt.nonarchimedean _ _
         _ < 1 := max_lt hmem (by rw [norm_neg]; exact mem_pZp_of_mul p)
     rw [Set.indicator_of_notMem hnmem, Set.indicator_of_notMem (by exact hy), zero_mul,
       zero_mul]
@@ -404,7 +410,7 @@ lemma psi_dirac_mul (x : ℤ_[p]) : psi p (dirac p ((p : ℤ_[p]) * x)) = dirac 
 
 lemma psi_dirac_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : psi p (dirac p x) = 0 := by
   refine LinearMap.ext fun f => ?_
-  show (LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) x
+  change (LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) x
       * (f.comp (shiftDiv p)) x = 0
   have hnmem : x ∉ {z : ℤ_[p] | ‖z‖ < 1} := by
     simp [PadicInt.isUnit_iff.1 hx]
@@ -474,7 +480,8 @@ theorem psi_muA {a : ℕ} (hpa : ¬ p ∣ a) : psi p (muA p a) = muA p a := by
         (fun j => dirac p ((a * j : ℕ) : ℤ_[p]))]
     simp [dirac_zero_eq_one]
   -- (Σ_{j<p}[aj])·(Σ_{i<a}[i]) = Σ_{n<ap}[n]
-  have htr : ∀ b : ℕ, mahlerTransform p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p]))
+  have htr : ∀ b : ℕ,
+      mahlerTransform p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p]))
       = geomSum p b := fun b => by
     rw [show mahlerTransform p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p]))
         = mahlerTransformₗ p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p])) from rfl,
@@ -547,7 +554,7 @@ theorem psi_muA {a : ℕ} (hpa : ¬ p ∣ a) : psi p (muA p a) = muA p a := by
 
 lemma phi_apply_powCM (μ : PadicMeasure p ℤ_[p]) (k : ℕ) :
     phi p μ (powCM p k) = (p : ℤ_[p]) ^ k * μ (powCM p k) := by
-  show μ ((powCM p k).comp (mulCM p (p : ℤ_[p]))) = (p : ℤ_[p]) ^ k * μ (powCM p k)
+  change μ ((powCM p k).comp (mulCM p (p : ℤ_[p]))) = (p : ℤ_[p]) ^ k * μ (powCM p k)
   have hfun : (powCM p k).comp (mulCM p (p : ℤ_[p])) = (p : ℤ_[p]) ^ k • powCM p k := by
     ext x
     simp [powCM, mulCM, mul_pow]

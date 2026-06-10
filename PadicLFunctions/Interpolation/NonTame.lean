@@ -47,7 +47,7 @@ unnormalised (multiplied through by the unit `−G(η⁻¹)`) per R5-CLEAR; the
 genuinely-used object is the *family* below, with the Gauss-normalisation
 carried in the statements. -/
 def muEtaCleared {D : ℕ} [NeZero D] (η : DirichletCharacter (integerRing K) D)
-    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) :
+    {ζ : integerRing K} (_hζ : IsPrimitiveRoot ζ D) (_hD : ¬ (p : ℕ) ∣ D) :
     MeasureR K ℤ_[p] :=
   (mahlerRingEquiv p K).symm
     (-(∑ c ∈ Finset.range D,

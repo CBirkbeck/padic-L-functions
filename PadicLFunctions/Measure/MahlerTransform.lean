@@ -5,7 +5,8 @@ import Mathlib.RingTheory.PowerSeries.Binomial
 # The Mahler (Amice) transform
 
 Following RJW (arXiv:2309.15692) §3.4: to a measure `μ` on `ℤ_p` we attach the power
-series `𝓐_μ(T) = ∫ (1+T)^x dμ(x) = ∑_n (∫ binom(x,n) dμ) Tⁿ ∈ ℤ_p[[T]]`, and prove this
+series `𝓐_μ(T) = ∫ (1+T)^x dμ(x) = ∑_n (∫ binom(x,n) dμ) Tⁿ ∈ ℤ_p[[T]]`, and
+prove this
 is a bijection — RJW Thm. 3.20 (`thm:mahler`), as a linear equivalence here; the ring
 isomorphism is assembled in `PadicLFunctions.Measure.Convolution`.
 
@@ -48,7 +49,8 @@ lemma coeff_mahlerTransform (μ : PadicMeasure p ℤ_[p]) (n : ℕ) :
   simp [mahlerTransform, mahlerCoeff]
 
 /-- The Mahler transform is `ℤ_[p]`-linear. -/
-noncomputable def mahlerTransformₗ : PadicMeasure p ℤ_[p] →ₗ[ℤ_[p]] PowerSeries ℤ_[p] where
+noncomputable def mahlerTransformₗ :
+    PadicMeasure p ℤ_[p] →ₗ[ℤ_[p]] PowerSeries ℤ_[p] where
   toFun := mahlerTransform p
   map_add' _ _ := by ext n; simp [mahlerTransform, mahlerCoeff]
   map_smul' _ _ := by ext n; simp [mahlerTransform, mahlerCoeff]
@@ -149,7 +151,7 @@ theorem mahlerTransform_ofPowerSeries (g : PowerSeries ℤ_[p]) :
     mahlerTransform p (ofPowerSeries p g) = g := by
   ext k
   rw [coeff_mahlerTransform]
-  show ∑' n, Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0 * PowerSeries.coeff n g
+  change ∑' n, Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0 * PowerSeries.coeff n g
       = PowerSeries.coeff k g
   simp_rw [fwdDiff_iter_mahler_zero, ite_mul, one_mul, zero_mul]
   exact tsum_ite_eq k _
@@ -162,7 +164,7 @@ noncomputable def mahlerLinearEquiv : PadicMeasure p ℤ_[p] ≃ₗ[ℤ_[p]] Pow
     invFun := ofPowerSeries p
     left_inv := fun μ => by
       refine LinearMap.ext fun f => ?_
-      show ∑' n, Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n (mahlerTransform p μ) = μ f
+      change ∑' n, Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n (mahlerTransform p μ) = μ f
       simp_rw [coeff_mahlerTransform]
       exact (apply_eq_tsum p μ f).symm
     right_inv := mahlerTransform_ofPowerSeries p }

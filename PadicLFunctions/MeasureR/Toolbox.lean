@@ -39,6 +39,7 @@ def cmul (g : C(ℤ_[p], integerRing K)) (μ : MeasureR K ℤ_[p]) : MeasureR K 
 
 variable {p K}
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 @[simp]
 lemma cmul_apply (g f : C(ℤ_[p], integerRing K)) (μ : MeasureR K ℤ_[p]) :
     cmul p K g μ f = μ (g * f) := rfl
@@ -51,6 +52,7 @@ def del (F : PowerSeries (integerRing K)) : PowerSeries (integerRing K) :=
 
 variable {p K}
 
+omit [CompleteSpace K] in
 /-- The coefficients of `∂F`: `(∂F)_n = (n+1)F_{n+1} + n·F_n`. -/
 private lemma coeff_del (F : PowerSeries (integerRing K)) (n : ℕ) :
     PowerSeries.coeff n (del K F)
@@ -65,6 +67,7 @@ private lemma coeff_del (F : PowerSeries (integerRing K)) (n : ℕ) :
     push_cast
     ring
 
+omit [CompleteSpace K] in
 /-- Multiplication by `x` corresponds to `∂` on Mahler transforms
 (RJW Lem 3.24, TeX 1066–1075): `𝓐_{xμ} = ∂𝓐_μ`, where "multiplication by `x`"
 multiplies by the `R`-valued inclusion of the identity. -/
@@ -81,7 +84,7 @@ theorem mahlerTransform_cmul_X (μ : MeasureR K ℤ_[p]) :
       ContinuousMap.add_apply, ContinuousMap.smul_apply, smul_eq_mul]
     refine congrArg Subtype.val ?_
     have h1 : Ring.choose x 1 = x := by
-      simp [Ring.choose_one_right]
+      simp []
     rw [← map_mul]
     rw [show (Ring.choose x 1 * Ring.choose x n) = x * Ring.choose x n by rw [h1]]
     rw [PadicMeasure.mul_choose_eq p x n, map_add, map_mul, map_mul]
@@ -99,10 +102,12 @@ def powCM (k : ℕ) : C(ℤ_[p], integerRing K) :=
 
 variable {p K}
 
+omit [CompleteSpace K] in
 @[simp]
 lemma powCM_apply (k : ℕ) (x : ℤ_[p]) :
     powCM p K k x = algebraMap ℤ_[p] (integerRing K) (x ^ k) := rfl
 
+omit [CompleteSpace K] in
 /-- `∫ x^k dμ = (∂^k 𝓐_μ)(0)` (RJW Cor 3.25, TeX 1079–1082). -/
 theorem apply_powCM (μ : MeasureR K ℤ_[p]) (k : ℕ) :
     μ (powCM p K k)
@@ -121,7 +126,7 @@ theorem apply_powCM (μ : MeasureR K ℤ_[p]) (k : ℕ) :
       refine congrArg Subtype.val ?_
       rw [← map_mul]
       congr 1
-      rw [show Ring.choose x 1 = x by simp [Ring.choose_one_right], pow_succ,
+      rw [show Ring.choose x 1 = x by simp [], pow_succ,
         mul_comm]
     rw [h1, ← cmul_apply, ih (cmul p K (mahlerCM p K 1) μ), mahlerTransform_cmul_X,
       Function.iterate_succ_apply]
@@ -162,6 +167,7 @@ def psi (μ : MeasureR K ℤ_[p]) : MeasureR K ℤ_[p] where
 
 variable {p K}
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- `ψ ∘ φ = id` (RJW TeX 1149–1150). -/
 @[simp]
 theorem psi_phi (μ : MeasureR K ℤ_[p]) : psi p K (phi p K μ) = μ := by
@@ -171,11 +177,12 @@ theorem psi_phi (μ : MeasureR K ℤ_[p]) : psi p K (phi p K μ) = μ := by
   congr 1
   ext x
   simp only [ContinuousMap.comp_apply, ContinuousMap.mul_apply, PadicMeasure.mulCM,
-    ContinuousMap.coe_mk, charFnCM_apply, LocallyConstant.coe_continuousMap,
-    LocallyConstant.coe_charFn, PadicMeasure.shiftDiv_mul]
+    ContinuousMap.coe_mk, charFnCM_apply, 
+    PadicMeasure.shiftDiv_mul]
   have hmem : ((p : ℤ_[p]) * x) ∈ {y : ℤ_[p] | ‖y‖ < 1} := PadicMeasure.mem_pZp_of_mul p
   rw [Set.indicator_of_mem hmem, Pi.one_apply, one_mul]
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- `φ ∘ ψ = Res_{pℤ_p}` (RJW TeX 1149–1151). -/
 theorem phi_psi (μ : MeasureR K ℤ_[p]) :
     phi p K (psi p K μ) = res p K (PadicMeasure.isClopen_pZp p) μ := by
@@ -185,12 +192,13 @@ theorem phi_psi (μ : MeasureR K ℤ_[p]) :
   congr 1
   ext x
   simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply, charFnCM_apply,
-    LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn, PadicMeasure.mulCM,
+    PadicMeasure.mulCM,
     ContinuousMap.coe_mk]
   by_cases hx : ‖x‖ < 1
   · rw [PadicMeasure.mul_shiftDiv_of_mem p hx]
   · rw [Set.indicator_of_notMem (by simpa using hx) 1, zero_mul, zero_mul]
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 /-- `Res_{ℤ_p^×} = 1 − φ∘ψ` (RJW Eq 3.10, TeX 1152–1154). -/
 theorem res_units_eq (μ : MeasureR K ℤ_[p]) :
     res p K (PadicMeasure.isClopen_units p) μ = μ - phi p K (psi p K μ) := by
@@ -200,8 +208,8 @@ theorem res_units_eq (μ : MeasureR K ℤ_[p]) :
   rw [eq_sub_iff_add_eq, ← map_add]
   congr 1
   ext x
-  simp only [ContinuousMap.add_apply, ContinuousMap.mul_apply, ContinuousMap.coe_mk,
-    charFnCM_apply, LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn]
+  simp only [ContinuousMap.add_apply, ContinuousMap.mul_apply, 
+    charFnCM_apply]
   rw [← add_mul]
   by_cases hx : ‖x‖ < 1
   · have hnu : x ∉ {y : ℤ_[p] | IsUnit y} := fun hu =>
@@ -215,9 +223,10 @@ theorem res_units_eq (μ : MeasureR K ℤ_[p]) :
     rw [Set.indicator_of_mem hu, Set.indicator_of_notMem hnm, Pi.one_apply, add_zero,
       one_mul]
 
+omit [CompleteSpace K] [NormedAlgebra ℚ_[p] K] in
 lemma psi_sub (μ ν : MeasureR K ℤ_[p]) :
     psi p K (μ - ν) = psi p K μ - psi p K ν :=
-  LinearMap.ext fun f => LinearMap.sub_apply μ ν _
+  LinearMap.ext fun _f => LinearMap.sub_apply μ ν _
 
 /-- **RJW Cor 3.32** over `R`: supported on `ℤ_p^×` iff `ψμ = 0`
 (TeX 1161–1167). -/

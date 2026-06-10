@@ -58,12 +58,12 @@ lemma innerInt_smul [CompactSpace Y] (c : ℤ_[p]) (ν : PadicMeasure p Y)
 lemma innerInt_measure_add [CompactSpace Y] (ν₁ ν₂ : PadicMeasure p Y)
     (F : C(X × Y, ℤ_[p])) :
     innerInt p (ν₁ + ν₂) F = innerInt p ν₁ F + innerInt p ν₂ F :=
-  ContinuousMap.ext fun x => rfl
+  ContinuousMap.ext fun _x => rfl
 
 @[simp]
 lemma innerInt_measure_zero [CompactSpace Y] (F : C(X × Y, ℤ_[p])) :
     innerInt p (0 : PadicMeasure p Y) F = 0 :=
-  ContinuousMap.ext fun x => rfl
+  ContinuousMap.ext fun _x => rfl
 
 /-- **Density of locally constant maps, general ultrametric target**: any continuous
 map from a compact space to an ultrametric seminormed group is uniformly approximated
@@ -79,7 +79,8 @@ theorem exists_locallyConstant_norm_sub_le' [CompactSpace X]
       fun x => (IsEmpty.false x).elim⟩
   classical
   -- clopen cover by ball preimages
-  have hcov : ∀ x : X, ∃ U : Set X, IsClopen U ∧ x ∈ U ∧ ∀ y ∈ U, ‖f y - f x‖ ≤ ε := by
+  have hcov : ∀ x : X,
+      ∃ U : Set X, IsClopen U ∧ x ∈ U ∧ ∀ y ∈ U, ‖f y - f x‖ ≤ ε := by
     intro x
     refine ⟨f ⁻¹' Metric.closedBall (f x) ε,
       ⟨Metric.isClosed_closedBall.preimage (map_continuous f),
@@ -116,7 +117,7 @@ theorem exists_locallyConstant_norm_sub_le' [CompactSpace X]
     obtain ⟨c₀, hmem⟩ := Set.mem_iUnion₂.1 (ht (Set.mem_univ x))
     obtain ⟨hc₀t, hxc₀⟩ := hmem
     exact ⟨⟨c₀, hc₀t⟩, by simp [hPdef, hxc₀]⟩
-  show ‖f x - h (P x)‖ ≤ ε
+  change ‖f x - h (P x)‖ ≤ ε
   rw [hhdef]
   simp only [dif_pos hex]
   have hxU : x ∈ U ↑(hex.choose) := by
@@ -202,7 +203,8 @@ theorem integral_swap [CompactSpace X] [CompactSpace Y]
       rw [hmid, map_sum, hSdef]
       refine Finset.sum_congr rfl fun g _ => ?_
       rw [map_smul, smul_eq_mul]
-    have hbound : ‖innerInt p μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂‖ ≤ ε := by
+    have hbound : ‖innerInt p μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂‖
+        ≤ ε := by
       rw [ContinuousMap.norm_le _ hε.le]
       intro y
       -- the column `x ↦ Φ x y`, as a continuous map
@@ -244,7 +246,8 @@ theorem integral_swap [CompactSpace X] [CompactSpace Y]
           rw [dist_eq_norm, hνmid]
       _ = ‖ν (innerInt p μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂)‖ := by
           rw [map_sub]
-      _ ≤ ‖innerInt p μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂‖ := norm_apply_le p ν _
+      _ ≤ ‖innerInt p μ (F.comp ⟨Prod.swap, continuous_swap⟩) - mid₂‖ :=
+          norm_apply_le p ν _
       _ ≤ ε := hbound
   calc dist (μ (innerInt p ν F)) (ν (innerInt p μ (F.comp ⟨Prod.swap, continuous_swap⟩)))
       ≤ max (dist (μ (innerInt p ν F)) S)

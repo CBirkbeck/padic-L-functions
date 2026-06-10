@@ -68,10 +68,12 @@ def algCM (f : C(ℤ_[p], ℤ_[p])) : C(ℤ_[p], integerRing K) :=
   ⟨fun x => algebraMap ℤ_[p] (integerRing K) (f x),
     ((integerRing.isometry_algebraMap p K).continuous).comp (map_continuous f)⟩
 
+omit [CompleteSpace K] in
 @[simp]
 lemma algCM_apply (f : C(ℤ_[p], ℤ_[p])) (x : ℤ_[p]) :
     algCM K f x = algebraMap ℤ_[p] (integerRing K) (f x) := rfl
 
+omit [CompleteSpace K] in
 lemma algCM_mahler (n : ℕ) : algCM K (mahler n) = mahlerCM p K n := rfl
 
 variable {K}
@@ -88,7 +90,7 @@ theorem baseChange_algCM (μ : PadicMeasure p ℤ_[p]) (f : C(ℤ_[p], ℤ_[p]))
     intro n
     rw [fwdDiff_iter_eq_sum_shift, fwdDiff_iter_eq_sum_shift, map_sum]
     refine Finset.sum_congr rfl fun i _ => ?_
-    simp [map_zsmul]
+    simp []
   have hcoeff : ∀ n, baseChange p K μ (mahlerCM p K n)
       = algebraMap ℤ_[p] (integerRing K) (μ (mahler n)) := by
     intro n

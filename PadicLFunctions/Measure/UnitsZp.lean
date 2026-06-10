@@ -101,23 +101,24 @@ noncomputable def extendByZero : C(ℤ_[p]ˣ, ℤ_[p]) →ₗ[ℤ_[p]] C(ℤ_[p]
   map_add' g₁ g₂ := by
     ext x
     by_cases hx : IsUnit x <;>
-      simp [dif_pos, dif_neg, hx]
+      simp [hx]
   map_smul' c g := by
     ext x
     by_cases hx : IsUnit x <;>
-      simp [dif_pos, dif_neg, hx]
+      simp [hx]
 
 open Classical in
 @[simp]
 lemma extendByZero_coe_unit (g : C(ℤ_[p]ˣ, ℤ_[p])) (u : ℤ_[p]ˣ) :
     extendByZero p g (u : ℤ_[p]) = g u := by
   have hx : IsUnit ((u : ℤ_[p])) := u.isUnit
-  show (if h : IsUnit ((u : ℤ_[p])) then g h.unit else 0) = g u
+  change (if h : IsUnit ((u : ℤ_[p])) then g h.unit else 0) = g u
   rw [dif_pos hx]
   congr 1
   exact Units.ext (IsUnit.unit_spec hx)
 
-/-- The embedding `ι : Λ(ℤ_p^×) → Λ(ℤ_p)`: `∫_{ℤ_p} φ d(ιμ) = ∫_{ℤ_p^×} φ|_{ℤ_p^×} dμ`.
+/-- The embedding `ι : Λ(ℤ_p^×) → Λ(ℤ_p)`:
+`∫_{ℤ_p} φ d(ιμ) = ∫_{ℤ_p^×} φ|_{ℤ_p^×} dμ`.
 
 Source: RJW Rem. 3.33 (TeX lines 1170–1171). -/
 noncomputable def iota : PadicMeasure p ℤ_[p]ˣ →ₗ[ℤ_[p]] PadicMeasure p ℤ_[p] :=
@@ -142,7 +143,7 @@ units. Source: RJW Rem. 3.33 ("`Res_{ℤ_p^×} ∘ ι` is the identity on `Λ(�
 theorem res_iota (μ : PadicMeasure p ℤ_[p]ˣ) :
     res p (isClopen_units p) (iota p μ) = iota p μ := by
   refine LinearMap.ext fun f => ?_
-  show μ ((((LocallyConstant.charFn ℤ_[p] (isClopen_units p) : C(ℤ_[p], ℤ_[p])) * f)).comp
+  change μ ((((LocallyConstant.charFn ℤ_[p] (isClopen_units p) : C(ℤ_[p], ℤ_[p])) * f)).comp
       (unitsValCM p)) = μ (f.comp (unitsValCM p))
   congr 1
   ext u
@@ -158,7 +159,7 @@ lemma extendByZero_comp_unitsVal (f : C(ℤ_[p], ℤ_[p])) :
     extendByZero p (f.comp (unitsValCM p))
       = (LocallyConstant.charFn ℤ_[p] (isClopen_units p) : C(ℤ_[p], ℤ_[p])) * f := by
   ext x
-  show (if h : IsUnit x then (f.comp (unitsValCM p)) h.unit else 0) = _
+  change (if h : IsUnit x then (f.comp (unitsValCM p)) h.unit else 0) = _
   by_cases hx : IsUnit x
   · rw [dif_pos hx]
     simp only [ContinuousMap.comp_apply, unitsValCM, ContinuousMap.coe_mk,
@@ -183,7 +184,7 @@ theorem mem_range_iota_iff (μ : PadicMeasure p ℤ_[p]) :
   · intro h
     refine ⟨μ.comp (extendByZero p), ?_⟩
     refine LinearMap.ext fun f => ?_
-    show μ (extendByZero p (f.comp (unitsValCM p))) = μ f
+    change μ (extendByZero p (f.comp (unitsValCM p))) = μ f
     rw [extendByZero_comp_unitsVal]
     exact LinearMap.congr_fun ((isSupportedOn_units_iff_psi_eq_zero p μ).2 h) f
 

@@ -129,7 +129,7 @@ theorem mul_apply (μ ν : PadicMeasure p ℤ_[p]) (f : C(ℤ_[p], ℤ_[p])) :
   apply mahlerTransform_injective p
   ext n
   rw [mahlerTransform_mul, PowerSeries.coeff_mul, coeff_mahlerTransform]
-  show _ = μ (convInner p ν (mahler n))
+  change _ = μ (convInner p ν (mahler n))
   -- Chu–Vandermonde on the Mahler basis
   have hcomp : ∀ x : ℤ_[p],
       (mahler n).comp (⟨fun y => x + y, by fun_prop⟩ : C(ℤ_[p], ℤ_[p]))

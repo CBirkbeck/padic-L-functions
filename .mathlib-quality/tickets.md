@@ -2236,7 +2236,21 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: source proof 14 lines ⟹ ~120 LOC.
 
 ### [CLEANUP-ALL-3] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T509 | **Type**: cleanup-all (before T510)
+- **Status**: done | **Depends on**: T509 | **Type**: cleanup-all (before T510)
+- **Progress**: DONE 2026-06-10, full-project sweep (~140 linter warnings →
+  0 non-sorry warnings): scripted positional fixes for 64 show→change, 30
+  unused simp args, ~40 unused-section-var omits (looped to fixpoint; NOTE
+  the warning columns are 0-indexed, omit-lists need bracket-aware parsing
+  for `ℚ_[p]`, and `omit ... in`/`open ... in` must precede docstrings);
+  flexible-simp `simp [Nat.factorial] at h1` in the two hreg-proofs
+  restructured to `simpa ... using` + explicit Nat-contradiction;
+  `open scoped Classical` in Characters.lean narrowed to `open Classical in`
+  on toContinuousMapZp + `classical` tactic in the locally-constant proof;
+  no-op push_casts removed; deprecated `AddSubmonoidClass.coe_finset_sum` →
+  `coe_finsetSum`; all 28 over-100-col lines repacked (some had grown from
+  show→change). Verification: lake build green (code + blueprint), zero
+  non-sorry warnings project-wide, all lines ≤ 100; axiom spot-checks
+  unchanged on twist_muA_moments and PadicMeasure.kubotaLeopoldt.
 
 ### [T511] F_η and μ_η (conductor D coprime to p)
 - **Status**: open | **File**: Interpolation/NonTame.lean (TW6 skeleton) | **Depends on**: TW6, T501
