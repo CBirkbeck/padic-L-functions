@@ -621,6 +621,105 @@ lemma constantCoeff_iterate_delField (k : ℕ) (F : PowerSeries K) :
 
 end fieldBridge
 
+/-- The `K`-coercion of the integral Gauss sum is the `K`-valued Gauss sum of
+the induced character. -/
+lemma coe_gaussSum_zmodChar {n : ℕ}
+    (χ : DirichletCharacter (integerRing K) (p ^ n)) {ζ : integerRing K}
+    (hζ : IsPrimitiveRoot ζ (p ^ n)) (hζK : IsPrimitiveRoot ((ζ : K)) (p ^ n)) :
+    ((gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hζ.pow_eq_one) : integerRing K) : K)
+      = gaussSum (toFieldChar χ)⁻¹
+          (AddChar.zmodChar (p ^ n) hζK.pow_eq_one) := by
+  rw [gaussSum, gaussSum, AddSubmonoidClass.coe_finset_sum]
+  refine Finset.sum_congr rfl fun c _ => ?_
+  push_cast
+  rw [show (toFieldChar χ)⁻¹ = toFieldChar χ⁻¹ from MulChar.ringHomComp_inv χ _,
+    AddChar.zmodChar_apply, AddChar.zmodChar_apply]
+  push_cast
+  rfl
+
+/-- T509 (v-f) transport: the `χ̄⁻¹`-weighted sum of the `H_c` is the
+`K`-coerced Gauss sum times `H_χ` (T508 carried through `𝓐`, the coefficient
+inclusion, and the exponential substitution). -/
+lemma sum_char_inv_H_eq {n : ℕ} (hn : 1 ≤ n)
+    {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n)) {a : ℕ} :
+    ∑ c ∈ Finset.range (p ^ n),
+        PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+          * (PowerSeries.map (integerRing K).subtype
+              (mahlerTransform p K (twist p K
+                (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+                (baseChange p K (PadicMeasure.muA p a))))).subst
+              (PowerSeries.exp K - 1)
+      = PowerSeries.C
+          ((gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hζ.pow_eq_one)
+            : integerRing K) : K)
+          * (PowerSeries.map (integerRing K).subtype
+              (mahlerTransform p K (twist p K χ.toContinuousMapZp
+                (baseChange p K (PadicMeasure.muA p a))))).subst
+              (PowerSeries.exp K - 1) := by
+  have hg := hasSubst_exp_sub_one_K (K := K)
+  have hmapsmul : ∀ (r : integerRing K) (F : PowerSeries (integerRing K)),
+      PowerSeries.map (integerRing K).subtype (r • F)
+        = PowerSeries.C ((r : K))
+          * PowerSeries.map (integerRing K).subtype F := by
+    intro r F
+    ext m
+    rw [PowerSeries.coeff_map, PowerSeries.coeff_smul, PowerSeries.coeff_C_mul,
+      PowerSeries.coeff_map, smul_eq_mul]
+    push_cast
+    rfl
+  have hsubC : ∀ (x : K) (F : PowerSeries K),
+      (PowerSeries.C x * F).subst (PowerSeries.exp K - 1)
+        = PowerSeries.C x * F.subst (PowerSeries.exp K - 1) := by
+    intro x F
+    rw [← PowerSeries.coe_substAlgHom hg, map_mul]
+    simp only [show ∀ y : K, (PowerSeries.substAlgHom hg) (PowerSeries.C y)
+        = PowerSeries.C y from fun y => (PowerSeries.substAlgHom hg).commutes y,
+      PowerSeries.coe_substAlgHom hg]
+  have h508 := mahler_twist_formula hn hχ hζ
+    (baseChange p K (PadicMeasure.muA p a))
+  -- mahlerTransform of smul/sum (it is `mahlerTransformₗ` as a linear map)
+  have h𝓐' : gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hζ.pow_eq_one) •
+        mahlerTransform p K (twist p K χ.toContinuousMapZp
+          (baseChange p K (PadicMeasure.muA p a)))
+      = ∑ c ∈ Finset.range (p ^ n),
+          χ⁻¹ ((c : ℕ) : ZMod (p ^ n)) •
+            mahlerTransform p K (twist p K
+              (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+              (baseChange p K (PadicMeasure.muA p a))) := by
+    have h1 := congrArg (mahlerTransformₗ p K) h508
+    simp only [map_smul, map_sum] at h1
+    simpa only [show ∀ μ, mahlerTransformₗ p K μ = mahlerTransform p K μ
+      from fun _ => rfl] using h1
+  have hmap := congrArg (PowerSeries.map (integerRing K).subtype) h𝓐'
+  rw [hmapsmul, map_sum,
+    Finset.sum_congr rfl (fun c _ => hmapsmul (χ⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+      (mahlerTransform p K (twist p K (charCM (ζ ^ c - 1)
+        (tendsto_pow_pow_sub_one hζ c))
+        (baseChange p K (PadicMeasure.muA p a)))))] at hmap
+  have hsub := congrArg (fun F => F.subst (PowerSeries.exp K - 1)) hmap
+  rw [hsubC, show (∑ c ∈ Finset.range (p ^ n),
+        PowerSeries.C (((χ⁻¹ ((c : ℕ) : ZMod (p ^ n)) : integerRing K)) : K)
+          * PowerSeries.map (integerRing K).subtype
+              (mahlerTransform p K (twist p K (charCM (ζ ^ c - 1)
+                (tendsto_pow_pow_sub_one hζ c))
+                (baseChange p K (PadicMeasure.muA p a))))).subst
+        (PowerSeries.exp K - 1)
+      = ∑ c ∈ Finset.range (p ^ n),
+          PowerSeries.C (((χ⁻¹ ((c : ℕ) : ZMod (p ^ n)) : integerRing K)) : K)
+            * (PowerSeries.map (integerRing K).subtype
+                (mahlerTransform p K (twist p K (charCM (ζ ^ c - 1)
+                  (tendsto_pow_pow_sub_one hζ c))
+                  (baseChange p K (PadicMeasure.muA p a))))).subst
+              (PowerSeries.exp K - 1) from by
+      rw [← PowerSeries.coe_substAlgHom hg, map_sum]
+      exact Finset.sum_congr rfl fun c _ => by
+        rw [PowerSeries.coe_substAlgHom hg, hsubC]] at hsub
+  refine Eq.trans (Finset.sum_congr rfl fun c _ => ?_) hsub.symm
+  congr 2
+  rw [show (toFieldChar χ)⁻¹ = toFieldChar χ⁻¹ from MulChar.ringHomComp_inv χ _]
+  rfl
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
