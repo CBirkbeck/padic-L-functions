@@ -244,6 +244,47 @@ lemma sum_inv_char_zeta_pow {n : ℕ}
         AddChar.zmodChar_apply' hζ'.pow_eq_one, mul_comm j c]
   rw [hsum, gaussSum_mulShift_of_isPrimitive _ hχinv, inv_inv]
 
+/-- T509 (v-e) step 1: the (‡c) identity with the `a`-side denominator
+telescoped away: `(E_{a·p^N} − 1)·H_c = (Σ_{i<a} ζ'^{ci}E_i − a)·
+Σ_{j<p^N} ζ'^{caj}·E_{aj}`. -/
+lemma charTwist_muA_exp_identity_cleared {ζ : integerRing K} {N : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ N)) (c : ℕ) {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a) :
+    (PowerSeries.rescale ((a * p ^ N : ℕ) : K) (PowerSeries.exp K) - 1)
+        * (PowerSeries.map (integerRing K).subtype
+            (mahlerTransform p K (twist p K
+              (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+              (baseChange p K (PadicMeasure.muA p a))))).subst
+            (PowerSeries.exp K - 1)
+      = ((∑ i ∈ Finset.range a, PowerSeries.C ((ζ : K) ^ (c * i))
+            * PowerSeries.rescale ((i : ℕ) : K) (PowerSeries.exp K))
+          - (a : PowerSeries K))
+        * ∑ j ∈ Finset.range (p ^ N),
+            PowerSeries.C ((ζ : K) ^ (c * (a * j)))
+              * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K) := by
+  set B : PowerSeries K := PowerSeries.C ((ζ : K) ^ (c * a))
+      * PowerSeries.rescale ((a : ℕ) : K) (PowerSeries.exp K) with hB
+  have hζK : ((ζ : K)) ^ (p ^ N) = 1 := by
+    rw [show ((ζ : K)) ^ (p ^ N) = ((ζ ^ (p ^ N) : integerRing K) : K) by push_cast; rfl,
+      hζ.pow_eq_one, OneMemClass.coe_one]
+  -- the `j`-th power of the cofactor base
+  have hBj : ∀ j : ℕ, B ^ j = PowerSeries.C ((ζ : K) ^ (c * (a * j)))
+      * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K) := by
+    intro j
+    rw [hB, mul_pow, ← map_pow, ← pow_mul, rescale_exp_pow,
+      show ((j : K)) * ((a : ℕ) : K) = ((a * j : ℕ) : K) by push_cast; ring,
+      show c * a * j = c * (a * j) by ring]
+  -- the telescope `(B − 1)·Σ_j B^j = B^{p^N} − 1 = E_{ap^N} − 1`
+  have htel : (B - 1) * ∑ j ∈ Finset.range (p ^ N), B ^ j
+      = PowerSeries.rescale ((a * p ^ N : ℕ) : K) (PowerSeries.exp K) - 1 := by
+    rw [mul_comm, geom_sum_mul, hBj (p ^ N),
+      show c * (a * p ^ N) = p ^ N * (c * a) by ring, pow_mul, hζK, one_pow, map_one,
+      one_mul]
+  have h := congrArg
+    (· * ∑ j ∈ Finset.range (p ^ N), B ^ j) (charTwist_muA_exp_identity hζ c hpa)
+  rw [← hB, mul_right_comm, htel] at h
+  simp only [hBj] at h
+  exact h
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
