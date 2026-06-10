@@ -1959,7 +1959,22 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~70 LOC (source proof 8 lines, TeX 1117–1131).
 
 ### [T508] Mahler transform of the χ-twist (RJW Lem 5.4, cleared)
-- **Status**: open | **File**: Twist.lean | **Depends on**: T507, T501 | **Type**: lemma
+- **Status**: done | **File**: Twist.lean | **Depends on**: T507, T501 | **Type**: lemma
+- **Progress**: DONE 2026-06-10, FIRST-PASS COMPILE. Route refinement (recorded):
+  instead of the composition χ̃-decomposition → L5.1.7 → swap → Gauss(ii), proved
+  the pointwise Gauss–Fourier expansion `G(χ⁻¹)•χ̃ = Σ_c χ⁻¹(c)•κ_{ζ^c−1}`
+  directly as a continuous-map identity (same Continuous.ext_on-over-ℕ frame as
+  T507 — the same algebra with the L5.1.7 steps merged at the pointwise level):
+  at naturals the right side is `gaussSum χ⁻¹ (e.mulShift m)` (range↔ZMod-univ
+  bridge by Finset.sum_nbij' val/natCast; `AddChar.zmodChar_apply'` gives the
+  ζ^{cm}-form), evaluated by mathlib's `gaussSum_mulShift_of_isPrimitive` —
+  which covers non-unit m with the vanishing built in — then `inv_inv`;
+  χ⁻¹-primitivity via `DirichletCharacter.conductor_inv`. Integration assembly
+  identical to T507. Statement exactly the planning-pinned form (no extra sign,
+  range-sum). Twist.lean now SORRY-FREE. Verification: zero diagnostics
+  project-wide on the file; axioms = {propext, Classical.choice, Quot.sound}
+  (scan clean); lake build green. Blueprint: `interp-mahler-twist` wired with
+  cleared-form prose note.
 - **Statement**: `mahler_twist_formula` per L5.1.8 — statement form pinned by
   the planning trace (G(χ⁻¹)-cleared, NO extra sign; see L5.1.8 attack [2]).
 - **Proof sketch**: decomposition L5.1.8 composition (χ̃-decomposition →

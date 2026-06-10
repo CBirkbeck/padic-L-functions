@@ -243,15 +243,65 @@ trace at decomposition L5.1.8 attack [2]): for `χ` primitive mod `p^n`
 Source (verbatim, TeX 1675–1678): "The Mahler transform of `μ_χ` is
 `𝓐_{μ_χ}(T) = (1/G(χ⁻¹)) ∑_c χ(c)⁻¹ 𝓐_μ((1+T)ε^c − 1)`" — multiplied
 through by the Gauss sum. -/
-theorem mahler_twist_formula {n : ℕ} (hn : 1 ≤ n)
+theorem mahler_twist_formula {n : ℕ} (_hn : 1 ≤ n)
     {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n)) (μ : MeasureR K ℤ_[p]) :
     gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) (hζ.pow_eq_one)) •
         twist p K χ.toContinuousMapZp μ
       = ∑ c ∈ Finset.range (p ^ n),
           χ⁻¹ (c : ZMod (p ^ n)) •
-            twist p K (charCM (ζ ^ c - 1) (by sorry)) μ := by
-  sorry
+            twist p K (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c)) μ := by
+  have hχinv : χ⁻¹.IsPrimitive := (DirichletCharacter.conductor_inv χ).trans hχ
+  -- pointwise Gauss–Fourier expansion: `G(χ⁻¹)·χ̃ = ∑_c χ⁻¹(c)·κ_{ζ^c−1}`
+  have hpoint : gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) (hζ.pow_eq_one)) •
+        χ.toContinuousMapZp
+      = ∑ c ∈ Finset.range (p ^ n),
+          χ⁻¹ (c : ZMod (p ^ n)) •
+            charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c) := by
+    refine ContinuousMap.coe_injective
+      (Continuous.ext_on (PadicInt.denseRange_natCast (p := p))
+        (map_continuous _) (map_continuous _) ?_)
+    rintro _ ⟨m, rfl⟩
+    simp only [ContinuousMap.coe_smul, ContinuousMap.coe_sum, Pi.smul_apply,
+      Finset.sum_apply, charCM_natCast, smul_eq_mul]
+    -- the right side is the Gauss sum of `χ⁻¹` against `e.mulShift m`
+    have hterm : ∀ c : ℕ, χ⁻¹ ((c : ℕ) : ZMod (p ^ n)) * (1 + (ζ ^ c - 1)) ^ m
+        = χ⁻¹ ((c : ℕ) : ZMod (p ^ n))
+            * AddChar.zmodChar (p ^ n) (hζ.pow_eq_one) (((m * c : ℕ) : ZMod (p ^ n))) := by
+      intro c
+      rw [show (1 + (ζ ^ c - 1) : integerRing K) = ζ ^ c by ring, ← pow_mul,
+        AddChar.zmodChar_apply' (hζ.pow_eq_one), mul_comm c m]
+    rw [Finset.sum_congr rfl fun c _ => hterm c]
+    have hsum : ∑ c ∈ Finset.range (p ^ n),
+        χ⁻¹ ((c : ℕ) : ZMod (p ^ n))
+          * AddChar.zmodChar (p ^ n) (hζ.pow_eq_one) (((m * c : ℕ) : ZMod (p ^ n)))
+        = gaussSum χ⁻¹
+            ((AddChar.zmodChar (p ^ n) (hζ.pow_eq_one)).mulShift
+              ((m : ℕ) : ZMod (p ^ n))) := by
+      rw [gaussSum]
+      refine Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod (p ^ n))) (fun a => a.val)
+        ?_ ?_ ?_ ?_ ?_
+      · intro c _
+        exact Finset.mem_univ _
+      · intro a _
+        exact Finset.mem_range.mpr (ZMod.val_lt a)
+      · intro c hc
+        exact ZMod.val_natCast_of_lt (Finset.mem_range.mp hc)
+      · intro a _
+        exact ZMod.natCast_zmod_val a
+      · intro c _
+        rw [AddChar.mulShift_apply, ← Nat.cast_mul]
+    rw [hsum, gaussSum_mulShift_of_isPrimitive _ hχinv, inv_inv,
+      DirichletCharacter.toContinuousMapZp_apply, map_natCast]
+    ring
+  -- integrate the pointwise identity
+  refine LinearMap.ext fun f => ?_
+  rw [LinearMap.smul_apply, LinearMap.sum_apply]
+  change gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) (hζ.pow_eq_one)) •
+      μ (χ.toContinuousMapZp * f) = _
+  rw [← map_smul, ← smul_mul_assoc, hpoint, Finset.sum_mul, map_sum]
+  exact Finset.sum_congr rfl fun c _ => by
+    rw [smul_mul_assoc, map_smul, LinearMap.smul_apply, twist_apply]
 
 end MeasureR
 

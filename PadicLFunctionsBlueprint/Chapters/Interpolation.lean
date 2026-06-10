@@ -107,7 +107,7 @@ character sums; the cross terms cancel and the diagonal contributes $`\chi(-1)p^
 Nonvanishing of $`G(\chi)` is immediate from (i) since $`\chi(-1)p^n \neq 0`.
 :::
 
-:::lemma_ "interp-mahler-twist"
+:::lemma_ "interp-mahler-twist" (lean := "PadicLFunctions.MeasureR.mahler_twist_formula")
 Let $`\chi` be a primitive Dirichlet character of conductor $`p^n`, $`n \geq 1`,
 and $`\mu` a measure on $`\Zp`. Then the Mahler transform of the twist $`\mu_\chi`
 is
@@ -115,6 +115,12 @@ $$`\Am_{\mu_\chi}(T) = \frac{1}{G(\chi^{-1})}\sum_{c\in(\Z/p^n\Z)^\times}
 \chi(c)^{-1}\,\Am_\mu\big((1+T)\eps_{p^n}^{\,c} - 1\big).`
 This uses {uses "interp-twist"}[], {uses "interp-gauss-sum"}[],
 {uses "interp-gauss-sum-properties"}[] and {uses "mahler-transform"}[].
+
+The formalisation states this multiplied through by the Gauss sum
+$`G(\chi^{-1})` and as an identity of measures (`mahler_twist_formula`):
+$`G(\chi^{-1})\cdot\mu_\chi = \sum_c \chi^{-1}(c)\,\kappa_{\eps^c-1}\mu`, the
+sum running over all residues (the character kills the non-units); applying
+the Mahler transform recovers the display.
 :::
 
 :::proof "interp-mahler-twist"
