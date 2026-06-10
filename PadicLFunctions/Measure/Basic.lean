@@ -211,6 +211,63 @@ theorem exists_locallyConstant_norm_sub_le (f : C(X, ℤ_[p])) {ε : ℝ} (hε :
     _ ≤ (p : ℝ) ^ (-k : ℤ) := hle
     _ ≤ ε := hk.le
 
+/-- On `ℤ_p`, a locally constant function (into any type) factors through a
+finite quotient `toZModPow n`: local constancy is uniform on the compact
+`ℤ_p`. Not in mathlib (PR candidate). -/
+theorem _root_.LocallyConstant.exists_eq_comp_toZModPow {α : Type*}
+    (Φ : LocallyConstant ℤ_[p] α) :
+    ∃ (n : ℕ) (g : ZMod (p ^ n) → α), ⇑Φ = g ∘ (PadicInt.toZModPow n) := by
+  classical
+  have hker : ∀ (m : ℕ) (z w : ℤ_[p]),
+      PadicInt.toZModPow m z = PadicInt.toZModPow m w
+        ↔ ‖z - w‖ ≤ (p : ℝ) ^ (-(m : ℤ)) := by
+    intro m z w
+    rw [PadicInt.norm_le_pow_iff_mem_span_pow, ← PadicInt.ker_toZModPow,
+      RingHom.mem_ker, map_sub, sub_eq_zero]
+  -- each point has a `toZModPow`-fibre on which `Φ` is constant
+  have hpt : ∀ x : ℤ_[p], ∃ n : ℕ, ∀ y : ℤ_[p],
+      PadicInt.toZModPow n y = PadicInt.toZModPow n x → Φ y = Φ x := by
+    intro x
+    have hopen : IsOpen {y : ℤ_[p] | Φ y = Φ x} :=
+      Φ.isLocallyConstant.isOpen_fiber (Φ x)
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hopen x rfl
+    obtain ⟨n, hn⟩ := PadicInt.exists_pow_neg_lt p hε
+    refine ⟨n, fun y hy => ?_⟩
+    refine hball ?_
+    rw [Metric.mem_ball, dist_eq_norm]
+    exact lt_of_le_of_lt ((hker n y x).mp hy) hn
+  choose nx hnx using hpt
+  -- finitely many such fibres cover `ℤ_p`
+  obtain ⟨t, -, ht⟩ := IsCompact.elim_nhds_subcover isCompact_univ
+    (fun x => {y : ℤ_[p] | PadicInt.toZModPow (nx x) y
+      = PadicInt.toZModPow (nx x) x})
+    (fun x _ => ((isOpen_toZModPow_fiber p (nx x)
+      (PadicInt.toZModPow (nx x) x)).mem_nhds rfl))
+  set n : ℕ := t.sup nx with hn
+  -- `Φ` is constant on every `toZModPow n`-fibre
+  have hconst : ∀ x y : ℤ_[p],
+      PadicInt.toZModPow n y = PadicInt.toZModPow n x → Φ y = Φ x := by
+    intro x y hy
+    obtain ⟨xi, hxi, hxU⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ x))
+    have hxU' : PadicInt.toZModPow (nx xi) x
+        = PadicInt.toZModPow (nx xi) xi := hxU
+    have hxin : ‖x - xi‖ ≤ (p : ℝ) ^ (-(nx xi : ℤ)) := (hker _ x xi).mp hxU'
+    have hyx : ‖y - x‖ ≤ (p : ℝ) ^ (-(nx xi : ℤ)) := by
+      refine ((hker n y x).mp hy).trans ?_
+      have hp1 : (1 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp.out.one_lt.le
+      have hle : nx xi ≤ n := Finset.le_sup hxi
+      exact zpow_le_zpow_right₀ hp1 (neg_le_neg (by exact_mod_cast hle))
+    have hyxi : PadicInt.toZModPow (nx xi) y = PadicInt.toZModPow (nx xi) xi := by
+      refine (hker _ y xi).mpr ?_
+      calc ‖y - xi‖ = ‖(y - x) + (x - xi)‖ := by ring_nf
+        _ ≤ max ‖y - x‖ ‖x - xi‖ := IsUltrametricDist.norm_add_le_max _ _
+        _ ≤ (p : ℝ) ^ (-(nx xi : ℤ)) := max_le hyx hxin
+    rw [hnx xi y hyxi, hnx xi x hxU']
+  refine ⟨n, fun a => Φ ((a.val : ℤ_[p])), funext fun x => ?_⟩
+  refine (hconst x ((((PadicInt.toZModPow n x).val : ℕ)) : ℤ_[p]) ?_).symm
+  rw [map_natCast]
+  exact ZMod.natCast_rightInverse _
+
 /-- A measure is determined by its values on locally constant functions.
 
 Source: RJW Eq. (3.1) (`eq:restrict measures`, TeX lines 787–799): restriction defines

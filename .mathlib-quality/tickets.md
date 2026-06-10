@@ -2486,7 +2486,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   factor, ambient root). Only T516's determinacy sorry remains in the file.
 
 ### [T516] **MILESTONE: RJW Theorem 5.7** — ∃! ζ_η
-- **Status**: open | **File**: NonTame.lean | **Depends on**: CLEANUP-ALL-4
+- **Status**: done | **File**: NonTame.lean | **Depends on**: CLEANUP-ALL-4
 - **Type**: theorem
 - **Statement**: existence (T515) + uniqueness via determinacy (L5.2.8's
   recorded design: χ-quantifier through 𝓞_ℂp-baseChange; statement form
@@ -2494,6 +2494,53 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sources**: TeX 1773–1776 (verbatim at R5.2 head).
 - **Blueprint**: wire `interp-nontame`; re-render.
 - **Sizing**: determinacy ~120 LOC + assembly ~60.
+- **Progress**: **DONE 2026-06-11 — MILESTONE: NonTame.lean SORRY-FREE,
+  RJW Theorem 5.7 complete** (existence = T515's zetaEta_twisted_moments;
+  uniqueness = `eq_of_twisted_moments_eq` via the determinacy
+  `eq_zero_of_twisted_moments_eq_zero`, both proven this ticket). The
+  skeleton's hroots-quantifier design (NOT the 𝓞_ℂp-baseChange
+  alternative) was the pinned form ✓. Determinacy route (≈260 LOC + three
+  infrastructure pieces): (1) NEW
+  `LocallyConstant.exists_eq_comp_toZModPow` (Measure/Basic.lean —
+  uniform local constancy on compact ℤ_p: per-point toZModPow-fibre
+  neighbourhoods + elim_nhds_subcover + ultrametric two-ball merge; PR
+  candidate); (2) NEW `PadicInt.exists_primitiveRoot_card_sub_one`
+  (Branches.lean — Teichmüller lift of a generator of (ZMod p)ˣ is a
+  primitive (p−1)-th root: section-property toZMod_teichmullerZMod forces
+  the order; NOTE IsPrimitiveRoot needs
+  Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots imported); (3)
+  `hasEnoughRootsOfUnity_of_padic_roots` — instance for the full dual of
+  (ZMod p^n)ˣ: exponent ∣ φ(p^n) ∣ p^n(p−1); primitive-P-root as the
+  COPRIME PRODUCT of hroots-root and Teichmüller-root
+  (Commute.orderOf_mul_eq_mul_orderOf_of_coprime + IsPrimitiveRoot.orderOf
+  + pow_of_dvd + Nat.div_div_self; NOTE HasEnoughRootsOfUnity is
+  TYPE-valued — produce the ∃-prim as a Prop-have BEFORE the structure
+  goal or Exists-elim fails; cyc-field = rootsOfUnity.isCyclic for the
+  domain integerRing K). Determinacy body: (B) all-χ moment vanishing via
+  the primitive core (FactorsThrough at p^m + conductor-min via
+  Nat.sInf_le + NEW Characters lemma
+  `DirichletCharacter.toContinuousMapZp_changeLevel` (unit-agreement via
+  changeLevel_eq_cast_of_dvd + PadicInt.cast_toZModPow) + 1_u-sandwich by
+  hsupp); (C) x-weighted coset-indicator vanishing via mathlib's
+  `DirichletCharacter.sum_char_inv_mul_char_eq` orthogonality (nonunit
+  cosets die against the unit-supported μ; CharZero-cancel of totient);
+  (D) loc-const collapse through the factorisation lemma at level
+  max(n₀,1) + Finset.sum_eq_single; (E) x⁻¹-trick: extendByZero of the
+  R-valued units-inverse (UnitsZp machinery + KubotaLeopoldt invCM) +
+  ε-approximation against PadicMeasure.exists_locallyConstant_norm_sub_le'
+  + norm_apply_le. LEAN NOTES: conductor_le_conductor_mem_conductorSet
+  concludes ≤ (Classical.choose _).conductor — useless; use Nat.sInf_le
+  directly; changeLevel_trans takes χ as FIRST explicit arg; ext-on-C(X,R)
+  goals come ↑-coercion-wrapped — close ring-steps with
+  `exact congrArg Subtype.val (by ring)`; Nat.dvd_sub (unprimed) in this
+  pin; omega needs primality-derived 1 < p fed explicitly. Verification:
+  lake build green (code + blueprint, 3950 jobs); axioms = {propext,
+  Classical.choice, Quot.sound} + scan_source clean on
+  eq_zero_of_twisted_moments_eq_zero and eq_of_twisted_moments_eq.
+  Blueprint: `interp-nontame` wired → zetaEta_twisted_moments +
+  eq_of_twisted_moments_eq + eq_zero_of_twisted_moments_eq_zero with the
+  two-halves prose note (cleared existence, hroots-design uniqueness,
+  Teichmüller prime-to-p roots).
 
 ### [CLEANUP-ALL-4] Pre-milestone /cleanup-all
 - **Status**: done | **Depends on**: T515 | **Type**: cleanup-all (before T516)

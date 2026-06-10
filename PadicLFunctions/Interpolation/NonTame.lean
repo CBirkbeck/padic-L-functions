@@ -3,6 +3,8 @@ Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
+import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
+import PadicLFunctions.Interpolation.Branches
 import PadicLFunctions.Interpolation.TameConductor
 
 /-!
@@ -1273,6 +1275,67 @@ theorem zetaEta_twisted_moments {D : ℕ} [NeZero D] (hD1 : 1 < D)
       toFieldChar_prod_natCast hθ p]
   ring
 
+omit [CompleteSpace K] [CharZero K] in
+/-- The coefficient ring has enough roots of unity for the full character
+dual of `(ℤ/p^n)ˣ`, given primitive `p`-power roots: the prime-to-`p` part
+is the Teichmüller lift of a generator mod `p`
+(`PadicInt.exists_primitiveRoot_card_sub_one`). -/
+lemma hasEnoughRootsOfUnity_of_padic_roots
+    (hroots : ∀ n : ℕ, ∃ ζ : integerRing K, IsPrimitiveRoot ζ (p ^ n)) (n : ℕ) :
+    HasEnoughRootsOfUnity (integerRing K)
+      (Monoid.exponent (ZMod (p ^ n))ˣ) := by
+  classical
+  set e : ℕ := Monoid.exponent (ZMod (p ^ n))ˣ with he
+  set P : ℕ := p ^ n * (p - 1) with hP
+  have hP0 : P ≠ 0 :=
+    Nat.mul_ne_zero (pow_ne_zero _ hp.out.ne_zero)
+      (Nat.sub_ne_zero_of_lt hp.out.one_lt)
+  -- `e` divides `P = p^n (p − 1)`
+  have heP : e ∣ P := by
+    refine dvd_trans Group.exponent_dvd_card ?_
+    rw [ZMod.card_units_eq_totient]
+    rcases n with _ | m
+    · simp
+    · rw [Nat.totient_prime_pow hp.out (Nat.succ_pos m), hP]
+      exact Nat.mul_dvd_mul (pow_dvd_pow p (by omega)) dvd_rfl
+  have he0 : e ≠ 0 := Monoid.exponent_ne_zero_of_finite
+  -- a primitive `e`-th root, dividing down a primitive `P`-th root built as
+  -- the coprime product of the `p`-power part and the Teichmüller part
+  have hprim : ∃ ξ : integerRing K, IsPrimitiveRoot ξ e := by
+    obtain ⟨ζ₁, hζ₁⟩ := hroots n
+    obtain ⟨ω₀, hω₀⟩ := PadicInt.exists_primitiveRoot_card_sub_one p
+    have hω : IsPrimitiveRoot (algebraMap ℤ_[p] (integerRing K) ω₀) (p - 1) :=
+      hω₀.map_of_injective (integerRing.isometry_algebraMap p K).injective
+    have hco : Nat.Coprime (p ^ n) (p - 1) := by
+      refine Nat.Coprime.pow_left _ ?_
+      have h1 : p - (p - 1) = 1 := by
+        have h2 := hp.out.one_lt
+        omega
+      have h3 : p.gcd (p - 1) ∣ p - (p - 1) := Nat.dvd_sub
+        (Nat.gcd_dvd_left p (p - 1)) (Nat.gcd_dvd_right p (p - 1))
+      rw [h1] at h3
+      exact Nat.dvd_one.mp h3
+    have hcomm : Commute (ζ₁ : integerRing K)
+        (algebraMap ℤ_[p] (integerRing K) ω₀) := Commute.all _ _
+    have hordmul : orderOf (ζ₁ * algebraMap ℤ_[p] (integerRing K) ω₀) = P := by
+      rw [hcomm.orderOf_mul_eq_mul_orderOf_of_coprime
+        (by rw [← hζ₁.eq_orderOf, ← hω.eq_orderOf]; exact hco),
+        ← hζ₁.eq_orderOf, ← hω.eq_orderOf]
+    have hξ : IsPrimitiveRoot
+        (ζ₁ * algebraMap ℤ_[p] (integerRing K) ω₀) P := by
+      have h := IsPrimitiveRoot.orderOf
+        (ζ₁ * algebraMap ℤ_[p] (integerRing K) ω₀)
+      rwa [hordmul] at h
+    have hdvd : P / e ∣ P := Nat.div_dvd_of_dvd heP
+    have hne : P / e ≠ 0 :=
+      Nat.div_ne_zero_iff.mpr
+        ⟨he0, Nat.le_of_dvd (Nat.pos_of_ne_zero hP0) heP⟩
+    have hprim' := hξ.pow_of_dvd hne hdvd
+    rw [Nat.div_div_self heP hP0] at hprim'
+    exact ⟨_, hprim'⟩
+  exact ⟨hprim, inferInstance⟩
+
+omit [CompleteSpace K] in
 /-- L5.2.8 (determinacy, the uniqueness half of **RJW Thm 5.7**): a measure
 on `ℤ_p` supported on the units and killing every `χ(x)·x^k` (all primitive
 `χ` of `p`-power conductor valued in `R`, all `k > 0`) is zero — provided `K`
@@ -1284,7 +1347,244 @@ theorem eq_zero_of_twisted_moments_eq_zero
     (hsupp : res p K (PadicMeasure.isClopen_units p) μ = μ)
     (h : ∀ (n : ℕ) (χ : DirichletCharacter (integerRing K) (p ^ n)), χ.IsPrimitive →
       ∀ k, 0 < k → twist p K χ.toContinuousMapZp μ (powCM p K k) = 0) :
-    μ = 0 := by sorry
+    μ = 0 := by
+  classical
+  haveI : IsDomain (integerRing K) := inferInstance
+  haveI : CharZero (integerRing K) :=
+    ⟨fun a b hab => Nat.cast_injective (R := K)
+      (by exact_mod_cast congrArg (Subtype.val) hab)⟩
+  -- restriction is invisible: `μ(1_{ℤ_p^×}·f) = μ(f)`
+  have hsuppf : ∀ f : C(ℤ_[p], integerRing K),
+      μ (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * f) = μ f :=
+    fun f => congrArg (fun ν : MeasureR K ℤ_[p] => ν f) hsupp
+  -- (B) the moments vanish for ALL `p`-power-level characters, via the
+  -- primitive core (they agree on the units, and `μ` lives there)
+  have hall : ∀ (n : ℕ) (χ : DirichletCharacter (integerRing K) (p ^ n))
+      (k : ℕ), 0 < k → μ (χ.toContinuousMapZp * powCM p K k) = 0 := by
+    intro n χ k hk
+    obtain ⟨m, hmle, hcond⟩ : ∃ m, m ≤ n ∧ χ.conductor = p ^ m := by
+      obtain ⟨m, hm1, hm2⟩ := (Nat.dvd_prime_pow hp.out).mp χ.conductor_dvd_level
+      exact ⟨m, (Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).mp
+        (hm2 ▸ χ.conductor_dvd_level), hm2⟩
+    have hft : DirichletCharacter.FactorsThrough χ (p ^ m) := by
+      rw [← hcond]
+      exact χ.factorsThrough_conductor
+    obtain ⟨hdvd, χ₀, hχeq⟩ := hft
+    have hχ₀prim : χ₀.IsPrimitive := by
+      refine le_antisymm
+        (Nat.le_of_dvd (pow_pos hp.out.pos m) χ₀.conductor_dvd_level) ?_
+      have hmem : χ₀.conductor ∈ DirichletCharacter.conductorSet χ :=
+        ⟨dvd_trans χ₀.conductor_dvd_level hdvd, χ₀.primitiveCharacter, by
+          rw [hχeq, DirichletCharacter.changeLevel_trans
+            χ₀.primitiveCharacter χ₀.conductor_dvd_level hdvd,
+            DirichletCharacter.changeLevel_primitiveCharacter]⟩
+      calc p ^ m = χ.conductor := hcond.symm
+        _ ≤ χ₀.conductor := Nat.sInf_le hmem
+    -- the two tilde-functions agree under the unit indicator
+    have hfun : charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p)
+          * (χ.toContinuousMapZp * powCM p K k)
+        = charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p)
+          * (χ₀.toContinuousMapZp * powCM p K k) := by
+      ext x
+      refine congrArg Subtype.val ?_
+      change Set.indicator {y : ℤ_[p] | IsUnit y} 1 x
+          * (χ.toContinuousMapZp x * powCM p K k x)
+        = Set.indicator {y : ℤ_[p] | IsUnit y} 1 x
+          * (χ₀.toContinuousMapZp x * powCM p K k x)
+      by_cases hx : IsUnit x
+      · rw [hχeq,
+          DirichletCharacter.toContinuousMapZp_changeLevel hmle hdvd χ₀ hx]
+      · rw [Set.indicator_of_notMem (by simpa using hx), zero_mul, zero_mul]
+    have h0 := h m χ₀ hχ₀prim k hk
+    rw [show twist p K χ₀.toContinuousMapZp μ (powCM p K k)
+        = μ (χ₀.toContinuousMapZp * powCM p K k) from rfl] at h0
+    rw [← hsuppf, hfun, hsuppf]
+    exact h0
+  -- (C) the `x`-weighted coset indicators vanish, by character orthogonality
+  have hcoset : ∀ (n : ℕ), 1 ≤ n → ∀ a : ZMod (p ^ n),
+      μ (powCM p K 1
+        * charFnCM K ℤ_[p] (isClopen_toZModPow_fiber p n a)) = 0 := by
+    intro n hn a
+    by_cases ha : IsUnit a
+    · haveI := hasEnoughRootsOfUnity_of_padic_roots hroots n
+      -- the orthogonality identity at the level of test functions
+      have hfn : ((((p ^ n).totient : ℕ) : integerRing K))
+            • (powCM p K 1 * charFnCM K ℤ_[p] (isClopen_toZModPow_fiber p n a))
+          = ∑ χ : DirichletCharacter (integerRing K) (p ^ n),
+              χ a⁻¹ • (χ.toContinuousMapZp * powCM p K 1) := by
+        ext x
+        simp only [ContinuousMap.smul_apply, ContinuousMap.mul_apply,
+          ContinuousMap.coe_sum, Finset.sum_apply, smul_eq_mul,
+          charFnCM_apply]
+        rw [show ∑ χ : DirichletCharacter (integerRing K) (p ^ n),
+              χ a⁻¹ * (χ.toContinuousMapZp x * powCM p K 1 x)
+            = (∑ χ : DirichletCharacter (integerRing K) (p ^ n),
+                χ a⁻¹ * χ (PadicInt.toZModPow n x)) * powCM p K 1 x from by
+            rw [Finset.sum_mul]
+            exact Finset.sum_congr rfl fun χ _ => by
+              rw [DirichletCharacter.toContinuousMapZp_apply]
+              ring,
+          DirichletCharacter.sum_char_inv_mul_char_eq (integerRing K) ha
+            (PadicInt.toZModPow n x)]
+        by_cases hxa : PadicInt.toZModPow n x = a
+        · rw [if_pos hxa.symm,
+            Set.indicator_of_mem (show x ∈ {z : ℤ_[p]
+              | PadicInt.toZModPow n z = a} from hxa), Pi.one_apply]
+          exact congrArg Subtype.val (by ring)
+        · rw [if_neg (fun hax => hxa hax.symm),
+            Set.indicator_of_notMem (show x ∉ {z : ℤ_[p]
+              | PadicInt.toZModPow n z = a} from hxa), zero_mul,
+            mul_zero, mul_zero]
+      have hμfn := congrArg μ hfn
+      rw [map_smul, map_sum, smul_eq_mul] at hμfn
+      have hzero : ∑ χ : DirichletCharacter (integerRing K) (p ^ n),
+          μ (χ a⁻¹ • (χ.toContinuousMapZp * powCM p K 1)) = 0 := by
+        refine Finset.sum_eq_zero fun χ _ => ?_
+        rw [map_smul, hall n χ 1 one_pos, smul_zero]
+      rw [hzero] at hμfn
+      have htot : ((((p ^ n).totient : ℕ) : integerRing K)) ≠ 0 :=
+        Nat.cast_ne_zero.mpr (Nat.totient_pos.mpr (pow_pos hp.out.pos n)).ne'
+      exact (mul_eq_zero.mp hμfn).resolve_left htot
+    · -- non-unit coset: invisible to the unit-supported `μ`
+      rw [← hsuppf]
+      rw [show charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p)
+            * (powCM p K 1 * charFnCM K ℤ_[p] (isClopen_toZModPow_fiber p n a))
+          = 0 from ?_, map_zero]
+      ext x
+      refine congrArg Subtype.val ?_
+      change Set.indicator {y : ℤ_[p] | IsUnit y} 1 x
+          * (powCM p K 1 x * Set.indicator
+              {z : ℤ_[p] | PadicInt.toZModPow n z = a} 1 x) = 0
+      by_cases hxa : PadicInt.toZModPow n x = a
+      · have hxu : ¬ IsUnit x := fun hx => ha (hxa ▸ hx.map _)
+        rw [Set.indicator_of_notMem (by simpa using hxu), zero_mul]
+      · rw [Set.indicator_of_notMem (show x ∉ {z : ℤ_[p]
+            | PadicInt.toZModPow n z = a} from hxa), mul_zero, mul_zero]
+  -- (D) the `x`-multiplied measure kills every locally constant function
+  have hloc : ∀ Φ : LocallyConstant ℤ_[p] (integerRing K),
+      μ (powCM p K 1 * Φ.toContinuousMap) = 0 := by
+    intro Φ
+    obtain ⟨n₀, g, hg⟩ := Φ.exists_eq_comp_toZModPow
+    set n : ℕ := max n₀ 1 with hndef
+    set g' : ZMod (p ^ n) → integerRing K :=
+      g ∘ ZMod.castHom (pow_dvd_pow p (le_max_left n₀ 1)) (ZMod (p ^ n₀))
+      with hg'def
+    have hg' : ∀ x : ℤ_[p], Φ x = g' (PadicInt.toZModPow n x) := by
+      intro x
+      rw [hg'def]
+      simp only [Function.comp_apply, ZMod.castHom_apply]
+      rw [PadicInt.cast_toZModPow n₀ n (le_max_left n₀ 1), ← Function.comp_apply
+        (f := g) (g := PadicInt.toZModPow n₀), ← hg]
+    have hdec : powCM p K 1 * Φ.toContinuousMap
+        = ∑ a : ZMod (p ^ n), g' a
+            • (powCM p K 1
+              * charFnCM K ℤ_[p] (isClopen_toZModPow_fiber p n a)) := by
+      ext x
+      simp only [ContinuousMap.mul_apply, ContinuousMap.coe_sum,
+        Finset.sum_apply, ContinuousMap.smul_apply, smul_eq_mul,
+        charFnCM_apply, LocallyConstant.coe_continuousMap]
+      rw [Finset.sum_eq_single (PadicInt.toZModPow n x)]
+      · rw [Set.indicator_of_mem (show x ∈ {z : ℤ_[p]
+            | PadicInt.toZModPow n z = PadicInt.toZModPow n x} from rfl),
+          Pi.one_apply, hg' x]
+        exact congrArg Subtype.val (by ring)
+      · intro a _ ha
+        rw [Set.indicator_of_notMem (show x ∉ {z : ℤ_[p]
+            | PadicInt.toZModPow n z = a} from fun hx => ha hx.symm),
+          mul_zero, mul_zero]
+      · intro hmem
+        exact absurd (Finset.mem_univ _) hmem
+    rw [hdec, map_sum]
+    refine Finset.sum_eq_zero fun a _ => ?_
+    rw [map_smul, hcoset n (le_max_right n₀ 1) a, smul_zero]
+  -- (E) conclude: the unit-inverse trick reduces `μ f` to (D) by density
+  refine LinearMap.ext fun f => ?_
+  rw [LinearMap.zero_apply]
+  set invU : C(ℤ_[p]ˣ, integerRing K) :=
+    ⟨fun u => algebraMap ℤ_[p] (integerRing K) (PadicMeasure.invCM p u),
+      ((integerRing.isometry_algebraMap p K).continuous).comp
+        (map_continuous (PadicMeasure.invCM p))⟩ with hinvU
+  have hinv : charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * f
+      = powCM p K 1 * (extendByZero p K invU * f) := by
+    ext x
+    refine congrArg Subtype.val ?_
+    change Set.indicator {y : ℤ_[p] | IsUnit y} 1 x * f x
+      = powCM p K 1 x * ((extendByZero p K invU) x * f x)
+    by_cases hx : IsUnit x
+    · rw [Set.indicator_of_mem (show x ∈ {y : ℤ_[p] | IsUnit y} from hx),
+        Pi.one_apply]
+      conv_rhs => rw [← hx.unit_spec]
+      rw [extendByZero_coe_unit]
+      change (1 : integerRing K) * f x
+        = algebraMap ℤ_[p] (integerRing K) (((hx.unit : ℤ_[p])) ^ 1)
+          * (algebraMap ℤ_[p] (integerRing K)
+              (((hx.unit⁻¹ : ℤ_[p]ˣ)) : ℤ_[p]) * f x)
+      rw [pow_one, ← mul_assoc, ← map_mul, ← Units.val_mul, mul_inv_cancel,
+        Units.val_one, map_one]
+    · rw [Set.indicator_of_notMem (by simpa using hx), zero_mul,
+        show (extendByZero p K invU) x = 0 from dif_neg hx, zero_mul, mul_zero]
+  rw [← hsuppf f, hinv]
+  refine eq_of_forall_dist_le fun ε hε => ?_
+  obtain ⟨Φ, hΦ⟩ := PadicMeasure.exists_locallyConstant_norm_sub_le'
+    (extendByZero p K invU * f) hε
+  have hΦn : ‖(extendByZero p K invU * f) - Φ.toContinuousMap‖ ≤ ε :=
+    (ContinuousMap.norm_le _ hε.le).2 fun x => by simpa using hΦ x
+  have hsplit : μ (powCM p K 1 * (extendByZero p K invU * f))
+      = μ (powCM p K 1 * Φ.toContinuousMap)
+        + μ (powCM p K 1
+          * ((extendByZero p K invU * f) - Φ.toContinuousMap)) := by
+    rw [← map_add]
+    congr 1
+    ring
+  rw [dist_zero_right, hsplit, hloc Φ, zero_add]
+  refine (norm_apply_le μ _).trans (le_trans ?_ hΦn)
+  refine (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x => ?_
+  have hval : ‖(powCM p K 1
+      * ((extendByZero p K invU * f) - Φ.toContinuousMap)) x‖
+      = ‖powCM p K 1 x‖
+        * ‖((extendByZero p K invU * f) - Φ.toContinuousMap) x‖ := by
+    rw [show (powCM p K 1
+        * ((extendByZero p K invU * f) - Φ.toContinuousMap)) x
+      = powCM p K 1 x
+        * ((extendByZero p K invU * f) - Φ.toContinuousMap) x from rfl,
+      AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm,
+      AddSubgroupClass.coe_norm, MulMemClass.coe_mul, norm_mul]
+  rw [hval]
+  refine le_trans (mul_le_of_le_one_left (norm_nonneg _) (powCM p K 1 x).2) ?_
+  exact ((extendByZero p K invU * f)
+    - Φ.toContinuousMap).norm_coe_le_norm x
+
+omit [CompleteSpace K] in
+/-- **RJW Theorem 5.7, uniqueness** (TeX 1773–1776 "There exists a unique
+measure"): two unit-supported measures with the same χ-twisted moments
+agree. With the existence half `zetaEta_twisted_moments` this is the full
+statement of the theorem. -/
+theorem eq_of_twisted_moments_eq
+    (hroots : ∀ n : ℕ, ∃ ζ : integerRing K, IsPrimitiveRoot ζ (p ^ n))
+    (μ ν : MeasureR K ℤ_[p])
+    (hμ : res p K (PadicMeasure.isClopen_units p) μ = μ)
+    (hν : res p K (PadicMeasure.isClopen_units p) ν = ν)
+    (h : ∀ (n : ℕ) (χ : DirichletCharacter (integerRing K) (p ^ n)),
+      χ.IsPrimitive → ∀ k, 0 < k →
+      twist p K χ.toContinuousMapZp μ (powCM p K k)
+        = twist p K χ.toContinuousMapZp ν (powCM p K k)) :
+    μ = ν := by
+  have hsub := eq_zero_of_twisted_moments_eq_zero hroots (μ - ν) ?_ ?_
+  · exact sub_eq_zero.mp hsub
+  · refine LinearMap.ext fun f => ?_
+    have h1 := congrArg (fun ρ : MeasureR K ℤ_[p] => ρ f) hμ
+    have h2 := congrArg (fun ρ : MeasureR K ℤ_[p] => ρ f) hν
+    change (μ - ν) (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * f)
+      = (μ - ν) f
+    rw [LinearMap.sub_apply, LinearMap.sub_apply,
+      show μ (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * f) = μ f
+        from h1,
+      show ν (charFnCM K ℤ_[p] (PadicMeasure.isClopen_units p) * f) = ν f
+        from h2]
+  · intro n χ hχ k hk
+    change (μ - ν) (χ.toContinuousMapZp * powCM p K k) = 0
+    rw [LinearMap.sub_apply, sub_eq_zero]
+    exact h n χ hχ k hk
 
 end MeasureR
 

@@ -8,6 +8,7 @@ import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.FieldTheory.Perfect
 import Mathlib.NumberTheory.Padics.AddChar
 import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.RingTheory.Teichmuller
 import PadicLFunctions.KubotaLeopoldt.ZetaP
 
@@ -78,6 +79,26 @@ lemma toZMod_teichmullerZMod (a : ZMod p) : toZMod (teichmullerZMod p a) = a := 
 lemma teichmullerZMod_pow_card_sub_one {a : ZMod p} (ha : a ≠ 0) :
     teichmullerZMod p a ^ (p - 1) = 1 := by
   rw [← map_pow, ZMod.pow_card_sub_one_eq_one ha, map_one]
+
+/-- `ℤ_p` contains a primitive `(p−1)`-th root of unity: the Teichmüller lift
+of a generator of `(ZMod p)ˣ` (the prime-to-`p` part of the roots of unity
+needed for character orthogonality in the §5.2 determinacy). -/
+theorem exists_primitiveRoot_card_sub_one :
+    ∃ ζ : ℤ_[p], IsPrimitiveRoot ζ (p - 1) := by
+  haveI : Fact (1 < p) := ⟨hp.out.one_lt⟩
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := (ZMod p)ˣ)
+  have hord : orderOf g = p - 1 := by
+    rw [orderOf_eq_card_of_forall_mem_zpowers hg, Nat.card_eq_fintype_card,
+      ZMod.card_units_eq_totient, Nat.totient_prime hp.out]
+  refine ⟨teichmullerZMod p ((g : ZMod p)), ?_, fun l hl => ?_⟩
+  · exact teichmullerZMod_pow_card_sub_one p g.ne_zero
+  · have htoZ : (g : ZMod p) ^ l = 1 := by
+      have h := congrArg (toZMod (p := p)) hl
+      rwa [map_pow, toZMod_teichmullerZMod, map_one] at h
+    have hgl : g ^ l = 1 :=
+      Units.ext (by rw [Units.val_pow_eq_pow_val, htoZ, Units.val_one])
+    rw [← hord]
+    exact orderOf_dvd_of_pow_eq_one hgl
 
 /-- L5.3.1: the Teichmüller lift `ω(x) ∈ ℤ_[p]` of the reduction of `x` mod `p`
 (RJW Def 5.15: "ω(x) ≔ Teichmüller lift of the reduction modulo p of x");

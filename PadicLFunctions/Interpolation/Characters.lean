@@ -73,6 +73,19 @@ lemma DirichletCharacter.toContinuousMapZp_eq_zero
   simp only [Nat.Coprime, Nat.gcd_self] at hpu
   exact absurd hpu hp.out.ne_one
 
+/-- At a unit, the tilde-function only depends on the primitive core: the
+level-raise `changeLevel` is invisible through `toZModPow`-compatibility. -/
+lemma DirichletCharacter.toContinuousMapZp_changeLevel {m : ℕ} (hmn : m ≤ n)
+    (hdvd : p ^ m ∣ p ^ n) (χ₀ : DirichletCharacter R (p ^ m)) {x : ℤ_[p]}
+    (hx : IsUnit x) :
+    (DirichletCharacter.changeLevel hdvd χ₀).toContinuousMapZp x
+      = χ₀.toContinuousMapZp x := by
+  have hu : IsUnit (PadicInt.toZModPow n x) := hx.map _
+  rw [DirichletCharacter.toContinuousMapZp_apply,
+    DirichletCharacter.toContinuousMapZp_apply, ← hu.unit_spec,
+    DirichletCharacter.changeLevel_eq_cast_of_dvd χ₀ _ hu.unit, hu.unit_spec,
+    PadicInt.cast_toZModPow m n hmn]
+
 /-- Multiplicativity (`MulChar`s are unconditionally multiplicative; the
 skeleton's `1 ≤ n` hypothesis was unnecessary and is dropped). -/
 lemma DirichletCharacter.toContinuousMapZp_mul

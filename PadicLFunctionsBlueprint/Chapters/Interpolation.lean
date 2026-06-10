@@ -238,7 +238,7 @@ division in the definition. The two unit facts of the node are
 vanishing since $`\eta^{-1}` is zero there.
 :::
 
-:::theorem "interp-nontame"
+:::theorem "interp-nontame" (lean := "PadicLFunctions.MeasureR.zetaEta_twisted_moments, PadicLFunctions.MeasureR.eq_of_twisted_moments_eq, PadicLFunctions.MeasureR.eq_zero_of_twisted_moments_eq_zero")
 Let $`D > 1` be an integer coprime to $`p` and $`\eta` a primitive Dirichlet
 character of conductor $`D`. There is a unique measure $`\zeta_\eta \in
 \Lam(\Zpx)` over the Iwasawa algebra defined over a finite extension $`L/\Qp`
@@ -248,6 +248,22 @@ $$`\int_{\Zpx}\chi(x)\,x^k\cdot\zeta_\eta = \big(1 - \chi\eta(p)\,p^{k-1}\big)
 L(\chi\eta, 1-k).`
 This rests on {uses "interp-zeta-eta"}[], {uses "interp-eta-restriction"}[],
 {uses "interp-mahler-theta"}[] and {uses "dirichlet-L-function"}[].
+
+The two halves are formalised separately. Existence is
+`zetaEta_twisted_moments`: the displayed interpolation property for the
+explicit measure $`x^{-1}\Res_{\Zpx}(\mu_\eta)`, in cleared form
+(multiplied by the unit $`G(\eta^{-1})`), with the value as the
+generalised Bernoulli expression `LvalNeg` and the $`x^{-1}`-shift as the
+index shift `k ↦ k−1`. Uniqueness is `eq_of_twisted_moments_eq` (via the
+determinacy `eq_zero_of_twisted_moments_eq_zero`): unit-supported measures
+with equal χ-twisted moments coincide, under the hypothesis that the
+coefficient ring contains primitive `p^n`-th roots of unity for every `n`
+— the formal reading of the source's "defined over a (fixed) finite
+extension `L/ℚ_p` containing the values" with the χ-quantifier ranging
+over `R`-valued characters; the prime-to-`p` roots needed for character
+orthogonality come from the Teichmüller lift, which `ℤ_p` already
+contains. Ambient primitive roots `ε_D`, `ε_{p^n}` are assumed as in the
+tame case.
 :::
 
 :::proof "interp-nontame"
