@@ -1741,7 +1741,15 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   norm lemma ~20.
 
 ### [T502] χ as a locally constant function on ℤ_p
-- **Status**: open | **File**: Interpolation/Characters.lean | **Depends on**: none
+- **Status**: done (2026-06-10T22:05Z)
+- **Progress**: all 5 sorries discharged: continuity via locally-constant
+  fibres (reusing §3 isOpen_toZModPow_fiber), vanishing on pℤ_p (p∣x +
+  isUnit_of_mul_isUnit_left + coprime-self contradiction), multiplicativity
+  (REPLAN: hypothesis-free — MulChars are unconditionally multiplicative;
+  the skeleton's 1 ≤ n dropped), isLocallyConstant, norm ≤ 1 (REPLAN:
+  specialised to ball-valued characters where it is the subtype bound; the
+  general-R form was unprovable-or-vacuous — recorded). Characters.lean now
+  fully sorry-free. Axioms standard, build green. | **File**: Interpolation/Characters.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: def API
 - **Statement**: skeleton `DirichletCharacter.toContinuousMapZp` continuity +
   4 API sorries (L5.1.1).

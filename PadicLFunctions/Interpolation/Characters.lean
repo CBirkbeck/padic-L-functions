@@ -7,6 +7,7 @@ import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 import Mathlib.Topology.LocallyConstant.Basic
 import PadicLFunctions.Coefficients
+import PadicLFunctions.Measure.Basic
 
 /-!
 # Dirichlet characters as functions on `ℤ_p`, and Gauss sums (RJW §5.1)
@@ -38,7 +39,15 @@ Source (TeX 1620): "(seen as a locally constant character of `ℤ_p^×`, cf.
 §`sec:dirichlet ideles`)". -/
 noncomputable def _root_.DirichletCharacter.toContinuousMapZp
     (χ : DirichletCharacter R (p ^ n)) : C(ℤ_[p], R) :=
-  ⟨fun x => χ (PadicInt.toZModPow n x), by sorry⟩
+  ⟨fun x => χ (PadicInt.toZModPow n x), by
+    refine IsLocallyConstant.continuous (fun s => ?_)
+    have : (fun x => χ (PadicInt.toZModPow n x)) ⁻¹' s
+        = ⋃ b ∈ (Finset.univ.filter fun b : ZMod (p ^ n) => χ b ∈ s),
+            {x : ℤ_[p] | PadicInt.toZModPow n x = b} := by
+      ext x
+      simp [Set.mem_iUnion]
+    rw [this]
+    exact isOpen_biUnion fun b _ => PadicMeasure.isOpen_toZModPow_fiber p n b⟩
 
 @[simp]
 lemma DirichletCharacter.toContinuousMapZp_apply
@@ -49,24 +58,50 @@ lemma DirichletCharacter.toContinuousMapZp_apply
 non-units mod `p^n`). Source: TeX 1752 "Since `χ` is 0 on `pℤ_p`". -/
 lemma DirichletCharacter.toContinuousMapZp_eq_zero
     (χ : DirichletCharacter R (p ^ n)) (hn : 1 ≤ n) {x : ℤ_[p]}
-    (hx : ¬IsUnit x) : χ.toContinuousMapZp x = 0 := by sorry
+    (hx : ¬IsUnit x) : χ.toContinuousMapZp x = 0 := by
+  rw [DirichletCharacter.toContinuousMapZp_apply]
+  refine χ.map_nonunit fun hu => hx ?_
+  rw [PadicInt.isUnit_iff]
+  by_contra hnorm
+  have hdvd : (p : ℤ_[p]) ∣ x := by
+    rw [← PadicInt.norm_lt_one_iff_dvd]
+    exact lt_of_le_of_ne (PadicInt.norm_le_one x) hnorm
+  obtain ⟨y, rfl⟩ := hdvd
+  have hpu : IsUnit ((p : ZMod (p ^ n))) :=
+    isUnit_of_mul_isUnit_left (y := PadicInt.toZModPow n y) (by simpa [map_mul] using hu)
+  rw [ZMod.isUnit_iff_coprime] at hpu
+  rw [Nat.coprime_pow_right_iff (by omega)] at hpu
+  simp only [Nat.Coprime, Nat.gcd_self] at hpu
+  exact absurd hpu hp.out.ne_one
 
-/-- Multiplicativity (both sides vanish off the units). -/
+/-- Multiplicativity (`MulChar`s are unconditionally multiplicative; the
+skeleton's `1 ≤ n` hypothesis was unnecessary and is dropped). -/
 lemma DirichletCharacter.toContinuousMapZp_mul
-    (χ : DirichletCharacter R (p ^ n)) (hn : 1 ≤ n) (x y : ℤ_[p]) :
+    (χ : DirichletCharacter R (p ^ n)) (x y : ℤ_[p]) :
     χ.toContinuousMapZp (x * y)
-      = χ.toContinuousMapZp x * χ.toContinuousMapZp y := by sorry
+      = χ.toContinuousMapZp x * χ.toContinuousMapZp y := by
+  simp [map_mul]
 
 lemma DirichletCharacter.isLocallyConstant_toContinuousMapZp
     (χ : DirichletCharacter R (p ^ n)) :
-    IsLocallyConstant (χ.toContinuousMapZp : ℤ_[p] → R) := by sorry
+    IsLocallyConstant (χ.toContinuousMapZp : ℤ_[p] → R) := by
+  refine fun s => ?_
+  have : (χ.toContinuousMapZp : ℤ_[p] → R) ⁻¹' s
+      = ⋃ b ∈ (Finset.univ.filter fun b : ZMod (p ^ n) => χ b ∈ s),
+          {x : ℤ_[p] | PadicInt.toZModPow n x = b} := by
+    ext x
+    simp [Set.mem_iUnion]
+  rw [this]
+  exact isOpen_biUnion fun b _ => PadicMeasure.isOpen_toZModPow_fiber p n b
 
-/-- The values of a Dirichlet character (in a normed ring, ultrametric not
-needed) have norm at most one: they are roots of unity or zero. -/
+/-- The values of a ball-valued Dirichlet character have norm at most one
+(immediate from ball-valuedness; the skeleton's general-`R` form was
+vacuous — replan note in T502). -/
 lemma DirichletCharacter.norm_toContinuousMapZp_le
-    [NormOneClass R] [IsUltrametricDist R]
-    (χ : DirichletCharacter R (p ^ n)) (x : ℤ_[p]) :
-    ‖χ.toContinuousMapZp x‖ ≤ 1 := by sorry
+    {K : Type*} [NormedField K] [IsUltrametricDist K]
+    (χ : DirichletCharacter (integerRing K) (p ^ n)) (x : ℤ_[p]) :
+    ‖χ.toContinuousMapZp x‖ ≤ 1 :=
+  (χ.toContinuousMapZp x).2
 
 end toContinuousMap
 
