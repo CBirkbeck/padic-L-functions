@@ -1820,8 +1820,64 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: source's manipulation ~10 lines ⟹ ~80 LOC Lean (T031 analogue
   ran ~70).
 
+### [T505a] Sawtooth boundary: sinZeta(x,1) = π(1/2−x) and hurwitzZeta at s=0
+- **Status**: done | **File**: Interpolation/Sawtooth.lean (new) | **Depends on**: none
+- **Progress**: DONE 2026-06-10. Sawtooth.lean (~740 lines): port compiled with
+  only 3 cast-juggling fixes (Tendsto.comp eta-mismatch → plain `exact`;
+  push_cast before ring in the ζ_O(x,0) endgame; `map_inv₀` not `map_div₀` for
+  algebraMap ℚ ℂ 2⁻¹). All four mathlib dependencies present in pin
+  (tendsto_tsum_powerSeries_nhdsWithin_lt, hasSum_taylorSeries_neg_log,
+  Antitone.cauchySeq_series_mul_of_tendsto_zero_of_bounded,
+  hasSum_nat_sinZeta). New beyond the port: `unitAddCircle_coe_ne_zero`,
+  `hurwitzZetaOdd_apply_zero_of_mem_Ioo` (ζ_O(x,0) = 1/2−x via
+  hurwitzZetaOdd_one_sub at s=1 + Gamma_one + cpow_neg_one + sin π/2),
+  `hurwitzZeta_neg_nat_of_mem_Ioo` (all k ≥ 0; docstring records the genuine
+  x=0 boundary failure ζ(0) = −1/2 ≠ −B₁(0)). 13 over-length lines repacked;
+  lake build green. Axioms = {propext, Classical.choice, Quot.sound} on
+  sinZeta_one_eq_boundary (scan clean) and hurwitzZeta_neg_nat_of_mem_Ioo.
+  Mathlib PR candidate alongside T505.
+- **Spawned by**: T505 (beastmode A1, 2026-06-10) — mathlib gap: `hurwitzZeta_neg_nat`
+  requires `k ≠ 0` (mathlib's own TODO: "formula also correct for k = 0; current
+  proof does not work"); the missing ingredient is the conditionally-convergent
+  sawtooth value `sinZeta x 1 = π(1/2 − x)` on `(0,1)` (Dirichlet-test/Abel
+  boundary argument, no absolutely-convergent route).
+- **Statement**: port of flt-regular-bernoulli `LValueAtOne/{DirichletBounds,
+  ComplexBounds-general-part,Sine}.lean` (user's own repo, sorry-free, same
+  author/licence): Dirichlet-test partial-sum bounds; `sinZeta_one_eq_boundary
+  {x} (0<x) (x<1) : sinZeta x 1 = π(1/2−x)`; NEW composition lemmas
+  `hurwitzZetaOdd_apply_zero_of_mem_Ioo : hurwitzZetaOdd x 0 = 1/2 − x` (via
+  `hurwitzZetaOdd_one_sub` at s=1: ζ_O(x,0) = 2(2π)⁻¹Γ(1)sin(π/2)·sinZeta x 1)
+  and `hurwitzZeta_apply_zero_of_mem_Ioo : hurwitzZeta x 0 =
+  −((bernoulli 1).map (algebraMap ℚ ℂ)).eval x` (even part 0 on (0,1) by
+  `hurwitzZetaEven_apply_zero`) — closing mathlib's k=0 TODO for interior x.
+- **Mathlib lemmas**: `HurwitzZeta.hasSum_nat_sinZeta`,
+  `differentiableAt_sinZeta`, `hurwitzZetaOdd_one_sub`,
+  `hurwitzZetaEven_apply_zero`, `geom_sum_eq`, `UniformCauchySeqOn` API.
+- **Sources**: port provenance flt-regular-bernoulli (survey addendum,
+  plan.md); the mathematical content is the classical Abel-limit evaluation of
+  Σ sin(2πnx)/n (Washington Ch. 4 territory).
+- **Sizing**: ~700 LOC port + ~60 new.
+
 ### [T505] Complex bridge: L(χ,−k) = −B_{k+1,χ}/(k+1)
-- **Status**: open | **File**: GenBernoulliComplex.lean | **Depends on**: T503
+- **Status**: done | **File**: GenBernoulliComplex.lean | **Depends on**: T503, T505a
+- **Progress**: DONE 2026-06-10. `LFunction_neg_nat` proven for ALL k ≥ 0
+  (the planned statement, unrestricted — the k=0 gap that spawned T505a is
+  closed). N=1 branch: level_one + LFunction_modOne_eq +
+  riemannZeta_neg_nat_eq_bernoulli' + genBernoulli_one + eq_ratCast. N>1
+  branch: unfold LFunction/ZMod.LFunction (simp only with def names),
+  cpow_natCast; termwise hurwitzZeta values (j = 0 killed by χ(0) = 0 — this
+  is what confines to the OPEN interval where T505a applies; j ≠ 0 via
+  toAddCircle_apply + hurwitzZeta_neg_nat_of_mem_Ioo); NEW REUSABLE LEMMA
+  `genBernoulli_eq_zmod_sum` extracted from T503's hsum_eq block (range-sum =
+  ZMod-sum bijection; genBernoulli_eq_zero refactored to consume it — net
+  ~35 lines saved, both compile); endgame eq_div_iff + sum_mul +
+  sum_neg_distrib + per-term field_simp. Verification: lake build green
+  (full PadicLFunctions incl. new Sawtooth import in root); axioms =
+  {propext, Classical.choice, Quot.sound} on LFunction_neg_nat (scan clean).
+  Blueprint: `interp-dirichlet-integral` left unwired with the
+  kl-values-of-zeta-pattern rationale comment naming LvalNeg /
+  LFunction_neg_nat / sinZeta_one_eq_boundary (no chapter node states the
+  bare value identity). PR candidate.
 - **Parallel**: yes | **Type**: theorem (quarantined complex; PR candidate)
 - **Statement**: skeleton `LFunction_neg_nat`.
 - **Proof sketch**: unfold `DirichletCharacter.LFunction` = `ZMod.LFunction` =

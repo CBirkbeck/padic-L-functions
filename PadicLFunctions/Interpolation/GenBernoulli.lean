@@ -56,6 +56,53 @@ theorem genBernoulli_one (k : ℕ) :
     Nat.cast_one, one_zpow, one_mul, Nat.cast_zero, zero_add, div_one, map_one]
   rw [Polynomial.eval_one_map, Polynomial.bernoulli_eval_one, Algebra.smul_def, mul_one]
 
+/-- For `N > 1`, the defining `1..N` range sum of `genBernoulli` equals the
+`ZMod N`-indexed sum (shift `a ↦ a + 1`; at the boundary `a + 1 = N` both
+terms vanish through `χ(0) = 0`):
+`B_{k,χ} = N^{k−1} ∑_{b : ZMod N} χ(b)·B_k(b.val/N)`. -/
+theorem genBernoulli_eq_zmod_sum [Fact (1 < N)] (χ : DirichletCharacter L N) (k : ℕ) :
+    χ.genBernoulli k = (N : L) ^ ((k : ℤ) - 1) *
+      ∑ b : ZMod N, χ b *
+        Polynomial.eval (((b.val : ℕ) : L) / (N : L))
+          ((Polynomial.bernoulli k).map (algebraMap ℚ L)) := by
+  have hN2 : 1 < N := Fact.out
+  have hχ0 : χ (0 : ZMod N) = 0 := χ.map_nonunit not_isUnit_zero
+  rw [DirichletCharacter.genBernoulli]
+  congr 1
+  rw [show (Finset.univ : Finset (ZMod N))
+      = Finset.image (fun a : ℕ => ((a + 1 : ℕ) : ZMod N)) (range N) from by
+    refine (Finset.eq_univ_of_card _ ?_).symm
+    rw [Finset.card_image_of_injOn, Finset.card_range]
+    · simp [ZMod.card]
+    · intro a ha b hb hab
+      simp only [Finset.coe_range, Set.mem_Iio] at ha hb
+      have hmod := (ZMod.natCast_eq_natCast_iff' (a+1) (b+1) N).1 hab
+      rcases eq_or_ne (a+1) N with h1 | h1 <;> rcases eq_or_ne (b+1) N with h2 | h2
+      · omega
+      · rw [h1, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+      · rw [h2, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+      · rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hmod; omega]
+  rw [Finset.sum_image (by
+    intro a ha b hb hab
+    simp only [Finset.coe_range, Set.mem_Iio] at ha hb
+    have hmod := (ZMod.natCast_eq_natCast_iff' (a+1) (b+1) N).1 hab
+    rcases eq_or_ne (a+1) N with h1 | h1 <;> rcases eq_or_ne (b+1) N with h2 | h2
+    · omega
+    · rw [h1, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+    · rw [h2, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+    · rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hmod; omega)]
+  refine Finset.sum_congr rfl fun a ha => ?_
+  rw [Finset.mem_range] at ha
+  rcases eq_or_ne (a + 1) N with hend | hend
+  · -- boundary `a+1 = N`: both sides vanish through `χ(0) = 0`
+    have hcast : ((a + 1 : ℕ) : ZMod N) = 0 := by rw [hend, ZMod.natCast_self]
+    simp [hcast, hχ0]
+  · have hval : ((a + 1 : ℕ) : ZMod N).val = a + 1 :=
+      ZMod.val_natCast_of_lt (by omega)
+    rw [hval]
+    push_cast
+    ring_nf
+
 /-- L5.1.11 (parity vanishing): `B_{k,χ} = 0` when `χ(−1) ≠ (−1)^k` —
 except in the degenerate trivial-character case `k = 1`.
 
@@ -99,47 +146,6 @@ theorem genBernoulli_eq_zero (χ : DirichletCharacter L N) {k : ℕ}
   have hNL : ((N : ℕ) : L) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
   -- the `ZMod`-indexed sum
   set T : L := ∑ b : ZMod N, χ b * B.eval (((b.val : ℕ) : L) / (N : L)) with hT
-  -- the defining sum equals `T` (shift `a ↦ a+1`, both boundary terms vanish)
-  have hsum_eq : ∑ a ∈ range N, χ ((a : ZMod N) + 1)
-        * B.eval (((a : L) + 1) / (N : L)) = T := by
-    rw [hT]
-    rw [show (Finset.univ : Finset (ZMod N))
-        = Finset.image (fun a : ℕ => ((a + 1 : ℕ) : ZMod N)) (range N) from by
-      refine (Finset.eq_univ_of_card _ ?_).symm
-      rw [Finset.card_image_of_injOn, Finset.card_range]
-      · simp [ZMod.card]
-      · intro a ha b hb hab
-        simp only [Finset.coe_range, Set.mem_Iio] at ha hb
-        have hmod := (ZMod.natCast_eq_natCast_iff' (a+1) (b+1) N).1 hab
-        rcases eq_or_ne (a+1) N with h1 | h1 <;> rcases eq_or_ne (b+1) N with h2 | h2
-        · omega
-        · rw [h1, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
-        · rw [h2, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
-        · rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hmod; omega]
-    rw [Finset.sum_image (by
-      intro a ha b hb hab
-      simp only [Finset.coe_range, Set.mem_Iio] at ha hb
-      have hmod := (ZMod.natCast_eq_natCast_iff' (a+1) (b+1) N).1 hab
-      rcases eq_or_ne (a+1) N with h1 | h1 <;> rcases eq_or_ne (b+1) N with h2 | h2
-      · omega
-      · rw [h1, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
-      · rw [h2, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
-      · rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hmod; omega)]
-    refine Finset.sum_congr rfl fun a ha => ?_
-    rw [Finset.mem_range] at ha
-    rcases eq_or_ne (a + 1) N with hend | hend
-    · -- boundary `a+1 = N`: both sides vanish through `χ(0) = 0`
-      have hcast : ((a : ZMod N) + 1) = 0 := by
-        have h0 : ((a + 1 : ℕ) : ZMod N) = 0 := by rw [hend, ZMod.natCast_self]
-        push_cast at h0
-        exact h0
-      have hcast' : ((a + 1 : ℕ) : ZMod N) = 0 := by push_cast; exact hcast
-      simp [hcast, hcast', hχ0]
-    · have hval : ((a + 1 : ℕ) : ZMod N).val = a + 1 :=
-        ZMod.val_natCast_of_lt (by omega)
-      rw [hval]
-      push_cast
-      ring_nf
   -- reflection: `T = χ(−1)·(−1)^k · T` via the negation bijection on `ZMod N`
   have hflip : T = (χ (-1) * (-1 : L) ^ k) * T := by
     rw [hT, Finset.mul_sum]
@@ -182,16 +188,12 @@ theorem genBernoulli_eq_zero (χ : DirichletCharacter L N) {k : ℕ}
     have h2 : (2 : L) * T = 0 := by linear_combination hflip
     have h2ne : (2 : L) ≠ 0 := two_ne_zero
     exact (mul_eq_zero.1 h2).resolve_left h2ne
-  rw [DirichletCharacter.genBernoulli]
-  have hfinal : ∑ a ∈ range N, χ (a + 1 : ℕ)
-      * Polynomial.eval (((a : L) + 1) / (N : L)) ((Polynomial.bernoulli k).map (algebraMap ℚ L))
-      = T := by
-    rw [← hsum_eq]
-    refine Finset.sum_congr rfl fun a _ => ?_
-    rw [← hf, ← hB]
-    push_cast
-    ring_nf
-  rw [hfinal, hT0, mul_zero]
+  rw [genBernoulli_eq_zmod_sum χ k]
+  have hfold : (∑ b : ZMod N, χ b *
+      Polynomial.eval (((b.val : ℕ) : L) / (N : L))
+        ((Polynomial.bernoulli k).map (algebraMap ℚ L))) = T := by
+    rw [hT, hB, hf]
+  rw [hfold, hT0, mul_zero]
 
 section generatingFunction
 
