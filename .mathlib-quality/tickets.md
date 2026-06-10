@@ -1663,7 +1663,16 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **DoD**: as TW2.
 
 ### [TW5] Widen PseudoMeasure.lean's Λ(ℤ_p^×)-ring section; §4 call-site repair
-- **Status**: open | **Depends on**: TW4 | **Type**: refactor
+- **Status**: done (2026-06-10T20:10Z)
+- **Progress**: MeasureR/UnitsRing.lean complete, ZERO sorries: unitsConv +
+  CommRing (comm via integral_swap, assoc via triple-integral changes with
+  Subtype.val bridges), units_dirac_mul_dirac, deg ring hom. innerInt API
+  (add/smul/measure_add/measure_zero) added to MeasureR/Fubini. §4 call-site
+  repair: NOT NEEDED under the parallel-layer route (§4 untouched — the
+  route's purpose). Pseudo-measure theory stays ℤ_p per scope note.
+  psi_phi_mul widening deferred to T513 (per TW4's "worker picks placement"
+  note — T513 is its only §5 consumer). VERIFICATION: zero diagnostics,
+  axioms standard, build green. | **Depends on**: TW4 | **Type**: refactor
 - **Contract**: the units-convolution ring (unitsConv, CommRing laws, diracs,
   degree) over R; the pseudo-measure/zero-divisor/augmentation/QuotientField
   sections STAY at ℤ_[p] (decomposition W-r4 scope note). All §4 files compile

@@ -39,6 +39,32 @@ variable {p K}
 lemma innerInt_apply [CompactSpace Y] (ν : MeasureR K Y) (F : C(X × Y, integerRing K))
     (x : X) : innerInt K ν F x = ν (F.curry x) := rfl
 
+@[simp]
+lemma innerInt_add [CompactSpace Y] (ν : MeasureR K Y) (F G : C(X × Y, integerRing K)) :
+    innerInt K ν (F + G) = innerInt K ν F + innerInt K ν G :=
+  ContinuousMap.ext fun x => by
+    have hcurry : (F + G).curry x = F.curry x + G.curry x := ContinuousMap.ext fun y => rfl
+    simp [hcurry]
+
+@[simp]
+lemma innerInt_smul [CompactSpace Y] (c : integerRing K) (ν : MeasureR K Y)
+    (F : C(X × Y, integerRing K)) :
+    innerInt K ν (c • F) = c • innerInt K ν F :=
+  ContinuousMap.ext fun x => by
+    have hcurry : (c • F).curry x = c • F.curry x := ContinuousMap.ext fun y => rfl
+    simp [hcurry]
+
+@[simp]
+lemma innerInt_measure_add [CompactSpace Y] (ν₁ ν₂ : MeasureR K Y)
+    (F : C(X × Y, integerRing K)) :
+    innerInt K (ν₁ + ν₂) F = innerInt K ν₁ F + innerInt K ν₂ F :=
+  ContinuousMap.ext fun x => rfl
+
+@[simp]
+lemma innerInt_measure_zero [CompactSpace Y] (F : C(X × Y, integerRing K)) :
+    innerInt K (0 : MeasureR K Y) F = 0 :=
+  ContinuousMap.ext fun x => rfl
+
 /-- **Fubini over `R`** (RJW Rem 3.11, TeX 910): the iterated integrals agree. -/
 theorem integral_swap [CompactSpace X] [CompactSpace Y]
     (μ : MeasureR K X) (ν : MeasureR K Y) (F : C(X × Y, integerRing K)) :

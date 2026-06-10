@@ -17,6 +17,7 @@ import PadicLFunctions.MeasureR.Convolution
 import PadicLFunctions.MeasureR.Toolbox
 import PadicLFunctions.MeasureR.UnitsZp
 import PadicLFunctions.MeasureR.Fubini
+import PadicLFunctions.MeasureR.UnitsRing
 import PadicLFunctions.Interpolation.Characters
 import PadicLFunctions.Interpolation.GenBernoulli
 import PadicLFunctions.Interpolation.GenBernoulliComplex
