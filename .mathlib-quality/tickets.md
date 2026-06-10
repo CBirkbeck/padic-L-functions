@@ -1680,7 +1680,19 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **DoD**: as TW2 + `#print axioms PadicMeasure.kubotaLeopoldt` still standard.
 
 ### [TW6] baseChange + skeletonise Λ_R-dependent §5 statements
-- **Status**: open | **Depends on**: TW5 | **Type**: def + skeleton gate
+- **Status**: done (2026-06-10T21:05Z)
+- **Progress**: MeasureR/BaseChange.lean SORRY-FREE: baseChange ring hom
+  (transform-side coefficient inclusion), mahlerTransform_baseChange,
+  baseChange_dirac, algCM + baseChange_algCM (the characterising property,
+  via tsum-mapping through the isometric algebra map). Naturality lemmas
+  (psi/res/twist-compat) deferred to their §5 consumers per the loc-const
+  strategy recorded in this ticket's notes. SKELETON GATE: Interpolation/
+  {Twist,TameConductor,NonTame}.lean created with the Λ_R-dependent
+  statements (16 sorries; charCM helper; toFieldChar bridge; statements per
+  decomposition with the L5.1.8-trace-pinned form, R5-CLEAR clearing, and
+  the L5.2.8 determinacy design). Support: CharZero-of-ℚ_p-algebra lemma;
+  isClopen_toZModPow_fiber skeleton. Build green project-wide. W-CLUSTER
+  CRITICAL PATH COMPLETE — all three §5 chains unblocked. | **Depends on**: TW5 | **Type**: def + skeleton gate
 - **Statement** (key new decl): `PadicMeasure.baseChange : PadicMeasure p X →
   PadicMeasureR R X`-shape (W4: transform-side coefficient inclusion for
   X = ℤ_p; density-extension for general profinite X; ring hom on Λ(ℤ_p);

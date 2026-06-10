@@ -119,6 +119,12 @@ end integerRing
 
 variable {p L}
 
+/-- A normed `ℚ_[p]`-algebra field has characteristic zero (not an instance:
+`p` is not determined by the goal — cite per use site). -/
+lemma charZero_of_qpAlgebra (q : ℕ) [Fact q.Prime] {M : Type*} [NormedField M]
+    [NormedAlgebra ℚ_[q] M] : CharZero M :=
+  charZero_of_injective_algebraMap (algebraMap ℚ_[q] M).injective
+
 omit [IsUltrametricDist L] [CompleteSpace L] in
 /-- In a normed `ℚ_[p]`-algebra, `‖p‖ = p⁻¹ < 1` (the algebra map is an
 isometry on scalars). -/
