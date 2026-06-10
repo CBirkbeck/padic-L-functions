@@ -723,14 +723,96 @@ lemma sum_char_inv_H_eq {n : ℕ} (hn : 1 ≤ n)
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
-`∫ χ(x)x^k dμ_a = −(1 − χ(a)·a^{k+1})·L(χ,−k)`. -/
+`∫ χ(x)x^k dμ_a = −(1 − χ(a)·a^{k+1})·L(χ,−k)`.
+
+The hypothesis `hζ` (a primitive `p^n`-th root of unity in the coefficient
+ring) mirrors the source's ambient `ε_{p^n} ∈ Q̄_p` (TeX 1657–1660: the fixed
+compatible system of `p`-power roots of unity) — recorded statement-replan:
+the skeleton omitted it, but the proof route (Lem 5.4) and the source both
+live over a field containing `μ_{p^n}`. -/
 theorem twist_muA_moments {n : ℕ} (hn : 1 ≤ n)
     {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n))
     {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a) (k : ℕ) :
     ((twist p K χ.toContinuousMapZp
         (baseChange p K (PadicMeasure.muA p a)) (powCM p K k) : integerRing K) : K)
       = -(1 - (χ (a : ZMod (p ^ n)) : K) * (a : K) ^ (k + 1))
-          * LvalNeg (toFieldChar χ) k := by sorry
+          * LvalNeg (toFieldChar χ) k := by
+  have hζK : IsPrimitiveRoot ((ζ : K)) (p ^ n) :=
+    hζ.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  have hχK : (toFieldChar χ).IsPrimitive :=
+    (DirichletCharacter.isPrimitive_ringHomComp_iff χ
+      (fun _ _ h => Subtype.ext h)).mpr hχ
+  haveI : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (by omega) hp.out.one_lt⟩
+  -- the Gauss sum is nonzero
+  have hG'ne : gaussSum (toFieldChar χ)⁻¹
+      (AddChar.zmodChar (p ^ n) hζK.pow_eq_one) ≠ 0 := by
+    have hprim_e : (AddChar.zmodChar (p ^ n) hζK.pow_eq_one).IsPrimitive :=
+      AddChar.zmodChar_primitive_of_primitive_root _ hζK
+    have hχKinv : (toFieldChar χ)⁻¹.IsPrimitive :=
+      (DirichletCharacter.conductor_inv _).trans hχK
+    have hmul := gaussSum_mul_gaussSum_inv hχK hprim_e
+    have hne2 : gaussSum (toFieldChar χ)⁻¹
+        ((AddChar.zmodChar (p ^ n) hζK.pow_eq_one))⁻¹ ≠ 0 := by
+      intro h0
+      rw [h0, mul_zero] at hmul
+      exact (Nat.cast_ne_zero.2 (pow_ne_zero _ hp.out.ne_zero)) hmul.symm
+    rw [AddChar.inv_mulShift,
+      gaussSum_mulShift_of_isPrimitive _ hχKinv, inv_inv] at hne2
+    exact right_ne_zero_of_mul hne2
+  -- the moment as `k!·[t^k] H_χ`
+  have hmom : ((twist p K χ.toContinuousMapZp
+        (baseChange p K (PadicMeasure.muA p a)) (powCM p K k)
+        : integerRing K) : K)
+      = (k.factorial : K) * PowerSeries.coeff k
+          ((PowerSeries.map (integerRing K).subtype (mahlerTransform p K
+            (twist p K χ.toContinuousMapZp
+              (baseChange p K (PadicMeasure.muA p a))))).subst
+            (PowerSeries.exp K - 1)) := by
+    rw [apply_powCM]
+    rw [show ((PowerSeries.constantCoeff ((del K)^[k] (mahlerTransform p K
+          (twist p K χ.toContinuousMapZp (baseChange p K
+            (PadicMeasure.muA p a))))) : integerRing K) : K)
+        = PowerSeries.constantCoeff (PowerSeries.map (integerRing K).subtype
+            ((del K)^[k] (mahlerTransform p K (twist p K χ.toContinuousMapZp
+              (baseChange p K (PadicMeasure.muA p a)))))) from by
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+        ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
+      rfl]
+    have hiter : ∀ (j : ℕ) (F : PowerSeries (integerRing K)),
+        PowerSeries.map (integerRing K).subtype ((del K)^[j] F)
+          = delField^[j] (PowerSeries.map (integerRing K).subtype F) := by
+      intro j
+      induction j with
+      | zero => exact fun F => rfl
+      | succ j ih =>
+        intro F
+        rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
+          map_subtype_del, ih]
+    rw [hiter, constantCoeff_iterate_delField]
+  -- the `(k+1)`-st coefficient of FINAL-10b
+  have h10b := congrArg (PowerSeries.coeff (k + 1))
+    (X_mul_sum_char_inv_subst hn hχ hζ hζK hpa)
+  rw [PowerSeries.coeff_succ_X_mul, sum_char_inv_H_eq hn hχ hζ,
+    coe_gaussSum_zmodChar χ hζ hζK, PowerSeries.coeff_C_mul,
+    PowerSeries.coeff_C_mul, map_sub, PowerSeries.coeff_mk,
+    PowerSeries.coeff_C_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_mk]
+    at h10b
+  have hkey := mul_left_cancel₀ hG'ne h10b
+  rw [hmom, hkey, LvalNeg]
+  have hk1 : ((k + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero k)
+  have hkf : ((k.factorial : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 k.factorial_ne_zero
+  have hfact : (((k + 1).factorial : ℕ) : K)
+      = ((k + 1 : ℕ) : K) * (k.factorial : K) := by
+    rw [Nat.factorial_succ]
+    push_cast
+    ring
+  rw [show (toFieldChar χ) ((a : ℕ) : ZMod (p ^ n))
+      = ((χ ((a : ℕ) : ZMod (p ^ n)) : integerRing K) : K) from rfl] at *
+  field_simp [hfact]
+  rw [hfact]
+  push_cast
+  ring
 
 /-- **RJW Theorem 5.1**, θ-form — the source's own engine (TeX 1757–1761:
 "`∫_{ℤ_p^×}χ(x)x^k · x^{-1}μ_a = −(1−χ(a)a^k)L(χ,1−k)`"): the χ-twisted
