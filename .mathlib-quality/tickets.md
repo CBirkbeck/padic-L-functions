@@ -2030,6 +2030,24 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   `apply_powCM` (MeasureR) extract the moment. Sub-steps (i)/(ii) are the next
   concrete edits (new section in Twist.lean or a new SubstAffine.lean file —
   prefer new file `PadicLFunctions/MeasureR/SubstAffine.lean`).
+  UPDATE (same day): sub-steps (i)+(ii) DONE — placed in Twist.lean (new
+  `section substAffine`, cohesion with the L5.1.6 material won over the new
+  file): `hasEval_affine` (HasEval.map continuous_C + HasEval.X.mul_left over
+  scoped PowerSeries.WithPiTopology; mop-IsLinearTopology instance derived via
+  `IsCentralScalar.isLinearTopology_iff` — consider moving to Coefficients.lean
+  at cleanup), `substAffine := PowerSeries.eval₂Hom continuous_C hasEval_affine
+  : R⟦X⟧ →+* R⟦X⟧`, `coeff_substAffine` (hasSum_eval₂ mapped through the
+  continuous coeff), `mahlerTransform_charTwist_eq_substAffine` (L5.1.6 in the
+  source's ring-hom form: 𝓐(κ_r μ) = substAffine r (𝓐 μ)). All compile, build
+  green, linter-clean. NEXT: step (iii) — base-change §4's
+  `one_add_X_pow_sub_one_mul_Fa` to K and hit it with `substAffine (ζ^c−1)`
+  (ring hom ⟹ identity transports); then (iv) Σ_c χ⁻¹(c)-weights + T508; then
+  (v) ∘(exp−1) formal subst + T504 + `constantCoeff_iterate_delQ`-bridge over K
+  + MeasureR `apply_powCM` to extract `twist_muA_moments`. Note for (v): the
+  §4 bridge lemmas (map_del, derivativeFun_subst_exp, constantCoeff_iterate_*)
+  are stated over ℚ_[p] in MuA.lean — the K-analogues need restating over K
+  (same proofs; the field K plays ℚ_[p]'s role; `del K` exists in
+  MeasureR/Toolbox).
 
 ### [T510] **MILESTONE: RJW Theorem 5.1** — ∫χ(x)x^k·ζ_p = L(χ,1−k)
 - **Status**: open | **File**: TameConductor.lean | **Depends on**: CLEANUP-ALL-3

@@ -3,6 +3,7 @@ Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
+import Mathlib.RingTheory.PowerSeries.Evaluation
 import PadicLFunctions.MeasureR.BaseChange
 import PadicLFunctions.Interpolation.Characters
 
@@ -302,6 +303,76 @@ theorem mahler_twist_formula {n : ℕ} (_hn : 1 ≤ n)
   rw [← map_smul, ← smul_mul_assoc, hpoint, Finset.sum_mul, map_sum]
   exact Finset.sum_congr rfl fun c _ => by
     rw [smul_mul_assoc, map_smul, LinearMap.smul_apply, twist_apply]
+
+section substAffine
+
+open scoped PowerSeries.WithPiTopology
+
+instance : IsLinearTopology (integerRing K)ᵐᵒᵖ (integerRing K) :=
+  (IsCentralScalar.isLinearTopology_iff _).mpr inferInstance
+
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
+/-- The affine substitution point `(1+X)(1+r) − 1 = C r + C(1+r)·X` is
+topologically nilpotent in the product topology when `r` is. -/
+lemma hasEval_affine (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0)) :
+    PowerSeries.HasEval
+      ((1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1 :
+        PowerSeries (integerRing K)) := by
+  have h1 : ((1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1 :
+        PowerSeries (integerRing K))
+      = PowerSeries.C r + PowerSeries.C (1 + r) * PowerSeries.X := by
+    rw [show (PowerSeries.C (1 + r) : PowerSeries (integerRing K))
+        = 1 + PowerSeries.C r by rw [map_add, map_one]]
+    ring
+  rw [h1]
+  exact (PowerSeries.HasEval.map PowerSeries.WithPiTopology.continuous_C hr).add
+    ((PowerSeries.HasEval.X).mul_left _)
+
+/-- L5.1.6 (eval₂ form): the substitution `F(T) ↦ F((1+T)(1+r) − 1)` as a ring
+homomorphism — mathlib's topological `PowerSeries.eval₂Hom` at the
+topologically nilpotent affine point. -/
+noncomputable def substAffine (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0)) :
+    PowerSeries (integerRing K) →+* PowerSeries (integerRing K) :=
+  PowerSeries.eval₂Hom PowerSeries.WithPiTopology.continuous_C
+    (hasEval_affine r hr)
+
+/-- The coefficients of the affine substitution are the L5.1.6 tsums. -/
+lemma coeff_substAffine (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0))
+    (F : PowerSeries (integerRing K)) (n : ℕ) :
+    PowerSeries.coeff n (substAffine r hr F)
+      = ∑' m, PowerSeries.coeff n
+            (((1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1) ^ m)
+          * PowerSeries.coeff m F := by
+  have h := PowerSeries.hasSum_eval₂ PowerSeries.WithPiTopology.continuous_C
+    (hasEval_affine r hr) F
+  have h2 := h.map (PowerSeries.coeff (R := integerRing K) n).toAddMonoidHom
+    (PowerSeries.WithPiTopology.continuous_coeff (R := integerRing K) n)
+  simp only [LinearMap.toAddMonoidHom_coe, Function.comp_def] at h2
+  have h3 : substAffine r hr F
+      = PowerSeries.eval₂ PowerSeries.C
+          ((1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1) F :=
+    congrFun (PowerSeries.coe_eval₂Hom PowerSeries.WithPiTopology.continuous_C
+      (hasEval_affine r hr)) F
+  rw [h3, ← h2.tsum_eq]
+  exact tsum_congr fun m => by
+    rw [PowerSeries.coeff_C_mul]
+    ring
+
+/-- L5.1.6 in the source's own form (TeX 1084–1090: "the measure `z^x μ` has
+Mahler transform `𝓐_μ((1+T)z − 1)`"): the eval₂-upgrade of
+`mahlerTransform_charTwist`. -/
+theorem mahlerTransform_charTwist_eq_substAffine (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0)) (μ : MeasureR K ℤ_[p]) :
+    mahlerTransform p K (twist p K (charCM r hr) μ)
+      = substAffine r hr (mahlerTransform p K μ) := by
+  refine PowerSeries.ext fun n => ?_
+  rw [coeff_substAffine, mahlerTransform_charTwist]
+  exact tsum_congr fun m => by rw [coeff_mahlerTransform]
+
+end substAffine
 
 end MeasureR
 
