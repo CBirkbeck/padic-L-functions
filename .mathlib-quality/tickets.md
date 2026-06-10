@@ -2113,7 +2113,16 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
     definition give twist_muA_moments. (The −1-sign: LvalNeg = −B/(k+1);
     statement RHS −(1−χ(a)a^{k+1})·LvalNeg = +(1−χ(a)a^{k+1})·B_{k+1}/(k+1) ✓
     consistent with the §4 sign-trace.)
-  NEXT concrete edit: (v-a) + the toFieldChar-IsPrimitive lemma in
+  (v-a)+(v-b)+(v-c) DONE (2026-06-10, all in TameConductor.lean, build green,
+  committed): `sum_inv_char_zeta_pow` (K-valued Gauss collapse; primitivity
+  transport `DirichletCharacter.isPrimitive_ringHomComp_iff` +
+  `factorsThrough_ringHomComp_iff` added to Characters.lean — PR candidates);
+  `sum_range_mul_eq_sum_range` (division-algorithm reindex via sum_nbij' on
+  range a ×ˢ range N); `rescale_exp_pow` ((E_b)^l = E_{lb} by induction +
+  exp_mul_exp_eq_exp_add). NEXT: (v-d) T504-reindex at K
+  (X·Σ_{j<p^n}χ̄(j)E_j = genBPS_χ̄·(E_{p^n}−1)), then (v-e) master assembly,
+  then (v-f) extraction.
+  OLD-NEXT (superseded): (v-a) + the toFieldChar-IsPrimitive lemma in
   TameConductor.lean (or Characters.lean for the primitivity transport).
   NEXT after: step (v) per the plan above — the formal subst (exp K − 1)
   of (†c) [needs the K-analogue of §4's hasSubst_exp_sub_one + map-to-K of the
