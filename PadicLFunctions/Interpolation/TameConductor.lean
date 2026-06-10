@@ -285,6 +285,127 @@ lemma charTwist_muA_exp_identity_cleared {ζ : integerRing K} {N : ℕ}
   simp only [hBj] at h
   exact h
 
+/-- T509 (v-e) step 2: the `χ̄⁻¹`-weighted sum of the telescoped identities,
+with the inner character sums collapsed by the Gauss identity:
+`(E_{ap^n} − 1)·Σ_c χ̄⁻¹(c)·H_c = G'·(Σ_{m<ap^n} χ̄(m)E_m −
+χ̄(a)·a·Σ_{j<p^n} χ̄(j)·E_{aj})`. -/
+lemma sum_char_inv_mul_exp_identity {n : ℕ}
+    {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n))
+    (hζK : IsPrimitiveRoot ((ζ : K)) (p ^ n)) {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a)
+    (ha : 0 < a) :
+    (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1)
+        * ∑ c ∈ Finset.range (p ^ n),
+            PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+              * (PowerSeries.map (integerRing K).subtype
+                  (mahlerTransform p K (twist p K
+                    (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+                    (baseChange p K (PadicMeasure.muA p a))))).subst
+                  (PowerSeries.exp K - 1)
+      = PowerSeries.C (gaussSum (toFieldChar χ)⁻¹
+            (AddChar.zmodChar (p ^ n) hζK.pow_eq_one))
+          * ((∑ m ∈ Finset.range (a * p ^ n),
+                PowerSeries.C ((toFieldChar χ) ((m : ℕ) : ZMod (p ^ n)))
+                  * PowerSeries.rescale ((m : ℕ) : K) (PowerSeries.exp K))
+            - PowerSeries.C ((toFieldChar χ) ((a : ℕ) : ZMod (p ^ n)))
+                * (a : PowerSeries K)
+                * ∑ j ∈ Finset.range (p ^ n),
+                    PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)))
+                      * PowerSeries.rescale ((a * j : ℕ) : K)
+                          (PowerSeries.exp K)) := by
+  rw [Finset.mul_sum]
+  -- per `c`: insert the telescoped identity and expand the product
+  have hper : ∀ c ∈ Finset.range (p ^ n),
+      (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1)
+          * (PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+            * (PowerSeries.map (integerRing K).subtype
+                (mahlerTransform p K (twist p K
+                  (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+                  (baseChange p K (PadicMeasure.muA p a))))).subst
+                (PowerSeries.exp K - 1))
+        = ∑ m ∈ Finset.range (a * p ^ n),
+            PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n))
+                * (ζ : K) ^ (c * m))
+              * PowerSeries.rescale ((m : ℕ) : K) (PowerSeries.exp K)
+          - PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+              * (a : PowerSeries K)
+              * ∑ j ∈ Finset.range (p ^ n),
+                  PowerSeries.C ((ζ : K) ^ (c * (a * j)))
+                    * PowerSeries.rescale ((a * j : ℕ) : K)
+                        (PowerSeries.exp K) := by
+    intro c _
+    rw [mul_left_comm, charTwist_muA_exp_identity_cleared hζ c hpa, sub_mul,
+      Finset.sum_mul]
+    rw [mul_sub]
+    congr 1
+    · -- the (i,j)-double sum reindexed to `m < a·p^n`
+      rw [Finset.mul_sum]
+      have hdouble : ∀ i ∈ Finset.range a,
+          PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+              * ((PowerSeries.C ((ζ : K) ^ (c * i))
+                  * PowerSeries.rescale ((i : ℕ) : K) (PowerSeries.exp K))
+                * ∑ j ∈ Finset.range (p ^ n),
+                    PowerSeries.C ((ζ : K) ^ (c * (a * j)))
+                      * PowerSeries.rescale ((a * j : ℕ) : K)
+                          (PowerSeries.exp K))
+            = ∑ j ∈ Finset.range (p ^ n),
+                PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n))
+                    * (ζ : K) ^ (c * (i + a * j)))
+                  * PowerSeries.rescale ((i + a * j : ℕ) : K)
+                      (PowerSeries.exp K) := by
+        intro i _
+        rw [Finset.mul_sum, Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [show ((i + a * j : ℕ) : K) = ((i : ℕ) : K) + ((a * j : ℕ) : K)
+            by push_cast; ring,
+          ← PowerSeries.exp_mul_exp_eq_exp_add,
+          show c * (i + a * j) = c * i + c * (a * j) by ring, pow_add, map_mul,
+          map_mul]
+        ring
+      rw [Finset.sum_congr rfl hdouble,
+        sum_range_mul_eq_sum_range
+          (f := fun m => PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n))
+            * (ζ : K) ^ (c * m))
+            * PowerSeries.rescale ((m : ℕ) : K) (PowerSeries.exp K))
+          (p ^ n) ha]
+    · ring
+  have hχK : (toFieldChar χ).IsPrimitive :=
+    (DirichletCharacter.isPrimitive_ringHomComp_iff χ
+      (fun _ _ h => Subtype.ext h)).mpr hχ
+  rw [Finset.sum_congr rfl hper, Finset.sum_sub_distrib]
+  rw [mul_sub]
+  congr 1
+  · -- swap the `c`-sum inside the `m`-sum and collapse
+    rw [Finset.sum_comm, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun m _ => ?_
+    rw [← Finset.sum_mul, ← map_sum, sum_inv_char_zeta_pow hχK hζK m, map_mul]
+    ring
+  · -- the `a`-side sums collapse with `χ̄(a·j) = χ̄(a)·χ̄(j)`
+    have hswap : ∀ c ∈ Finset.range (p ^ n),
+        PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+            * (a : PowerSeries K)
+            * ∑ j ∈ Finset.range (p ^ n),
+                PowerSeries.C ((ζ : K) ^ (c * (a * j)))
+                  * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K)
+          = ∑ j ∈ Finset.range (p ^ n),
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n))
+                  * (ζ : K) ^ (c * (a * j)))
+                * ((a : PowerSeries K)
+                  * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K)) := by
+      intro c _
+      rw [mul_assoc, Finset.mul_sum, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      rw [map_mul]
+      ring
+    rw [Finset.sum_congr rfl hswap, Finset.sum_comm, Finset.mul_sum,
+      Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [← Finset.sum_mul, ← map_sum, sum_inv_char_zeta_pow hχK hζK (a * j),
+      show (((a * j : ℕ)) : ZMod (p ^ n)) = ((a : ℕ) : ZMod (p ^ n))
+          * ((j : ℕ) : ZMod (p ^ n)) from by push_cast; ring,
+      map_mul, map_mul, map_mul]
+    ring
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
