@@ -15,10 +15,13 @@ $\mathrm{GL}(2)$ analogue for modular forms.
 
 ## Status
 
-**Roadmap stage.** The [blueprint](#blueprint) records the intended statements and
-proof sketches for the whole paper (§2–§15). Lean skeletons are being introduced
-incrementally; the blueprint dependency graph colours each node in as the
-declaration it references is stated (blue) and then fully proved (green).
+**§3 (measures and Iwasawa algebras) and §4 (the Kubota–Leopoldt p-adic
+L-function) are fully formalised and sorry-free**, including the headline
+existence-and-uniqueness theorem `PadicMeasure.kubotaLeopoldt` (RJW Theorem 4.1).
+Work on §5 (interpolation at Dirichlet characters) is in progress. The
+[blueprint](#blueprint) records statements and proof sketches for the whole
+paper (§2–§15); its dependency graph colours each node in as the declaration it
+references is stated (blue) and then fully proved (green).
 
 ## Layout
 
@@ -51,11 +54,23 @@ the HTML site locally:
 ./scripts/ci-pages.sh   # output in _out/site/html-multi/
 ```
 
-Once published, it will live at
-<https://CBirkbeck.github.io/padic-L-functions/>.
+The rendered site is published at
+<https://CBirkbeck.github.io/padic-L-functions/> (rebuilt by CI on every push
+to `main`).
 
 ## Credits
 
 Formalisation by Chris Birkbeck. The mathematics is due to Joaquín Rodrigues
-Jacinto and Chris Williams; see the notes above. Released under the Apache 2.0
-license (see `LICENSE`).
+Jacinto and Chris Williams; see the notes above.
+
+## License
+
+The **Lean code and blueprint in this repository** are released under the
+Apache License 2.0 (see `LICENSE`).
+
+The **lecture notes** by Rodrigues Jacinto and Williams — including the TeX
+source kept under `.mathlib-quality/references/` for ease of cross-referencing —
+are **not** covered by this repository's license. They remain © their authors
+and are distributed under their own license
+([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), per their
+[arXiv page](https://arxiv.org/abs/2309.15692)).

@@ -9,7 +9,7 @@ but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
 - Total: 30 work tickets + 12 cleanup tickets
-- Open: 2 (T029, CLEANUP-FINAL) | Done: 40 — ALL PROOF TICKETS DISCHARGED, project sorry-free (2026-06-10)
+- Open: 1 (CLEANUP-FINAL — unblocked 2026-06-10: this session has lean-lsp) | Done: 41 — ALL PROOF TICKETS DISCHARGED incl. T029 wiring, project sorry-free (2026-06-10)
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -952,7 +952,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
 
 ## §4 Summary
 - Tickets: T030–T039 (10 proof/def) + CLEANUP-ALL-2 + CLEANUP-KL-1/2
-- Open: 13 | Done: 0
+- Open: 0 | Done: 13 (all §4 tickets discharged 2026-06-10)
 - Skeleton: `PadicLFunctions/KubotaLeopoldt/{ZetaValues,ZetaValuesComplex,MuA,ZetaP}.lean`,
   46 sorries, builds green (2026-06-10)
 - Decomposition: `.mathlib-quality/decomposition.md` §4 (leaves L0.1–L5.8, all gated)
