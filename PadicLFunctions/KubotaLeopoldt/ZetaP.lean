@@ -89,7 +89,21 @@ theorem zetaNum_moments {a : ℕ} (hpa : ¬ p ∣ a) {k : ℕ} (hk : 0 < k) :
 theorem topGen_pow_ne_one {a : ℤ_[p]ˣ}
     (ha : ∀ n : ℕ, Subgroup.zpowers (unitsToZModPow p n a) = ⊤) :
     ∀ k, 0 < k → (a : ℤ_[p]) ^ k ≠ 1 := by
-  sorry
+  intro k hk hak
+  have hu : a ^ k = 1 := Units.ext (by rw [Units.val_pow_eq_pow_val, hak, Units.val_one])
+  -- at level k+1 the image generates a group of order p^k (p−1) > k
+  have horder : orderOf (unitsToZModPow p (k + 1) a) = Nat.card (ZMod (p ^ (k + 1)))ˣ :=
+    orderOf_eq_card_of_forall_mem_zpowers fun x => (ha (k + 1)) ▸ Subgroup.mem_top x
+  have hdvd : orderOf (unitsToZModPow p (k + 1) a) ∣ k :=
+    orderOf_dvd_of_pow_eq_one (by rw [← map_pow, hu, map_one])
+  have hcard := Nat.le_of_dvd hk (horder ▸ hdvd)
+  rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+    Nat.totient_prime_pow hp.out (Nat.succ_pos k), Nat.succ_sub_one] at hcard
+  have h2 : k < 2 ^ k := k.lt_two_pow_self
+  have h3 : 2 ^ k ≤ p ^ k := Nat.pow_le_pow_left hp.out.two_le k
+  have h4 : p ^ k ≤ p ^ k * (p - 1) :=
+    Nat.le_mul_of_pos_right _ (by have := hp.out.two_le; omega)
+  omega
 
 /-- For odd `p` there is an *integer* topological generator of `ℤ_p^×`: an integer
 that is a primitive root mod `p²` generates `(ℤ/p^n)^×` for every `n`. RJW takes
@@ -98,7 +112,137 @@ Def. 4.10). -/
 theorem exists_nat_topological_generator (hp2 : p ≠ 2) :
     ∃ (m : ℕ) (u : ℤ_[p]ˣ), ¬ p ∣ m ∧ (u : ℤ_[p]) = (m : ℤ_[p]) ∧
       ∀ n : ℕ, Subgroup.zpowers (unitsToZModPow p n u) = ⊤ := by
-  sorry
+  classical
+  obtain ⟨u₀, hu₀⟩ := exists_topological_generator p hp2
+  -- the integer lift of u₀ mod p²
+  set m : ℕ := ((unitsToZModPow p 2 u₀ : (ZMod (p ^ 2))ˣ) : ZMod (p ^ 2)).val with hm
+  have hm2 : ((m : ℕ) : ZMod (p ^ 2))
+      = ((unitsToZModPow p 2 u₀ : (ZMod (p ^ 2))ˣ) : ZMod (p ^ 2)) :=
+    ZMod.natCast_rightInverse _
+  -- p ∤ m (else p²|p in ZMod p²)
+  have hpm : ¬ p ∣ m := by
+    rintro ⟨t, ht⟩
+    have hunit : IsUnit ((m : ℕ) : ZMod (p ^ 2)) := by
+      rw [hm2]; exact (unitsToZModPow p 2 u₀).isUnit
+    obtain ⟨v, hv⟩ := hunit.exists_right_inv
+    have h1 : ((p * t : ℕ) : ZMod (p ^ 2)) * v = 1 := by rw [← ht]; exact hv
+    have h2 := congrArg (· * ((p : ℕ) : ZMod (p ^ 2))) h1
+    simp only [one_mul] at h2
+    have h3 : ((p ^ 2 : ℕ) : ZMod (p ^ 2)) * (((t : ℕ) : ZMod (p ^ 2)) * v)
+        = ((p : ℕ) : ZMod (p ^ 2)) := by
+      rw [← h2]; push_cast; ring
+    rw [ZMod.natCast_self, zero_mul] at h3
+    have h4 : (p ^ 2 : ℕ) ∣ p := by
+      rwa [eq_comm, ZMod.natCast_eq_zero_iff] at h3
+    have h5 := Nat.le_of_dvd hp.out.pos h4
+    nlinarith [hp.out.two_le]
+  have hum := PadicInt.isUnit_natCast_of_not_dvd (p := p) hpm
+  refine ⟨m, hum.unit, hpm, hum.unit_spec, ?_⟩
+  -- the value of the constructed unit at every level
+  have hval : ∀ n : ℕ, ((unitsToZModPow p n hum.unit : (ZMod (p ^ n))ˣ) : ZMod (p ^ n))
+      = ((m : ℕ) : ZMod (p ^ n)) := fun n => by
+    rw [unitsToZModPow_coe, hum.unit_spec, map_natCast]
+  -- level 2 matches u₀, hence generates
+  have hgen2 : Subgroup.zpowers (unitsToZModPow p 2 hum.unit) = ⊤ := by
+    have hq2 : unitsToZModPow p 2 hum.unit = unitsToZModPow p 2 u₀ :=
+      Units.ext (by rw [hval 2, hm2])
+    rw [hq2]; exact hu₀ 2
+  -- generation descends along the (surjective) transition maps
+  have hdown : ∀ {n₁ n₂ : ℕ}, n₁ ≤ n₂ →
+      Subgroup.zpowers (unitsToZModPow p n₂ hum.unit) = ⊤ →
+      Subgroup.zpowers (unitsToZModPow p n₁ hum.unit) = ⊤ := by
+    intro n₁ n₂ h hgen
+    rw [show unitsToZModPow p n₁ hum.unit
+        = ZMod.unitsMap (pow_dvd_pow p h) (unitsToZModPow p n₂ hum.unit) from
+        unitsToZModPow_le p h _,
+      ← MonoidHom.map_zpowers, hgen]
+    exact Subgroup.map_top_of_surjective _
+      (ZMod.unitsMap_surjective (pow_dvd_pow p h))
+  have hgen1 : Subgroup.zpowers (unitsToZModPow p 1 hum.unit) = ⊤ :=
+    hdown one_le_two hgen2
+  -- Fermat decomposition m^{p−1} = 1 + p·c with p ∤ c
+  have hm1 : 1 ≤ m := Nat.one_le_iff_ne_zero.2 fun h => hpm (h ▸ dvd_zero p)
+  have hmp1 : 1 ≤ m ^ (p - 1) := Nat.one_le_pow _ _ hm1
+  have hfermat : (p : ℕ) ∣ m ^ (p - 1) - 1 := by
+    have h1 : ((m : ℕ) : ZMod p) ≠ 0 := by
+      rw [Ne, ZMod.natCast_eq_zero_iff]; exact hpm
+    have h2 := ZMod.pow_card_sub_one_eq_one h1
+    have h3 : ((m ^ (p - 1) : ℕ) : ZMod p) = ((1 : ℕ) : ZMod p) := by
+      push_cast
+      rw [h2]
+    rw [ZMod.natCast_eq_natCast_iff] at h3
+    exact (Nat.modEq_iff_dvd' hmp1).1 h3.symm
+  obtain ⟨c, hc⟩ := hfermat
+  have hc' : m ^ (p - 1) = 1 + p * c := by omega
+  -- p ∤ c: else m^{p−1} ≡ 1 mod p², contradicting order p(p−1) at level 2
+  have hpc : ¬ p ∣ c := by
+    rintro ⟨d, rfl⟩
+    have hsq : (p ^ 2 : ℕ) ∣ m ^ (p - 1) - 1 := ⟨d, by rw [hc]; ring⟩
+    have hord2 : orderOf (unitsToZModPow p 2 hum.unit) = p * (p - 1) := by
+      rw [orderOf_eq_card_of_forall_mem_zpowers fun x => hgen2 ▸ Subgroup.mem_top x,
+        Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+        Nat.totient_prime_pow hp.out two_pos]
+      ring_nf
+    have hpow1 : (unitsToZModPow p 2 hum.unit) ^ (p - 1) = 1 := by
+      apply Units.ext
+      rw [Units.val_pow_eq_pow_val, hval 2, Units.val_one, ← Nat.cast_pow,
+        show ((m ^ (p - 1) : ℕ) : ZMod (p ^ 2)) = ((1 : ℕ) : ZMod (p ^ 2)) from
+          (ZMod.natCast_eq_natCast_iff _ _ _).2 ((Nat.modEq_iff_dvd' hmp1).2 hsq).symm,
+        Nat.cast_one]
+    have hdvd := orderOf_dvd_of_pow_eq_one hpow1
+    rw [hord2] at hdvd
+    have h5 := Nat.le_of_dvd (by have := hp.out.two_le; omega) hdvd
+    have h7 : 2 * (p - 1) ≤ p * (p - 1) := Nat.mul_le_mul_right _ hp.out.two_le
+    have h8 := hp.out.two_le
+    omega
+  have hcz : ¬ ((p : ℤ)) ∣ ((c : ℕ) : ℤ) := by exact_mod_cast hpc
+  -- main: every level generates
+  intro n
+  rcases Nat.lt_or_ge n 3 with hn | hn
+  · exact hdown (by omega) hgen2
+  · obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+    set g := unitsToZModPow p (n' + 1) hum.unit with hg
+    have hcard : Nat.card (ZMod (p ^ (n' + 1)))ˣ = p ^ n' * (p - 1) := by
+      rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+        Nat.totient_prime_pow hp.out (Nat.succ_pos n'), Nat.succ_sub_one]
+    -- (p − 1) ∣ orderOf g, via the level-1 image
+    have ho1 : orderOf (unitsToZModPow p 1 hum.unit) = p - 1 := by
+      rw [orderOf_eq_card_of_forall_mem_zpowers fun x => hgen1 ▸ Subgroup.mem_top x,
+        Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, pow_one,
+        Nat.totient_prime hp.out]
+    have hd1 : (p - 1) ∣ orderOf g := by
+      rw [← ho1,
+        show unitsToZModPow p 1 hum.unit
+          = ZMod.unitsMap (pow_dvd_pow p (by omega : 1 ≤ n' + 1)) g from
+          unitsToZModPow_le p (by omega) _]
+      exact orderOf_map_dvd _ _
+    -- p^{n'} ∣ orderOf g, via 1 + pc
+    have hd2 : p ^ n' ∣ orderOf g := by
+      have hval_pow : ((g ^ (p - 1) : (ZMod (p ^ (n' + 1)))ˣ) : ZMod (p ^ (n' + 1)))
+          = (1 : ZMod (p ^ (n' + 1))) + (p : ZMod (p ^ (n' + 1))) * (c : ZMod (p ^ (n' + 1))) := by
+        rw [Units.val_pow_eq_pow_val, hval (n' + 1), ← Nat.cast_pow, hc']
+        push_cast
+        ring
+      have hord_val : orderOf ((g ^ (p - 1) : (ZMod (p ^ (n' + 1)))ˣ) : ZMod (p ^ (n' + 1)))
+          = p ^ n' := by
+        rw [hval_pow]
+        have h := ZMod.orderOf_one_add_mul_prime hp.out hp2 ((c : ℕ) : ℤ) hcz n'
+        push_cast at h
+        exact h
+      have : orderOf (g ^ (p - 1)) = p ^ n' := by
+        rw [← orderOf_units, hord_val]
+      exact this ▸ orderOf_pow_dvd (p - 1)
+    have hcop : Nat.Coprime (p ^ n') (p - 1) := by
+      have hbase : Nat.Coprime p (p - 1) := (Nat.Prime.coprime_iff_not_dvd hp.out).2
+        fun h => by
+          have h6 := Nat.le_of_dvd (by have := hp.out.two_le; omega) h
+          have h7 := hp.out.two_le
+          omega
+      exact hbase.pow_left n'
+    have hmul : p ^ n' * (p - 1) ∣ orderOf g := hcop.mul_dvd_of_dvd_of_dvd hd2 hd1
+    have hog : orderOf g = Nat.card (ZMod (p ^ (n' + 1)))ˣ :=
+      Nat.dvd_antisymm (orderOf_dvd_natCard g) (hcard ▸ hmul)
+    exact Subgroup.eq_top_of_card_eq _ (by rw [Nat.card_zpowers, hog])
 
 /-! ## The p-adic zeta function (RJW Def. 4.10, Prop. 4.11, Thm. 4.1) -/
 

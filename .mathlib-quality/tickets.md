@@ -1312,7 +1312,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
 - **Progress**:
 
 ### [T037] Integer topological generator (p odd)
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
 - **Depends on**: none (uses §3 only)
 - **Parallel**: yes (with T030–T036)
@@ -1360,6 +1360,15 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   def-node prose when T038 wires it.
 - **Cleanup**: `/cleanup` immediately after.
 - **Progress**:
+  - 2026-06-10: DONE — topGen_pow_ne_one (level-(k+1) order vs totient growth;
+    Nat.card vs Fintype.card bridge needed) and exists_nat_topological_generator
+    (~110 LOC: integer lift of u₀ mod p² via ZMod.natCast_rightInverse; p∤m by the
+    p²∣p contradiction; descent along surjective unitsMap via MonoidHom.map_zpowers +
+    Subgroup.map_top_of_surjective; Fermat split m^{p−1} = 1+pc with p∤c from the
+    level-2 order p(p−1); ascent: orderOf bounds via ZMod.orderOf_one_add_mul_prime
+    (n = n'+1 destructuring to align types) + coprime lcm + eq_top_of_card_eq).
+    Names found: ZMod.natCast_eq_zero_iff (not the old natCast_zmod_…), orderOf_units,
+    Nat.card_zpowers. Axioms standard. Cleanup: degraded.
 
 ### [T038] `ζ_p`: definition, pseudo-measure property, interpolation
 - **Status**: open
