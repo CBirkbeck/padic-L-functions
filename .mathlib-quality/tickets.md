@@ -2639,7 +2639,12 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~150 LOC.
 
 ### [CLEANUP-ALL-5] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T510, T516, T518 | **Type**: cleanup-all (before T519/T520)
+- **Status**: done | **Depends on**: T510, T516, T518 | **Type**: cleanup-all (before T519/T520)
+- **Progress**: DONE 2026-06-11. Sweep: zero style/linter warnings
+  project-wide, zero long lines; 21 sorry-warnings, all open-ticket scope
+  (Branches 4 = T519, PadicExp 17 = T521–T523). T516's additions were
+  cleaned per-ticket (omits, congrArg-val ring-closers, simp-arg prunes).
+  No batch debt.
 
 ### [T520] L_p(θ,s) and RJW Theorem 5.19
 - **Status**: open | **File**: Branches.lean | **Depends on**: T519, T516 | **Type**: def + theorem
