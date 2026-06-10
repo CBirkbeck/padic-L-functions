@@ -235,4 +235,42 @@ theorem norm_gaussSum_eq_one {D : ℕ} [NeZero D] {η : DirichletCharacter L D}
 
 end gaussSumNorm
 
+section primitivityTransport
+
+/-- Composing with an injective ring homomorphism preserves the factor-levels
+of a Dirichlet character (via the kernel criterion
+`factorsThrough_iff_ker_unitsMap`). -/
+lemma _root_.DirichletCharacter.factorsThrough_ringHomComp_iff
+    {R S : Type*} [CommRing R] [CommRing S] {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter R N) {f : R →+* S} (hf : Function.Injective f)
+    {d : ℕ} : DirichletCharacter.FactorsThrough (χ.ringHomComp f) d
+      ↔ χ.FactorsThrough d := by
+  by_cases hd : d ∣ N
+  · rw [DirichletCharacter.factorsThrough_iff_ker_unitsMap hd,
+      DirichletCharacter.factorsThrough_iff_ker_unitsMap hd]
+    have hker : ∀ x : (ZMod N)ˣ,
+        MulChar.toUnitHom (χ.ringHomComp f) x = 1 ↔ χ.toUnitHom x = 1 := by
+      intro x
+      rw [← Units.val_eq_one, ← Units.val_eq_one, MulChar.coe_toUnitHom,
+        MulChar.coe_toUnitHom, MulChar.ringHomComp_apply, ← map_one f]
+      exact ⟨fun h => hf h, fun h => congrArg f h⟩
+    constructor
+    · intro h x hx
+      exact MonoidHom.mem_ker.mpr ((hker x).mp (MonoidHom.mem_ker.mp (h hx)))
+    · intro h x hx
+      exact MonoidHom.mem_ker.mpr ((hker x).mpr (MonoidHom.mem_ker.mp (h hx)))
+  · exact ⟨fun h => absurd h.dvd hd, fun h => absurd h.dvd hd⟩
+
+/-- Primitivity of a Dirichlet character transports along injective
+coefficient homomorphisms. -/
+lemma _root_.DirichletCharacter.isPrimitive_ringHomComp_iff
+    {R S : Type*} [CommRing R] [CommRing S] {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter R N) {f : R →+* S} (hf : Function.Injective f) :
+    DirichletCharacter.IsPrimitive (χ.ringHomComp f) ↔ χ.IsPrimitive := by
+  unfold DirichletCharacter.IsPrimitive DirichletCharacter.conductor
+  rw [show DirichletCharacter.conductorSet (χ.ringHomComp f) = χ.conductorSet from
+    Set.ext fun d => DirichletCharacter.factorsThrough_ringHomComp_iff χ hf]
+
+end primitivityTransport
+
 end PadicLFunctions
