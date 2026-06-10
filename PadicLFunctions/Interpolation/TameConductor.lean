@@ -406,6 +406,137 @@ lemma sum_char_inv_mul_exp_identity {n : ℕ}
       map_mul, map_mul, map_mul]
     ring
 
+/-- T509 (v-e), FINAL-10b — the χ-analogue of §4's `X_mul_subst_exp_Fa`:
+`X·Σ_c χ̄⁻¹(c)·H_c = G'·(genBPS_χ̄ − χ̄(a)·rescale a genBPS_χ̄)`. -/
+lemma X_mul_sum_char_inv_subst {n : ℕ} (hn : 1 ≤ n)
+    {χ : DirichletCharacter (integerRing K) (p ^ n)} (hχ : χ.IsPrimitive)
+    {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ (p ^ n))
+    (hζK : IsPrimitiveRoot ((ζ : K)) (p ^ n)) {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a) :
+    PowerSeries.X * ∑ c ∈ Finset.range (p ^ n),
+        PowerSeries.C ((toFieldChar χ)⁻¹ ((c : ℕ) : ZMod (p ^ n)))
+          * (PowerSeries.map (integerRing K).subtype
+              (mahlerTransform p K (twist p K
+                (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+                (baseChange p K (PadicMeasure.muA p a))))).subst
+              (PowerSeries.exp K - 1)
+      = PowerSeries.C (gaussSum (toFieldChar χ)⁻¹
+            (AddChar.zmodChar (p ^ n) hζK.pow_eq_one))
+          * ((PowerSeries.mk fun k =>
+                (toFieldChar χ).genBernoulli k * (k.factorial : K)⁻¹)
+            - PowerSeries.C ((toFieldChar χ) ((a : ℕ) : ZMod (p ^ n)))
+                * PowerSeries.rescale ((a : ℕ) : K)
+                    (PowerSeries.mk fun k =>
+                      (toFieldChar χ).genBernoulli k * (k.factorial : K)⁻¹)) := by
+  have ha : 0 < a := Nat.pos_of_ne_zero fun h => hpa (h ▸ dvd_zero _)
+  haveI : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (by omega) hp.out.one_lt⟩
+  -- the regular factor `E_{ap^n} − 1 ≠ 0`
+  have hreg : PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1
+      ≠ 0 := by
+    intro h
+    have h1 := congrArg (PowerSeries.coeff 1) h
+    rw [map_sub, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
+      PowerSeries.coeff_one] at h1
+    simp [Nat.factorial] at h1
+    rcases h1 with h | ⟨hp0, _⟩
+    · exact absurd h (by omega)
+    · exact absurd hp0 hp.out.pos.ne'
+  refine mul_left_cancel₀ hreg ?_
+  rw [show (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K) - 1)
+        * (PowerSeries.X * ∑ c ∈ Finset.range (p ^ n), _)
+      = PowerSeries.X * ((PowerSeries.rescale ((a * p ^ n : ℕ) : K)
+          (PowerSeries.exp K) - 1) * _) from mul_left_comm _ _ _,
+    sum_char_inv_mul_exp_identity hχ hζ hζK hpa ha]
+  -- (A): `X·Σ_{m<ap^n} χ̄(m)E_m = genBPS·(E_{ap^n} − 1)` by block-splitting
+  have hA : PowerSeries.X * ∑ m ∈ Finset.range (a * p ^ n),
+        PowerSeries.C ((toFieldChar χ) ((m : ℕ) : ZMod (p ^ n)))
+          * PowerSeries.rescale ((m : ℕ) : K) (PowerSeries.exp K)
+      = (PowerSeries.mk fun k =>
+            (toFieldChar χ).genBernoulli k * (k.factorial : K)⁻¹)
+          * (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K)
+            - 1) := by
+    have hsplit : ∑ m ∈ Finset.range (a * p ^ n),
+          PowerSeries.C ((toFieldChar χ) ((m : ℕ) : ZMod (p ^ n)))
+            * PowerSeries.rescale ((m : ℕ) : K) (PowerSeries.exp K)
+        = (∑ i ∈ Finset.range (p ^ n),
+            PowerSeries.C ((toFieldChar χ) ((i : ℕ) : ZMod (p ^ n)))
+              * PowerSeries.rescale ((i : ℕ) : K) (PowerSeries.exp K))
+          * ∑ l ∈ Finset.range a,
+              (PowerSeries.rescale (((p ^ n : ℕ)) : K) (PowerSeries.exp K)) ^ l := by
+      rw [show a * p ^ n = p ^ n * a by ring,
+        ← sum_range_mul_eq_sum_range _ a (pow_pos hp.out.pos n)]
+      rw [Finset.sum_mul_sum]
+      refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun l _ => ?_
+      rw [rescale_exp_pow,
+        show ((i + p ^ n * l : ℕ) : ZMod (p ^ n)) = ((i : ℕ) : ZMod (p ^ n)) from by
+          push_cast
+          rw [← Nat.cast_pow, ZMod.natCast_self]
+          ring,
+        show ((i + p ^ n * l : ℕ) : K) = ((i : ℕ) : K) + ((l : K)) * (((p ^ n : ℕ)) : K)
+          from by push_cast; ring,
+        ← PowerSeries.exp_mul_exp_eq_exp_add]
+      ring
+    rw [hsplit, ← mul_assoc, X_mul_sum_char_rescale_exp hn (toFieldChar χ),
+      mul_assoc, mul_comm (PowerSeries.rescale (((p : ℕ) ^ n : ℕ) : K)
+        (PowerSeries.exp K) - 1), geom_sum_mul, rescale_exp_pow,
+      show ((a : K)) * (((p ^ n : ℕ)) : K) = ((a * p ^ n : ℕ) : K)
+        by push_cast; ring]
+  -- (B): the `a`-side via the `rescale a`-image of (v-d)
+  have hB : PowerSeries.X
+        * (PowerSeries.C ((toFieldChar χ) ((a : ℕ) : ZMod (p ^ n)))
+          * (a : PowerSeries K)
+          * ∑ j ∈ Finset.range (p ^ n),
+              PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)))
+                * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K))
+      = PowerSeries.C ((toFieldChar χ) ((a : ℕ) : ZMod (p ^ n)))
+          * PowerSeries.rescale ((a : ℕ) : K)
+              (PowerSeries.mk fun k =>
+                (toFieldChar χ).genBernoulli k * (k.factorial : K)⁻¹)
+          * (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K)
+            - 1) := by
+    have hres := congrArg (PowerSeries.rescale ((a : ℕ) : K))
+      (X_mul_sum_char_rescale_exp hn (toFieldChar χ))
+    rw [map_mul, map_mul, map_sub, map_one, map_sum, PowerSeries.rescale_X,
+      PowerSeries.rescale_rescale,
+      show (((p : ℕ) ^ n : ℕ) : K) * ((a : ℕ) : K) = ((a * p ^ n : ℕ) : K)
+        by push_cast; ring] at hres
+    have hterm : ∀ j ∈ Finset.range (p ^ n),
+        PowerSeries.rescale ((a : ℕ) : K)
+            (PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)))
+              * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K))
+          = PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)))
+              * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K) := by
+      intro j _
+      have hresC : PowerSeries.rescale ((a : ℕ) : K)
+          (PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n))))
+          = PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n))) := by
+        ext m
+        rcases eq_or_ne m 0 with rfl | hm
+        · simp
+        · simp [PowerSeries.coeff_rescale, PowerSeries.coeff_C, hm]
+      rw [map_mul, hresC, PowerSeries.rescale_rescale,
+        show ((j : ℕ) : K) * ((a : ℕ) : K) = ((a * j : ℕ) : K) by push_cast; ring]
+    rw [Finset.sum_congr rfl hterm] at hres
+    rw [show ((a : PowerSeries K)) = PowerSeries.C ((a : ℕ) : K) from
+      (map_natCast (PowerSeries.C (R := K)) a).symm,
+      show PowerSeries.X * (PowerSeries.C ((toFieldChar χ) ((a : ℕ) : ZMod (p ^ n)))
+          * PowerSeries.C ((a : ℕ) : K)
+          * ∑ j ∈ Finset.range (p ^ n),
+              PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)))
+                * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K))
+        = PowerSeries.C ((toFieldChar χ) ((a : ℕ) : ZMod (p ^ n)))
+            * (PowerSeries.C ((a : ℕ) : K) * PowerSeries.X
+              * ∑ j ∈ Finset.range (p ^ n),
+                  PowerSeries.C ((toFieldChar χ) ((j : ℕ) : ZMod (p ^ n)))
+                    * PowerSeries.rescale ((a * j : ℕ) : K) (PowerSeries.exp K))
+        from by ring,
+      hres]
+    ring
+  -- assemble: the goal is the `C(G')`-linear combination of hA and hB
+  linear_combination (PowerSeries.C (gaussSum (toFieldChar χ)⁻¹
+      (AddChar.zmodChar (p ^ n) hζK.pow_eq_one))) * hA
+    - (PowerSeries.C (gaussSum (toFieldChar χ)⁻¹
+      (AddChar.zmodChar (p ^ n) hζK.pow_eq_one))) * hB
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
