@@ -1927,7 +1927,26 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   {MeasureR.twist, MeasureR.twist_res_units} with prose note; build green.
 
 ### [T507] Cleared restriction formula (EqRestrictionFormula)
-- **Status**: open | **File**: Twist.lean | **Depends on**: T506 | **Type**: lemma
+- **Status**: done | **File**: Twist.lean | **Depends on**: T506 | **Type**: lemma
+- **Progress**: DONE 2026-06-10. New helpers `norm_pow_sub_one_lt_one`
+  (‖ζ^c−1‖ < 1 for ALL c — orderOf-case-split to p^j, j ≥ 1 via
+  Nat.dvd_prime_pow, transported through the subring inclusion by
+  map_of_injective, then W2 `IsPrimitiveRoot.norm_sub_one_lt`) and
+  `tendsto_pow_pow_sub_one` (fills the skeleton's inline `(by sorry)`
+  convergence hole). Main proof exactly the decomposition route: the
+  orthogonality identity proven as an equality of *continuous maps*
+  `p^n • 1_{b+p^nZp} = Σ_c ζ^{cs} • κ_{ζ^c−1}` via `Continuous.ext_on` over
+  dense ℕ (per-ℕ: terms collapse to `(ζ^{s+m})^c` and either all-ones
+  (Finset.sum_const) or geometric-sum-zero via `geom_sum_mul` + domain);
+  membership bridge ζ^{s+m} = 1 ↔ toZModPow n m = b via pow_eq_one_iff_dvd +
+  ZMod.natCast_eq_zero_iff cast-arithmetic. Integration step: LinearMap.ext +
+  map_smul/map_sum/smul_mul_assoc shuffles. `hn` unused by the proof
+  (degenerate-true at n = 0) — kept in the statement (source-faithful),
+  underscored. Verification: only the T508 sorry remains in the file; axioms =
+  {propext, Classical.choice, Quot.sound}; linter-clean; lake build green.
+  Blueprint: §3 deferred nodes now wired — `meas-mult-by-zx` →
+  {MeasureR.cmul, mahlerTransform_charTwist}, `meas-restriction` gains
+  `res_class_eq_sum_twists`, both with cleared-form prose notes.
 - **Statement**: `res_class_eq_sum_twists` (L5.1.7, p^n-cleared, measure-side).
 - **Proof sketch**: decomposition L5.1.7 (orthogonality pointwise + integrate;
   geometric-sum-zero from primitive root).

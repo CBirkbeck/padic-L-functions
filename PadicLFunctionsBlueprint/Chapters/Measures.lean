@@ -314,16 +314,22 @@ evaluating the moment formula $`\int_{\Zp} \mu_g = g(0)` at $`g = \Am_{x^k\mu}`
 $`\int_{\Zp} x^k \cdot \mu = \Am_{x^k\mu}(0) = (\partial^k \Am_\mu)(0)`.
 :::
 
-:::definition "meas-mult-by-zx"
+:::definition "meas-mult-by-zx" (lean := "PadicLFunctions.MeasureR.cmul, PadicLFunctions.MeasureR.mahlerTransform_charTwist")
 For $`g \in \cC(\Zp, L)` define $`g(x)\mu` by
 $`\int_{\Zp} f \cdot g(x)\mu := \int_{\Zp} fg \cdot \mu`. In particular, for
 $`z \in \OL` with $`\abs{z-1} < 1`,
 $$`\Am_{z^x \mu}(T) = \Am_\mu\big((1+T)z - 1\big),`
 since $`\Am_\mu((1+T)z - 1) = \int_{\Zp}((1+T)z)^x \cdot \mu` is by definition the
 Mahler transform of $`z^x\mu`. Uses {uses "mahler-transform"}[].
+
+In the formalisation the multiplication is `MeasureR.cmul` (over the general
+coefficient ring of the §5 widening) and the displayed substitution identity is
+`mahlerTransform_charTwist`, stated coefficientwise — the right-hand side read
+off as the convergent sum over Mahler coefficients, with `z = 1 + r` for
+topologically nilpotent `r`.
 :::
 
-:::definition "meas-restriction" (lean := "PadicMeasure.res, PadicMeasure.res_union")
+:::definition "meas-restriction" (lean := "PadicMeasure.res, PadicMeasure.res_union, PadicLFunctions.MeasureR.res_class_eq_sum_twists")
 For an open compact $`X \subseteq \Zp` with characteristic function $`\one_X`, the
 *restriction* $`\Res_X(\mu)` is the measure with
 $`\int_{\Zp} f \cdot \Res_X(\mu) := \int_{\Zp} f\one_X \cdot \mu`, also written
@@ -338,6 +344,11 @@ The case $`b = 0`, $`n = 1` gives the restriction to $`\Zpx`:
 $$`\Am_{\Res_{\Zpx}(\mu)}(T) = \Am_\mu(T) - \frac{1}{p}\sum_{\xi \in \mu_p}\Am_\mu\big((1+T)\xi - 1\big).`
 An arbitrary open compact $`X` (or its complement, as here for $`\Zpx`) is a finite
 disjoint union of such balls, so its restriction formula is obtained by summing.
+
+The displayed Fourier-expansion formula (deferred during §3) is realised in the
+§5 coefficient layer as `MeasureR.res_class_eq_sum_twists`, stated as an
+identity of measures multiplied through by `p^n` and with `ξ^{-b}` written with
+a positive exponent — the source's identity divided by `p^n`.
 :::
 
 :::definition "meas-sigma-phi-psi" (lean := "PadicMeasure.sigma, PadicMeasure.phi, PadicMeasure.psi, PadicMeasure.mahlerTransform_sigma, PadicMeasure.mahlerTransform_phi")

@@ -142,21 +142,98 @@ theorem mahlerTransform_charTwist (r : integerRing K)
   push_cast
   ring
 
+omit [CompleteSpace K] in
+/-- Any power of a primitive `p^n`-th root of unity satisfies `‖ζ^c − 1‖ < 1`
+(W2, extended from primitive roots to all of `μ_{p^∞}`). -/
+lemma norm_pow_sub_one_lt_one {ζ : integerRing K} {n : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ n)) (c : ℕ) : ‖ζ ^ c - 1‖ < 1 := by
+  by_cases hc1 : ζ ^ c = 1
+  · simp [hc1]
+  · have horder : orderOf (ζ ^ c) ∣ p ^ n :=
+      orderOf_dvd_of_pow_eq_one (by rw [← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow])
+    obtain ⟨j, hjle, hj⟩ := (Nat.dvd_prime_pow hp.out).mp horder
+    have hj1 : 1 ≤ j := by
+      rcases Nat.eq_zero_or_pos j with rfl | h
+      · exact absurd (orderOf_eq_one_iff.mp (by simpa using hj)) hc1
+      · exact h
+    have hprim : IsPrimitiveRoot ((ζ ^ c : integerRing K) : K) (p ^ j) := by
+      have h0 : IsPrimitiveRoot (ζ ^ c) (orderOf (ζ ^ c)) := IsPrimitiveRoot.orderOf _
+      rw [hj] at h0
+      exact h0.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+    exact hprim.norm_sub_one_lt hj1
+
+omit [CompleteSpace K] in
+/-- `ζ^c − 1` is topologically nilpotent for `ζ ∈ μ_{p^n}`. -/
+lemma tendsto_pow_pow_sub_one {ζ : integerRing K} {n : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ n)) (c : ℕ) :
+    Filter.Tendsto ((ζ ^ c - 1) ^ ·) Filter.atTop (nhds 0) :=
+  tendsto_pow_atTop_nhds_zero_of_norm_lt_one (norm_pow_sub_one_lt_one hζ c)
+
 /-- L5.1.7 (`EqRestrictionFormula`, cleared per R5-CLEAR): for a primitive
 `p^n`-th root of unity `ζ` and `b : ZMod (p^n)`,
 `p^n · Res_{b+p^nℤ_p}(μ) = ∑_{c} ζ^{-bc} · (κ_{ζ^c−1}-twist of μ)` as
-measures.
+measures (`ζ^{-bc}` realised with the positive exponent `c·(p^n − b.val)`).
 
 Source (verbatim, TeX 1126–1131): the display `EqRestrictionFormula`,
 multiplied through by `p^n`. -/
-theorem res_class_eq_sum_twists {n : ℕ} (hn : 1 ≤ n) {ζ : integerRing K}
+theorem res_class_eq_sum_twists {n : ℕ} (_hn : 1 ≤ n) {ζ : integerRing K}
     (hζ : IsPrimitiveRoot ζ (p ^ n)) (b : ZMod (p ^ n)) (μ : MeasureR K ℤ_[p]) :
     ((p : ℕ) ^ n : integerRing K) •
         res p K (isClopen_toZModPow_fiber p n b) μ
       = ∑ c ∈ Finset.range (p ^ n),
           ζ ^ (c * (p ^ n - (b.val % p ^ n))) •
-            twist p K (charCM (ζ ^ c - 1) (by sorry)) μ := by
-  sorry
+            twist p K (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c)) μ := by
+  have hbval : b.val % p ^ n = b.val := Nat.mod_eq_of_lt (ZMod.val_lt b)
+  -- the pointwise orthogonality relation, as an identity of continuous maps
+  have hpoint : (((p : ℕ) ^ n : integerRing K)) •
+        charFnCM K ℤ_[p] (isClopen_toZModPow_fiber p n b)
+      = ∑ c ∈ Finset.range (p ^ n),
+          ζ ^ (c * (p ^ n - b.val % p ^ n)) •
+            charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c) := by
+    refine ContinuousMap.coe_injective
+      (Continuous.ext_on (PadicInt.denseRange_natCast (p := p))
+        (map_continuous _) (map_continuous _) ?_)
+    rintro _ ⟨m, rfl⟩
+    simp only [ContinuousMap.coe_smul, ContinuousMap.coe_sum, Pi.smul_apply,
+      Finset.sum_apply, charFnCM_apply, charCM_natCast, smul_eq_mul]
+    -- each summand is `(ζ^{s+m})^c` with `s := p^n − b.val`
+    have hterm : ∀ c, ζ ^ (c * (p ^ n - b.val % p ^ n)) * (1 + (ζ ^ c - 1)) ^ m
+        = (ζ ^ ((p ^ n - b.val % p ^ n) + m)) ^ c := by
+      intro c
+      rw [show (1 + (ζ ^ c - 1) : integerRing K) = ζ ^ c by ring, ← pow_mul,
+        ← pow_add, ← mul_add, mul_comm c _, pow_mul]
+    rw [Finset.sum_congr rfl fun c _ => hterm c]
+    -- `ζ^{s+m} = 1` iff `m` lies in the residue class `b`
+    have hω : ζ ^ ((p ^ n - b.val % p ^ n) + m) = 1
+        ↔ PadicInt.toZModPow n ((m : ℕ) : ℤ_[p]) = b := by
+      rw [hζ.pow_eq_one_iff_dvd, map_natCast, hbval,
+        ← ZMod.natCast_eq_zero_iff _ (p ^ n)]
+      push_cast [Nat.cast_sub (ZMod.val_lt b).le]
+      rw [← Nat.cast_pow, ZMod.natCast_self, zero_sub, ZMod.natCast_zmod_val b,
+        neg_add_eq_zero, eq_comm]
+    by_cases hmem : PadicInt.toZModPow n ((m : ℕ) : ℤ_[p]) = b
+    · rw [Set.indicator_of_mem (show _ ∈ {x : ℤ_[p]
+          | PadicInt.toZModPow n x = b} from hmem), Pi.one_apply, mul_one]
+      rw [Finset.sum_congr rfl fun c _ => by rw [hω.mpr hmem, one_pow],
+        Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one]
+      push_cast
+      ring
+    · rw [Set.indicator_of_notMem (show _ ∉ {x : ℤ_[p]
+          | PadicInt.toZModPow n x = b} from hmem), mul_zero]
+      have hωne : ζ ^ ((p ^ n - b.val % p ^ n) + m) ≠ 1 := fun h => hmem (hω.mp h)
+      have hgeom := geom_sum_mul (ζ ^ ((p ^ n - b.val % p ^ n) + m)) (p ^ n)
+      rw [← pow_mul, mul_comm _ (p ^ n), pow_mul, hζ.pow_eq_one, one_pow, sub_self]
+        at hgeom
+      exact ((mul_eq_zero.mp hgeom).resolve_right
+        (sub_ne_zero.mpr hωne)).symm
+  -- integrate the pointwise identity
+  refine LinearMap.ext fun f => ?_
+  rw [LinearMap.smul_apply, LinearMap.sum_apply]
+  change ((p : ℕ) ^ n : integerRing K) •
+      μ (charFnCM K ℤ_[p] (isClopen_toZModPow_fiber p n b) * f) = _
+  rw [← map_smul, ← smul_mul_assoc, hpoint, Finset.sum_mul, map_sum]
+  exact Finset.sum_congr rfl fun c _ => by
+    rw [smul_mul_assoc, map_smul, LinearMap.smul_apply, twist_apply]
 
 /-- L5.1.8 (RJW Lem 5.4, cleared — statement form pinned by the planning
 trace at decomposition L5.1.8 attack [2]): for `χ` primitive mod `p^n`
