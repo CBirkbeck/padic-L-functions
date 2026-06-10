@@ -139,11 +139,11 @@ $$`f_{\chi,a}(t) = \frac{1}{G(\chi^{-1})}\sum_{c\in(\Z/p^n\Z)^\times}\chi(c)^{-1
 -- Deliberately unwired (§5 board, 2026-06-10): the Mellin/analytic-continuation
 -- half of this lemma is §2 material (deferred), following the
 -- `kl-values-of-zeta` pattern. The L-value content the §5 statements consume is
--- encoded algebraically as `LvalNeg` (= −B_{k+1,χ}/(k+1), `GenBernoulli.lean`),
--- with the complex comparison `PadicLFunctions.LFunction_neg_nat`
--- (`L(χ,−k) = −B_{k+1,χ}/(k+1)` for all k ≥ 0, `GenBernoulliComplex.lean`; the
--- k = 0 case rests on the sawtooth boundary value `sinZeta_one_eq_boundary`,
--- `Sawtooth.lean`).
+-- encoded algebraically as `LvalNeg` (minus the (k+1)-st generalised Bernoulli
+-- number over (k+1), `GenBernoulli.lean`), with the complex comparison
+-- `PadicLFunctions.LFunction_neg_nat` (`GenBernoulliComplex.lean`, all k ≥ 0;
+-- the k = 0 case rests on the sawtooth boundary value
+-- `sinZeta_one_eq_boundary`, `Sawtooth.lean`).
 :::lemma_ "interp-dirichlet-integral"
 With $`f_{\chi,a}` as above and $`L(f,s) = \frac{1}{\Gamma(s)}\int_0^\infty
 f(t)t^{s-1}dt` the complex Mellin transform (whose special-value formula
