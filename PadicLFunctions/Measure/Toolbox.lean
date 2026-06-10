@@ -49,7 +49,7 @@ noncomputable def del (F : PowerSeries ℤ_[p]) : PowerSeries ℤ_[p] :=
 /-- The binomial recurrence `x·binom(x,n) = (n+1)·binom(x,n+1) + n·binom(x,n)` over
 `ℤ_p`: the source's one-line computation (RJW TeX line 1074), proved on `ℕ` and
 extended by density. -/
-private lemma mul_choose_eq (x : ℤ_[p]) (n : ℕ) :
+lemma mul_choose_eq (x : ℤ_[p]) (n : ℕ) :
     x * Ring.choose x n
       = (n + 1 : ℤ_[p]) * Ring.choose x (n + 1) + (n : ℤ_[p]) * Ring.choose x n := by
   have hnat : ∀ m : ℕ, (m : ℕ) * m.choose n = (n + 1) * m.choose (n + 1) + n * m.choose n := by

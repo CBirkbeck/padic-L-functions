@@ -97,6 +97,7 @@ instance : IsLinearTopology (integerRing L) (integerRing L) := by
     AddSubgroupClass.coe_norm]
 
 omit [CompleteSpace L] in
+omit [CompleteSpace L] in
 /-- The algebra map `ℤ_[p] → integerRing L` is an isometry (it is the
 restriction of the scalar embedding `ℚ_[p] → L`). -/
 lemma norm_algebraMap_eq (x : ℤ_[p]) :
@@ -104,9 +105,11 @@ lemma norm_algebraMap_eq (x : ℤ_[p]) :
   change ‖algebraMap ℚ_[p] L (x : ℚ_[p])‖ = ‖x‖
   rw [norm_algebraMap', PadicInt.norm_def]
 
+omit [CompleteSpace L] in
 lemma isometry_algebraMap : Isometry (algebraMap ℤ_[p] (integerRing L)) :=
   AddMonoidHomClass.isometry_of_norm _ (norm_algebraMap_eq p L)
 
+omit [CompleteSpace L] in
 instance : IsBoundedSMul ℤ_[p] (integerRing L) :=
   .of_norm_smul_le fun r x => by
     rw [Algebra.smul_def]

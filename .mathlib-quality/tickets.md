@@ -1642,7 +1642,19 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   remain CLEANUP-FINAL scope).
 
 ### [TW4] Widen Toolbox.lean + UnitsZp.lean + Fubini.lean
-- **Status**: open | **Depends on**: CLEANUP-W1 | **Type**: refactor
+- **Status**: done (2026-06-10T19:40Z)
+- **Progress**: MeasureR/{Toolbox,UnitsZp,Fubini}.lean complete, ZERO sorries.
+  Toolbox: cmul/del/powCM + mahlerTransform_cmul_X + apply_powCM (Cor 3.25
+  over R; reuses de-privated PadicMeasure.mul_choose_eq through algebraMap),
+  charFnCM (moved to Basic, p-FREE — mathlib charFn is value-ring-parametric,
+  design improvement over the algebraMap detour), res/IsSupportedOn,
+  sigma/phi/psi + psi_phi/phi_psi/res_units_eq/Cor 3.32 (space-side digit/
+  shiftDiv/clopens reused from §3 — zero duplication). UnitsZp: extendByZero,
+  iota, iota_injective, res_iota, mem_range_iota_iff (= ker ψ). Fubini:
+  innerInt + integral_swap (the §3 approximation argument verbatim over R).
+  VERIFICATION: zero diagnostics all files; axioms standard (lean_verify
+  integral_swap); lake build green project-wide. CLEANUP: tooled-inline;
+  formal pass folded into CLEANUP-W2. | **Depends on**: CLEANUP-W1 | **Type**: refactor
 - **Contract**: W-r4 — space-side constructions re-parametrise mechanically
   (res/σ/φ/ψ/shiftDiv, units geometry, integral_swap). The §4-needed toolbox
   lemmas (φ-moment scaling, psi_phi_mul-projection formula in MuA.lean —

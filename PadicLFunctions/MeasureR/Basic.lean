@@ -86,6 +86,15 @@ lemma pushforward_apply (m : C(X, Y)) (μ : MeasureR K X) (f : C(Y, integerRing 
 lemma pushforward_dirac (m : C(X, Y)) (x : X) :
     pushforward K X Y m (dirac K X x) = dirac K Y (m x) := rfl
 
+/-- The indicator function of a clopen subset, valued in `integerRing K`
+(mathlib's `LocallyConstant.charFn` is parametric in the value ring). -/
+noncomputable def charFnCM {U : Set X} (hU : IsClopen U) : C(X, integerRing K) :=
+  (LocallyConstant.charFn (integerRing K) hU : C(X, integerRing K))
+
+@[simp]
+lemma charFnCM_apply {U : Set X} (hU : IsClopen U) (x : X) :
+    charFnCM K X hU x = U.indicator 1 x := rfl
+
 section compact
 
 variable {K X} [CompactSpace X]
