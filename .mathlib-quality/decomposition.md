@@ -1658,3 +1658,854 @@ incoherent without it).
 **Feasibility**: every §4 leaf is dischargeable from verified infrastructure; the two
 new clusters (Bernoulli/exp-substitution algebra L2.2–L2.6; integer-generator ascent
 L5.4) are bounded and self-contained. Ready for ticketing.
+
+---
+
+# §5 — Interpolation at Dirichlet characters (TeX 1610–1979) — added 2026-06-10
+
+## Skeleton location (§5)
+
+New-mathematics leaves are skeletonised with `:= by sorry` in:
+- `PadicLFunctions/Coefficients.lean` (integer ring of a nonarch field, roots-of-unity norms)
+- `PadicLFunctions/Interpolation/Characters.lean` (Dirichlet chars as functions on ℤ_p, Gauss sums)
+- `PadicLFunctions/Interpolation/Twist.lean` (twist μ_χ, character-twist transform, ξ-formulas cleared)
+- `PadicLFunctions/Interpolation/GenBernoulli.lean` (generalised Bernoulli numbers + F_{χ,a} moments)
+- `PadicLFunctions/Interpolation/TameConductor.lean` (Thm 5.1)
+- `PadicLFunctions/Interpolation/NonTame.lean` (F_η, μ_η, ζ_η, Thm 5.7)
+- `PadicLFunctions/Interpolation/Branches.lean` (ω, ⟨·⟩, ⟨x⟩^s, ζ_{p,i}, L_p, Thms 5.17/5.19)
+
+**Refactor-cluster exception (recorded deviation from Step 2.5).** The W-cluster
+below generalises the *existing* `Measure/*` files in place from `ℤ_[p]`-coefficients
+to a coefficient ring `R` (the integer ring of a nonarchimedean field `L`). The same
+declaration names keep their files; a parallel `sorry`-skeleton cannot coexist with
+the monomorphic originals. Step 2.5 is therefore realised for W as: (i) the genuinely
+*new* statements (Coefficients.lean) are skeletonised normally; (ii) each widening
+ticket carries the per-lemma risk register entry from this section instead of a
+skeleton pointer, and its DoD is "file builds with the `R`-parametrised signatures,
+zero sorries" — the existing §3 proof scripts are the evidence the dependency shape
+type-checks, and the risk register pins where they are ℤ_p-specific.
+
+## Coefficient conventions (binding for every §5 leaf)
+
+`(L : Type*)` a nonarchimedean coefficient field with the typeclass set
+`[NontriviallyNormedField L] [IsUltrametricDist L] [CompleteSpace L]` and a
+`ℤ_[p]`-algebra structure `[Algebra ℤ_[p] L] [IsBoundedSMul ℤ_[p] L]`-grade
+(exact spelling fixed at W1; the paper's "finite extension L/ℚ_p" instantiates it,
+and so does ℂ_p). `R := integerRing L` its norm-unit ball, `[NormMulClass L]`
+assumed where division-by-attained-norm is used. The paper fixes O_L once
+(TeX 1781: "Implicit in this theorem is the fact that the relevant Iwasawa algebra
+is defined over a (fixed) finite extension L/Q_p containing the values of η").
+Statements involving 1/p^n or 1/G(χ⁻¹) at p-power conductor are stated
+**denominator-cleared** over `R` (replan note R5-CLEAR below).
+
+### Replan note R5-CLEAR (T018/T026/T034 pattern; binding)
+The source's displays for `EqRestrictionFormula` (TeX 1126–1131), `Eqphipsi`
+(TeX 1135–1140), Lem 5.4 (TeX 1675–1678) carry the scalars `1/p^n` resp.
+`1/G(χ^{-1})`, which are **not** elements of `O_L` when the conductor is a p-power
+(G(χ)G(χ⁻¹) = χ(−1)p^n forces |G| = p^{-n/2}). Both sides of each identity are
+integral; only the displayed rearrangement is not. We state every such identity
+multiplied through by `p^n` resp. `G(χ⁻¹)`, which is equivalent over `L` and
+statement-level faithful (the cleared and displayed forms differ by multiplying by
+a nonzerodivisor). Blueprint nodes keep the source displays with a one-line note.
+
+## W: coefficient-widening cluster (API gap; gates everything)
+
+### Step 1 prose (source substrate)
+RJW fixes the coefficients once and for all in §3: "Let L be a finite extension of
+Q_p" (§3.1, TeX 680–690) and defines measures with values in O_L (Def 3.6,
+TeX 755–765: "the space of L-valued measures on G ... we say μ is an O_L-valued
+measure ... ∥μ∥ ≤ 1"); every §3 toolbox identity is stated over these coefficients.
+§§3–4 were developed at `R = ℤ_[p]` (plan.md Generality Decision 1, recorded risk:
+"the generalisation is parameter-insertion, not redesign"). §5 is where the source
+first *needs* the larger ring: Gauss sums and χ-values (Def 5.2) lie in
+ℚ_p(μ_{p^n}, values of χ) and Thm 5.7's Remark 2 (TeX 1781) makes the O_L-algebra
+explicit. The widening mirrors the source's own §3 generality; no new mathematics
+beyond the four ℤ_p-specific proof points in the risk register.
+
+### Risk register (per-lemma re-attack of the §3 proofs; the W-tickets' contract)
+- **W-r1** `norm_apply_le` (Basic.lean:109): current proof divides by `p^valuation`.
+  General route: sup attained at `x₀` (compactness, unchanged); set `c := f x₀ ∈ R`;
+  `g := fun x => (f x : L)/c` has `‖g x‖ ≤ 1` by maximality (needs `NormMulClass L`),
+  so `g ∈ C(X, R)` and `f = c • g`; conclude `‖μ f‖ = ‖c‖‖μ g‖ ≤ ‖f‖·‖μ g‖` —
+  same statement *up to* the constant `‖μ g‖`. ATTACK: the ℤ_p statement is
+  `‖μ f‖ ≤ ‖f‖` (operator norm ≤ 1, used for `LipschitzWith 1`); over `R` the same
+  bound needs `‖μ g‖ ≤ 1` for the *specific* `g`, which is `norm_apply_le` again —
+  circular! RESOLUTION (and the honest general statement): automatic boundedness is
+  `‖μ f‖ ≤ ‖f‖ * ‖μ‖₀` with `‖μ‖₀ := sup over the unit sphere`… which need not be
+  finite a priori. The ℤ_p proof in fact shows ≤ 1 because `‖μ g‖ ≤ 1` for `g` of
+  norm ≤ 1 REDUCES to boundedness on the unit ball, which over a *spherically
+  complete-free* route follows since `μ g ∈ R` has `‖μ g‖ ≤ 1` BY R-VALUEDNESS.
+  The codomain is `R` (the ball!), so `‖μ f‖ ≤ ‖c‖ · 1 = ‖f‖` — NOT circular: every
+  value of μ lies in R, norm ≤ 1. Verdict: statement and constant survive verbatim;
+  proof swaps `p^n`-division for `c`-division. (`‖f‖` attained in `‖L^×‖` requires
+  `f ≠ 0`; the `f = 0` and `IsEmpty X` branches as now.) SURVIVED.
+- **W-r2** density `exists_locallyConstant_norm_sub_le` (Basic.lean:191): current
+  proof factors through `toZModPow` on the *value* ring — ℤ_p-specific. Fubini.lean
+  (T018 replan) already proved the general-ultrametric-target approximation
+  `exists_locallyConstant_norm_sub_le'`; W re-bases Basic.lean's density (and its
+  `ext_locallyConstant` corollary) on that lemma, deleting the ℤ_p-specific proof.
+  ATTACK: T018' is stated for which domain/target? (Verified in file: domain any
+  profinite `X`, target any `[NormedAddCommGroup E] [IsUltrametricDist E]`; values
+  taken in the image — `R`-valued f gets `R`-valued approximants by construction.)
+  SURVIVED.
+- **W-r3** Mahler layer (MahlerTransform.lean): mathlib `mahlerEquiv` is already
+  E-general (MahlerBasis.lean:356). Our `mahlerCoeff/mahlerTransform/ofPowerSeries`
+  re-parametrise; the duality argument (coefficients of μ bounded by W-r1; for
+  `F ∈ R⟦T⟧`, `ofPowerSeries F` summability from `aₙ → 0`) is coefficient-agnostic.
+  ATTACK: `binomialSeries`/`Ring.choose` usage needs `BinomialRing R`? — no: the
+  binomial coefficients live in ℤ_[p] and act on R through the algebra map; the §3
+  proofs use `Ring.choose` on ℤ_[p] then `algebraMap`. The one genuinely
+  ℤ_p-flavoured input, `𝓐(δ_n) = (1+T)^n` via `binomialSeries_nat`, maps through.
+  SURVIVED (worker re-checks each `PadicInt.*` call site).
+- **W-r4** Toolbox/UnitsZp/Fubini/Λ(ℤ_p^×)-ring: space-side constructions
+  (pushforwards along `X`-maps, clopen indicators, `shiftDiv`, units geometry) —
+  coefficient-blind; convolution/Fubini re-run by W-r2/W-r3. The pseudo-measure
+  *theory* (zero-divisor lemma, augmentation ideal, Lem 3.38) is NOT widened — §5
+  never needs it over R (Thm 5.7 produces a genuine measure; ζ_p stays over ℤ_p and
+  is paired through base change W4). PseudoMeasure.lean is widened only in its
+  Λ(ℤ_p^×)-ring section.
+- **W-r5** §4 files: stay at `R := ℤ_[p]` via instantiation; no churn. ATTACK: do
+  the §4 call sites elaborate once Measure/* takes an `R` parameter with ℤ_[p]
+  default-instance? — the W-tickets keep `variable (R)`-explicit style with
+  `abbrev`-compatibility or update §4 call sites mechanically; DoD includes
+  `lake build PadicLFunctions` green project-wide.
+
+### New leaves (skeletonised in Coefficients.lean)
+- **W1** (leaf): `integerRing L : Subring L`, carrier `{x | ‖x‖ ≤ 1}` — closed under
+  `+` by `IsUltrametricDist.norm_add_le_max`, under `*` by submultiplicativity; with
+  `instNormedCommRing` (SubringClass), `instCompleteSpace` (closed subset),
+  `instIsUltrametricDist`, `Algebra ℤ_[p] (integerRing L)` (image of the ball under
+  the algebra map: `‖algebraMap ℤ_[p] L x‖ ≤ 1` — *hypothesis* on the algebra
+  structure, bundled into the typeclass spelling chosen at W1).
+  Source: TeX 690 "O_L its ring of integers". Mathlib check: `Valuation.integer`
+  exists for `Valued`; no norm-unit-ball `Subring` for `IsUltrametricDist` fields
+  found (grep 2026-06-10) — PR candidate. Attacks: [1] counterexample: closure
+  under + fails without ultrametric (archimedean |1+1|>1) — hypothesis necessary ✓;
+  [2] edge p=2: nothing p-specific in W1 ✓; [3] discharge: every instance named
+  above verified available (SubringClass.toNormedCommRing,
+  IsClosed.completeSpace_coe, ultrametric-subtype) by local search at skeleton
+  time. SURVIVED.
+- **W2** (leaf): `IsPrimitiveRoot.norm_sub_one_lt (hζ : IsPrimitiveRoot ζ (p^n))
+  (hn : 1 ≤ n) : ‖ζ - 1‖ < 1` (in L; hence `ζ - 1` topologically nilpotent in R).
+  Source: standard (RJW cites the analogous unit fact at TeX 1798 for the
+  coprime case; the p-power case is classical [Washington Lem. 1.x]). Route:
+  `x := ζ - 1`; `(1+x)^{p^n} = 1`; `v_p(binom(p^n, j)) = n - v_p(j) ≥ 1` for
+  `0 < j < p^n` (mathlib: `Nat.Prime.pow_dvd_choose`-family / Kummer), so
+  `x^{p^n} = -∑_{0<j<p^n} binom·x^j` has every RHS term of norm ≤ ‖p‖·max(1,‖x‖^j);
+  if `‖x‖ ≥ 1` then taking norms gives `‖x‖^{p^n} ≤ ‖p‖·‖x‖^{p^n-1} < ‖x‖^{p^n-1}`,
+  contradiction with `‖x‖ ≥ 1`. Attacks: [1] edge n=0: ζ = 1 excluded by `1 ≤ n`…
+  but ζ primitive p⁰ = 1-st root IS 1, and ‖0‖ < 1 ✓ holds anyway — hypothesis
+  `1 ≤ n` kept for the honest statement, noted droppable; [2] ζ = 1 (n ≥ 1,
+  p^n > 1): IsPrimitiveRoot excludes ✓; [3] NormMulClass needed? — only
+  submultiplicativity and `‖p‖ < 1` (from the ℤ_[p]-algebra normalisation);
+  `‖p‖ < 1` must be a recorded hypothesis of the typeclass spelling — ATTACK
+  SURFACED REAL CONSTRAINT: the algebra `ℤ_[p] → L` must be norm-compatible
+  (‖algebraMap x‖ = ‖x‖, or at least ‖p‖_L < 1); bundled into W1's spelling.
+  SURVIVED with the recorded constraint.
+- **W3** (leaf): `IsPrimitiveRoot.norm_sub_one_eq_one` — for `ζ` a primitive D-th
+  root, `p ∤ D`, `c` with `ζ^c ≠ 1`: `‖ζ^c - 1‖ = 1` (hence a unit of R).
+  Source (verbatim, TeX 1798): "and \epsilon_D^c -1 \in \roi_L^\times (since it
+  has norm dividing D)". Route: `∏_{0<j<D}(X - ζ^j) = (X^D-1)/(X-1)` at `X = 1`
+  gives `∏_{0<j<D}(1 - ζ^j) = D`; norms multiply (NormMulClass), each factor has
+  norm ≤ 1 (in R), and `‖D‖ = 1` since `p ∤ D` — so every factor has norm exactly 1.
+  Attacks: [1] needs ζ ∈ R (‖ζ‖ ≤ 1): ζ^D = 1 + NormMulClass forces ‖ζ‖ = 1 ✓;
+  [2] D = 1, 2 edges: D=1 vacuous (no c), D=2, ζ=−1, c=1: ‖−2‖: p odd ⟹ ‖2‖=1 ✓
+  (p = 2 EXCLUDED where this is used? — no: this lemma is p-free except ‖D‖ = 1
+  ⟸ p ∤ D ✓ fine for p = 2 with D odd; no silent p≠2 issue); [3] mathlib overlap:
+  `IsPrimitiveRoot.prod_one_sub` / cyclotomic-at-one lemmas exist
+  (`Polynomial.cyclotomic`-family) — discharge via `IsPrimitiveRoot.prod_pow_sub_one`
+  -shaped lemma if present, else the 8-line product argument. SURVIVED.
+- **W4** (leaf): scalar extension `baseChange : Λ_{ℤ_p}(X) →+* Λ_R(X)`-grade map
+  (at minimum: `PadicMeasure p X → PadicMeasureR R X` with
+  `baseChange μ f = ∑' n, (coeffs)` — definition via Mahler for `X = ℤ_p`
+  (transform-side: the coefficientwise inclusion `ℤ_p⟦T⟧ → R⟦T⟧`) and via
+  `C(X, ℤ_[p])`-density for general profinite X (extend μ R-linearly along
+  locally-constant approximation). Needed by: Thm 5.1 (pairing χ·x^k against the
+  ℤ_p-witnesses of ζ_p), §5.2 (comparing with §4's μ_a). Source: implicit
+  throughout §5.1 ("seen as a locally constant character of Z_p^×" pairing against
+  ζ_p, TeX 1620–1621). Attacks: [1] well-definedness of the density route =
+  uniform continuity of μ (W-r1) ✓; [2] ring-hom on Λ(ℤ_p): transform-side
+  inclusion is a ring hom of power series ✓ defeq-route; [3] compatibility
+  `baseChange (dirac x) = dirac x` — definitional on transforms ✓. SURVIVED.
+
+(Leaf-level source quotes for W: Def 3.6 TeX 755–765 — already quoted in the §3
+tree — and TeX 1781, 1798 quoted above; W is a generality pass over the §3 tree,
+whose per-leaf quotes remain the §3 entries'.)
+
+## R5.1: Interpolation at p-power conductor (RJW Thm 5.1, `thm:tame conductor`)
+
+### Source statement (verbatim, TeX 1619–1622)
+> "Let $\chi$ be a (primitive) Dirichlet character of conductor $p^n$ for some
+> integer $n \geq 1$ (seen as a locally constant character of $\Zp^\times$, cf.\
+> \S \ref{sec:dirichlet ideles}). Then, for $k > 0$, we have
+> $\int_{\Zp^\times}\chi(x)x^k \cdot\zeta_p = L(\chi,1-k)$."
+
+### Step 1 prose (the source's own proof, TeX 1623–1765, structure-preserving)
+The proof (TeX 1751–1765) composes: (a) since χ vanishes on pℤ_p,
+∫_{ℤ_p^×}χx^k·μ_a = ∫_{ℤ_p}χx^k·μ_a = ∫x^k·μ_{χ,a} where μ_{χ,a} is the twist
+(eq:twist by chi, TeX 1637–1640); (b) the integral is (∂^k F_{χ,a})(0)
+(`cor:eval at x^k`, §3 toolbox — our `apply_powCM` route); (c) F_{χ,a} is computed
+by Lem 5.4 (`lem:mahler chi`, TeX 1675–1692) whose proof decomposes χ-twist into
+residue-class restrictions and applies EqRestrictionFormula plus the two Gauss-sum
+properties of Rem 5.3; (d) the special value f^{(k)}_{χ,a}(0) =
+−(1−χ(a)a^{k+1})L(χ,−k) is the complex Lemma 5.5 (`lem:dirichlet integral`,
+TeX 1702–1740) via §2's thm:l-function — the same Mellin bridge §4 met at
+`kl-values-of-zeta`; p-adically the value is the generalised-Bernoulli number, and
+the §4 pattern (T030–T033: rational/algebraic value + quarantined complex bridge)
+applies, with Washington Ch. 4 / DS05 §4 as the cross-reference for the
+generalised-Bernoulli generating function (source-gap fallback step 1, recorded);
+(e) the shift x ↦ x⁻¹-twist and θ_a-cancellation as in §4's T036/T038 give the ζ_p
+statement: "∫χ(x)x^k·θ_a = −(1−χ(a)a^k)" (TeX 1760–1761) and hence the theorem.
+
+### Leaves (Characters.lean / Twist.lean / GenBernoulli.lean / TameConductor.lean)
+
+- **L5.1.1** (leaf): `DirichletCharacter.toContinuousMapZp` — for
+  `χ : DirichletCharacter R (p^n)`: the function `χ̃ : C(ℤ_[p], R)`,
+  `χ̃ x = χ (toZModPow n x)` (with junk χ(0)=0 off units built into MulChar),
+  + API: `toContinuousMapZp_apply_unit`, `_apply_of_mem_pZp` (= 0; here n ≥ 1),
+  `_mul` (χ̃(xy) = χ̃x·χ̃y), `IsLocallyConstant`.
+  - Source (TeX 1620): "(seen as a locally constant character of $\Zp^\times$)".
+  - Discharge: `PadicInt.toZModPow` + `MulChar.map_nonunit` + locally-constant
+    fibres of toZModPow (§3 Basic.lean `isLocallyConstant_toZModPow_val` pattern).
+  - Attacks: [1] n = 0 edge: conductor 1, χ trivial, χ̃ ≡ 1 ≠ 0 on pℤ_p — the
+    `_apply_of_mem_pZp` lemma carries `1 ≤ n` (the theorem's hypothesis, TeX 1620
+    "n ≥ 1") ✓ statement guarded; [2] `IsUnit (toZModPow n x) ↔ IsUnit x`-bridge
+    needed — discharge `PadicInt.isUnit_toZModPow_iff`-shape: local search at
+    skeleton; if absent, 6-line lemma via `isUnit_iff` norms; [3] multiplicativity
+    at non-units: χ̃(xy) with x unit, y not: both sides 0 ✓ MulChar.map_nonunit.
+    SURVIVED.
+- **L5.1.2** (leaf): `PadicMeasure.twist` — `(twist χ̃ μ) f := μ (χ̃ * f)` as
+  `Λ_R(ℤ_p) → Λ_R(ℤ_p)`, R-linear in μ and f-functorial; +
+  `twist_apply`, `twist_powCM` (∫x^k d(twist μ) = ∫χ̃x^k dμ).
+  - Source (verbatim, TeX 1637–1640): "If $\mu$ is a measure on $\Zp$, we define a
+    measure $\mu_{\chi}$ on $\Zp$ by $\int_{\Zp}f(x) \cdot\mu_{\chi} =
+    \int_{\Zp}\chi(x)f(x) \cdot\mu$."
+  - Discharge: definition + `LinearMap` bookkeeping (mul action on C(X,R) ✓ §3).
+  - Attacks: [1] needs C(ℤ_p,R) a ring with χ̃·f continuous ✓; [2] twist by a
+    *bounded* function keeps R-valuedness ✓ ‖χ̃‖ ≤ 1; [3] consistency with the
+    source's μ_χ supported on ℤ_p^× (TeX 1641): proven as L5.1.3, not assumed ✓.
+    SURVIVED.
+- **L5.1.3** (leaf): `twist_res_units` — `Res_{ℤ_p^×}(twist χ̃ μ) = twist χ̃ μ`
+  (n ≥ 1), the source's "as $\chi$ is supported on $\zpe$, the twisted measure
+  $\mu_{\chi}$ is automatically supported on $\zpe$" (TeX 1641).
+  - Discharge: §3 `res`-API + `χ̃·1_{pℤ_p} = 0` (L5.1.1) + Cor 3.32 (`ψ = 0`-side
+    or directly res∘twist computation on indicators).
+  - Attacks: [1] which form does TameConductor need — the integral form
+    `∫_{ℤ_p^×}χx^k μ = ∫_{ℤ_p}χx^k μ` (TeX 1752–1753): provable directly from
+    res_apply + indicator-multiplicativity; state THAT as the lemma ✓ reshaped to
+    the use site; [2] edge μ arbitrary (incl. non-unit-supported) ✓ holds by
+    χ̃-vanishing; [3] n = 0 fails (χ̃ ≡ 1) — `1 ≤ n` hypothesis ✓. SURVIVED.
+- **L5.1.4** (leaf): Gauss sum setup — `gaussSumRoot (hζ : IsPrimitiveRoot ζ (p^n))
+  (χ) : R := gaussSum χ (AddChar.zmodChar/zmod-construction at ζ)`; properties:
+  - (ii) = mathlib `gaussSum_mulShift_of_isPrimitive` (verified at
+    DirichletCharacter/GaussSum.lean:57, all `a : ZMod N`, `[IsDomain R]`).
+  - Source (verbatim, TeX 1647–1651, Def 5.2): "Let $\chi$ be a primitive Dirichlet
+    character of conductor $p^n$, $n \geq 1$. Define the \emph{Gauss sum of $\chi$}
+    as $G(\chi) \defeq \sum_{c\in(\Z/p^n\Z)^\times} \chi(c) \epsilon_{p^n}^c$" —
+    and (TeX 1653–1659, Rem 5.3): "(i) $G(\chi) G(\chi^{-1}) = \chi(-1) p^n.$
+    (ii) $G(\chi) = \chi(a) \sum_{c \in (\Z / p^n \Z)^\times} \chi(c)
+    \epsilon_{p^n}^{ac}$ for any $a \in \zpe$."
+  - Note: mathlib's `gaussSum` sums over ALL of ZMod N; χ(non-unit) = 0 makes it
+    equal the source's unit-restricted sum ✓ definitional bridge lemma.
+  - Attacks: [1] the AddChar-from-root construction at general N: verify name
+    (`AddChar.zmod`-family, LegendreSymbol/AddCharacter.lean `zmodChar` is
+    ℤ/2^?-specific — at skeleton, search `AddChar.mk`-from-`IsPrimitiveRoot`; if
+    absent it is a 10-line leaf L5.1.4a: `ZMod N → R`, `a ↦ ζ^(a.val)`,
+    additivity from ζ^N = 1 — `ZMod.pow_totient`… standard); its primitivity
+    (needed by mathlib's (ii)) ⟸ ζ primitive — small lemma; [2] (ii)'s
+    `[IsDomain R]`: R = integerRing L of a field IS a domain ✓ instance; [3] the
+    ε-SYSTEM (ε_{p^{n+1}}^p = ε_{p^n}, TeX 1650) — §5.1 only ever uses ONE level n
+    at a time (the system matters for compatibility across n in later sections);
+    parametrising by `IsPrimitiveRoot ζ (p^n)` per-statement is faithful here;
+    recorded so §8+ (Coleman) revisits. SURVIVED.
+- **L5.1.5** (leaf, gap→PR candidate): `gaussSum_mul_gaussSum_inv` — for χ
+  primitive mod N, e primitive AddChar, R a domain:
+  `gaussSum χ e * gaussSum χ⁻¹ e⁻¹ = N` (mathlib has this only for N prime/field).
+  - Source: Rem 5.3(i) (quote above; source's display = this × the
+    `e⁻¹ = e.mulShift (−1)`-unfolding absorbing χ(−1)).
+  - Route (4 sums): G(χ,e)·G(χ⁻¹,e⁻¹) = Σ_b χ⁻¹(b)e(−b)·G(χ,e)
+    = Σ_b e(−b)·gaussSum χ (e.mulShift b)   [mathlib (ii), backwards]
+    = Σ_b Σ_a χ(a) e(ab − b) = Σ_a χ(a) Σ_b e(b(a−1)) = N·χ(1) = N
+    [primitive-e orthogonality Σ_b e(bc) = N·δ_{c,0} — the `sum_mulShift`
+    ingredient used by the field proof, generality re-verified at skeleton].
+  - Attacks: [1] χ⁻¹(b)-vs-gaussSum-mulShift orientation: (ii) gives
+    `gaussSum χ (e.mulShift b) = χ⁻¹(b) gaussSum χ e` for ALL b incl. non-units
+    (where both sides are 0 only if e primitive… for b non-unit LHS is a Gauss sum
+    at an imprimitive char = 0 by `gaussSum_eq_zero_of_isPrimitive_of_not_isPrimitive`
+    ✓ and χ⁻¹(b) = 0 ✓) — the b-sum over all of ZMod N is legitimate ✓;
+    [2] domain needed only through mathlib's (ii) ✓; [3] N = 1 edge: G(1,1) = 1,
+    product = 1 = N ✓. SURVIVED.
+- **L5.1.6** (leaf): `mahlerTransform_charTwist` — the z-twist formula, cleared
+  form. For `r ∈ R` topologically nilpotent with character `κ_r` (mathlib
+  `PadicInt.addChar_of_value_at_one`), and μ ∈ Λ_R(ℤ_p):
+  `𝓐(κ_r · μ) = PowerSeries.eval₂ (C-inclusion) ((1+T)·(1+r) − 1) (𝓐 μ)`
+  (evaluation into S := R⟦T⟧ with WithPiTopology; constant term r top-nilpotent).
+  - Source (TeX 1084–1090, the deferred z-twist): "if z ∈ 𝓞_{ℂp} with |z−1| < 1…
+    the measure z^x μ has Mahler transform 𝓐_μ((1+T)z − 1)" (§3.5; deferral note
+    plan.md "Deferred" row 4 — comes due here).
+  - Route: coefficientwise, T009/T014 pattern: LHS_n = μ(κ_r·binom(·,n));
+    κ_r = Σ_m binom(·,m) r^m (the AddChar.lean construction is literally this
+    Mahler series); product-of-binomials expansion + Chu–Vandermonde regroups to
+    the eval₂ coefficient. Dirac sanity: μ = δ_m ⟹ both sides z^m(1+T)^m.
+  - Attacks: [1] instance stack for eval₂ (IsLinearTopology R⟦T⟧, complete, T2):
+    WithPiTopology over R-with-norm-topology — R's topology linear (balls are
+    ideals of R: `‖x‖ ≤ ε`-sets ✓ ultrametric+submult) — instance leaf L5.1.6a in
+    Coefficients.lean (`IsLinearTopology R R` for integerRing; ~15 LOC) +
+    mathlib's PiTopology instances (verified present in
+    MvPowerSeries/{Topology,Evaluation}); [2] continuity of the coefficient
+    inclusion `R → R⟦T⟧`-vs-φ argument of eval₂ ✓ C is continuous coefficientwise;
+    [3] alternative if eval₂ plumbing fights: state the RHS coefficientwise
+    (`coeff n (RHS) = Σ_m binom(m+?,?)…`-explicit) — BOTH routes recorded, worker
+    picks; the STATEMENT in the skeleton uses eval₂ (source-shaped). SURVIVED.
+- **L5.1.7** (leaf): `res_class_eq_sum_twists` (EqRestrictionFormula, cleared) —
+  for `hζ : IsPrimitiveRoot ζ (p^n)`, b : ZMod (p^n), μ ∈ Λ_R(ℤ_p):
+  `(p^n : R) • 𝓐(Res_{b+p^nℤ_p} μ) = ∑_{c ∈ ZMod (p^n)} ζ^{-bc} • 𝓐(κ_{ζ^c−1}·μ)`
+  (with 𝓐(κ·μ) as in L5.1.6; equivalently before transform, as measures).
+  - Source (verbatim, TeX 1126–1131): "Res_{b + p^n\Zp}(\mu) = … \frac{1}{p^n}
+    \sum_{\xi \in \mu_{p^n}} \xi^{-b} (z^x\mu)|_{z = \xi}" [EqRestrictionFormula
+    display] — cleared per R5-CLEAR.
+  - Route: measure-side orthogonality: Σ_{c} ζ^{(x−b)c} = p^n·1_{x ≡ b (p^n)}
+    pointwise on ℤ_p (finite geometric sum; x ≡ b detection through toZModPow n),
+    then integrate. 1_{b+p^nℤ_p} is the §3 clopen-indicator.
+  - Attacks: [1] ζ^{(x−b)c} for x ∈ ℤ_p: meaning is κ_{ζ^c−1}(x)·ζ^{-bc} —
+    well-formed via the AddChar (ζ^x := κ(x)) ✓ no ad-hoc exponentials;
+    [2] orthogonality at x ∉ b+p^n: Σ_c (ζ^{x−b})^c = 0 needs ζ^{x−b} ≠ 1 i.e.
+    toZModPow n x ≠ b and ζ primitive ✓ + geometric-sum-zero (ω^N=1, ω≠1 ⟹ Σ=0:
+    `IsPrimitiveRoot`-adjacent, in mathlib as `IsPrimitiveRoot.geom_sum_eq_zero`?
+    verify at skeleton; else 5 lines); [3] does §5.1 need general b or only the
+    χ-summed version? Lem 5.4's proof needs per-b — keep ✓. SURVIVED.
+- **L5.1.8** (internal): `mahler_twist_formula` (RJW Lem 5.4, cleared) — for χ
+  primitive mod p^n (n ≥ 1), ζ primitive p^n-th root:
+  `gaussSumRoot ζ χ⁻¹ • 𝓐(twist χ̃ μ) = χ(−1)•∑_{c units} χ⁻¹(c) • 𝓐(κ_{ζ^c−1}·μ)`
+  — equivalently the source display × G(χ⁻¹), using (i) to absorb p^n.
+  - Source (verbatim, TeX 1675–1678): "The Mahler transform of $\mu_{\chi}$ is
+    $\Am_{\mu_\chi}(T) = \frac{1}{G(\chi^{-1})}\sum_{c \in (\Z/p^n \Z)^\times}
+    \chi(c)^{-1}\Am_{\mu} \big( (1+T)\epsilon_{p^n}^c - 1 \big)$."
+  - Composition (mirrors source proof TeX 1680–1692): χ̃ = Σ_c χ(c)1_{c+p^n}
+    (L5.1.1 locally-constant decomposition) ⟹ twist = Σ_c χ(c)Res_{c+p^n};
+    apply L5.1.7, swap sums, recognise G(χ) via L5.1.4(ii) at the inner sum
+    (`Σ_b χ(b)ζ^{-bc} = χ(−c)⁻¹·…`-shape — exactly the source's second display,
+    TeX 1685–1690), then (i)=L5.1.5 to trade G(χ)p^{-n} for χ(−1)/G(χ⁻¹), cleared.
+  - Attacks (composition): [1] sum-swap finite ✓; [2] the χ(−c)⁻¹ bookkeeping has
+    a sign trap (χ(−1)-factor): END-TO-END TRACE at p^n = 3, χ the quadratic
+    character mod 3, μ = δ_1: LHS: twist χ̃ δ_1 = χ(1)δ_1 = δ_1, transform (1+T);
+    G(χ⁻¹) = G(χ) = ζ − ζ² (χ(1)=1, χ(2)=−1); RHS = χ(−1)Σ_c χ(c)[𝓐(κ_{ζ^c−1}δ_1)]
+    = −[χ(1)ζ(1+T) − χ(2)ζ²(1+T)] − wait κ_{ζ^c−1}δ_1 transform = ζ^c(1+T):
+    RHS = χ(−1)[ζ(1+T) − ζ²(1+T)] = −(ζ−ζ²)(1+T) [χ(−1) = χ(2) = −1].
+    LHS = (ζ−ζ²)(1+T)?? MISMATCH of sign ⟹ the cleared statement must carry
+    χ(−1) on the LHS or use G(χ⁻¹)-on-the-other-side: re-derive: source:
+    𝓐_{μχ} = (1/G(χ⁻¹))Σ_c χ⁻¹(c)𝓐_μ((1+T)ζ^c−1). Cleared: G(χ⁻¹)·𝓐_{μχ}
+    = Σ_c χ⁻¹(c)·𝓐(κ-twists). Trace: G(χ⁻¹) = ζ−ζ²; LHS = (ζ−ζ²)(1+T);
+    RHS = Σ_c χ⁻¹(c)ζ^c(1+T) = (χ(1)ζ + χ(2)ζ²)·(1+T) = (ζ−ζ²)(1+T) ✓✓ EQUAL —
+    my χ(−1)-in-the-statement draft above was WRONG; the cleared form is the
+    PLAIN multiply-through `G(χ⁻¹) • 𝓐(twist) = Σ_c χ⁻¹(c) • (κ-twist transforms)`
+    with NO extra sign; the χ(−1)/p^n appear only INSIDE the proof when
+    converting the L5.1.7 p^n-cleared identity (which divides by G(χ)G(χ⁻¹)
+    = χ(−1)p^n — in cleared bookkeeping: multiply L5.1.7's χ-summed form by
+    χ(−1)G(χ⁻¹)² …; the worker follows the algebra; the trace pins the final
+    statement). Statement fixed in skeleton per the trace. ATTACK [2] CAUGHT a
+    real statement bug at planning time — exactly Phase 1e's purpose.
+    [3] both (i) and (ii) at level p^n verified available (L5.1.4/L5.1.5) ✓.
+    SURVIVED (statement corrected by trace).
+- **L5.1.9** (leaf): generalised Bernoulli numbers — `genBernoulli χ k : R`-field…
+  in L: `genBernoulli (χ : DirichletCharacter L N) (k : ℕ) : L :=
+  N^{k-1}·Σ_{c=0}^{N-1} χ(c)·(Polynomial.bernoulli k).eval (c/N : L)`-shape
+  (B_{k,χ}, Washington §4.1/DS05) + API (`genBernoulli_one_eq` reduction to
+  bernoulli at χ = 1-level-1; parity vanishing `genBernoulli_eq_zero_of_…`
+  deferred to where needed).
+  - Source: not displayed in RJW §5 (the source routes through L(χ,−k) and
+    thm:l-function); cross-reference (fallback chain step 1): Washington,
+    *Introduction to Cyclotomic Fields*, §4.1–4.2: "B_{n,χ} defined by
+    Σ_{a=1}^{f} χ(a) t e^{at}/(e^{ft} − 1) = Σ B_{n,χ} t^n/n!" and Thm 4.2:
+    "L(1−n, χ) = −B_{n,χ}/n". Our definition uses the equivalent
+    Bernoulli-polynomial form (Washington Prop 4.1: B_{n,χ} =
+    f^{n−1}Σ_a χ(a)B_n(a/f)); equivalence is internal bookkeeping.
+  - Attacks: [1] c/N needs N invertible in L ✓ char-0 field; [2] which Bernoulli
+    convention: Polynomial.bernoulli uses `bernoulli` (B₁ = −1/2); Washington's
+    B_{n,χ} for χ = 1 (f = 1) gives B_n(0)?? — B_n(0) = bernoulli n EXCEPT the
+    χ=1 comparison to ζ wants… the χ-trivial case reduces to RJW's own
+    `zetaNeg` (§4): consistency lemma `genBernoulli_trivial : genBernoulli 1 k
+    = (-1)^?·bernoulli k`-shape pinned by cross-checking against L(1,−k) sign at
+    k=1,2 numerically AT SKELETON TIME (B_{1,1} = 1/2 = bernoulli' 1: Washington
+    f=1: B_n(a/f) at a=1?? Σ_{a=1}^{1}χ(a)B_n(a/1) = B_n(1) = bernoulli' n ✓ so
+    trivial-χ gives bernoulli' — consistent with ζ(−n) = −B'_{n+1}/(n+1) ✓ and
+    the a-range 1..f (not 0..f−1) MATTERS; skeleton uses Σ_{a=1}^{N} ✓);
+    [3] χ primitive vs any level: define at any level (Washington does);
+    primitivity only in interpolation statements. SURVIVED (a-range pinned).
+- **L5.1.10** (internal): `twistMuA_moments` — the p-adic value computation:
+  for χ primitive mod p^n, n ≥ 1, a coprime to p (and to keep §4's setup, p odd
+  where μ_a does):
+  `G(χ⁻¹) • ∫ x^k d(twist χ̃ (μ_a)_R) = G(χ⁻¹) • (−(1 − χ(a)a^{k+1})·(−genBernoulli χ (k+1)/(k+1)))`-cleared-shape — i.e. ∂^k at 0 of L5.1.8's RHS
+  equals the Washington-style value; skeleton states the sane cleared form
+  `∫χ̃x^k dμ_a = −(1−χ(a)a^{k+1})·LvalNeg χ k` with
+  `LvalNeg χ k := −genBernoulli χ (k+1)/(k+1) : L` and the integral L-valued
+  (pairing through baseChange W4; G-clearing only inside the proof).
+  - Source (TeX 1707–1711, Lem 5.5 statement, verbatim):
+    "$f_{\chi,a}^{(k)}(0) = -\big(1-\chi(a)a^{k+1}\big)L(\chi,-k)$ if
+    $\chi(-1) (-1)^k = -1$; $0$ if $\chi(-1)(-1)^k = 1$" — note BOTH branches
+    are `−(1−χ(a)a^{k+1})L(χ,−k)` once L(χ,−k) = 0 in the even case (source's
+    own Remark TeX 1744–1746) — the Lean statement is the uniform formula with
+    `LvalNeg`; the parity-vanishing of `LvalNeg` is L5.1.11.
+  - Composition: ∂^k(0) of the cleared Lem 5.4 RHS for μ = μ_a: each term
+    𝓐(κ_{z}·μ_a)|-derivatives at 0: ∂ = (1+T)d/dT (§3); the §4 T033 machinery
+    computed ∂^k F_a(0) via the e^t-generating-function in ℚ_p⟦t⟧; here the
+    analogous computation over L⟦t⟧: G(χ⁻¹)Σ_c χ⁻¹(c)F_a((1+T)ζ^c−1) under
+    e^t = 1+T becomes Σ-of-shifted-exponential-series whose Taylor coefficients
+    are the B_{k,χ}-generating function (Washington §4.2's manipulation) ×
+    Euler-factor bookkeeping for the a-smoothing. Sub-decomposition (skeleton
+    leaves, GenBernoulli.lean): L5.1.10a generating-function identity
+    `Σ_{c=1}^{p^n} χ(c)·t·e^{ct}/(e^{p^n t}−1) = Σ_k genBernoulli χ k·t^k/k!`
+    (formal, in L⟦t⟧; Washington's defining identity ↔ our polynomial def —
+    finite-sum Bernoulli-polynomial bookkeeping, `bernoulliPowerSeries`-based,
+    T031-pattern); L5.1.10b the χ-twisted F_a-expansion: the cleared Lem-5.4-RHS
+    at e^t = 1+T equals
+    `Σ_c χ⁻¹(c)G(χ⁻¹)·[1/(e^tζ^c·…)]`… realised as: ζ^c-shifted geometric
+    cancellations — the SOURCE's own display (TeX 1697): F_{χ,a}(T) =
+    (1/G(χ⁻¹))Σ_c χ(c)⁻¹[1/((1+T)ζ^c−1) − a/((1+T)^aζ^{ac}−1)]; cleared and
+    multiplied by the unit-denominators: T031-pattern clearing
+    `((1+T)ζ^c − 1)`-factors are UNITS?? — NO: |ζ^c − 1| < 1 (W2) so NOT units:
+    handled exactly as §4's F_a: cleared characterising identity
+    `((1+T)^{p^n}−1)·[stuff]`… the common denominator (1+T)^{p^n}−1 works since
+    ζ^{c·p^n} = 1: (1+T)ζ^c−1 divides (1+T)^{p^n}−1 in R⟦T⟧ ⟸ product formula
+    Π_c((1+T)ζ^c−1) = (1+T)^{p^n}−1 (the W3-style cyclotomic product, p-power
+    case) — sub-leaf L5.1.10c. The worker-facing contract: the moments
+    statement above + these three sub-leaf identities; assembly is §4-T033-style
+    derivative bookkeeping.
+  - Attacks: [1] END-TO-END SANITY at χ quadratic mod 3 (p=3, a=2, k=1):
+    numeric check of `∫χx dμ₂ = −(1−χ(2)·4)·(−B_{2,χ}/2)`: B_{2,χ} =
+    3^{1}·[χ(1)B₂(1/3)+χ(2)B₂(2/3)] = 3[(1/9−1/3·... )−(4/9−2/3+1/6−…)]:
+    B₂(x) = x²−x+1/6: B₂(1/3) = 1/9−1/3+1/6 = −1/18; B₂(2/3) = 4/9−2/3+1/6 =
+    −1/18; B_{2,χ} = 3·[−1/18 − (−1/18)·(−1)?? χ(2) = −1: 3[−1/18·1 +
+    (−1)·(−1/18)] = 3·0 = 0?? — χ quadratic mod 3 is ODD (χ(−1) = χ(2) = −1);
+    B_{2,χ} = 0 for parity reasons (k+1 = 2 even vs χ odd ⟹ vanishing ✓
+    consistent with L5.1.11 parity: nonvanishing needs χ(−1)(−1)^{k+1}… the
+    k=1, χ-odd moment: χ(−1)(−1)^1 = (−1)(−1) = +1 ⟹ the value is 0 — and
+    LHS ∫χx dμ₂: trace via μ₂ = [witness]… both sides 0 ✓ consistent;
+    parity-machinery confirmed live. Pick the NONVANISHING check k=2:
+    B_{3,χ} = 9[χ(1)B₃(1/3) − B₃(2/3)]: B₃(x) = x³−(3/2)x²+(1/2)x:
+    B₃(1/3) = 1/27−1/6+1/6 = 1/27; B₃(2/3) = 8/27−2/3+1/3 = 8/27−1/3 = −1/27;
+    B_{3,χ} = 9[1/27+1/27] = 2/3; value −(1−χ(2)2³)(−B_{3,χ}/3) =
+    −(1+8)(−2/9) = 2. Measure side: ∫χx²dμ₂ over ℤ₃ — μ₂ has moments
+    ∫x^k μ₂ = (−1)^k(1−2^{k+1})ζ(−k)-pattern… full numeric trace deferred to
+    the worker's first regression (#eval-style sanity via finite-level approx is
+    NOT available; instead the worker re-derives the k=2 value through the
+    generating function — the planning-time check above validates the
+    STATEMENT's shape and parity wiring) — recorded as ticket acceptance step;
+    [2] composition gap: does L5.1.8 + ∂^k REALLY need eval₂-functoriality of
+    ∂ (∂ commutes with the κ-twist substitution)? — ∂-of-eval₂ chain rule:
+    avoided by computing moments via `twist_powCM` (L5.1.2) on the MEASURE side
+    then L5.1.8 only as the bridge to the t-side generating function — the §4
+    T033 proof shape (measure moments ↔ power-series derivatives at 0 via
+    `apply_powCM`) — composition re-checked: types line up through W4-baseChange
+    ✓; [3] the `(μ_a)_R` base change commutes with twist/Res/ψ — small
+    naturality leaves, folded into W4's API (recorded there). SURVIVED.
+- **L5.1.11** (leaf): parity vanishing `genBernoulli_eq_zero` —
+  `χ(−1)·(−1)^k = 1 → genBernoulli χ k... ` precise: B_{k,χ} = 0 when
+  χ(−1) ≠ (−1)^k (k ≥ 2-grade care at χ trivial).
+  - Source (TeX 1744–1746): "we recover the well-known fact that $L(\chi,-k) = 0$
+    if $\chi(-1)(-1)^k = 1$" (+ proof's reflection argument TeX 1731–1739).
+  - Route: c ↦ N−c involution on the defining sum + B_k(1−x) = (−1)^k B_k(x)
+    (mathlib: `Polynomial.bernoulli_eval_one_sub`? verify; classical identity).
+  - Attacks: [1] χ trivial & k = 1: B_{1,1} = 1/2 ≠ 0 and χ(−1)(−1) = −1 ✓
+    excluded by the hypothesis ✓; [2] c = 0/c = N endpoint double-count in the
+    involution: the a-range 1..N from L5.1.9 makes c ↦ N−c map {1..N−1} to
+    itself + fixed handling of c = N (χ(N) = χ(0) = 0 for N > 1) ✓;
+    [3] needs (−1)^k B_k(x)-identity in mathlib — `bernoulli_eval_one_sub`
+    verified-or-12-lines. SURVIVED.
+- **L5.1.12** (internal): **Thm 5.1 assembly** `padicZeta_twisted_moments` —
+  statement (ζ_p-witness form, mirroring T038/T039's moment encoding):
+  for χ primitive mod p^n (n ≥ 1), p odd, k > 0, b ≔ the §4 generator-witness
+  quantification: `∀ witnesses ν of ([b]−[1])·ζ_p: ∫χ̃x^k dν_R =
+  (χ(b)b^k − 1)·LvalNeg χ (k−1)`-shape, plus the headline reading
+  `∫_{ℤ_p^×}χx^k·ζ_p = L(χ,1−k)` as docstring/blueprint gloss; concretely the
+  θ_a-form is the proved engine: `∫χ̃x^k d(θ_a)_R = −(1−χ(a)a^k)·LvalNeg χ (k−1)`
+  (the source's own display TeX 1760–1761, verbatim: "By definition, we have
+  $\int_{\Zp^\times}\chi(x)x^k \cdot\theta_a = -(1-\chi(a)a^{k})$" — note the
+  source elides the L-factor there; the preceding display TeX 1757–1759 carries
+  it: "$\int_{\Zp^\times}\chi(x)x^k \cdot x^{-1}\mu_a = -(1-\chi(a)a^{k})L(\chi,1-k)$").
+  - Composition: L5.1.3 (units-restriction trivial for χ-twist) + L5.1.10
+    (moments of twist μ_a) + §4's x⁻¹-twist machinery (T036 zetaNum pattern:
+    x·(x⁻¹μ)-bookkeeping under twist: χ(x)x^k·x⁻¹μ_a-identities) + W4
+    naturality + uniqueness-free (5.1 is a value statement, no ∃!).
+  - Attacks: [1] k > 0 vs k−1 ≥ 0 indexing ✓ destructure k = k'+1 (HANDOVER
+    gotcha); [2] the (1−p^{k−1})-Euler factor: ABSENT in Thm 5.1 (χ ramified ⟹
+    no Euler factor — consistency: source remark at TeX 1861 "if $\chi$ is
+    non-trivial, then $\mu_\theta$ is already supported on $\Zp^\times$; but
+    this is consistent, as $\theta(p) = 0$"); our route never inserts one ✓;
+    [3] interaction with §4's `padicZeta` defined at ℤ_p-coefficients: the
+    witness pairing is THROUGH baseChange; the b-quantification must match
+    T038's exact encoding — skeleton copies T039's statement shape with the
+    χ̃-factor inserted. SURVIVED.
+
+## R5.2: Non-trivial tame conductors (RJW Thm 5.7, `thm:nontame`)
+
+### Source statement (verbatim, TeX 1773–1776)
+> "Let $D > 1$ be any integer coprime to $p$, and let $\eta$ denote a (primitive)
+> Dirichlet character of conductor $D$. There exists a unique measure
+> $\zeta_\eta \in \Lambda(\Zp^\times)$ such that, for all primitive Dirichlet
+> characters $\chi$ with conductor $p^n$, $n \geq 0$, and for all $k > 0$, we have
+> $\int_{\Zp^\times} \chi(x) x^k \cdot\zeta_{\eta} = \big(1 - \chi \eta(p)
+> p^{k-1}\big) L(\chi \eta,1-k)$."
+
+### Step 1 prose (source proof, TeX 1785–1875)
+The source gives "only the main ideas" (TeX 1786: "the proof of Theorem
+\ref{thm:nontame} is a good exercise") — per Phase 1e the gaps are expanded
+here and each expansion is a leaf. Chain: (1) define F_η (EquationFeta, TeX
+1793–1795) — an honest element of O_L⟦T⟧ because each (1+T)ε_D^c − 1 is a UNIT
+(constant term ε_D^c − 1 ∈ O_L^×, TeX 1798's parenthetical, = W3) — and μ_η its
+measure; (2) Lem 5.9 (TeX 1801–1807): ∫x^k μ_η = L(η,−k), "proved in a similar
+manner to Lemma 5.5" — p-adically: the F_η Taylor coefficients give the
+generalised Bernoulli values (GenBernoulli cluster, η-instance — NO clearing
+needed since G(η⁻¹), D ∈ R^×); (3) Lem 5.10 ψ(F_η) = η(p)F_η (TeX 1812–1827)
+via the trace identity (TeX 1818); (4) Lem 5.11 (TeX 1831–1843):
+Res_{ℤ_p^×}μ_η = μ_η − η(p)φμ_η and ∫x^k φμ = p^k∫x^k μ ⟹
+∫_{ℤ_p^×}x^k μ_η = (1−η(p)p^k)L(η,−k); (5) μ_θ := (μ_η)_χ, Lem 5.12 transform
+formula (TeX 1849–1852) "Using Lemma 5.4, we find easily"; the χ-twisted moments
+"Via a calculation essentially identical to the cases already seen" (TeX 1854–
+1856) and Res-formula (TeX 1858–1861); (6) ζ_η := x⁻¹Res_{ℤ_p^×}(μ_η)
+(Def, TeX 1866–1868) and the final display (TeX 1870–1873); uniqueness from
+density of the twisted monomials (the source treats it as implicit in "unique
+measure" — expanded as L5.2.8).
+
+### Leaves (NonTame.lean; coefficient field L ⊇ μ_D + values of η)
+
+- **L5.2.1** (leaf): `etaDenomUnit` — for ζ_D primitive D-th root in R, c with
+  D ∤ c: `IsUnit ((ζ_D^c) • (X+1) - 1 : R⟦X⟧)`-shape via constant-coeff unit
+  (W3 + `PowerSeries.isUnit_iff_constantCoeff`, already used in §4).
+  Source: TeX 1798 (quoted at W3). Attacks: [1] c ≡ 0 (mod D): ζ^c = 1, const
+  coeff 0, NOT a unit — η(c) = 0 kills those terms in F_η; the def sums over
+  units c only ✓ guard in statement; [2] (X+1) vs (1+X) orientation ✓ cosmetic;
+  [3] discharge: `isUnit_iff_constantCoeff` verified (Inverse.lean:111, plan.md
+  §4 table). SURVIVED.
+- **L5.2.2** (leaf): `muEta : Λ_R(ℤ_p)` — `muEta := −G(η⁻¹)⁻¹-unit • Σ_{c units}
+  η⁻¹(c) • (inverse measure of L5.2.1)` — via 𝓐⁻¹ (ofPowerSeries); G(η⁻¹) unit:
+  L5.1.5 at level D (`G(η)G(η⁻¹) = ±D`, ‖D‖ = 1) + `‖G‖ ≤ 1`-integrality both
+  factors ⟹ unit (norm-1) — sub-leaf `gaussSum_isUnit_of_coprime`.
+  Source (verbatim, TeX 1793–1795): "$F_{\eta}(T) \defeq \frac{-1}{G(\eta^{-1})}
+  \sum_{c \in (\Z/D\Z)^\times} \frac{\eta(c)^{-1}}{(1 + T)\epsilon_{D}^c - 1}$"
+  and TeX 1798: "There is therefore a measure $\mu_{\eta} \in \Lambda(\Zp)$ …
+  corresponding to $F_{\eta}$ under the Mahler transform."
+  Attacks: [1] the sign −1 placement ✓ source's; [2] D = 1 edge excluded
+  (D > 1 hypothesis, TeX 1773) — at D = 1 the c-sum is over {1}, ζ_D = 1,
+  denominator (1+T)−1 = T not a unit — hypothesis NECESSARY ✓ recorded;
+  [3] η⁻¹ vs χ(c)^{-1} = χ⁻¹(c) for MulChar with values in a field where χ(c)
+  can be 0: mathlib's χ⁻¹ handles (inv-char := χ∘(·⁻¹)… verified MulChar.inv
+  semantics at skeleton). SURVIVED.
+- **L5.2.3** (leaf): `muEta_moments` — `∫x^k d(muEta) = LvalNeg η k` i.e.
+  −B_{k+1,η}/(k+1) (Lem 5.9's second half; first half L(f_η,s) = −η(−1)L(η,s)
+  is the complex bridge, quarantined as L5.2.9).
+  Source (verbatim, TeX 1801–1804): "We have $L(f_\eta,s) = -\eta(-1)L(\eta,s).$
+  Hence for $k \geq 0$ we have $\int_{\Zp}x^k \cdot\mu_\eta = L(\eta,-k)$."
+  Route: ∂^k F_η(0) through the η-instance of the generating-function cluster
+  (L5.1.10a at modulus D; the geometric expansion TeX 1797 is the worker's
+  guide: each unit-denominator term expands honestly in R⟦T⟧).
+  Attacks: [1] k = 0 included (k ≥ 0 here vs k > 0 in 5.1) ✓ statement matches
+  source; [2] parity: B_{k+1,η} vanishing handled by L5.1.11, no contradiction
+  with the formula (both sides 0) ✓; [3] the −η(−1)-factor of the f_η-side does
+  NOT enter the p-adic statement (it is absorbed in the Mellin normalisation of
+  the complex side) — confirmed by source's "Hence" giving the clean
+  ∫x^k μ_η = L(η,−k) ✓. SURVIVED.
+- **L5.2.4** (leaf): `psi_muEta` — ψ(μ_η) = η(p)·μ_η (RJW Lem 5.10).
+  Source (verbatim, TeX 1812–1813): "We have $\psi(F_\eta) = \eta(p)F_\eta$."
+  **Recorded replan (R3/T034 pattern).** The source proves this by the μ_p-trace
+  identity (TeX 1818) inside (φ∘ψ)-Eqphipsi — which over R requires μ_p ⊂ L,
+  a hypothesis the STATEMENT does not need. The ξ-free route (the cleared form
+  of the source's own partial-fraction identity, as in R3):
+  let γ_c := (ε^c δ_1 − δ_0)⁻¹ ∈ Λ_R (L5.2.1/L5.2.2), A_c := ε^{pc}δ_1 − δ_0.
+  (i) geometric telescope in Λ_R:
+      φ(A_c)·γ_c = Σ_{j<p} ε^{jc}δ_j   [since ((1+T)^pε^{pc}−1) =
+      ((1+T)ε^c−1)·Σ_{j<p}((1+T)ε^c)^j — the cleared trace identity];
+  (ii) apply ψ + projection formula (W-widened psi_phi_mul):
+      A_c·ψ(γ_c) = ψ(Σ_{j<p}ε^{jc}δ_j) = δ_0   [ψδ_j = 0 for 0<j<p,
+      ψδ_0 = δ_0 — §4 L3.3/L3.4 widened];
+  (iii) so ψ(γ_c) = A_c⁻¹·δ_0 = γ_{pc-index}   [A_c = ε^{(pc)}δ_1 − δ_0 with
+      pc taken mod D, p ∤ D];
+  (iv) sum: ψ(μ_η) = −G(η⁻¹)⁻¹Σ_c η⁻¹(c)γ_{pc} = η(p)μ_η by reindexing
+      c ↦ p⁻¹c on (ℤ/D)ˣ (η⁻¹(p⁻¹c') = η(p)η⁻¹(c')).
+  Attacks: [1] (i) is an identity of UNITS-inverses: verify by multiplying out —
+  pure ring algebra in Λ_R via 𝓐 (power-series side: polynomial identity) ✓;
+  [2] ψ(δ_j) for 0<j<p needs j a UNIT of ℤ_p ✓ j < p coprime; [3] the pc-index:
+  p invertible mod D ⟸ gcd(p,D)=1 ✓ hypothesis present; [4] END-TO-END TRACE
+  (D = 4?? p odd, take p = 3, D = 4, η the quadratic char mod 4, c ∈ {1,3},
+  ε = i): γ_1 = (iδ_1−δ_0)⁻¹, γ_3 = (−iδ_1−δ_0)⁻¹; ψγ_1 = γ_{3·1 mod 4} = γ_3 ✓
+  shape; μ_η = −G(η⁻¹)⁻¹[γ_1 − γ_3]; ψμ_η = −G⁻¹[γ_3 − γ_1] = −μ_η = η(3)μ_η
+  [η(3) = −1 ✓] — TRACE CONFIRMS, including the sign through the reindex.
+  SURVIVED. (Lemma-level faithfulness: statement is TeX 1812–1813 verbatim;
+  proof-route deviation recorded here, mirroring decomposition R3.)
+- **L5.2.5** (leaf): `res_units_muEta_moments` — RJW Lem 5.11:
+  `∫_{ℤ_p^×}x^k μ_η = (1−η(p)p^k)·LvalNeg η k`.
+  Source (verbatim, TeX 1831–1834): "We have $\int_{\Zp^\times}x^k \cdot\mu_{\eta}
+  = \big(1-\eta(p)p^k\big)L(\eta,-k)$." Proof TeX 1836–1843: Res = 1−φψ +
+  ∫x^k φμ = p^k∫x^k μ.
+  Discharge: §3 toolbox (res_units = 1 − φψ, widened) + L5.2.4 + §4's
+  `apply_powCM`-of-φ lemma (T035 `res_units_muA_apply_powCM` pattern — the φ-
+  moment-scaling lemma exists at ℤ_p (Toolbox/T011/T035-route), widened by W).
+  Attacks: [1] exactly the §4 T035 proof with η(p)-factor inserted ✓ pattern
+  proven; [2] η(p) ∈ R vs p-power: η(p) is a ROOT OF UNITY value ✓ in R;
+  [3] k = 0: source says k ≥ 0 in Lem 5.9 but here the φ-scaling at k = 0 gives
+  (1−η(p)) — fine ✓ statement quantifies k : ℕ. SURVIVED.
+- **L5.2.6** (internal): `muTheta` cluster — θ = χη, conductor Dp^n:
+  μ_θ := twist χ̃ μ_η (TeX 1845–1846 verbatim: "we define
+  $\mu_\theta \defeq (\mu_\eta)_\chi$"); Lem 5.12 transform formula (TeX
+  1849–1852) in CLEARED form (G(θ⁻¹)-multiplied; at n = 0 no clearing needed);
+  moments `∫x^k μ_θ = LvalNeg θ k` and Res-formula
+  `Res_{ℤ_p^×}μ_θ = (1−θ(p)φ)μ_θ` (TeX 1858–1861).
+  Composition: L5.1.2-twist of μ_η + L5.1.8 (Lem 5.4 at μ = μ_η) + the
+  L5.1.10-style moment computation at modulus Dp^n + L5.2.4/ψ-side for the Res
+  formula (θ(p) = χ(p)η(p) with χ(p) = 0 when n ≥ 1 — source TeX 1861:
+  "(if $\chi$ is non-trivial, then $\mu_\theta$ is already supported on
+  $\Zp^\times$; but this is consistent, as $\theta(p) = 0$)").
+  Attacks: [1] θ as a DirichletCharacter at level Dp^n: mathlib product of
+  chars at different levels via `changeLevel` to lcm — primitivity of θ = χη
+  for coprime conductors: mathlib has `DirichletCharacter.IsPrimitive.mul`-?
+  (verify at skeleton; classical fact; if absent: 15-line leaf via conductor
+  of product of coprime-conductor primitives = product — needed also for
+  genBernoulli θ); [2] n = 0 degeneration: θ = η, μ_θ = μ_η ✓ twist by trivial
+  char = identity (χ̃ = 1 needs… at n = 0, conductor 1: χ̃ per L5.1.1 with
+  n = 0 is the constant 1 — but L5.1.1 carried n ≥ 1 for the pZp-vanishing
+  lemma only; the DEFINITION is fine at n = 0 ✓ guard placement re-checked);
+  [3] the ψ(μ_θ)-computation when n ≥ 1: ψμ_θ = 0?? — source's Res-formula
+  says Res μ_θ = (1−θ(p)φ)μ_θ = μ_θ (θ(p)=0) ⟹ φψμ_θ = 0 ⟹ ψμ_θ = 0
+  (φ injective) — consistent with support ✓; the worker proves ψμ_θ = θ(p)ψ-
+  shape uniformly via the L5.2.4-route at modulus Dp^n?? — CAREFUL: L5.2.4's
+  telescope was at modulus D with ε_D; for θ-level the same algebra runs with
+  ε_{Dp^n}… whose p-power part is NOT a unit-denominator — the γ_c-inverses
+  don't all exist at level Dp^n!! RESOLUTION: μ_θ is DEFINED as twist of μ_η
+  (not by an F_θ-formula); its ψ is computed from ψ-of-twist:
+  ψ(twist χ̃ ν)-formula: twist-by-χ̃ and ψ interact through supp/digit algebra:
+  for n ≥ 1: χ̃·(anything) is supported on units ⟹ ψ(twist) = 0 directly
+  (ψ∘Res_units = 0, §3 Cor 3.32-side) ✓ NO level-Dp^n telescope needed; for
+  n = 0 it IS L5.2.4. Lem 5.12's transform DISPLAY (the ε_{Dp^n}-sum) is then
+  derived from L5.1.8 (whose ζ_{p^n}-twists multiply the ε_D-units inside the
+  γ's — products ε_{p^n}^a·ε_D^b realise ε_{Dp^n}-terms via CRT, bookkeeping
+  sub-leaf) — the ATTACK CAUGHT a wrong-route risk and fixed the decomposition
+  (ψμ_θ via support, not telescope). SURVIVED (route corrected).
+- **L5.2.7** (leaf): `zetaEta` definition + interpolation —
+  ζ_η := x⁻¹-twist of Res_{ℤ_p^×}(μ_η) ∈ Λ_R(ℤ_p^×) (Def TeX 1866–1868
+  verbatim: "Define $\zeta_\eta \defeq x^{-1} \mathrm{Res}_{\Zp^\times}(\mu_\eta).$")
+  + final display (TeX 1870–1873): ∫χx^k ζ_η = (1−θ(p)p^{k−1})LvalNeg θ (k−1).
+  Discharge: §4 T036 x⁻¹-twist machinery on ℤ_p^× (widened) + L5.2.5/L5.2.6.
+  Attacks: [1] x⁻¹-twist on UNITS-side measures: T036's `zetaNum` infra ✓;
+  [2] k > 0 shift bookkeeping (k−1 ≥ 0) ✓ destructure; [3] genuine measure (no
+  pseudo-measure) ✓ by construction — matches source Remark 1 (TeX 1780).
+  SURVIVED.
+- **L5.2.8** (leaf): uniqueness/determinacy — a measure on ℤ_p^× vanishing
+  against χ(x)x^k for all primitive χ mod p^n (n ≥ 0) and all k > 0 is zero.
+  Source: implicit in "unique measure" (TeX 1774); expansion (Step-1 duty):
+  the span of {χ̃·x^k} contains x·(every locally constant)·x^j; on ℤ_p^×, x is
+  a unit of C(ℤ_p^×, R) so x·C = C; locally-constant-span × polynomials is
+  dense (W-r2 density + Mahler/Stone–Weierstrass-free ultrametric argument:
+  loc const alone is dense, and every loc const on ℤ_p^× times x^1 stays in the
+  span with k = 1 ranging… need ALL characters of (ℤ/p^n)ˣ = all functions on
+  it by Fourier inversion over L?? characters span functions needs |G|
+  invertible + enough roots of unity in L — (ℤ/p^n)ˣ has order p^{n−1}(p−1):
+  p NOT invertible in R… but in L it is! Coefficients-in-L span: the
+  determinacy pairing lands in L; inversion uses 1/|G| ∈ L ✓ and characters
+  OF (ℤ/p^n)ˣ with values in L: needs μ_{p^{n−1}(p−1)} ⊂ L — a HYPOTHESIS
+  (L "sufficiently large", source Remark 2 TeX 1781–1782: "the relevant
+  Iwasawa algebra is defined over a (fixed) finite extension L/Q_p containing
+  the values" — for the UNIQUENESS over a fixed small L: restrict the
+  uniqueness statement to measures over the L the theorem fixes; the χ's in
+  the interpolation property have values in Q̄_p — the source quantifies over
+  ALL primitive χ of p-power conductor, implicitly enlarging L per χ. Lean
+  statement: uniqueness among Λ_{R}(ℤ_p^×) for the fixed R, quantifying the
+  property over χ valued in R… faithful reading: fix L large enough to contain
+  η's values AND all relevant χ-values? — IMPOSSIBLE finitely (all n!).
+  RESOLUTION (replan note, statement-level): state Thm 5.7 as the source does
+  but with the χ-quantifier ranging over characters **valued in any finite
+  extension L'/L inside a fixed algebraic closure / inside ℂ_p**, with ζ_η's
+  uniqueness in Λ_{R}: two candidate measures in Λ_R agreeing against all
+  χ̃x^k for χ valued in EVERY L' are equal — the determinacy argument runs in
+  the big field per-level. Lean-shape: coefficients functorial via baseChange
+  (W4 for R → R'); the uniqueness lemma quantifies over levels n with
+  characters over R_n := integerRing of L(μ_{p^n·(p−1)})… CONCRETE Lean
+  spelling: use ℂ_p (PadicComplex) as the ambient: state determinacy for
+  measures over R against ℂ_p-valued characters through baseChange R → 𝓞_ℂp.
+  This is the honest faithful reading of the source's quantifier and uses
+  mathlib's ℂ_p. Recorded as the R5.2-statement design (skeleton states it
+  this way). [2] injectivity of baseChange R → 𝓞_ℂp on measures (needed so
+  determinacy over ℂ_p kills the R-measure): coefficientwise on Mahler ⟸
+  L → ℂ_p isometric embedding… exists for finite L/ℚ_p (into Q̄_p ⊂ ℂ_p) —
+  HYPOTHESIS of the final theorem: an embedding L ↪ ℂ_p (canonical for
+  subfields; statement carries `[Algebra L ℂ_[p]] [IsometricSMul…]`-grade or
+  states L as a closed subfield — design pinned at skeleton with the simplest
+  faithful form). [3] Fourier inversion on the finite abelian (ℤ/p^n)ˣ over an
+  alg closed char-0 field: mathlib `MonoidAlgebra`/character orthogonality —
+  `MulChar.orthogonality`-family exists? (DirichletCharacter/Orthogonality.lean
+  EXISTS in the survey listing ✓ — verified file present; exact statements at
+  skeleton). SURVIVED (with the two recorded design notes).
+- **L5.2.9** (leaf, quarantined complex bridge): `LFunction_neg_eq_genBernoulli` —
+  for χ : DirichletCharacter ℂ N (N ≥ 1): `DirichletCharacter.LFunction χ (−k)
+  = −genBernoulli χ (k+1)/(k+1)` (ℂ-instance of genBernoulli), via mathlib
+  `hurwitzZeta_neg_nat` summed against χ per the LFunction definition
+  (ZMod.LFunction = N^{-s}Σ χ(j)hurwitzZeta(j/N) — definitionally).
+  This is the §5 analogue of §4's ZetaValuesComplex bridge and the wiring
+  target for the blueprint's L-value nodes; PR candidate.
+  Source: Lem 5.5/5.9's L(χ,−k) — the complex meaning of the p-adic LvalNeg.
+  Attacks: [1] hurwitzZeta_neg_nat's x ∈ [0,1] hypothesis vs j/N ✓ j.val/N ∈
+  [0,1); [2] N^{k}-power bookkeeping between the N^{-s}-prefactor at s = −k and
+  genBernoulli's N^{k−1} ✓ algebra; [3] the j = 0 term: χ(0) = 0 for N > 1 ✓,
+  N = 1 special-cased to riemannZeta_neg_nat_eq_bernoulli' ✓. SURVIVED.
+
+## R5.3: Analytic branches via Mellin (RJW §5.3, TeX 1885–1979)
+
+### Source statements (verbatim)
+- Lem 5.14 (TeX 1892–1894): "The $p$-adic exponential map converges on $p\Zp$.
+  Hence, for any $s \in \Zp$, the function $1+p\Zp \rightarrow \Zp$ given by
+  $x \mapsto x^s \defeq \mathrm{\exp}(s\cdot\mathrm{log}(x))$ is well-defined."
+- Def 5.15 (TeX 1899–1905): "Recall that we assume $p$ to be odd and that we
+  have a decomposition $\Zp^\times \cong \mu_{p-1} \times (1+p\Zp)$. Let
+  $\omega : \Zp^\times \to \mu_{p-1}$, $\langle\cdot\rangle : \Zp^\times \to
+  1+p\Zp$ … $\omega(x) \defeq$ Teichmüller lift … $\langle x \rangle \defeq
+  \omega^{-1}(x) x$."
+- Def 5.16 (TeX 1912–1918): "$\zeta_{p,i}(s) \defeq \int_{\Zp^\times}
+  \omega(x)^{i}\langle x\rangle^{1-s} \cdot\zeta_p$."
+- Thm 5.17 (TeX 1921–1924): "For all $k\geq 1$ with $k \equiv i \newmod{p-1}$,
+  we have $\zeta_{p,i}(1-k) = (1-p^{k-1})\zeta(1-k)$."
+- Def 5.18 (TeX 1929–1932): "$L_p(\theta,s) \defeq \int_{\Zp^\times}
+  \chi(x)\langle x\rangle^{1-s} \cdot \zeta_\eta$, $s\in\Zp$."
+- Thm 5.19 (TeX 1943–1946): "For all $k\geq 1$, we have $L_p(\theta,1-k) =
+  \big(1 - \theta \omega^{-k}(p)p^{k-1}\big) L(\theta \omega^{-k},1-k)$."
+
+### Leaves (Branches.lean; coefficients ℤ_p for ω/⟨·⟩, L for the L_p-values)
+
+- **L5.3.1** (leaf): `teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ`-grade (p odd) — ω(x) :=
+  lim_{n} x^{p^n}; API: `teichmuller_pow_card_sub_one` (ω(x)^{p−1} = 1),
+  `teichmuller_sub_self_mem` (ω(x) ≡ x mod p), `teichmuller_mul`,
+  `teichmuller_eq_self_iff` (fixed points = μ_{p−1}), `teichmuller_unit`.
+  Source: Def 5.15 ("Teichmüller lift of the reduction modulo p"); construction
+  cross-ref: Washington §… / standard. Route: x^{p^{n+1}} − x^{p^n} =
+  x^{p^n}((x^{p^n})^{p−1·…}−1)… Cauchy via Fermat (x^p ≡ x mod p ⟹ x^{p^{n+1}}
+  ≡ x^{p^n} mod p^{n+1} by induction with binomial): CompleteSpace ℤ_p limit.
+  Mathlib check: `Perfection.teichmuller` exists but extraction to ℤ_p direct
+  is heavier than the 40-LOC limit construction (recorded decision; revisit if
+  the worker finds `WittVector.equiv`-route shorter).
+  Attacks: [1] p = 2: μ_{2−1} trivial, ω ≡ 1, statement degenerates but the
+  CONSTRUCTION needs no p ≠ 2 — yet Def 5.15's DECOMPOSITION does (source
+  "Recall that we assume p to be odd"); p odd hypothesis sits on the
+  decomposition lemma L5.3.2, not on ω ✓ (never silently drop, rule 5 ✓);
+  [2] multiplicativity: limit of multiplicative maps ✓; [3] continuity of ω:
+  needed? (for measurability-free pairing yes: ω^i·⟨x⟩^{1−s} must be
+  CONTINUOUS in x: ω is locally constant (ω(x) determined by x mod p:
+  ω(x) = ω(y) if x ≡ y mod p — from the construction's congruences) — API
+  lemma `teichmuller_eq_of_sub_mem` added ✓. SURVIVED.
+- **L5.3.2** (leaf): `unitsDecomp` (p odd) — x = ω(x)·⟨x⟩ with
+  ⟨x⟩ := ω(x)⁻¹x ∈ 1 + pℤ_p; uniqueness of the decomposition; ⟨·⟩
+  multiplicative, continuous, ⟨x⟩ = x for x ∈ 1+pℤ_p.
+  Source: Def 5.15 (quoted). Discharge: L5.3.1 API; uniqueness: μ_{p−1} ∩
+  (1+pℤ_p) = 1 (orders coprime: an element of order dividing p−1 that is
+  ≡ 1 mod p is 1 — via L5.3.1 fixed-point + (1+pℤ_p) torsion-free for p odd —
+  the (ZMod 8)ˣ-noncyclic trap lives exactly here, p = 2 EXCLUDED ✓).
+  Attacks: [1] (1+pℤ_p) torsion-freeness p odd: §4's `topGen_pow_ne_one`/T037
+  infra adjacent — re-derivable from binomial valuation (‖(1+py)^m − 1‖ =
+  ‖m‖·‖py‖ for p odd — the standard isometry lemma, sub-leaf ~15 LOC, also
+  needed by L5.3.3 injectivity); [2] p = 2 falsity: (ℤ/8)ˣ ✓ excluded;
+  [3] ω(x)⁻¹: ω valued in UNITS ✓ construction. SURVIVED.
+- **L5.3.3** (leaf): `onePAdicPow` — for y ∈ 1+pℤ_p, s ∈ ℤ_p: `y^[s] :=
+  (PadicInt.addChar_of_value_at_one (y−1) h_nilp) s` (mathlib AddChar at
+  R = ℤ_[p]); API: agrees with monoid-pow on ℕ (`addChar`-uniqueness/
+  construction), multiplicative in s (AddChar ✓ free), multiplicative in y
+  (`(y₁y₂)^[s] = y₁^[s]y₂^[s]` — via continuousAddCharEquiv uniqueness),
+  continuous in s AND in y, `y^[s] ∈ 1+pℤ_p`, and the INTERPOLATION property:
+  s = k : ℕ gives y^k.
+  Source: Lem 5.14 (quoted). **Recorded replan (statement-level):** the source
+  DEFINES x^s = exp(s log x); p-adic exp/log are not in mathlib (survey); the
+  binomial/character construction defines the same function (both are the
+  unique continuous homomorphism ℤ_p → 1+pℤ_p sending 1 ↦ y — uniqueness by
+  density of ℤ ⊂ ℤ_p; the source's exp∘log map is continuous and sends 1 ↦ y).
+  The blueprint node for Lem 5.14 states the exp-version and stays UNWIRED
+  (prose note: realised via the equivalent character construction
+  `onePAdicPow`; the exp/log development is future work — surfaced to user).
+  Attacks: [1] (y−1) top-nilpotent: ‖y−1‖ ≤ p⁻¹ < 1 ✓; [2] does
+  addChar_of_value_at_one VALUE in 1+pℤ_p (needed: ⟨x⟩^s a UNIT for the
+  ζ_p-pairing)? — values: κ(s) = Σ binom(s,m)(y−1)^m: m ≥ 1 terms ∈ pℤ_p ✓
+  κ(s) ∈ 1+pℤ_p ✓ unit ✓ lemma; [3] continuity in y (for L_p(θ,·)-analyticity
+  later — NOT needed for §5 statements; skip, note for §6). SURVIVED.
+- **L5.3.4** (leaf): the character `kappa i s : C(ℤ_p^×, ℤ_p)` —
+  x ↦ ω(x)^i·⟨x⟩^[s]-as-continuous-map + multiplicativity + the κ(x) = x^k
+  identification: for k ≡ i mod (p−1), `kappa i k = x^k on units`
+  (x^k = ω(x)^k⟨x⟩^k = ω(x)^i⟨x⟩^[k] — source TeX 1919's "the character $x^k$
+  can be written in the form $\omega(x)^i\langle x\rangle^k$ if and only if
+  $k \equiv i \mod{p-1}$").
+  Discharge: L5.3.1–L5.3.3 + ω^{p−1} = 1. Attacks: [1] "only if" direction not
+  needed ✓ skip (statement-level: the iff is prose; the formal lemma is the
+  if-direction used by Thm 5.17); [2] continuity: ω loc const + ⟨·⟩^[s] cts ✓;
+  [3] i-range 1..p−1 vs i : ZMod (p−1): skeleton uses i : ℕ with the
+  congruence hypothesis (source's indexing) ✓. SURVIVED.
+- **L5.3.5** (leaf): pseudo-measure/character pairing — for κ : C(ℤ_p^×, ℤ_p)
+  multiplicative (a continuous character) with κ(b) − 1 ≠ 0 for the §4
+  generator-witness b, and λ a pseudo-measure with witnesses: define
+  `pairChar λ κ := (κ(b)−1)⁻¹ · ∫κ dν_b ∈ ℚ_p` (ν_b the witness of
+  ([b]−[1])λ) — well-definedness across witnesses/generators via the §3
+  machinery (the multiplicativity identity ∫κ d([b]−1)μ = (κ(b)−1)∫κ dμ for
+  genuine μ — NEW small lemma `integral_char_dirac_mul`: ([b]−1)·μ paired with
+  multiplicative κ — convolution-vs-character: ∫κ d(δ_b·μ) = κ(b)∫κ dμ ⟸
+  convolution `mul_apply` + κ(bx) = κ(b)κ(x) ✓ ~15 LOC).
+  Source: Def 5.16 glosses this ("meromorphic"); the pairing is the standard
+  reading (cf. §4's moment encoding which is its k-th-power instance).
+  Attacks: [1] independence of witness: two witnesses differ by … ([b]−1)-
+  torsion-free (§3 zero-divisor (i)) ✓ same argument as T038/T039;
+  [2] independence of b (for the THEOREM only one b is used; the DEFINITION
+  fixes the T037 generator u — junk-free domain: s such that κ_{i,s}(u) ≠ 1;
+  for Thm 5.17's (i,k): κ(u) = ω(u)^i⟨u⟩^{1−(1−k)} = ω(u)^i⟨u⟩^{k}…
+  at k ≡ i: = u^k ≠ 1 for k ≥ 1 (u top. generator, torsion-free) ✓
+  well-defined exactly where needed; [3] ζ_{p,0}(1)-pole: κ trivial at
+  (i,s) = (0,1): excluded by k ≥ 1 ✓ junk value there, recorded.
+  SURVIVED.
+- **L5.3.6** (internal): `zetaPBranch` + **Thm 5.17** — ζ_{p,i}(s) :=
+  pairChar (padicZeta) (kappa i (1−s)); theorem: for k ≥ 1, k ≡ i (p−1):
+  ζ_{p,i}(1−k) = (1−p^{k−1})·zetaNeg-value (the §4 rational ζ(1−k)).
+  Composition: L5.3.4 (κ = x^k on units) + L5.3.5 + §4's padicZeta_moments
+  (T038: the moment formula at x^k) — definitional alignment of the two
+  pairings.
+  Attacks: [1] the 1−s vs s twist: Def 5.16 has ⟨x⟩^{1−s} ✓ statement uses
+  kappa i (1−s) — at s = 1−k: ⟨x⟩^{k} ✓ matches the trace in L5.3.5-[2];
+  [2] ζ(1−k)-side: §4's zetaNeg (k−1)-indexing re-used ✓ (same value object as
+  T039 — no complex ζ needed); [3] i odd ⟹ both sides 0 (source remark TeX
+  1927): consequence, not hypothesis ✓ no extra work. SURVIVED.
+- **L5.3.7** (internal): `LpFunction` + **Thm 5.19** — L_p(θ,s) :=
+  ∫χ̃(x)⟨x⟩^[1−s] dζ_η (a GENUINE integral — ζ_η is a measure ✓ no pairing
+  subtleties); theorem TeX 1943–1946 via the eq:alternative route (TeX
+  1948–1956): χ⟨x⟩^{k−1} = χω^{−k}·x^{k−1}·ω^{…}-character algebra (L5.3.4)
+  + L5.2.7's interpolation at the character χω^{−k}-twisted powers — NOTE:
+  Thm 5.19's RHS involves L(θω^{−k},1−k) — the χ-part of θω^{−k} is χω^{−k},
+  ANOTHER p-power-conductor character: the moments of ζ_η against
+  (χω^{−k})(x)x^{k−1}-shape = exactly L5.2.7's quantified statement ✓ the
+  composition is pure bookkeeping over the χ-quantifier (no new analysis).
+  Attacks: [1] ω as a Dirichlet character mod p: ω's values μ_{p−1} ⊂ ℤ_p ✓
+  `teichmullerChar : DirichletCharacter ℤ_[p]-or-L p` bridge leaf (ω(x mod p)
+  = ω(x): L5.3.1 loc-const API ✓ ~10 LOC); [2] θω^{−k} conductor bookkeeping:
+  its p-part χω^{−k} primitive of some conductor p^m — L5.2.7 quantifies over
+  ALL primitive p-power χ' ✓ no conductor computation needed, just
+  primitivisation (mathlib `primitiveCharacter`) + equality of the FUNCTIONS
+  χ̃'·x^{k} on ℤ_p^× (values agree: x^k-shift absorbs) — the bookkeeping
+  lemma is the one real content ✓ bounded; [3] s-domain: all s ∈ ℤ_p ✓
+  genuine integral. SURVIVED.
+
+## §5 prior-B2 consultation (Step 4.6)
+`b2_log.jsonl` checked 2026-06-10: empty (0 entries). No name or shape matches
+possible. Clean.
+
+## §5 confidence gate (Step 5) — assessment
+
+1. Every leaf above is mathlib-discharged (cited + verified in the §5 survey
+   table, plan.md), project-discharged (named §3/§4 decls + W-widening), or an
+   explicit API-gap with its own sub-decomposition (W1–W4, L5.1.5, L5.1.9–10,
+   L5.2.8-design, L5.3.1–3) — no "figure it out during execution" steps remain.
+2. Skeleton: new-math leaves skeletonised in the 7 files listed; W-cluster per
+   the recorded refactor exception. `lake build` gate checked at skeleton commit.
+3. Verbatim quotes: every R5.x leaf carries one (or points at the §3-tree quote
+   it generalises — W). Lean ↔ source match paragraphs inline per leaf.
+4. Adversarial pass: every leaf has ≥ 3 attacks logged; FOUR attacks found real
+   defects and fixed the plan at planning time (L5.1.8 statement-sign by trace;
+   L5.2.6 wrong-route at level Dp^n; L5.2.8 quantifier design; W-r1 false
+   circularity resolved by R-valuedness) — the pass earned its keep.
+5. Prior-B2: empty log, clean.
+6. Tree mirrors the source: §5.1 follows TeX 1623–1765's chain (a)–(e); §5.2
+   follows TeX 1785–1875 item-by-item (each "good exercise" gap expanded as a
+   leaf with the expansion recorded); §5.3 follows TeX 1885–1962. LOC estimates
+   deferred to tickets, grounded per-leaf in the source-line spans cited there.
+
+REVIEW-PENDING: none. API gaps all carry sub-decompositions. GATE PASSES for
+ticket creation, with the three recorded replan/design notes (R5-CLEAR,
+L5.2.4-route, L5.2.8/L5.3.3 statement designs) to surface at board approval.

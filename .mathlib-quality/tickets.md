@@ -1500,3 +1500,417 @@ Parallel capacity: 3 workers at peak (T030/T031/T037 start immediately).
 Cleanup cadence: per-ticket immediate cleanup (standing rule) ⊇ 3-ticket cadence;
 final per-file cleanups folded into T035 (MuA.lean) and T039 (ZetaP.lean);
 CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 files.
+
+---
+
+# §5 — Interpolation at Dirichlet characters (TeX 1610–1979) — added 2026-06-10
+
+## §5 Summary
+- Tickets: TW1–TW6 (widening) + T501–T520 (§5 proper) + cleanups per cadence
+- Open: all | Done: 0
+- Decomposition: `.mathlib-quality/decomposition.md` §5 (W*, L5.1.*, L5.2.*, L5.3.*;
+  gate PASSED 2026-06-10 with 3 recorded replan/design notes: R5-CLEAR,
+  L5.2.4-route, L5.2.8/L5.3.3 statement designs)
+- Skeleton: `Coefficients.lean` + `Interpolation/{Characters,GenBernoulli,
+  GenBernoulliComplex,Branches}.lean` skeletonised NOW; the Λ_R-dependent
+  statements (Twist/TameConductor/NonTame) are skeletonised by TW6 (refactor
+  exception, decomposition §5 "Skeleton location")
+- Coefficients: `L` normed field, `[NormedAlgebra ℚ_[p] L] [IsUltrametricDist L]
+  [CompleteSpace L]`, `R := integerRing L` (plan.md §5 design decision 1)
+- **Standing rules (CLAUDE.md) bind every ticket**: blueprint node wiring in-session
+  (chapter: `Interpolation.lean`; node labels listed per ticket), /cleanup
+  (FULL tooled mode — lean-lsp present) before done, axioms ⊆ standard, checkpoint
+  commit + push.
+- **Parallel capacity**: 3 chains independent at the start — (A) TW-chain,
+  (B) T501/T503/T504/T505 (Gauss/Bernoulli, no W dependency), (C) T517/T518
+  (Branches, no W dependency). §5.1/§5.2 assembly tickets need (A).
+
+### [TW1] Coefficients: integerRing + instances + root-of-unity norms
+- **Status**: open | **File**: PadicLFunctions/Coefficients.lean | **Depends on**: none
+- **Parallel**: yes (chain A head) | **Type**: def + instances + lemmas
+- **Statement**: fill the skeleton sorries at Coefficients.lean (integerRing
+  subring fields; IsUltrametricDist/CompleteSpace/Algebra ℤ_[p]/IsLinearTopology
+  instances; `IsPrimitiveRoot.norm_sub_one_lt`, `.tendsto_pow_sub_one`,
+  `.norm_pow_sub_one_eq_one`).
+- **Proof sketch**: decomposition W1/W2/W3 + L5.1.6a entries (routes + attack
+  logs there). W1 closure: `IsUltrametricDist.norm_add_le_max` (mathlib, exact
+  name verify via lean_local_search) + `norm_mul_le`. Completeness:
+  `IsClosed.completeSpace_coe` on the closed ball. Algebra: `‖algebraMap ℚ_[p] L
+  q‖ = ‖q‖` from `NormedAlgebra` (norm_algebraMap') restricted to ℤ_[p].
+  IsLinearTopology: `IsLinearTopology.mk_of_hasBasis`-style with the ideal basis
+  `{x | ‖x‖ ≤ ε}` (ideals by ultrametric + ‖unit-ball·x‖ ≤ ‖x‖). W2: binomial
+  expansion of (1+x)^{p^n} = 1 + Kummer `Nat.Prime.dvd_choose` (mathlib name:
+  `Nat.Prime.dvd_choose_pow`?? verify) + norm contradiction. W3: evaluate
+  `∏_{0<j<D}(X − ζ^j)` at 1 via `IsPrimitiveRoot` cyclotomic-product lemmas
+  (search `IsPrimitiveRoot` `geom_sum`/`prod_X_sub`-family) ⟹ ∏(1−ζ^j) = D;
+  norms multiply (NormedField), all ≤ 1, ‖D‖ = 1 (p ∤ D + algebra-norm).
+- **Mathlib lemmas**: `IsUltrametricDist.norm_add_le_max`(-shape),
+  `IsClosed.completeSpace_coe`, `norm_algebraMap'`, `Nat.Prime.dvd_choose`
+  (Kummer-direction), `IsPrimitiveRoot.pow_eq_one`, cyclotomic product (verify
+  candidates: `IsPrimitiveRoot.prod_one_sub_pow`-shape; fallback 8-line direct).
+- **Sources**: RJW TeX 690 (O_L), 1798 (W3 verbatim quote in decomposition);
+  Washington §1 for W2 (classical).
+- **Generality**: maximal — any nonarch complete normed ℚ_[p]-algebra field;
+  no finiteness over ℚ_p (plan.md §5 decision 1).
+- **Blueprint**: none yet (infrastructure; Measures-chapter prose already wired).
+- **Sizing**: W1 ~60 LOC, W2 ~25, W3 ~20, instances ~40 (source spans cited in
+  decomposition; the instance pack has no source-lines — infrastructure).
+
+### [TW2] Widen Measure/Basic.lean to coefficient ring R
+- **Status**: open | **File**: Measure/Basic.lean | **Depends on**: TW1 | **Type**: refactor
+- **Contract**: re-parametrise `PadicMeasure p X := C(X, ℤ_[p]) →ₗ[ℤ_[p]] ℤ_[p]`
+  to `PadicMeasure R X := C(X, R) →ₗ[R] R` over
+  `variable (R : Type*) [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]`
+  + per-lemma extras; keep an `abbrev`/notation so §3/§4 ℤ_[p]-call-sites stay
+  green (`PadicMeasure p X` ↦ instantiation at `R := ℤ_[p]`; choose the spelling
+  that minimises §4 churn — worker decides, records). `norm_apply_le` per
+  decomposition W-r1 (division-by-attained-value; needs the codomain-ball
+  argument — for abstract R state as `‖μ f‖ ≤ ‖f‖` PROVABLE when R is a ball
+  ring: take the hypothesis spelling `[NormMulClass R]` + norm-≤-1-of-values…
+  worker follows W-r1's resolution: values in R have ‖·‖ ≤ ?? — for abstract R
+  the values are R itself: the W-r1 proof shape needs `‖μ g‖ ≤ 1`-from-
+  R-valuedness only when R IS the ball of L. State the lemma over
+  `integerRing L` directly if the abstract form fights — both forms recorded,
+  decomposition W-r1). Density: rebase on Fubini.lean's
+  `exists_locallyConstant_norm_sub_le'` (W-r2).
+- **DoD**: `lake build PadicLFunctions` green project-wide, zero sorries in file,
+  axioms standard, §4 unaffected, /cleanup, checkpoint commit.
+- **Sources**: RJW Def 3.6 TeX 755–765 (§3 tree quotes).
+
+### [TW3] Widen MahlerTransform.lean + Convolution.lean
+- **Status**: open | **Depends on**: TW2 | **Type**: refactor
+- **Contract**: W-r3 — mathlib `mahlerEquiv` is already E-general; re-parametrise
+  `mahlerCoeff/mahlerTransform/ofPowerSeries/mahlerLinearEquiv/mahlerRingEquiv`
+  and the convolution transport to R. Re-check each `PadicInt.*`-specific call
+  site (decomposition W-r3 attack note); `binomialSeries` acts through
+  `algebraMap ℤ_[p] R`.
+- **DoD**: as TW2.
+
+### [CLEANUP-W1] /cleanup on Coefficients.lean + Basic.lean + MahlerTransform.lean + Convolution.lean
+- **Status**: open | **Depends on**: TW3 | **Type**: cleanup (cadence: 3 tickets)
+
+### [TW4] Widen Toolbox.lean + UnitsZp.lean + Fubini.lean
+- **Status**: open | **Depends on**: CLEANUP-W1 | **Type**: refactor
+- **Contract**: W-r4 — space-side constructions re-parametrise mechanically
+  (res/σ/φ/ψ/shiftDiv, units geometry, integral_swap). The §4-needed toolbox
+  lemmas (φ-moment scaling, psi_phi_mul-projection formula in MuA.lean —
+  actually relocate-or-widen: psi_phi_mul lives in MuA.lean (§4); widen its
+  STATEMENT to R here or in TW5, worker picks placement, records).
+- **DoD**: as TW2.
+
+### [TW5] Widen PseudoMeasure.lean's Λ(ℤ_p^×)-ring section; §4 call-site repair
+- **Status**: open | **Depends on**: TW4 | **Type**: refactor
+- **Contract**: the units-convolution ring (unitsConv, CommRing laws, diracs,
+  degree) over R; the pseudo-measure/zero-divisor/augmentation/QuotientField
+  sections STAY at ℤ_[p] (decomposition W-r4 scope note). All §4 files compile
+  unchanged-or-mechanically-repaired (W-r5).
+- **DoD**: as TW2 + `#print axioms PadicMeasure.kubotaLeopoldt` still standard.
+
+### [TW6] baseChange + skeletonise Λ_R-dependent §5 statements
+- **Status**: open | **Depends on**: TW5 | **Type**: def + skeleton gate
+- **Statement** (key new decl): `PadicMeasure.baseChange : PadicMeasure p X →
+  PadicMeasureR R X`-shape (W4: transform-side coefficient inclusion for
+  X = ℤ_p; density-extension for general profinite X; ring hom on Λ(ℤ_p);
+  `baseChange_dirac`, naturality w.r.t. res/φ/ψ/twist as API lemmas).
+  THEN: create `Interpolation/Twist.lean`, `Interpolation/TameConductor.lean`,
+  `Interpolation/NonTame.lean` with ALL the Λ_R-dependent leaf statements from
+  decomposition §5 (L5.1.2/3/6/7/8/10/12, L5.2.1–L5.2.8) as `:= by sorry`,
+  imports wired into PadicLFunctions.lean; `lake build` green (THE deferred
+  Step-2.5 gate — decomposition "Refactor-cluster exception").
+- **DoD**: build green (sorries allowed in the three new files ONLY), /cleanup
+  on baseChange, commit.
+
+### [CLEANUP-W2] /cleanup-all-lite on the widened Measure/* (final per-file)
+- **Status**: open | **Depends on**: TW6 | **Type**: cleanup (final per-file ×6)
+
+### [T501] Gauss sums: product formula at general level + norm-one
+- **Status**: open | **File**: Interpolation/Characters.lean | **Depends on**: none
+- **Parallel**: yes (chain B head) | **Type**: lemmas (mathlib-PR candidates)
+- **Statement**: skeleton `gaussSum_mul_gaussSum_inv` (L5.1.5),
+  `norm_gaussSum_eq_one`, + any zmodChar-primitivity bridge sub-lemmas needed.
+- **Proof sketch**: decomposition L5.1.5 (the 4-sum collapse; attack-verified);
+  norm-one via ≤1 (ultrametric sum of root-of-unity terms — values χ(c)ζ^c with
+  ‖·‖ ≤ 1… careful: χ values in L: roots of unity have norm 1 — NormedField +
+  finite order ⟹ ‖χ(c)‖ = 1; sub-lemma) then product = ±D with ‖D‖ = 1 splits.
+- **Mathlib lemmas**: `gaussSum_mulShift_of_isPrimitive`,
+  `gaussSum_eq_zero_of_isPrimitive_of_not_isPrimitive`, `AddChar.sum_mulShift`-
+  orthogonality ingredient (verify generality — field proof's `sum_mulShift`),
+  `ZMod.zmodChar`, `IsPrimitiveRoot.pow_eq_one`.
+- **Sources**: Rem 5.3 TeX 1653–1659 (verbatim in decomposition L5.1.4); DS05
+  §4.3 (cross-ref); TeX 1798 for norm-one.
+- **Generality**: general level N, domain target; norm-form over the §5 L.
+- **Blueprint**: wire `interp-gauss-sum` → mathlib `gaussSum` and
+  `interp-gauss-sum-properties` → the pair {mathlib mulShift lemma,
+  `PadicLFunctions.gaussSum_mul_gaussSum_inv`} per the new linking policy.
+- **Sizing**: L5.1.5 ~35 LOC (source proof 6 lines, TeX 1685–1691-adjacent);
+  norm lemma ~20.
+
+### [T502] χ as a locally constant function on ℤ_p
+- **Status**: open | **File**: Interpolation/Characters.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: def API
+- **Statement**: skeleton `DirichletCharacter.toContinuousMapZp` continuity +
+  4 API sorries (L5.1.1).
+- **Proof sketch**: decomposition L5.1.1 (toZModPow fibres clopen — §3
+  Basic.lean pattern `isLocallyConstant_toZModPow_val`; vanishing via
+  `MulChar.map_nonunit` + unit-reduction bridge `PadicInt.isUnit_toZModPow_iff`-
+  shape (verify; else 6-line norm argument)).
+- **Mathlib lemmas**: `MulChar.map_nonunit`, `IsLocallyConstant.continuous`,
+  `ZMod.isUnit_iff`-family.
+- **Sources**: TeX 1620 (quote at L5.1.1).
+- **Blueprint**: contributes to `interp-twist` prose (wired at T506).
+- **Sizing**: ~50 LOC total (5 lemmas).
+
+### [T503] genBernoulli: trivial character + parity + cyclotomic product
+- **Status**: open | **File**: Interpolation/GenBernoulli.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: lemmas
+- **Statement**: skeleton `genBernoulli_one`, `genBernoulli_eq_zero`,
+  `prod_primitiveRoot_mul_sub_one` (L5.1.9/L5.1.11/L5.1.10c).
+- **Proof sketch**: decomposition entries (a-range 1..N pinned; involution
+  c ↦ N−c + `bernoulli_eval_one_sub`; product via `IsPrimitiveRoot`).
+- **Mathlib lemmas**: `Polynomial.bernoulli_eval_one_sub` (verify name),
+  `Polynomial.bernoulli_eval_one`, `bernoulli'`-bridges,
+  `IsPrimitiveRoot.prod_X_sub_pow`-family (verify; else direct).
+- **Sources**: Washington §4.1 Prop 4.1 (cross-ref recorded); TeX 1744–1746.
+- **Blueprint**: none directly (value infrastructure).
+- **Sizing**: ~30+35+20 LOC.
+
+### [T504] genBernoulli generating function (L5.1.10a)
+- **Status**: open | **File**: GenBernoulli.lean | **Depends on**: T503 | **Type**: lemma
+- **Statement**: skeleton `genBernoulliPowerSeries_mul`.
+- **Proof sketch**: decomposition L5.1.10a — expand both sides; mathlib
+  `bernoulliPowerSeries_mul_exp_sub_one` per-a after rescale-bookkeeping
+  (`exp_pow_eq_rescale_exp`, `rescale_comp`-laws); T031's clearing pattern.
+- **Mathlib lemmas**: `bernoulliPowerSeries_mul_exp_sub_one`,
+  `PowerSeries.exp`, `rescale`, `Polynomial.bernoulli_generating_function`-
+  variant (exact mathlib relating bernoulli POLYNOMIALS: `Polynomial.sum_range_pow`-
+  family — survey at execution; the §4 T031–T033 files are the template).
+- **Sources**: Washington §4.1 defining identity (cross-ref recorded).
+- **Sizing**: source's manipulation ~10 lines ⟹ ~80 LOC Lean (T031 analogue
+  ran ~70).
+
+### [T505] Complex bridge: L(χ,−k) = −B_{k+1,χ}/(k+1)
+- **Status**: open | **File**: GenBernoulliComplex.lean | **Depends on**: T503
+- **Parallel**: yes | **Type**: theorem (quarantined complex; PR candidate)
+- **Statement**: skeleton `LFunction_neg_nat`.
+- **Proof sketch**: unfold `DirichletCharacter.LFunction` = `ZMod.LFunction` =
+  `N^{−s}Σ_j χ(j)·hurwitzZeta(j/N)`; at s = −k apply `hurwitzZeta_neg_nat`
+  (j/N ∈ [0,1]); collect into genBernoulli's polynomial sum (a-range shift
+  0..N−1 ↦ 1..N: j = 0 term has χ(0) = 0 for N > 1; N = 1 separately via
+  `riemannZeta_neg_nat_eq_bernoulli'` + `LFunction_modOne_eq`).
+- **Mathlib lemmas**: `hurwitzZeta_neg_nat`, `ZMod.toAddCircle`-coercions,
+  `riemannZeta_neg_nat_eq_bernoulli'`, `DirichletCharacter.LFunction`.
+- **Sources**: TeX 1702–1740 (Lem 5.5 — its L-value content), Washington Thm 4.2.
+- **Blueprint**: wire `interp-dirichlet-integral`'s VALUE half? — NO: that node
+  states the full Mellin lemma (complex f_{χ,a}); stays unwired with rationale
+  (§2-Mellin pending, kl-values-of-zeta pattern). This theorem is the §5
+  analogue of `zetaNeg`'s complex bridge — wire INTO the chapter where the
+  L-values are introduced via a remark node if present (worker checks chapter).
+- **Sizing**: ~60 LOC.
+
+### [T506] Twist by χ + z-twist transform formula
+- **Status**: open | **File**: Interpolation/Twist.lean (TW6 skeleton) | **Depends on**: TW6, T502
+- **Type**: def + lemmas
+- **Statement** (from TW6 skeleton; signatures fixed there per decomposition
+  L5.1.2/L5.1.6): `PadicMeasure.twist`, `twist_apply`, `twist_powCM`,
+  `twist_res_units`-integral-form (L5.1.3), `mahlerTransform_charTwist`
+  (L5.1.6, eval₂ form).
+- **Proof sketch**: decomposition L5.1.2/3/6 (Dirac sanity + coefficientwise
+  Chu–Vandermonde; the §3 T009/T014 proof patterns; eval₂ instance stack from
+  TW1's IsLinearTopology).
+- **Mathlib lemmas**: `PowerSeries.eval₂`/`aeval` + `WithPiTopology` instances;
+  `PadicInt.addChar_of_value_at_one` + `mahlerSeries`-API.
+- **Sources**: TeX 1637–1641 (verbatim at L5.1.2), TeX 1084–1090 (z-twist).
+- **Blueprint**: wire `interp-twist` → `PadicMeasure.twist`.
+- **Sizing**: twist API ~40; charTwist ~90 (T014 ran ~80).
+
+### [T507] Cleared restriction formula (EqRestrictionFormula)
+- **Status**: open | **File**: Twist.lean | **Depends on**: T506 | **Type**: lemma
+- **Statement**: `res_class_eq_sum_twists` (L5.1.7, p^n-cleared, measure-side).
+- **Proof sketch**: decomposition L5.1.7 (orthogonality pointwise + integrate;
+  geometric-sum-zero from primitive root).
+- **Mathlib lemmas**: `IsPrimitiveRoot`-geom-sum (verify
+  `IsPrimitiveRoot.geom_sum_eq_zero`), §3 charFn/indicator API.
+- **Sources**: TeX 1126–1131 (verbatim at L5.1.7) + R5-CLEAR note.
+- **Blueprint**: the §3 Measures-chapter node for the restriction formula
+  (`meas-restriction-formula`-label — worker locates) gets wired NOW (it was
+  the §3 deferred ξ-node) with the cleared-form prose note.
+- **Sizing**: ~70 LOC (source proof 8 lines, TeX 1117–1131).
+
+### [T508] Mahler transform of the χ-twist (RJW Lem 5.4, cleared)
+- **Status**: open | **File**: Twist.lean | **Depends on**: T507, T501 | **Type**: lemma
+- **Statement**: `mahler_twist_formula` per L5.1.8 — statement form pinned by
+  the planning trace (G(χ⁻¹)-cleared, NO extra sign; see L5.1.8 attack [2]).
+- **Proof sketch**: decomposition L5.1.8 composition (χ̃-decomposition →
+  L5.1.7 → swap → Gauss (ii) → (i)).
+- **Sources**: TeX 1675–1692 (verbatim quote + the source's 3-display algebra).
+- **Blueprint**: wire `interp-mahler-twist` (prose note: cleared form).
+- **Sizing**: source proof 12 lines ⟹ ~110 LOC.
+
+### [CLEANUP-51] /cleanup on Twist.lean (cadence: 3 tickets)
+- **Status**: open | **Depends on**: T508 | **Type**: cleanup
+
+### [T509] Moments of the twisted measure (F_{χ,a}-values)
+- **Status**: open | **File**: Interpolation/TameConductor.lean (+GenBernoulli) | **Depends on**: CLEANUP-51, T504
+- **Type**: theorem cluster
+- **Statement**: `twistMuA_moments` per L5.1.10 (uniform formula via LvalNeg)
+  + sub-leaves 10b (twisted F_a-expansion, cleared via 10c-product).
+- **Proof sketch**: decomposition L5.1.10 (T033-pattern over L; generating
+  function T504; parity wiring L5.1.11; planning-time value-trace at p=3
+  recorded — re-derive k=2 as the ticket's acceptance regression).
+- **Sources**: TeX 1694–1700, 1727–1730 (eq:special value theorem 1).
+- **Blueprint**: wire `interp-dirichlet-integral` only if its node restates the
+  VALUE identity — else leave + rationale (Mellin half §2-pending); worker
+  reads the node and decides per rule 2, records.
+- **Sizing**: the big one — source spans TeX 1694–1740 ⟹ ~200 LOC across 3
+  declarations.
+
+### [T510] **MILESTONE: RJW Theorem 5.1** — ∫χ(x)x^k·ζ_p = L(χ,1−k)
+- **Status**: open | **File**: TameConductor.lean | **Depends on**: CLEANUP-ALL-3
+- **Type**: theorem
+- **Statement**: witness-quantified form mirroring `kubotaLeopoldt`'s encoding
+  (TW6 skeleton): for χ primitive mod p^n (n ≥ 1), p ≠ 2, k > 0, the
+  θ_a-form `∫χ̃x^k d(θ_a)_R = −(1−χ(a)a^k)·LvalNeg χ (k−1)` and the
+  ζ_p-pairing corollary (decomposition L5.1.12).
+- **Proof sketch**: L5.1.12 composition (units-restriction + L5.1.10 + x⁻¹
+  shift T036-pattern + baseChange naturality).
+- **Sources**: TeX 1619–1622 (headline, verbatim at R5.1) + proof 1751–1765.
+- **Blueprint**: wire `interpolation-property` (the chapter's Thm 5.1 node) →
+  the new theorem; re-render site.
+- **Sizing**: source proof 14 lines ⟹ ~120 LOC.
+
+### [CLEANUP-ALL-3] Pre-milestone /cleanup-all
+- **Status**: open | **Depends on**: T509 | **Type**: cleanup-all (before T510)
+
+### [T511] F_η and μ_η (conductor D coprime to p)
+- **Status**: open | **File**: Interpolation/NonTame.lean (TW6 skeleton) | **Depends on**: TW6, T501
+- **Type**: def + lemmas
+- **Statement**: `etaDenomUnit` (L5.2.1), `muEta` + transform characterisation
+  (L5.2.2; G(η⁻¹)-unit via T501's norm lemma).
+- **Sources**: TeX 1793–1798 (verbatim at L5.2.2).
+- **Blueprint**: wire `interp-mu-eta`.
+- **Sizing**: ~70 LOC.
+
+### [T512] Moments of μ_η (Lem 5.9, p-adic half)
+- **Status**: open | **File**: NonTame.lean | **Depends on**: T511, T504 | **Type**: lemma
+- **Statement**: `muEta_moments` (L5.2.3): ∫x^k μ_η = LvalNeg η k.
+- **Sources**: TeX 1801–1807 (verbatim at L5.2.3).
+- **Blueprint**: wire `interp-eta-mellin`'s value half per node text (worker
+  reads node; Mellin-statement half stays prose with rationale if present).
+- **Sizing**: ~90 LOC (rides T504/T509 machinery at modulus D).
+
+### [T513] ψ-invariance: ψ(μ_η) = η(p)·μ_η (Lem 5.10)
+- **Status**: open | **File**: NonTame.lean | **Depends on**: T511 | **Type**: lemma
+- **Statement**: `psi_muEta` (L5.2.4).
+- **Proof sketch**: the **recorded ξ-free replan** (decomposition L5.2.4:
+  γ-telescope + projection formula + (ℤ/D)ˣ reindex; end-to-end trace at
+  p=3, D=4 recorded — statement verbatim TeX 1812–1813, route deviation
+  recorded mirroring R3/T034).
+- **Mathlib lemmas**: project `psi_phi_mul` (widened, TW4/TW5), §4 Dirac-ψ
+  lemmas (widened), `ZMod.unitOfCoprime`-reindex machinery.
+- **Sources**: TeX 1812–1827.
+- **Blueprint**: wire the chapter's ψ-invariance node (locate label; prose
+  note: proof via the cleared trace identity).
+- **Sizing**: source proof 10 lines ⟹ ~110 LOC.
+
+### [CLEANUP-52] /cleanup on NonTame.lean (cadence: 3 tickets on file)
+- **Status**: open | **Depends on**: T513 | **Type**: cleanup
+
+### [T514] Restriction to units: (1−η(p)p^k)-moments (Lem 5.11)
+- **Status**: open | **File**: NonTame.lean | **Depends on**: CLEANUP-52, T512 | **Type**: lemma
+- **Statement**: `res_units_muEta_moments` (L5.2.5).
+- **Sources**: TeX 1831–1843 (verbatim at L5.2.5; T035-pattern).
+- **Sizing**: ~50 LOC.
+
+### [T515] μ_θ, its moments and restriction; ζ_η and its interpolation
+- **Status**: open | **File**: NonTame.lean | **Depends on**: T514, T508 | **Type**: cluster
+- **Statement**: `muTheta` (:= twist χ̃ μ_η) + Lem 5.12 cleared transform +
+  moments + Res-formula (L5.2.6 — ROUTE per the corrected attack: ψ-of-twist
+  via support for n ≥ 1, L5.2.4 for n = 0); `zetaEta` + final display
+  (L5.2.7).
+- **Sources**: TeX 1845–1875 (verbatim quotes at L5.2.6/7).
+- **Blueprint**: wire `interp-nontame`-adjacent definition nodes (μ_θ/ζ_η).
+- **Sizing**: ~160 LOC.
+
+### [T516] **MILESTONE: RJW Theorem 5.7** — ∃! ζ_η
+- **Status**: open | **File**: NonTame.lean | **Depends on**: CLEANUP-ALL-4
+- **Type**: theorem
+- **Statement**: existence (T515) + uniqueness via determinacy (L5.2.8's
+  recorded design: χ-quantifier through 𝓞_ℂp-baseChange; statement form
+  fixed in TW6 skeleton per decomposition).
+- **Sources**: TeX 1773–1776 (verbatim at R5.2 head).
+- **Blueprint**: wire `interp-nontame`; re-render.
+- **Sizing**: determinacy ~120 LOC + assembly ~60.
+
+### [CLEANUP-ALL-4] Pre-milestone /cleanup-all
+- **Status**: open | **Depends on**: T515 | **Type**: cleanup-all (before T516)
+
+### [T517] Teichmüller character ω
+- **Status**: open | **File**: Interpolation/Branches.lean | **Depends on**: none
+- **Parallel**: yes (chain C head) | **Type**: def + API
+- **Statement**: skeleton `PadicInt.teichmullerFun` + 6 API sorries +
+  `teichmuller` packaging (L5.3.1).
+- **Proof sketch**: decomposition L5.3.1 (limit of x^{p^n}; Cauchy via
+  Fermat+binomial induction; fixed points; multiplicativity by limit-algebra;
+  PR candidate `PadicInt.teichmuller`).
+- **Mathlib lemmas**: `CompleteSpace`-limit API (`CauchySeq.tendsto_limUnder`),
+  `ZMod.pow_card_sub_one_eq_one`/Fermat (`ZMod.pow_card`), `PadicInt.toZModPow`
+  congruence API.
+- **Sources**: Def 5.15 TeX 1899–1905 (verbatim at R5.3).
+- **Blueprint**: wire the chapter's ω-definition node (§5.3 part — locate
+  label in Interpolation.lean tail).
+- **Sizing**: ~120 LOC.
+
+### [T518] ⟨·⟩ and y^s on 1+pℤ_p
+- **Status**: open | **File**: Branches.lean | **Depends on**: T517 | **Type**: def + API
+- **Statement**: skeleton angleUnit cluster (L5.3.2) + onePAdicPow cluster
+  (L5.3.3 — built on `PadicInt.addChar_of_value_at_one`; replan note: source's
+  exp/log definition realised by character-uniqueness; the Lem 5.14 blueprint
+  node stays UNWIRED with rationale comment).
+- **Mathlib lemmas**: `PadicInt.addChar_of_value_at_one`,
+  `PadicInt.continuousAddCharEquiv` (uniqueness for mul_base/natCast),
+  binomial-coefficient norm bounds.
+- **Sources**: TeX 1892–1905 (verbatim at R5.3).
+- **Sizing**: ~140 LOC.
+
+### [T519] **MILESTONE: branches ζ_{p,i} and RJW Theorem 5.17**
+- **Status**: open | **File**: Branches.lean | **Depends on**: T518, CLEANUP-ALL-5
+- **Type**: def + theorem
+- **Statement**: skeleton `branchChar`, `branchChar_natCast`, `zetaPBranch`,
+  `zetaPBranch_interpolation` (L5.3.4–6; pairing through the §4
+  IsPseudoMeasure witnesses at the T037 generator — pairChar sub-lemma
+  `integral_char_dirac_mul` L5.3.5).
+- **Sources**: TeX 1907–1924 (verbatim at R5.3).
+- **Blueprint**: wire the ζ_{p,i}/Thm 5.17 nodes; re-render.
+- **Sizing**: ~150 LOC.
+
+### [CLEANUP-ALL-5] Pre-milestone /cleanup-all
+- **Status**: open | **Depends on**: T510, T516, T518 | **Type**: cleanup-all (before T519/T520)
+
+### [T520] L_p(θ,s) and RJW Theorem 5.19
+- **Status**: open | **File**: Branches.lean | **Depends on**: T519, T516 | **Type**: def + theorem
+- **Statement**: `LpFunction θ s` (genuine integral against ζ_η) +
+  `Lp_interpolation` (L5.3.7; eq:alternative route; ω-as-Dirichlet-character
+  bridge `teichmullerChar` sub-leaf).
+- **Sources**: TeX 1929–1957 (verbatim at R5.3).
+- **Blueprint**: wire the L_p/Thm 5.19 nodes; re-render; chapter complete
+  except Mellin-dependent prose nodes (rationale comments).
+- **Sizing**: ~130 LOC.
+
+### [CLEANUP-53] Final per-file cleanups (§5 files)
+- **Status**: open | **Depends on**: T520 | **Type**: cleanup (Characters,
+  GenBernoulli[Complex], Twist, TameConductor, NonTame, Branches — final pass
+  each; then update CLEANUP-FINAL's scope to include §5)
+
+## §5 dependency quick-view
+```
+chain A: TW1 → TW2 → TW3 → CLW1 → TW4 → TW5 → TW6 → CLW2
+chain B: T501 T502 T503 (free) → T504 → T505;
+chain C: T517 → T518 (free)
+TW6+T502 → T506 → T507 → (T501) → T508 → CL51 → (T504) → T509 → CLALL3 → T510*
+TW6+T501 → T511 → T512(T504) , T513 → CL52 → T514 → T515(T508) → CLALL4 → T516*
+T518 → (CLALL5) → T519* → (T516) → T520 → CL53 → [CLEANUP-FINAL widened]
+```
+Cadence audit: Twist 3/1 ✓; NonTame 6/2 ✓ (CL52 + final in CL53);
+TameConductor 2/1(final in CL53) ✓; Branches 4/1+final ✓; GenBernoulli 2+1
+(final in CL53) ✓; Characters 2 (final in CL53) ✓; pre-milestone cleanup-alls
+×3 ✓; CLEANUP-FINAL retained as global last ✓.
