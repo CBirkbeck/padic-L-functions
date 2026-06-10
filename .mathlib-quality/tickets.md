@@ -2147,9 +2147,32 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   STEP 4: cancel (E_{ap^n}−1) ≠ 0 (coeff 1 = a ≠ 0, K char-0; §4
   hreg-pattern; domain): **FINAL-10b: X·Σ_{c<p^n}χ̄⁻¹(c)•H_c =
   G'·(genBPS_χ̄ − C(χ̄(a))·rescale (a:K) genBPS_χ̄)**.
-  Then (v-f) extraction: T508 map+subst-transport (Σ_cχ̄⁻¹(c)H_c =
-  (G_R:K)·H_χ), G'-cancel (≠ 0 via T502 norm), coeff_{k+1}, K-bridge
-  delQ-cluster restated from MuA.lean, apply_powCM.
+  (v-e) COMPLETE (2026-06-10, all four steps committed/pushed):
+  `charTwist_muA_exp_identity_cleared` (step 1),
+  `sum_char_inv_mul_exp_identity` (step 2),
+  `X_mul_sum_char_inv_subst` = **FINAL-10b** (steps 3+4; hA block-split via
+  the reindex with roles swapped + ZMod-period + exp-products + telescope;
+  hB via the rescale-a-image of (v-d) with an inline rescale-of-C ext-lemma;
+  endgame `linear_combination C(G')·hA − C(G')·hB`; the regular-factor
+  cancellation via coeff-1 ≠ 0, simp leaves the disjunction a = 0 ∨ p-zero
+  — rcases). LEAN NOTES for the file: fragile underscore-calcs DON'T (the
+  `_`s elaborate against the wrong metas — write rw-show-chains or
+  linear_combination instead).
+  Then (v-f) extraction — the LAST sub-step of T509: T508 map+subst-transport
+  (Σ_cχ̄⁻¹(c)·H_c = C((G_R:K))·H_χ where H_χ := (map subtype 𝓐(twist χ̃
+  (μ_a)_K)).subst (exp−1); from T508 hit with map-subtype, substAlgHom at
+  exp−1, and the C-image bookkeeping — note T508's statement is in
+  •-smul form: (G_R • twist χ̃ μ) — map_smul through 𝓐/map/subst gives the
+  C-multiple), G'-vs-(G_R:K) bridge (subtype-hom of the finite gaussSum =
+  the K-valued gaussSum of toFieldChar against the K-valued zmodChar —
+  small lemma, map_sum), G'-cancel (≠ 0: T502 `norm_gaussSum_eq_one` gives
+  the K-valued norm 1 — check it applies to gaussSum (toFieldChar χ)⁻¹
+  directly or transport), coeff_{k+1} of FINAL-10b (coeff_succ_X_mul on the
+  left; coeff_mk + coeff_rescale on the right), K-bridge delQ-cluster
+  restated from MuA.lean over K (hasSubst_exp_sub_one-K [done inline in ‡c
+  as hg], derivativeFun_subst_exp-K, constantCoeff_subst_exp-K,
+  constantCoeff_iterate_delQ-K — copy proofs with ℚ_[p] → K), MeasureR
+  `apply_powCM` + `mahlerTransform_baseChange` to land twist_muA_moments.
   OLD-NEXT (superseded): (v-a) + the toFieldChar-IsPrimitive lemma in
   TameConductor.lean (or Characters.lean for the primitivity transport).
   NEXT after: step (v) per the plan above — the formal subst (exp K − 1)
