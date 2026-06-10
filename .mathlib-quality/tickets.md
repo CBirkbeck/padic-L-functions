@@ -1506,7 +1506,8 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 # §5 — Interpolation at Dirichlet characters (TeX 1610–1979) — added 2026-06-10
 
 ## §5 Summary
-- Tickets: TW1–TW6 (widening) + T501–T520 (§5 proper) + cleanups per cadence
+- Tickets: TW1–TW6 (widening) + T501–T523 (§5 proper + exp/log cluster,
+  user-added at board approval) + cleanups per cadence
 - Open: all | Done: 0
 - Decomposition: `.mathlib-quality/decomposition.md` §5 (W*, L5.1.*, L5.2.*, L5.3.*;
   gate PASSED 2026-06-10 with 3 recorded replan/design notes: R5-CLEAR,
@@ -1896,6 +1897,55 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   except Mellin-dependent prose nodes (rationale comments).
 - **Sizing**: ~130 LOC.
 
+### [T521] p-adic exponential: convergence, isometry, functional equation
+- **Status**: open | **File**: PadicLFunctions/PadicExp.lean | **Depends on**: none
+- **Parallel**: yes (chain D head; user-added cluster) | **Type**: def + lemmas
+- **Statement**: skeleton sorries E1–E3 (`summable_iff_tendsto_cofinite_zero`,
+  `norm_factorial_le`, `padicExp_zero`, `norm_padicExp_sub_padicExp`,
+  `norm_padicExp_sub_one`, `padicExp_add`).
+- **Proof sketch**: decomposition R5.E (E1 partial-sum Cauchy; E2 Legendre via
+  mathlib `padicValNat` factorial API; E3 isometry termwise-strict on the OPEN
+  ball + tsum_prod/antidiagonal for exp_add — NOT norm-summable Cauchy
+  products, attack-pinned).
+- **Mathlib lemmas**: `padicValNat`-factorial family (verify exact:
+  `Nat.Prime.factorization_factorial`/`sub_one_mul_padicValNat_factorial`),
+  `Summable.tsum_prod`, `tsum_comm`, `Finset.Nat.sum_antidiagonal_eq_sum_range_succ`,
+  `Padic.norm_eq_zpow_neg_valuation`.
+- **Sources**: TeX 1892–1897 (verbatim at R5.E) + Cassels §12/Washington §5.1
+  (cross-refs recorded).
+- **Generality**: over the §5 coefficient field L (ℚ_p-instance for Lem 5.14);
+  radius-form statements p-uniform, pℤ_p-forms p ≠ 2.
+- **Blueprint**: none yet (T523 wires Lem 5.14).
+- **Sizing**: ~180 LOC (Washington's §5.1 proofs span ~1.5 pages).
+
+### [T522] p-adic logarithm and exp/log inversion
+- **Status**: open | **File**: PadicExp.lean | **Depends on**: T521 | **Type**: lemmas
+- **Statement**: skeleton E4 sorries (`padicLog_one`, `norm_padicLog`,
+  `padicExp_padicLog`, `padicLog_padicExp`, `padicLog_mul`).
+- **Proof sketch**: decomposition E4 (series composition with ultrametric
+  Fubini — Washington Prop 5.3 route, attack-pinned; log_mul from exp_add +
+  injectivity-of-exp via isometry).
+- **Sources**: as T521.
+- **Sizing**: ~150 LOC (the composition is the meaty half).
+
+### [T523] RJW Lemma 5.14 as stated + equivalence with the character route
+- **Status**: open | **File**: PadicExp.lean | **Depends on**: T522, T518 | **Type**: theorem
+- **Statement**: skeleton pZp-section sorries (`padicExp_converges_on_pZp`,
+  `pZpExp`/`pZpLog` integral versions + membership lemmas,
+  `padicExp_smul_padicLog_eq_onePAdicPow`).
+- **Proof sketch**: decomposition E5 (ball inclusion p odd; integrality via
+  isometry; equivalence by `PadicInt.continuousAddCharEquiv` uniqueness +
+  `padicExp_add` + `padicExp_padicLog` at s = 1).
+- **Sources**: TeX 1892–1897 (the Lem 5.14 statement realised literally).
+- **Blueprint**: WIRE the chapter's Lem 5.14 node (the exp-statement node —
+  locate label in Interpolation.lean §5.3 region) → `padicExp_converges_on_pZp`
+  + `padicExp_smul_padicLog_eq_onePAdicPow`; replaces the planned
+  unwired-rationale (user-approved cluster).
+- **Sizing**: ~100 LOC.
+
+### [CLEANUP-54] /cleanup on PadicExp.lean (3 tickets on file → cadence + final)
+- **Status**: open | **Depends on**: T523 | **Type**: cleanup
+
 ### [CLEANUP-53] Final per-file cleanups (§5 files)
 - **Status**: open | **Depends on**: T520 | **Type**: cleanup (Characters,
   GenBernoulli[Complex], Twist, TameConductor, NonTame, Branches — final pass
@@ -1906,11 +1956,12 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 chain A: TW1 → TW2 → TW3 → CLW1 → TW4 → TW5 → TW6 → CLW2
 chain B: T501 T502 T503 (free) → T504 → T505;
 chain C: T517 → T518 (free)
+chain D: T521 → T522 → (T518) → T523 → CL54 (free until T523's T518-dep)
 TW6+T502 → T506 → T507 → (T501) → T508 → CL51 → (T504) → T509 → CLALL3 → T510*
 TW6+T501 → T511 → T512(T504) , T513 → CL52 → T514 → T515(T508) → CLALL4 → T516*
 T518 → (CLALL5) → T519* → (T516) → T520 → CL53 → [CLEANUP-FINAL widened]
 ```
-Cadence audit: Twist 3/1 ✓; NonTame 6/2 ✓ (CL52 + final in CL53);
+Cadence audit: PadicExp 3/1 ✓ (CL54); Twist 3/1 ✓; NonTame 6/2 ✓ (CL52 + final in CL53);
 TameConductor 2/1(final in CL53) ✓; Branches 4/1+final ✓; GenBernoulli 2+1
 (final in CL53) ✓; Characters 2 (final in CL53) ✓; pre-milestone cleanup-alls
 ×3 ✓; CLEANUP-FINAL retained as global last ✓.

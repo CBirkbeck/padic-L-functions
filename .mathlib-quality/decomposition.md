@@ -2509,3 +2509,103 @@ possible. Clean.
 REVIEW-PENDING: none. API gaps all carry sub-decompositions. GATE PASSES for
 ticket creation, with the three recorded replan/design notes (R5-CLEAR,
 L5.2.4-route, L5.2.8/L5.3.3 statement designs) to surface at board approval.
+
+## R5.E: p-adic exponential and logarithm (user-requested 2026-06-10 at board approval)
+
+### Source statement (verbatim, TeX 1892–1897, Lem 5.14)
+> "The $p$-adic exponential map converges on $p\Zp$. Hence, for any $s \in \Zp$,
+> the function $1+p\Zp \rightarrow \Zp$ given by $x \mapsto x^s \defeq
+> \mathrm{\exp}(s\cdot\mathrm{log}(x))$ is well-defined."
+> Proof: "This is a standard result in the theory of local fields; see e.g.\
+> \cite[\S12]{cassels}."
+
+### Step 1 prose (source defers to Cassels §12; cross-reference Washington §5.1
+— fallback chain step 1, recorded)
+exp(x) = Σ x^n/n! converges iff v_p(x) > 1/(p−1) (Legendre: v_p(n!) =
+(n − s_p(n))/(p−1)); on that ball exp is an isometry (‖exp x − exp y‖ = ‖x−y‖,
+each difference-term beyond the linear one being strictly smaller
+ultrametrically), hence a bijection onto 1 + ball with inverse log; exp(x+y) =
+exp(x)exp(y) by the binomial/double-series rearrangement (unconditional
+convergence, ultrametric). For p odd, pℤ_p is inside the ball; x^s := exp(s log x)
+is then a continuous character ℤ_p → 1+pℤ_p with value x at 1, hence agrees with
+`onePAdicPow` (L5.3.3) by uniqueness (`continuousAddCharEquiv`).
+
+### Leaves (PadicLFunctions/PadicExp.lean; over the §5 coefficient field L)
+- **E1** (leaf): ultrametric summability — a family `f : ι → L` is summable iff
+  `f → 0` along cofinite (complete ultrametric). Mathlib check at execution
+  (`IsUltrametricDist`-summability API); else ~25 LOC via Cauchy partial sums.
+  Attacks: [1] needs T2+complete ✓ L; [2] ι countable not needed ✓ cofinite
+  form; [3] known-true classical. SURVIVED.
+- **E2** (leaf): `‖(n.factorial : L)‖ = p^{-v_p(n!)}` + Legendre bound
+  `v_p(n!) ≤ (n−1)/(p−1)` (mathlib `padicValNat` factorial API — verify names
+  `Nat.Prime.factorization_factorial`/`padicValNat_factorial`; the ≤-bound is
+  s_p(n) ≥ 1 for n ≥ 1). Attacks: [1] n = 0 edge (0! = 1, v = 0 ✓);
+  [2] the bound is sharp at n = p^k — only ≤ needed ✓; [3] norm-of-cast via
+  NormedAlgebra isometry ✓ W1-route. SURVIVED.
+- **E3** (leaf): `padicExp : L → L` (junk-total, defined as tsum of x^n/n!),
+  `padicExp_isometry : ‖x‖ < rExp → ‖y‖ < rExp → ‖padicExp x − padicExp y‖ =
+  ‖x − y‖` where `rExp := p^{-1/(p−1) : ℝ}`-ball; `padicExp_add` on the ball
+  (double-series + `Summable.tsum_prod`/`tsum_comm` + antidiagonal binomial);
+  `padicExp_zero = 1`; `‖padicExp x − 1‖ = ‖x‖`; convergence-on-pℤ_p corollary
+  for p odd (‖x‖ ≤ p⁻¹ < p^{-1/(p−1)} ⟸ p odd; for p = 2 the radius excludes
+  2ℤ₂ — the source's pℤ_p-statement is the p-odd instance; the general-radius
+  form is stated p-uniformly, NO silent p≠2 drop). Attacks: [1] Cauchy-product
+  trap: norm-summability unavailable ultrametrically — route via unconditional
+  tsum_prod RECORDED (not tsum_mul_tsum) ✓; [2] junk-total def vs ball-guarded
+  lemmas — §4 Fa-pattern ✓; [3] isometry constant: ‖x^n/n!‖ < ‖x‖ for n ≥ 2 on
+  the OPEN ball needs strict Legendre: v(x^n/n!) − v(x) = (n−1)v(x) − v(n!) >
+  (n−1)/(p−1) − (n−1)/(p−1) = 0 ✓ strict on open ball ✓ (CAUGHT: at the CLOSED
+  radius it fails — ball openness is essential; statements use strict ‖·‖ <
+  rExp, with pℤ_p ⊂ open ball for p odd ✓). SURVIVED (attack [3] pinned
+  strictness).
+- **E4** (leaf): `padicExp_bijOn : BijOn padicExp (ball 0 rExp) (1 + ball)` —
+  injective (isometry), surjective onto `{y | ‖y − 1‖ < rExp}` (completeness:
+  the standard successive-approximation/contraction — Washington Prop 5.4
+  route) — and `padicLog : L → L` := the inverse on that ball (junk-total via
+  Function.invFunOn or explicit series; DESIGN: define padicLog by the SERIES
+  Σ −(−1)^n(x−1)^n/n (converges for ‖x−1‖ < 1, BIGGER ball) and prove
+  exp∘log/log∘exp on the matched small balls via the isometry+algebra —
+  faithful to "log" being the standard series and giving log on all of
+  1+pℤ_p... wait for p odd pℤ_p-ball: series-log converges on ‖x−1‖ < 1 ⊃
+  1+pℤ_p ✓ but exp∘log = id only holds on ‖x−1‖ < rExp... for p odd
+  ‖x−1‖ ≤ 1/p < rExp = p^{-1/(p−1)} ✓ all consistent on 1+pℤ_p. Series-log
+  it is; the bijection statement scoped to the rExp-balls.) Attacks:
+  [1] log-series convergence: v(yⁿ/n) = n·v(y) − v(n), v(n) ≤ log_p n → ✓
+  → ∞; [2] exp(log x) = x route: BOTH are limits of the formal identities'
+  partial sums — the clean p-adic proof (Washington Prop 5.3): isometry-based:
+  g := exp∘log − id is continuous, vanishes on the DENSE?? no — standard
+  route: formal power-series identity composed with evaluation: needs formal
+  `PowerSeries.exp/log` composition in mathlib (`PowerSeries.exp_log`-? NOT
+  confirmed) — FALLBACK (recorded): derivative-free telescoping à la
+  Washington 5.3 via the functional equations: exp_add (E3) + log_mul (same
+  tech) + the order-1 isometry pin exp(log x)·x⁻¹ ≡ 1: hmm — ROBUST ROUTE:
+  uniqueness of continuous characters AGAIN: for fixed x ∈ 1+pℤ_p (p odd),
+  s ↦ exp(s·log x) and s ↦ onePAdicPow x s are both continuous characters
+  ℤ_p → ℤ_p^×-ball with the SAME derivative-free determination at s ∈ ℕ?:
+  exp(n log x) = exp(log x)^n (exp_add ✓) so at s = 1 they agree IFF
+  exp(log x) = x — circular for the identity itself. DECISION: prove
+  exp∘log = id on 1+pℤ_p the honest way: composition of series with
+  ultrametric Fubini (double-sum over the log-expansion inside exp — finite
+  multinomial bookkeeping; Washington does exactly this in 5.3; ~80 LOC).
+  E4 carries the real work; sized accordingly. [3] image
+  characterisation 1+ball: from isometry ‖exp x − 1‖ = ‖x‖ ✓. SURVIVED
+  (route pinned: series-composition with ultrametric Fubini).
+- **E5** (internal): **Lem 5.14 as stated** — `padicExp_converges_on_pZp`
+  (p odd; the source's first sentence), `expPow x s := padicExp (s • padicLog x)`
+  well-defined `1+pℤ_p → ℤ_p` for s ∈ ℤ_p (p odd), and
+  `expPow_eq_onePAdicPow : expPow x s = onePAdicPow x hx s` (character
+  uniqueness: s ↦ expPow x s is continuous + additive (exp_add + log-linearity
+  of s·log x) with value exp(log x) = x at s = 1 (E4)).
+  Composition: E1–E4 + `PadicInt.continuousAddCharEquiv` uniqueness + L5.3.3.
+  Attacks: [1] ℤ_p-valuedness of expPow: ‖s·log x‖ ≤ ‖log x‖ ≤ 1/p ⟹ exp-value
+  ∈ 1+pℤ_p ⊂ ℤ_p ✓ E3-isometry; [2] s • log x: ℤ_p-action on L vs ℤ_p-target —
+  for the Lem 5.14 statement work over ℤ_p directly (L := ℚ_p-instance or the
+  ℤ_p-restricted statements; skeleton states the ℤ_p forms; general-L forms
+  are the PR-shape) ✓ both recorded; [3] blueprint wiring: the chapter's
+  Lem 5.14 node NOW wires to `padicExp_converges_on_pZp`+`expPow`-pair
+  (user-approved exp/log cluster removes the L5.3.3 unwired-rationale).
+  SURVIVED.
+
+Gate (E-cluster): all leaves discharged-or-sub-decomposed; quotes present
+(TeX 1892–1897 + Cassels/Washington cross-refs recorded); attacks logged with
+two real route-pins (E3 strictness, E4 composition route). PASSES.

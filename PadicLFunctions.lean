@@ -15,6 +15,7 @@ import PadicLFunctions.Interpolation.Characters
 import PadicLFunctions.Interpolation.GenBernoulli
 import PadicLFunctions.Interpolation.GenBernoulliComplex
 import PadicLFunctions.Interpolation.Branches
+import PadicLFunctions.PadicExp
 
 /-!
 # p-adic L-functions
