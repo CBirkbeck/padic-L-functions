@@ -266,11 +266,24 @@ Uniqueness follows from the fact that a measure on $`\Zpx` is determined by its
 moments $`\int x^k`.
 :::
 
-:::lemma_ "interp-eta-mellin"
+:::lemma_ "interp-eta-mellin" (lean := "PadicLFunctions.MeasureR.muEtaCleared_moments, PadicLFunctions.MeasureR.X_mul_muEtaCleared_subst")
 With $`f_\eta` and $`\mu_\eta` the function and measure of {uses "interp-mu-eta"}[],
 we have $`L(f_\eta, s) = -\eta(-1)L(\eta, s)`, and hence for $`k \geq 0`,
 $$`\int_{\Zp}x^k\cdot\mu_\eta = L(\eta, -k).`
 This uses {uses "interp-mu-eta"}[] and {uses "dirichlet-L-function"}[].
+
+The formalisation proves the displayed moment formula in cleared form:
+`muEtaCleared_moments` gives $`\int x^k \cdot (-G(\eta^{-1})\mu_\eta) =
+G(\eta^{-1})\,L(\eta,-k)` with the value encoded as the generalised
+Bernoulli expression `LvalNeg`, by extracting the $`(k+1)`-st coefficient
+of the formal master identity `X_mul_muEtaCleared_subst`
+($`t\,G(\eta^{-1})f_\eta(t)` equals the generating function of
+$`-B_{k,\eta}`) — the purely $`p`-adic route through the
+generalised-Bernoulli generating function `genBernoulliPowerSeries_mul`,
+avoiding the complex Mellin detour. The
+first display ($`L(f_\eta,s) = -\eta(-1)L(\eta,s)`, an identity of
+complex $`L`-functions) is the analytic half quarantined as in
+{uses "interp-dirichlet-integral"}[] and is not formalised.
 :::
 
 :::proof "interp-eta-mellin"

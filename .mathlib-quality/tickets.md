@@ -2317,12 +2317,38 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   green (3833 jobs).
 
 ### [T512] Moments of μ_η (Lem 5.9, p-adic half)
-- **Status**: open | **File**: NonTame.lean | **Depends on**: T511, T504 | **Type**: lemma
+- **Status**: done | **File**: NonTame.lean | **Depends on**: T511, T504 | **Type**: lemma
 - **Statement**: `muEta_moments` (L5.2.3): ∫x^k μ_η = LvalNeg η k.
 - **Sources**: TeX 1801–1807 (verbatim at L5.2.3).
 - **Blueprint**: wire `interp-eta-mellin`'s value half per node text (worker
   reads node; Mellin-statement half stays prose with rationale if present).
 - **Sizing**: ~90 LOC (rides T504/T509 machinery at modulus D).
+- **Progress**: DONE 2026-06-10, `muEtaCleared_moments` (cleared form:
+  ∫x^k·(−G(η⁻¹)μ_η) = G(η⁻¹)·LvalNeg(ηK)(k)) via a 3-step chain mirroring
+  T509 but with NO clearing factor: (1) `muEta_term_exp_identity` — T511's
+  unit identity through map-subtype + substAlgHom(exp−1) (LEAN NOTE: keep
+  `map_pow` OUT of the first simp set or the C-of-pow splits into (C ↑ζ)^c
+  and the second simp can't push substAlgHom through — use
+  `SubmonoidClass.coe_pow` to normalise ↑(ζ^c) = (↑ζ)^c instead); (2)
+  `rescale_exp_sub_one_mul_muEta_term` — geom_sum_mul clearing of e^{Dt}−1,
+  ζ^{cD} = 1, exp_pow_eq_rescale_exp; (3) `X_mul_muEtaCleared_subst` MASTER:
+  X·H_η = −C(G')·genBPS(ηK), via η̄(0) = 0 drop (Fact (1<D) nontrivial), the
+  GENERALISED `sum_inv_char_zeta_pow` Gauss collapse + GENERALISED
+  `X_mul_sum_char_rescale_exp` (both TameConductor: p^n → arbitrary
+  [NeZero N] modulus, X_mul… takes hN1 : 1 < N now — call sites pass
+  Nat.one_lt_pow), regular-factor cancellation (coeff-1 = D ≠ 0, CharZero).
+  Final: T509-endgame coeff_{k+1} extraction (apply_powCM + NEW FACTORED
+  `map_subtype_del_iterate` [also refactored into twist_muA_moments,
+  −10 LOC] + constantCoeff_iterate_delField), factorial algebra (LEAN NOTE:
+  after `field_simp [hfact]` the goal is already in (k+1)-normal form —
+  `rw [hfact]; push_cast; ring` closes; an intermediate push_cast is a
+  no-op). Verification: lake build green (code + blueprint); axioms =
+  {propext, Classical.choice, Quot.sound} on all four new decls (one
+  stale-LSP sorryAx artifact on moments, clean on re-verify — third
+  occurrence of this artifact, always re-verify). Blueprint:
+  `interp-eta-mellin` wired → muEtaCleared_moments + X_mul_muEtaCleared_subst
+  with prose note (cleared encoding, p-adic route via
+  genBernoulliPowerSeries_mul, complex Mellin half quarantined unfomalised).
 
 ### [T513] ψ-invariance: ψ(μ_η) = η(p)·μ_η (Lem 5.10)
 - **Status**: open | **File**: NonTame.lean | **Depends on**: T511 | **Type**: lemma

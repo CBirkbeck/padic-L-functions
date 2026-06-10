@@ -161,48 +161,48 @@ lemma sum_range_mul_eq_sum_range {M : Type*} [AddCommMonoid M] (f : ℕ → M)
   · intro q _
     rfl
 
-omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
+  [CompleteSpace K] in
 /-- T509 (v-d): the `j`-indexed form of the generating-function identity T504
-at level `p^n` over `K`: `X·Σ_{j<p^n} χK(j)·E_j = genBPS_χK·(E_{p^n} − 1)`
-(boundary terms `j = 0` and `j = p^n` vanish through `χK(0) = 0`). -/
-lemma X_mul_sum_char_rescale_exp {n : ℕ} (hn : 1 ≤ n)
-    (χK : DirichletCharacter K (p ^ n)) :
-    PowerSeries.X * ∑ j ∈ Finset.range (p ^ n),
-        PowerSeries.C (χK ((j : ℕ) : ZMod (p ^ n)))
+over `K` (any modulus `N > 1`): `X·Σ_{j<N} χK(j)·E_j = genBPS_χK·(E_N − 1)`
+(boundary terms `j = 0` and `j = N` vanish through `χK(0) = 0`). -/
+lemma X_mul_sum_char_rescale_exp {N : ℕ} [NeZero N] (hN1 : 1 < N)
+    (χK : DirichletCharacter K N) :
+    PowerSeries.X * ∑ j ∈ Finset.range N,
+        PowerSeries.C (χK ((j : ℕ) : ZMod N))
           * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
       = (PowerSeries.mk fun k => χK.genBernoulli k * (k.factorial : K)⁻¹)
-          * (PowerSeries.rescale (((p : ℕ) ^ n : ℕ) : K) (PowerSeries.exp K)
+          * (PowerSeries.rescale ((N : ℕ) : K) (PowerSeries.exp K)
               - 1) := by
-  haveI : Fact (1 < p ^ n) :=
-    ⟨Nat.one_lt_pow (by omega) hp.out.one_lt⟩
+  haveI : Fact (1 < N) := ⟨hN1⟩
   rw [genBernoulliPowerSeries_mul χK]
   set h : ℕ → PowerSeries K := fun j =>
-    χK ((j : ℕ) : ZMod (p ^ n)) •
+    χK ((j : ℕ) : ZMod N) •
       (PowerSeries.X * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K))
     with hh
   have h0 : h 0 = 0 := by
     simp only [hh, Nat.cast_zero]
     rw [χK.map_nonunit not_isUnit_zero, zero_smul]
-  have hpn : h (p ^ n) = 0 := by
+  have hpn : h N = 0 := by
     simp only [hh]
-    rw [show (((p ^ n : ℕ)) : ZMod (p ^ n)) = 0 from ZMod.natCast_self _,
+    rw [show ((N : ℕ) : ZMod N) = 0 from ZMod.natCast_self _,
       χK.map_nonunit not_isUnit_zero, zero_smul]
-  have hshift : ∑ b ∈ Finset.range (p ^ n), h (b + 1)
-      = ∑ j ∈ Finset.range (p ^ n), h j := by
-    have hs := Finset.sum_range_succ' h (p ^ n)
+  have hshift : ∑ b ∈ Finset.range N, h (b + 1)
+      = ∑ j ∈ Finset.range N, h j := by
+    have hs := Finset.sum_range_succ' h N
     rw [Finset.sum_range_succ, h0, hpn, add_zero, add_zero] at hs
     exact hs.symm
-  calc PowerSeries.X * ∑ j ∈ Finset.range (p ^ n),
-        PowerSeries.C (χK ((j : ℕ) : ZMod (p ^ n)))
+  calc PowerSeries.X * ∑ j ∈ Finset.range N,
+        PowerSeries.C (χK ((j : ℕ) : ZMod N))
           * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
-      = ∑ j ∈ Finset.range (p ^ n), h j := by
+      = ∑ j ∈ Finset.range N, h j := by
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun j _ => ?_
         simp only [hh]
         rw [PowerSeries.smul_eq_C_mul]
         ring
-    _ = ∑ b ∈ Finset.range (p ^ n), h (b + 1) := hshift.symm
-    _ = ∑ b ∈ Finset.range (p ^ n), χK ((b + 1 : ℕ) : ZMod (p ^ n)) •
+    _ = ∑ b ∈ Finset.range N, h (b + 1) := hshift.symm
+    _ = ∑ b ∈ Finset.range N, χK ((b + 1 : ℕ) : ZMod N) •
           (PowerSeries.X * PowerSeries.rescale ((b : K) + 1)
             (PowerSeries.exp K)) := by
         refine Finset.sum_congr rfl fun b _ => ?_
@@ -211,25 +211,25 @@ lemma X_mul_sum_char_rescale_exp {n : ℕ} (hn : 1 ≤ n)
 
 omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
   [CharZero K] in
-/-- T509 (v-a), the `K`-valued Gauss collapse: for `χK` primitive mod `p^n`
-and `ζ'` a primitive `p^n`-th root of unity in `K`,
-`Σ_{c<p^n} χK⁻¹(c)·ζ'^{cj} = χK(j)·G(χK⁻¹)` for every `j` (the non-unit `j`
+/-- T509 (v-a), the `K`-valued Gauss collapse (any modulus): for `χK`
+primitive mod `N` and `ζ'` a primitive `N`-th root of unity in `K`,
+`Σ_{c<N} χK⁻¹(c)·ζ'^{cj} = χK(j)·G(χK⁻¹)` for every `j` (the non-unit `j`
 case carried by the primitive-character vanishing inside
 `gaussSum_mulShift_of_isPrimitive`). -/
-lemma sum_inv_char_zeta_pow {n : ℕ}
-    {χK : DirichletCharacter K (p ^ n)} (hχK : χK.IsPrimitive)
-    {ζ' : K} (hζ' : IsPrimitiveRoot ζ' (p ^ n)) (j : ℕ) :
-    ∑ c ∈ Finset.range (p ^ n), χK⁻¹ ((c : ℕ) : ZMod (p ^ n)) * ζ' ^ (c * j)
-      = χK ((j : ℕ) : ZMod (p ^ n))
-        * gaussSum χK⁻¹ (AddChar.zmodChar (p ^ n) hζ'.pow_eq_one) := by
+lemma sum_inv_char_zeta_pow {N : ℕ} [NeZero N]
+    {χK : DirichletCharacter K N} (hχK : χK.IsPrimitive)
+    {ζ' : K} (hζ' : IsPrimitiveRoot ζ' N) (j : ℕ) :
+    ∑ c ∈ Finset.range N, χK⁻¹ ((c : ℕ) : ZMod N) * ζ' ^ (c * j)
+      = χK ((j : ℕ) : ZMod N)
+        * gaussSum χK⁻¹ (AddChar.zmodChar N hζ'.pow_eq_one) := by
   have hχinv : χK⁻¹.IsPrimitive :=
     (DirichletCharacter.conductor_inv χK).trans hχK
-  have hsum : ∑ c ∈ Finset.range (p ^ n),
-        χK⁻¹ ((c : ℕ) : ZMod (p ^ n)) * ζ' ^ (c * j)
-      = gaussSum χK⁻¹ ((AddChar.zmodChar (p ^ n) hζ'.pow_eq_one).mulShift
-          ((j : ℕ) : ZMod (p ^ n))) := by
+  have hsum : ∑ c ∈ Finset.range N,
+        χK⁻¹ ((c : ℕ) : ZMod N) * ζ' ^ (c * j)
+      = gaussSum χK⁻¹ ((AddChar.zmodChar N hζ'.pow_eq_one).mulShift
+          ((j : ℕ) : ZMod N)) := by
     rw [gaussSum]
-    refine Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod (p ^ n))) (fun a => a.val)
+    refine Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod N)) (fun a => a.val)
       ?_ ?_ ?_ ?_ ?_
     · intro c _
       exact Finset.mem_univ _
@@ -474,7 +474,9 @@ lemma X_mul_sum_char_inv_subst {n : ℕ} (hn : 1 ≤ n)
           from by push_cast; ring,
         ← PowerSeries.exp_mul_exp_eq_exp_add]
       ring
-    rw [hsplit, ← mul_assoc, X_mul_sum_char_rescale_exp hn (toFieldChar χ),
+    rw [hsplit, ← mul_assoc,
+      X_mul_sum_char_rescale_exp (Nat.one_lt_pow (by omega) hp.out.one_lt)
+        (toFieldChar χ),
       mul_assoc, mul_comm (PowerSeries.rescale (((p : ℕ) ^ n : ℕ) : K)
         (PowerSeries.exp K) - 1), geom_sum_mul, rescale_exp_pow,
       show ((a : K)) * (((p ^ n : ℕ)) : K) = ((a * p ^ n : ℕ) : K)
@@ -493,7 +495,7 @@ lemma X_mul_sum_char_inv_subst {n : ℕ} (hn : 1 ≤ n)
           * (PowerSeries.rescale ((a * p ^ n : ℕ) : K) (PowerSeries.exp K)
             - 1) := by
     have hres := congrArg (PowerSeries.rescale ((a : ℕ) : K))
-      (X_mul_sum_char_rescale_exp hn (toFieldChar χ))
+      (X_mul_sum_char_rescale_exp (Nat.one_lt_pow (by omega) hp.out.one_lt) (toFieldChar χ))
     rw [map_mul, map_mul, map_sub, map_one, map_sum, PowerSeries.rescale_X,
       PowerSeries.rescale_rescale,
       show (((p : ℕ) ^ n : ℕ) : K) * ((a : ℕ) : K) = ((a * p ^ n : ℕ) : K)
@@ -558,6 +560,16 @@ lemma map_subtype_del (F : PowerSeries (integerRing K)) :
       = delField (PowerSeries.map (integerRing K).subtype F) := by
   rw [del, delField, map_mul, map_add, map_one, PowerSeries.map_X,
     map_subtype_derivativeFun]
+
+omit [CompleteSpace K] [CharZero K] in
+lemma map_subtype_del_iterate (j : ℕ) (F : PowerSeries (integerRing K)) :
+    PowerSeries.map (integerRing K).subtype ((del K)^[j] F)
+      = delField^[j] (PowerSeries.map (integerRing K).subtype F) := by
+  induction j generalizing F with
+  | zero => rfl
+  | succ j ih =>
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
+      map_subtype_del, ih]
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
 lemma hasSubst_exp_sub_one_K : HasSubst (exp K - 1) :=
@@ -778,17 +790,7 @@ theorem twist_muA_moments {n : ℕ} (hn : 1 ≤ n)
       rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
         ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
       rfl]
-    have hiter : ∀ (j : ℕ) (F : PowerSeries (integerRing K)),
-        PowerSeries.map (integerRing K).subtype ((del K)^[j] F)
-          = delField^[j] (PowerSeries.map (integerRing K).subtype F) := by
-      intro j
-      induction j with
-      | zero => exact fun F => rfl
-      | succ j ih =>
-        intro F
-        rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
-          map_subtype_del, ih]
-    rw [hiter, constantCoeff_iterate_delField]
+    rw [map_subtype_del_iterate, constantCoeff_iterate_delField]
   -- the `(k+1)`-st coefficient of FINAL-10b
   have h10b := congrArg (PowerSeries.coeff (k + 1))
     (X_mul_sum_char_inv_subst hn hχ hζ hζK hpa)
