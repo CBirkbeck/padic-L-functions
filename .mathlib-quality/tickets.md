@@ -1996,7 +1996,32 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~120 LOC.
 
 ### [T518] ⟨·⟩ and y^s on 1+pℤ_p
-- **Status**: open | **File**: Branches.lean | **Depends on**: T517 | **Type**: def + API
+- **Status**: done | **File**: Branches.lean | **Depends on**: T517 | **Type**: def + API
+- **Progress**: DONE 2026-06-10. angleBracket section: `angleUnit_sub_one_mem`
+  (unit-factoring ω⁻¹(x − ω) + ideal absorption), `angleUnit_mul`
+  (mul_inv_rev + mul_mul_mul_comm), `teichmuller_mul_angleUnit`
+  (mul_inv_cancel_left, term-mode). onePAdicPow section: helpers
+  `tendsto_pow_atTop_nhds_zero_of_mem_span` (norm ≤ p⁻¹ < 1),
+  `isClosed_span_p` (closed ball via norm_le_pow_iff_mem_span_pow),
+  `mul_sub_one_mem`; `onePAdicPow := addChar_of_value_at_one (y−1)`;
+  `onePAdicPow_apply_one`, `onePAdicPow_natCast` (nsmul_one +
+  map_nsmul_eq_pow), `continuous_onePAdicPow` (defeq), `onePAdicPow_sub_one_mem`
+  (density of ℕ + closedness, quotient-ring computation at naturals),
+  `onePAdicPow_mul_base` (uniqueness `eq_addChar_of_value_at_one` applied to
+  the product character). `eq_one_of_pow_card_sub_one` MOVED into the
+  onePAdicPow section (proof needs the character API): u^{(p−1)s} via
+  `AddChar.mulShift` is trivial by two applications of uniqueness, then
+  evaluate at (p−1)⁻¹ (p−1 a unit: residue −1 ≠ 0); works verbatim for p = 2
+  (degenerate, exponent 1) — RJW's odd-p caveat noted in docstring.
+  Verification: zero errors; axioms = {propext, Classical.choice, Quot.sound}
+  on eq_one_of_pow_card_sub_one, onePAdicPow_mul_base,
+  teichmuller_mul_angleUnit, onePAdicPow_sub_one_mem. lake build green
+  (Branches + Blueprint). Blueprint: node `teichmuller-character` wired to
+  {teichmuller, angleUnit, teichmuller_mul_angleUnit,
+  eq_one_of_pow_card_sub_one} with construction/uniqueness prose note;
+  Lem 5.14 node `interp-padic-exp` left unwired with rationale comment
+  (wire when T521–T523 proves convergence). Replan note honoured: x^s via
+  character-uniqueness (decomposition L5.3.3).
 - **Statement**: skeleton angleUnit cluster (L5.3.2) + onePAdicPow cluster
   (L5.3.3 — built on `PadicInt.addChar_of_value_at_one`; replan note: source's
   exp/log definition realised by character-uniqueness; the Lem 5.14 blueprint

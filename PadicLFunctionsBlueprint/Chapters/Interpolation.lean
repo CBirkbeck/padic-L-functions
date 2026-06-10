@@ -318,6 +318,12 @@ instead there are $`p-1` branches, one for each residue class modulo $`p-1`.
 The obstruction is that the naive definition $`x \mapsto x^s = \exp(s\log x)`
 fails: the $`p`-adic exponential does not converge on all of $`\Zpx`.
 
+-- UNWIRED (rationale): the formalisation realises `x^s` as the unique
+-- continuous additive character with value `x` at `1`
+-- (`PadicInt.onePAdicPow`, recorded replan L5.3.3), not through `exp`/`log`;
+-- this node will be wired when the p-adic exp/log cluster
+-- (`PadicLFunctions/PadicExp.lean`, tickets T521–T523) proves the
+-- convergence statement itself.
 :::lemma_ "interp-padic-exp"
 The $`p`-adic exponential converges on $`p\Zp`. Consequently, for every $`s \in
 \Zp` the map $`1 + p\Zp \to \Zp`, $`x \mapsto x^s := \exp(s\log x)`, is
@@ -332,13 +338,20 @@ into $`p\Zp`. Hence $`\exp(s\log x)` makes sense for $`x \in 1+p\Zp` and $`s \in
 behaviour of an exponential.
 :::
 
-:::definition "teichmuller-character"
+:::definition "teichmuller-character" (lean := "PadicInt.teichmuller, PadicInt.angleUnit, PadicInt.teichmuller_mul_angleUnit, PadicInt.eq_one_of_pow_card_sub_one")
 For odd $`p` there is a decomposition $`\Zpx \cong \mu_{p-1}\times(1+p\Zp)`. The
 *Teichmüller character* $`\omega : \Zpx \to \mu_{p-1}` sends $`x` to the
 Teichmüller lift of its reduction modulo $`p`, and the projection
 $`\ang{\,\cdot\,} : \Zpx \to 1+p\Zp` is given by $`\ang{x} := \omega^{-1}(x)\,x`.
 Every $`x\in\Zpx` factors as $`x = \omega(x)\ang{x}`. This uses
 {uses "interp-padic-exp"}[].
+
+In the formalisation $`\omega` is `PadicInt.teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ`,
+built through mathlib's `Perfection.teichmuller₀` (whose construction is the
+adic limit of $`p^n`-th powers of lifts, i.e. $`\omega(x) = \lim_n x^{p^n}`);
+$`\mu_{p-1}`-valuedness is `teichmullerFun_pow_card_sub_one`, the $`1+p\Zp`
+membership of $`\ang{x}` is `angleUnit_sub_one_mem`, and uniqueness of the
+factorisation is `eq_one_of_pow_card_sub_one` ($`\mu_{p-1}\cap(1+p\Zp)=1`).
 :::
 
 Because the $`p`-adic exponential converges on $`p\Zp`, the map $`x \mapsto
