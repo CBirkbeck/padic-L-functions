@@ -2066,7 +2066,56 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   exp_pow_eq_rescale_exp, coe_substAlgHom]; final `simpa only [map_pow]`
   aligns the C-pow normal forms (simp pulls pow out of C). hg over K via
   HasSubst.of_constantCoeff_zero'. Build green.
-  NEXT: step (v) — the master identity per the refinement below — the formal subst (exp K − 1)
+  STEP (v) SUB-DECOMPOSITION (recorded 2026-06-10, derived on paper —
+  supersedes the sketchier refinement below; notation: ζ' := (ζ:K),
+  E_j := rescale (j:K) (exp K), χ̄ := toFieldChar χ, H_c as in (‡c),
+  G' := gaussSum (toFieldChar χ)⁻¹ (zmodChar _ (ζ'-pow-proof))):
+  (v-a) `sum_inv_char_zeta_pow`: Σ_{c<p^n} χ̄⁻¹(c)·ζ'^{cj} = χ̄(j)·G' — the
+    T508 Gauss-collapse re-derived K-valued (sum_nbij' range↔ZMod +
+    zmodChar_apply' + gaussSum_mulShift_of_isPrimitive + inv_inv; primitivity
+    of (ζ:K) via map_of_injective, of χ̄ via... toFieldChar preserves
+    IsPrimitive — small lemma needed: conductor under ringHomComp with
+    INJECTIVE hom is preserved [verify mathlib has conductor_ringHomComp or
+    prove via FactorsThrough]).
+  (v-b) division-algorithm reindex: Σ_{i<a}Σ_{j<p^n} f(i+a·j) =
+    Σ_{m<a·p^n} f(m) (Finset.sum_nbij' (i,j)↦i+aj, m↦(m%a,m/a) on
+    range a ×ˢ range p^n — or sum_sigma; needs a > 0 ✓ from hpa).
+  (v-c) exp-block identities: E_x·E_y = E_{x+y}
+    (mathlib `PowerSeries.exp_mul_exp_eq_exp_add` — verify name) and
+    (E_b)^l = E_{lb} (exp_pow_eq_rescale_exp + rescale_rescale-induct).
+  (v-d) T504-reindex at K, level p^n: X·Σ_{j<p^n}χ̄(j)E_j =
+    genBPS_χ̄·(E_{p^n}−1), where genBPS := mk(B_{k,χ̄}/k!) — from
+    genBernoulliPowerSeries_mul (T504) by the b+1↔j boundary-shift (χ̄(0) =
+    χ̄(p^n-as-0) = 0; THIRD occurrence of the T503 bijection — consider
+    factoring a `Finset.sum_range_succ_shift`-style reusable bridge).
+  (v-e) MASTER ASSEMBLY: multiply (‡c) by Σ_{j<p^n}(C(ζ'^{ca})E_a)^j, sum
+    against χ̄⁻¹(c) over c<p^n (c=0 drops via χ̄⁻¹(0)=0): LHS telescopes to
+    (E_{ap^n}−1)·Σ_cχ̄⁻¹(c)H_c [geom_sum_mul]; RHS double-sum reindexes by
+    (v-b) then collapses by (v-a) to G'·[Σ_{m<ap^n}χ̄(m)E_m − a·χ̄(a)·rescale
+    a (Σ_{j<p^n}χ̄(j)E_j)]; block-split (v-c) + (v-d) + geom-telescope give
+    RHS = G'·(E_{ap^n}−1)·[genBPS − χ̄(a)·rescale a genBPS]·X⁻¹-shape; after
+    multiplying through by X and cancelling (E_{ap^n}−1) ≠ 0 (coeff-1 check,
+    §4 hreg-pattern; K⟦t⟧ domain):
+    **X·Σ_cχ̄⁻¹(c)H_c = G'·(genBPS_χ̄ − χ̄(a)·rescale (a:K) genBPS_χ̄)** —
+    the exact χ-analogue of §4's X_mul_subst_exp_Fa. Then T508
+    (map+subst-transported: Σ_cχ̄⁻¹(c)H_c = (G_R:K)·H_χ with (G_R:K) = G' via
+    subtype-of-finite-sum) + G' ≠ 0 (T502 norm_gaussSum_eq_one) cancel to
+    **X·H_χ = genBPS_χ̄ − χ̄(a)·rescale a genBPS_χ̄** (FINAL-10b).
+  (v-f) moment extraction = §4 muA_apply_powCM tail over K: need K-analogues
+    of MuA's bridge cluster (delQ-K := (1+X)·derivativeFun over K [MeasureR
+    `del K` is the integerRing-level one], map_del-K [subtype-map commutes
+    with del], derivativeFun_subst_exp-K, constantCoeff_subst_exp-K,
+    constantCoeff_iterate_delQ-K — copy MuA.lean proofs verbatim with K for
+    ℚ_[p]) + MeasureR.apply_powCM; coeff_{k+1} of FINAL-10b: LHS
+    coeff_succ_X_mul → coeff_k H_χ → k!⁻¹-cleared moment of twist χ̃ μ_aK;
+    RHS via coeff of genBPS (coeff_mk) = B_{k+1,χ̄}/(k+1)! and coeff_rescale:
+    (1 − χ̄(a)a^{k+1})·B_{k+1}/(k+1)! ; factorial bookkeeping + LvalNeg
+    definition give twist_muA_moments. (The −1-sign: LvalNeg = −B/(k+1);
+    statement RHS −(1−χ(a)a^{k+1})·LvalNeg = +(1−χ(a)a^{k+1})·B_{k+1}/(k+1) ✓
+    consistent with the §4 sign-trace.)
+  NEXT concrete edit: (v-a) + the toFieldChar-IsPrimitive lemma in
+  TameConductor.lean (or Characters.lean for the primitivity transport).
+  NEXT after: step (v) per the plan above — the formal subst (exp K − 1)
   of (†c) [needs the K-analogue of §4's hasSubst_exp_sub_one + map-to-K of the
   identity], then the master identity.
   ROUTE REFINEMENT for (iii)–(v) (recorded before compaction): PARITY-FREE,
