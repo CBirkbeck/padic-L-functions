@@ -2496,7 +2496,16 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: determinacy ~120 LOC + assembly ~60.
 
 ### [CLEANUP-ALL-4] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T515 | **Type**: cleanup-all (before T516)
+- **Status**: done | **Depends on**: T515 | **Type**: cleanup-all (before T516)
+- **Progress**: DONE 2026-06-11. Project-wide sweep: lake build green with
+  23 warnings, ALL `declaration uses sorry` in open-ticket scope (PadicExp
+  17 = T521–T523, Branches 4 = T519, NonTame 1 = T516); zero style/linter
+  warnings; zero lines > 100 project-wide. Axiom spot-checks this session:
+  tame_conductor(+theta), zetaEta_twisted_moments, twist/X_mul masters —
+  all {propext, Classical.choice, Quot.sound}. Golf: T512's hHsum inline
+  subst-transport refactored onto the T515 subst_map_{neg,sum,C_mul}
+  distributors (−8 LOC). The per-ticket inline cleanups (T511–T515) kept
+  the bar; no batch debt found.
 
 ### [T517] Teichmüller character ω
 - **Status**: done | **File**: Interpolation/Branches.lean | **Depends on**: none

@@ -373,16 +373,11 @@ lemma X_mul_muEtaCleared_subst {D : ℕ} [NeZero D] (hD1 : 1 < D)
                 (Ring.inverse (PowerSeries.C (ζ ^ c)
                   * (1 + PowerSeries.X) - 1))).subst
                 (PowerSeries.exp K - 1) := by
-    rw [mahlerTransform_muEtaCleared, map_neg, map_sum,
-      ← PowerSeries.coe_substAlgHom hg, map_neg, map_sum, neg_inj]
+    simp only [mahlerTransform_muEtaCleared η hζ hD, subst_map_neg,
+      subst_map_sum, subst_map_C_mul]
+    rw [neg_inj]
     refine Finset.sum_congr rfl fun c _ => ?_
-    rw [map_mul, PowerSeries.map_C, map_mul,
-      show (PowerSeries.substAlgHom hg)
-          (PowerSeries.C ((integerRing K).subtype (η⁻¹ ((c : ℕ) : ZMod D))))
-        = PowerSeries.C ((integerRing K).subtype (η⁻¹ ((c : ℕ) : ZMod D))) from
-        (PowerSeries.substAlgHom hg).commutes _,
-      PowerSeries.coe_substAlgHom hg,
-      show (toFieldChar η)⁻¹ = toFieldChar η⁻¹ from MulChar.ringHomComp_inv η _]
+    rw [show (toFieldChar η)⁻¹ = toFieldChar η⁻¹ from MulChar.ringHomComp_inv η _]
     rfl
   -- (2) clear `e^{Dt} − 1` and collapse the Gauss sums
   have hclear : (PowerSeries.rescale ((D : ℕ) : K) (PowerSeries.exp K) - 1)
