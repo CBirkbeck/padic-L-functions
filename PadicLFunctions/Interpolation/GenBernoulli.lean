@@ -86,7 +86,7 @@ theorem genBernoulli_eq_zero (χ : DirichletCharacter L N) {k : ℕ}
       rcases hk with hχ | hk1
       · exact absurd hχ1 hχ
       · exact hk1
-    rw [hχ1, genBernoulli_one, bernoulli'_odd_eq_zero hodd (by
+    rw [hχ1, genBernoulli_one, bernoulli'_eq_zero_of_odd hodd (by
       rcases hodd with ⟨m, hm⟩
       omega)]
     simp
@@ -206,7 +206,68 @@ and drives the moment computations (T030–T033 pattern). -/
 theorem genBernoulliPowerSeries_mul (χ : DirichletCharacter L N) :
     (PowerSeries.mk fun k => χ.genBernoulli k * (k.factorial : L)⁻¹) *
         (rescale (N : L) (exp L) - 1)
-      = ∑ a ∈ range N, χ (a + 1 : ℕ) • (X * rescale ((a : L) + 1) (exp L)) := by sorry
+      = ∑ a ∈ range N, χ (a + 1 : ℕ) • (X * rescale ((a : L) + 1) (exp L)) := by
+  have hN : (N : L) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hCN : (C (N : L)) ≠ 0 := fun h =>
+    hN (by simpa using congrArg (constantCoeff) h)
+  refine mul_left_cancel₀ hCN ?_
+  -- the per-`a` identity: mathlib's Bernoulli generating function at
+  -- `t = (a+1)/N`, rescaled by `N`
+  have hper : ∀ a : ℕ,
+      rescale (N : L) (PowerSeries.mk fun n =>
+          Polynomial.aeval (((a : L) + 1) / (N : L))
+            ((1 / n.factorial : ℚ) • Polynomial.bernoulli n))
+        * (rescale (N : L) (exp L) - 1)
+      = C (N : L) * (X * rescale ((a : L) + 1) (exp L)) := by
+    intro a
+    have h := congrArg (rescale (N : L))
+      (Polynomial.bernoulli_generating_function (((a : L) + 1) / (N : L)))
+    rw [map_mul, map_sub, map_one, map_mul, rescale_rescale, rescale_X,
+      div_mul_cancel₀ _ hN, mul_assoc] at h
+    exact h
+  -- the χ-weighted sum of the rescaled generating functions is `C N · LHS`
+  have hkey : C (N : L) *
+        (PowerSeries.mk fun k => χ.genBernoulli k * (k.factorial : L)⁻¹)
+      = ∑ a ∈ range N, χ (a + 1 : ℕ) •
+          rescale (N : L) (PowerSeries.mk fun n =>
+            Polynomial.aeval (((a : L) + 1) / (N : L))
+              ((1 / n.factorial : ℚ) • Polynomial.bernoulli n)) := by
+    ext k
+    rw [coeff_C_mul, coeff_mk, map_sum]
+    simp only [coeff_smul, coeff_rescale, coeff_mk, smul_eq_mul]
+    have hzp : ((N : L)) ^ (k : ℕ) = (N : L) * (N : L) ^ ((k : ℤ) - 1) := by
+      rw [zpow_sub_one₀ hN, ← zpow_natCast (N : L) k]
+      field_simp
+    rw [DirichletCharacter.genBernoulli]
+    simp only [hzp, Finset.mul_sum, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [map_smul, Algebra.smul_def, map_div₀, map_one,
+      map_natCast (algebraMap ℚ L) k.factorial,
+      Polynomial.aeval_def, ← Polynomial.eval_map, one_div]
+    ring
+  calc C (N : L) * ((PowerSeries.mk fun k => χ.genBernoulli k * (k.factorial : L)⁻¹)
+        * (rescale (N : L) (exp L) - 1))
+      = (C (N : L) * PowerSeries.mk fun k => χ.genBernoulli k * (k.factorial : L)⁻¹)
+          * (rescale (N : L) (exp L) - 1) := (mul_assoc _ _ _).symm
+    _ = (∑ a ∈ range N, χ (a + 1 : ℕ) •
+          rescale (N : L) (PowerSeries.mk fun n =>
+            Polynomial.aeval (((a : L) + 1) / (N : L))
+              ((1 / n.factorial : ℚ) • Polynomial.bernoulli n)))
+          * (rescale (N : L) (exp L) - 1) := by rw [hkey]
+    _ = ∑ a ∈ range N, χ (a + 1 : ℕ) •
+          (rescale (N : L) (PowerSeries.mk fun n =>
+            Polynomial.aeval (((a : L) + 1) / (N : L))
+              ((1 / n.factorial : ℚ) • Polynomial.bernoulli n))
+            * (rescale (N : L) (exp L) - 1)) := by
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun a _ => smul_mul_assoc _ _ _
+    _ = ∑ a ∈ range N, χ (a + 1 : ℕ) •
+          (C (N : L) * (X * rescale ((a : L) + 1) (exp L))) :=
+        Finset.sum_congr rfl fun a _ => by rw [hper a]
+    _ = C (N : L) * ∑ a ∈ range N, χ (a + 1 : ℕ) •
+          (X * rescale ((a : L) + 1) (exp L)) := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun a _ => (mul_smul_comm _ _ _).symm
 
 /-- L5.1.10c: the cyclotomic product `∏_{c<M} (ζ^c·Y − 1) = Y^M − 1` for `ζ` a
 primitive `M`-th root of unity and **odd** `M` (used to clear the denominators

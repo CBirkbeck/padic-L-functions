@@ -1790,7 +1790,24 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~30+35+20 LOC.
 
 ### [T504] genBernoulli generating function (L5.1.10a)
-- **Status**: open | **File**: GenBernoulli.lean | **Depends on**: T503 | **Type**: lemma
+- **Status**: done | **File**: GenBernoulli.lean | **Depends on**: T503 | **Type**: lemma
+- **Progress**: DONE 2026-06-10. Route refined at execution: instead of
+  per-coefficient bernoulliPowerSeries bookkeeping, used mathlib's
+  `Polynomial.bernoulli_generating_function (t)` directly at `t = (a+1)/N`,
+  hit with the ring hom `rescale (N : L)` (rescale_rescale +
+  div_mul_cancel₀ collapses `rescale N ∘ rescale ((a+1)/N) = rescale (a+1)`;
+  rescale_X gives the `C N` factor), then χ-weighted sum over `a ∈ range N`
+  and cancellation of `C N` (domain, `mul_left_cancel₀`). The coefficient
+  identification `C N · mk(B_{k,χ}/k!) = Σ_a χ(a+1) • rescale N (GF_a)` is
+  `ext k` + zpow collapse `N^k = N·N^{(k:ℤ)−1}` (`zpow_sub_one₀`) +
+  aeval→eval-of-map conversion (`map_smul`, `Algebra.smul_def`, targeted
+  `map_natCast (algebraMap ℚ L) k.factorial` — the untargeted form matched
+  χ↑(a+1) and stuck on a RingHomClass goal) + `ring`. GenBernoulli.lean now
+  SORRY-FREE; also fixed deprecated `bernoulli'_odd_eq_zero` →
+  `bernoulli'_eq_zero_of_odd` in T503's proof. Verification: zero
+  diagnostics; axioms = {propext, Classical.choice, Quot.sound} on
+  genBernoulliPowerSeries_mul (scan_source clean). No blueprint node
+  (Washington-sourced internal identity).
 - **Statement**: skeleton `genBernoulliPowerSeries_mul`.
 - **Proof sketch**: decomposition L5.1.10a — expand both sides; mathlib
   `bernoulliPowerSeries_mul_exp_sub_one` per-a after rescale-bookkeeping
