@@ -966,7 +966,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   {propext, Classical.choice, Quot.sound}; (iv) checkpoint commit.
 
 ### [T030] Rational zeta values `zetaNeg` + complex bridge
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/ZetaValues.lean, ZetaValuesComplex.lean
 - **Depends on**: none
 - **Parallel**: yes (with T031)
@@ -994,6 +994,13 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   the unwired-rationale as a comment on the node).
 - **Cleanup**: `/cleanup` ZetaValues.lean + ZetaValuesComplex.lean immediately after.
 - **Progress**:
+  - 2026-06-10: DONE — 4 declarations proven (zetaNeg_zero, zetaNeg_eq_zero_of_even,
+    neg_one_pow_mul_one_sub_pow_mul_zetaNeg, zetaNeg_eq_riemannZeta); build green;
+    axioms = [propext, Classical.choice, Quot.sound] (verified). Off-script: Nat.Odd.sub_odd
+    (ℕ-sub version, not Odd.sub_odd). Blueprint: unwired-rationale comment added to
+    kl-values-of-zeta node, blueprint builds. Cleanup: degraded mode (no lean-lsp) —
+    proofs are 1–6-line minimal forms, naming/docstrings audited by hand; revisit in
+    a tooled session via CLEANUP-FINAL.
 
 ### [T031] `F_a`, `μ_a` and the characterising identity
 - **Status**: open

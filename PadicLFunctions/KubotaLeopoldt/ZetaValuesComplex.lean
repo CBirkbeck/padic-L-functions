@@ -17,4 +17,6 @@ Source: RJW TeX line 1455 (`ζ(−k) = (−1)^k B_{k+1}/(k+1)`); mathlib's
 `riemannZeta_neg_nat_eq_bernoulli`. -/
 theorem zetaNeg_eq_riemannZeta (k : ℕ) :
     ((zetaNeg k : ℚ) : ℂ) = riemannZeta (-(k : ℂ)) := by
-  sorry
+  rw [riemannZeta_neg_nat_eq_bernoulli, zetaNeg]
+  push_cast
+  ring

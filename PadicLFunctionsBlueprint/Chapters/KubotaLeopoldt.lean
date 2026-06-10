@@ -61,6 +61,11 @@ which is again $`\cC^\infty` and rapidly decreasing, so its $`L`-function
 $`L(\fa, s)` is defined. The parameter $`a` removes the factor $`s-1` at the cost
 of a different smoothing factor.
 
+-- Deliberately unwired (§4 board, 2026-06-10): the Mellin/analytic-continuation half
+-- of this lemma is §2 material (deferred). The value formula `f_a^{(k)}(0) =
+-- (−1)^k(1−a^{1+k})ζ(−k)` — the part §4 consumes — is realised algebraically by
+-- `PadicMeasure.muA_apply_powCM` (wired at `kl-mua-interpolation`), with the rational
+-- ζ-values as `zetaNeg` (bridge to `riemannZeta`: `zetaNeg_eq_riemannZeta`).
 :::lemma_ "kl-values-of-zeta"
 With $`\fa` as above,
 $$`L(\fa, s) = (1 - a^{1-s})\,\zeta(s),`$$

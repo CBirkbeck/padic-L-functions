@@ -19,11 +19,11 @@ def zetaNeg (k : ℕ) : ℚ :=
 
 @[simp]
 lemma zetaNeg_zero : zetaNeg 0 = -(1 / 2) := by
-  sorry
+  norm_num [zetaNeg, bernoulli_one]
 
 /-- The trivial zeros: `ζ(−k) = 0` for even `k ≥ 2` (odd Bernoulli numbers vanish). -/
 lemma zetaNeg_eq_zero_of_even {k : ℕ} (hk : k ≠ 0) (h : Even k) : zetaNeg k = 0 := by
-  sorry
+  rw [zetaNeg, bernoulli_eq_zero_of_odd h.add_one (by omega), mul_zero, zero_div]
 
 /-- Sign removal in the Kubota–Leopoldt interpolation (RJW TeX line 1596: "we may
 remove the `(−1)^k` as `ζ(1−k) ≠ 0` if and only if `k` is even"): for `k > 0`,
@@ -32,4 +32,9 @@ vanishes, at even `k` the sign is `+1`, and at odd `k ≥ 3` the zeta value vani
 lemma neg_one_pow_mul_one_sub_pow_mul_zetaNeg (q : ℚ) {k : ℕ} (hk : 0 < k) :
     (-1) ^ k * ((1 - q ^ (k - 1)) * zetaNeg (k - 1))
       = (1 - q ^ (k - 1)) * zetaNeg (k - 1) := by
-  sorry
+  obtain rfl | hk1 := eq_or_ne k 1
+  · simp
+  · rcases Nat.even_or_odd k with he | ho
+    · rw [he.neg_one_pow, one_mul]
+    · rw [zetaNeg_eq_zero_of_even (by omega) (Nat.Odd.sub_odd ho odd_one)]
+      ring
