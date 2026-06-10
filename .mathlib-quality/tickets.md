@@ -2119,9 +2119,37 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   `factorsThrough_ringHomComp_iff` added to Characters.lean — PR candidates);
   `sum_range_mul_eq_sum_range` (division-algorithm reindex via sum_nbij' on
   range a ×ˢ range N); `rescale_exp_pow` ((E_b)^l = E_{lb} by induction +
-  exp_mul_exp_eq_exp_add). NEXT: (v-d) T504-reindex at K
-  (X·Σ_{j<p^n}χ̄(j)E_j = genBPS_χ̄·(E_{p^n}−1)), then (v-e) master assembly,
-  then (v-f) extraction.
+  exp_mul_exp_eq_exp_add). (v-d) ALSO DONE (same day, committed):
+  `X_mul_sum_char_rescale_exp` (X·Σ_{j<p^n} C(χK(j))·E_j =
+  genBPS_χK·(E_{p^n}−1); sum_range_succ'-shift, both boundaries killed by
+  χK(0) = 0; note `set ... with hh` needs `simp only [hh]` not `rw [hh]` at
+  use sites — beta-reduction). All v-a/b/c/d helpers in TameConductor.lean
+  before twist_muA_moments, linter-clean, all committed/pushed.
+  NEXT — (v-e) MASTER ASSEMBLY, steps pinned (in K⟦t⟧; E_j := rescale (j:K)
+  (exp K); H_c as in charTwist_muA_exp_identity; G' the K-valued Gauss sum of
+  (v-a); χ̄ := toFieldChar χ):
+  STEP 1 (per-c): multiply (‡c) by Σ_{j<p^n}(C(ζ'^{ca})·E_a)^j; telescope LHS
+  cofactor with geom_sum_mul + rescale_exp_pow + exp-power-juggling to get
+  `(E_{ap^n} − 1)·H_c = (Σ_{i<a} C(ζ'^{ci})E_i − a)·Σ_{j<p^n}
+  C(ζ'^{caj})·E_{aj}`.
+  STEP 2: Σ_c χ̄⁻¹(c)-weighted sum; expand the (i,j)-product
+  (ζ'^{c(i+aj)}·E_{i+aj} via exp_mul_exp_eq_exp_add); reindex
+  sum_range_mul_eq_sum_range to m < a·p^n; swap Σ_c in and collapse with
+  sum_inv_char_zeta_pow (at m, and at a·j for the a-term; χ̄(aj) =
+  χ̄(a)·χ̄(j)): `(E_{ap^n} − 1)·Σ_c χ̄⁻¹(c)•H_c = G'·(Σ_{m<ap^n}
+  C(χ̄(m))·E_m − C(χ̄(a))·a·Σ_{j<p^n} C(χ̄(j))·E_{aj})`.
+  STEP 3: multiply by X; m-sum block-splits by m = m'+p^n·l (reindex again,
+  roles swapped; χ̄ p^n-periodic; E-product) → X·Σ_m =
+  (Σ_{l<a}(E_{p^n})^l)·genBPS·(E_{p^n}−1) = genBPS·(E_{ap^n}−1) [telescope];
+  a-term via rescale (a:K) applied to (v-d): rescale a X = C a·X absorbs the
+  stray a — VERIFY bookkeeping at write-time (planning trace pinned no stray
+  a-factor in FINAL).
+  STEP 4: cancel (E_{ap^n}−1) ≠ 0 (coeff 1 = a ≠ 0, K char-0; §4
+  hreg-pattern; domain): **FINAL-10b: X·Σ_{c<p^n}χ̄⁻¹(c)•H_c =
+  G'·(genBPS_χ̄ − C(χ̄(a))·rescale (a:K) genBPS_χ̄)**.
+  Then (v-f) extraction: T508 map+subst-transport (Σ_cχ̄⁻¹(c)H_c =
+  (G_R:K)·H_χ), G'-cancel (≠ 0 via T502 norm), coeff_{k+1}, K-bridge
+  delQ-cluster restated from MuA.lean, apply_powCM.
   OLD-NEXT (superseded): (v-a) + the toFieldChar-IsPrimitive lemma in
   TameConductor.lean (or Characters.lean for the primitivity transport).
   NEXT after: step (v) per the plan above — the formal subst (exp K − 1)
