@@ -104,3 +104,43 @@ Basic ──→ MahlerTransform ──→ Convolution ──→ Toolbox ──�
 ## ChatGPT validation
 
 `ask_chatgpt_math` not available in this session — skipped per the skill.
+
+## §4 addendum (2026-06-10) — Kubota–Leopoldt
+
+### Mathlib inventory (§4-specific, all grep-verified at file:line)
+| Concept | Mathlib status | Our action |
+|---------|---------------|------------|
+| Bernoulli gen. function | `bernoulliPowerSeries_mul_exp_sub_one` (Bernoulli.lean:273) | USE |
+| `B_odd = 0` | `bernoulli_eq_zero_of_odd` (:217) | USE |
+| `ζ(−n)` complex | `riemannZeta_neg_nat_eq_bernoulli` (HurwitzZetaValues) | USE (bridge file only) |
+| `exp`, `e^{at}` | `PowerSeries.exp`, `exp_pow_eq_rescale_exp` (Exp.lean:153) | USE |
+| Chain rule for subst | `PowerSeries.derivative_subst` (Derivative.lean:184) | USE |
+| `constantCoeff_subst` | Substitution.lean:244 | USE |
+| PS unit ⟺ const unit | `isUnit_iff_constantCoeff` (Inverse.lean:111) | USE |
+| ℕ coprime p unit in ℤ_p | not found | DEFINE `PadicInt.isUnit_natCast_of_not_dvd` (PR candidate) |
+| Λ(ℤ_p) domain | — | DEFINE instance via `mahlerRingEquiv` transport |
+| projection formula ψ(φν·μ)=ν·ψμ | — | DEFINE (`psi_phi_mul`) |
+| integer top. generator | — | DEFINE `exists_nat_topological_generator` (Washington §3 classical) |
+
+### §4 design decisions
+- **ζ-values**: `zetaNeg k := (−1)^k bernoulli (k+1)/(k+1) : ℚ` (TeX 1455's own
+  formula); all interpolation in ℚ_p via `Rat.cast`; complex bridge quarantined in
+  `ZetaValuesComplex.lean`. `kl-values-of-zeta` blueprint node unwired until §2
+  Mellin theory.
+- **F_a**: defined by clearing denominators — `Fa := ((geomSum−a)/X)·Ring.inverse
+  geomSum`, characterised by `((1+X)^a−1)·Fa = geomSum − a`. Junk-total defs,
+  `hpa : ¬ p ∣ a` on lemmas.
+- **ψ-invariance replan** (T034): source's ξ/μ_p-proof replaced by projection
+  formula + finite Dirac identities (decomposition R3 block) — keeps the deferred
+  O_L/ξ cluster deferred.
+- **delQ debt**: ℚ_p-clone of `del`; merge by generalising `del` to `CommRing R`
+  in a cleanup pass (do not churn §3 mid-section).
+- **a : ℕ** parametrisation for μ_a (source: "integer coprime to p"); the
+  topological-generator integrality gloss of Def 4.10 is made explicit
+  (`exists_nat_topological_generator`, p ≠ 2).
+
+### Deferred (unchanged from §3 + one §4 note)
+- ξ/roots-of-unity `Eqphipsi`, O_L coefficients → §5 pass (T034's replan keeps
+  this deferral intact).
+- §2 Mellin/L(f_a,s) analytic continuation → §2 chapter pass
+  (`kl-values-of-zeta` wiring blocked on it).

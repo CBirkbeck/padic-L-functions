@@ -945,3 +945,461 @@ T029 free;  everything → CLEANUP-FINAL
 Cadence audit: Basic 3 tickets/1 cleanup ✓; MahlerTransform 4/2 ✓; Convolution 3/1 ✓;
 Toolbox 4/2 ✓; UnitsZp 3/1 ✓; Fubini 2/1 ✓; PseudoMeasure 9/3 ✓; final /cleanup-all ✓.
 Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FINAL ✓.
+
+---
+
+# §4 — Kubota–Leopoldt (TeX 1440–1609) — added 2026-06-10
+
+## §4 Summary
+- Tickets: T030–T039 (10 proof/def) + CLEANUP-ALL-2 + CLEANUP-KL-1/2
+- Open: 13 | Done: 0
+- Skeleton: `PadicLFunctions/KubotaLeopoldt/{ZetaValues,ZetaValuesComplex,MuA,ZetaP}.lean`,
+  46 sorries, builds green (2026-06-10)
+- Decomposition: `.mathlib-quality/decomposition.md` §4 (leaves L0.1–L5.8, all gated)
+- **Standing rules (CLAUDE.md, binding on every ticket below)**: each ticket's
+  Definition-of-Done includes (i) the **Blueprint** step — wire/adjust the named
+  chapter node(s) in `PadicLFunctionsBlueprint/Chapters/KubotaLeopoldt.lean` in the
+  same session, `lake build PadicLFunctionsBlueprint` green; (ii) the **Cleanup**
+  step — `/cleanup` (single-declaration mode; degraded mode + note if lean-lsp absent)
+  on the new declarations immediately, before marking done; (iii) verification bar:
+  build green, zero sorry in the ticket's declarations, `#print axioms` ⊆
+  {propext, Classical.choice, Quot.sound}; (iv) checkpoint commit.
+
+### [T030] Rational zeta values `zetaNeg` + complex bridge
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/ZetaValues.lean, ZetaValuesComplex.lean
+- **Depends on**: none
+- **Parallel**: yes (with T031)
+- **Type**: lemmas (4 sorries: `zetaNeg_zero`, `zetaNeg_eq_zero_of_even`,
+  `neg_one_pow_mul_one_sub_pow_mul_zetaNeg`, `zetaNeg_eq_riemannZeta`)
+- **Statement**: in skeleton (ZetaValues.lean:21,25,36; ZetaValuesComplex.lean:18).
+- **Proof sketch** (decomposition L0.1–L0.4):
+  1. `zetaNeg_zero`: `simp [zetaNeg, bernoulli_one]; norm_num`.
+  2. `zetaNeg_eq_zero_of_even`: `bernoulli_eq_zero_of_odd (h.add_one) (by lia)`;
+     conclude `zetaNeg k = ±0/(k+1) = 0` by `simp [zetaNeg]`.
+  3. `neg_one_pow_mul_one_sub_pow_mul_zetaNeg`: `rcases k`: `k = 1` → factor
+     `1 − q⁰ = 0`; `k` even → `Even.neg_one_pow`; `k ≥ 3` odd → step 2 kills
+     `zetaNeg (k−1)`. Parity split via `Nat.even_or_odd k`.
+  4. `zetaNeg_eq_riemannZeta`: open mathlib's `riemannZeta_neg_nat_eq_bernoulli`
+     (HurwitzZetaValues.lean) at `n := k`; `push_cast [zetaNeg]; ring`.
+- **Mathlib lemmas**: `bernoulli_one`, `bernoulli_eq_zero_of_odd` (Bernoulli.lean:217),
+  `Even.neg_one_pow`, `Odd.neg_one_pow`, `riemannZeta_neg_nat_eq_bernoulli` (verified
+  by file-grep; exact argument form to confirm via hover at execution).
+- **Sources**: RJW TeX 1455 (value formula), 1596 (sign removal). Quotes in
+  decomposition L0.1–L0.4.
+- **Generality**: `zetaNeg : ℕ → ℚ` (pure rational — no p); sign lemma over arbitrary
+  `q : ℚ` (more general than the `p`-instance needed).
+- **Blueprint**: none of the §4 nodes is *this* content alone (kl-values-of-zeta
+  stays unwired pending §2 Mellin theory — see decomposition R-KL head-note; record
+  the unwired-rationale as a comment on the node).
+- **Cleanup**: `/cleanup` ZetaValues.lean + ZetaValuesComplex.lean immediately after.
+- **Progress**:
+
+### [T031] `F_a`, `μ_a` and the characterising identity
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
+- **Depends on**: none
+- **Parallel**: yes (with T030)
+- **Type**: def-API (9 sorries: `PadicInt.isUnit_natCast_of_not_dvd`,
+  `constantCoeff_geomSum`, `geomSum_mul_X`, `isUnit_geomSum`, `X_mul_FaNum`,
+  `geomSum_mul_Fa`, `one_add_X_pow_sub_one_mul_Fa`, `mahlerTransform_muA`,
+  `binomialSeries_natCast`)
+- **Statement**: in skeleton (MuA.lean:35–95).
+- **Proof sketch** (decomposition L1.1–L1.8):
+  1. `isUnit_natCast_of_not_dvd`: `PadicInt.isUnit_iff.2`; `‖(a:ℤ_[p])‖ = 1` from
+     `le_antisymm (norm_le_one _)` + `not_lt.2` of `norm_int_lt_one_iff_dvd`
+     (`exact_mod_cast` ℕ→ℤ dvd).
+  2. `constantCoeff_geomSum`: `simp [geomSum, map_sum, map_pow]`;
+     `Finset.sum_const`, `card_range`.
+  3. `geomSum_mul_X`: `geom_sum_mul` at `x := 1+X`; rewrite `1+X−1 = X` by
+     `add_sub_cancel_left`. (If `geom_sum_mul` has moved/renamed: 6-line induction
+     fallback recorded in decomposition L1.3.)
+  4. `isUnit_geomSum`: `isUnit_iff_constantCoeff.2` ∘ steps 1–2.
+  5. `X_mul_FaNum`: `PowerSeries.ext`; case `0`: both sides 0 (step 2);
+     case `n+1`: `coeff_succ_X_mul`, `coeff_mk`; RHS natCast-coeff via
+     `PowerSeries.coeff_natCast`-shape (or `Nat.cast` = `C a`: `coeff_C`).
+  6. `geomSum_mul_Fa`: `Fa`-def; `mul_left_comm` + `Ring.inverse_mul_cancel`
+     (step 4).
+  7. `one_add_X_pow_sub_one_mul_Fa`: rw ← step 3; `mul_assoc`-shuffle to
+     `X·(geomSum·Fa)`; steps 6 then 5.
+  8. `mahlerTransform_muA`: `muA`-def + `LinearEquiv.apply_symm_apply` (relate
+     `mahlerLinearEquiv` to `mahlerTransform` — they coincide per
+     MahlerTransform.lean:160's construction; `mahlerTransform_ofPowerSeries` if
+     needed).
+  9. `binomialSeries_natCast`: induction on `a`: `binomialSeries_zero`,
+     `binomialSeries_add` (+1 case via `binomialSeries 1 = 1 + X`:
+     `PowerSeries.ext`, `binomialSeries_coeff`, `Ring.choose_natCast`/
+     `Ring.choose_one_right`-computation; or de-privatise/replicate Toolbox's
+     `binomialSeries_mul_nat` at `c := 1`).
+- **Mathlib lemmas**: `PadicInt.isUnit_iff` (:366), `PadicInt.norm_int_lt_one_iff_dvd`
+  (:280), `PadicInt.norm_le_one`, `geom_sum_mul`, `PowerSeries.isUnit_iff_constantCoeff`
+  (Inverse.lean:111), `Ring.inverse_mul_cancel`, `coeff_succ_X_mul`, `coeff_mk`,
+  `binomialSeries_zero/add/coeff`.
+- **Sources**: RJW Prop 4.4 proof (TeX 1488–1494), Lem 4.3 (TeX 1475). Quotes +
+  realisation note: decomposition R1 head.
+- **Generality**: `a : ℕ` (source: integer coprime to p; ℕ suffices — negative
+  integers never used in §4); defs total (junk via `Ring.inverse`), lemmas carry
+  `hpa : ¬ p ∣ a`.
+- **Blueprint**: wire `kl-Fa-in-Zp` → `PadicMeasure.one_add_X_pow_sub_one_mul_Fa`
+  (+ prose note: membership is by construction, the identity is the content);
+  wire `measure-mu-a` → `PadicMeasure.muA`. Blueprint build green.
+- **Cleanup**: `/cleanup` the nine declarations immediately after.
+- **Progress**:
+
+### [T032] Dirac-sum identity + `Λ(ℤ_p)` is a domain
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
+- **Depends on**: T031
+- **Parallel**: yes (with T033 after T031)
+- **Type**: lemmas (3 sorries: `dirac_natCast_sub_one_mul_muA`, `instIsDomain`,
+  `dirac_natCast_sub_one_ne_zero`)
+- **Statement**: in skeleton (MuA.lean:101–110).
+- **Proof sketch** (decomposition L1.9–L1.10):
+  1. `instIsDomain`: transport `IsDomain ℤ_[p]⟦X⟧` (mathlib instance over a domain)
+     along `(mahlerRingEquiv p).symm` — `RingEquiv.isDomain`-spelling (candidates:
+     `MulEquiv.isDomain`, `Function.Injective.isDomain` via `.injective` +
+     `.toRingHom`).
+  2. `dirac_natCast_sub_one_mul_muA`: apply `(mahlerRingEquiv p).injective`;
+     `map_mul/map_sub/map_sum/map_one`; `mahlerTransform_dirac` +
+     `binomialSeries_natCast` (T031) turn LHS-transform into
+     `((1+X)^a−1)·Fa` = `one_add_X_pow_sub_one_mul_Fa`; RHS-transform:
+     `Σ(1+X)^i − a•1 = geomSum − natCast` (smul-to-natCast bridge:
+     `Nat.cast_smul_eq_nsmul`/`nsmul_eq_mul`). NB `mahlerRingEquiv` vs
+     `mahlerTransform` bridge lemma exists in Convolution.lean.
+  3. `dirac_natCast_sub_one_ne_zero`: transform `= (1+X)^a − 1 ≠ 0` since
+     `coeff 1 = a ≠ 0` (`coeff_one` of pow via `add_pow`-coeff or
+     `Polynomial`-free route: `coeff 1 ((1+X)^a) = a` by induction or
+     `binomialSeries_natCast` + `binomialSeries_coeff` at 1: `Ring.choose a 1 = a`).
+- **Mathlib lemmas**: PowerSeries `instIsDomain` (over `IsDomain R`),
+  `RingEquiv.isDomain` (or variant), `Nat.cast_injective` (char-0 `ℤ_[p]`),
+  `binomialSeries_coeff`, `Ring.choose_one_right`.
+- **Sources**: decomposition L1.9 (composition note), TeX 1475/1490.
+- **Generality**: `IsDomain` instance is global (not §4-scoped) — place near the top
+  of MuA.lean; consider migrating to Convolution.lean at cleanup (note for /cleanup).
+- **Blueprint**: no node (infrastructure).
+- **Cleanup**: `/cleanup` immediately; flag the instance's final home.
+- **Progress**:
+
+### [T033] Bernoulli moments: `∫x^k dμ_a = (−1)^k(1−a^{k+1})ζ(−k)`
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
+- **Depends on**: T030, T031
+- **Parallel**: yes (with T032, T034 modulo deps)
+- **Type**: theorem cluster (8 sorries: `map_del`, `hasSubst_exp_sub_one`,
+  `derivativeFun_subst_exp`, `constantCoeff_subst_exp`,
+  `constantCoeff_iterate_derivativeFun`, `constantCoeff_iterate_delQ`,
+  `X_mul_subst_exp_Fa`, `muA_apply_powCM`)
+- **Statement**: in skeleton (MuA.lean:131–171).
+- **Proof sketch** (decomposition L2.2–L2.7; the full multiply-and-cancel plan for
+  `X_mul_subst_exp_Fa` is in L2.6 — follow it step by step):
+  1. `map_del`: `PowerSeries.ext n`; `coeff_map`, `coeff_derivativeFun`,
+     `one_add_mul`-expansion both sides; `map_natCast`.
+  2. `hasSubst_exp_sub_one`: `HasSubst.of_constantCoeff_zero'` (§3 precedent in
+     Toolbox `mahlerTransform_pushforward_mulCM`); `constantCoeff_exp`, `map_sub`.
+  3. `derivativeFun_subst_exp`: `derivative_subst` (Derivative.lean:184) + bridge
+     `d⁄dX ↔ derivativeFun`; `derivative_exp`; algebra: `(dF)∘g·exp =
+     ((1+X)·dF)∘g` via `subst_mul`-homomorphy + `(1+X)∘g = exp` (`subst_add`,
+     `subst_one`? — use `map_add` of `substAlgHom`).
+  4. `constantCoeff_subst_exp`: `constantCoeff_subst` (Substitution.lean:244);
+     constant-coeff-zero kills all `n ≥ 1` terms (`pow`-of-zero-constantCoeff);
+     fallback: `coeff_subst` at 0.
+  5. `constantCoeff_iterate_derivativeFun`: induction on k;
+     `Function.iterate_succ_apply'`; `coeff_derivativeFun`;
+     `Nat.factorial_succ`; `push_cast; ring`.
+  6. `constantCoeff_iterate_delQ`: induction on k via 3+4+5: `constCoeff(delQ^[k]F)
+     = constCoeff(D^[k](F∘(e−1)))` (commute one delQ out per step), then 5.
+  7. `X_mul_subst_exp_Fa`: multiply-and-cancel by `(rescale a exp − 1)` per
+     decomposition L2.6: LHS·: subst the T031 identity
+     `one_add_X_pow_sub_one_mul_Fa` through `exp−1` (`substAlgHom`-ring-hom,
+     `exp_pow_eq_rescale_exp` for `subst((1+X)^a) = rescale a exp`); RHS·:
+     `bernoulliPowerSeries_mul_exp_sub_one` + substituted `geomSum_mul_X`
+     (`e^{at}−1 = (e^t−1)·Σ_{j<a}e^{jt}`) + `rescale`-ring-hom
+     (`rescale a X = C a·X`-form, `coeff_rescale` fallback); cancel by
+     `mul_right_cancel₀` in the domain `ℚ_p⟦X⟧` (`rescale a exp − 1 ≠ 0`:
+     coeff 1 = `a ≠ 0`, char-0 cast).
+  8. `muA_apply_powCM`: `apply_powCM` (§3) + `mahlerTransform_muA` (T031); cast;
+     commute map through iterates (1 + `constantCoeff_map`, induction); step 6;
+     extract `coeff (k+1)` of step 7 (`coeff_succ_X_mul`); `bernoulliPowerSeries`
+     coeff + `coeff_rescale`; `k!/(k+1)! = (k+1)⁻¹` (`Nat.factorial_succ`,
+     `field_simp`); fold `zetaNeg` (`(−1)^{2k} = 1`: `neg_one_pow_mul_self`-style,
+     `pow_mul_pow_eq...` — `ring` after `zetaNeg`-unfold; `Rat.cast`-homomorphy).
+  Numeric anchors verified in decomposition (L2.6 attack [1]: `a=2` coefficient;
+  L2.7 attack [3]: `k=0` gives `F_a(0) = (a−1)/2` both routes).
+- **Mathlib lemmas**: `bernoulliPowerSeries_mul_exp_sub_one` (Bernoulli.lean:273),
+  `bernoulliPowerSeries`-def (:270), `PowerSeries.derivative_subst` (:184),
+  `PowerSeries.derivative_exp`, `constantCoeff_exp`, `coeff_exp`,
+  `exp_pow_eq_rescale_exp` (Exp.lean:153), `constantCoeff_subst` (:244),
+  `coeff_rescale`, `rescale` ring-hom (`map_one/map_sub`), `coeff_derivativeFun`,
+  `coeff_succ_X_mul`, `Nat.factorial_succ`, `Rat.cast`-field-hom simp set.
+- **Sources**: RJW Lem 4.2 (TeX 1459–1464, value part), Lem 4.3 (TeX 1473–1479),
+  Prop 4.6 (TeX 1500–1507) — quotes in decomposition R2.
+- **Generality**: ℚ_p-coefficients via `PadicInt.Coe.ringHom`-map; `delQ` is a
+  *temporary* ℚ_p-clone of `del` — **cleanup debt**: merge by generalising
+  `PadicMeasure.del` to `CommRing R` in a dedicated pass (recorded; do NOT churn §3
+  call sites mid-ticket).
+- **Blueprint**: wire `kl-mua-interpolation` → `PadicMeasure.muA_apply_powCM`;
+  wire `kl-define-Fa` → `PadicMeasure.constantCoeff_iterate_delQ` (the
+  `f_a^{(k)}(0) = (∂^k F_a)(0)` content; prose note that the substitution is
+  realised by `PowerSeries.subst (exp−1)`); `kl-values-of-zeta` stays unwired
+  (Mellin half is §2) — add the rationale comment.
+- **Cleanup**: `/cleanup` the eight declarations immediately after.
+- **Progress**:
+
+### [T034] ψ-invariance: projection formula + `ψ(μ_a) = μ_a`
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
+- **Depends on**: T031, T032
+- **Parallel**: yes (with T033)
+- **Type**: theorem cluster (9 sorries: `psi_phi_mul`, `phi_dirac`, `psi_dirac_mul`,
+  `psi_dirac_of_isUnit`, `psi_add`, `psi_smul`, `psi_sum`, `psi_muA`)
+- **Statement**: in skeleton (MuA.lean:182–215).
+- **Proof sketch** (decomposition R3 — **recorded replan**: the source's
+  ξ/roots-of-unity proof (TeX 1517–1524) is replaced by the equivalent elementary
+  computation; justification block in decomposition R3 head):
+  1. `psi_phi_mul`: `LinearMap.ext f`; `show`-unfold both sides (§3 `psi_phi`
+     pattern); `mul_apply` (Convolution); inner integrand: for `y ∈ pℤ_p`,
+     `charFn(px+y) = charFn(y)` and `sd(px+y) = x + sd y` — new digit sub-lemma
+     `digit (p·x + y) = digit y` (~8 LOC from `digit`'s `toZModPow 1`
+     characterisation, `map_add`, `p·x ↦ 0`); reassemble as `(ν * psi μ) f`.
+  2. `phi_dirac`: `rfl`-grade (pushforward of dirac, §3 pattern).
+  3. `psi_dirac_mul`: via `psi_phi` + 2 (`ψ[px] = ψφ[x] = [x]`).
+  4. `psi_dirac_of_isUnit`: `LinearMap.ext`; charFn vanishes off `pℤ_p`; unit ∉
+     `pℤ_p` (`PadicInt.isUnit_iff`, `setOf_isUnit_eq`/norm-argument).
+  5. `psi_add/psi_smul/psi_sum`: definitional `LinearMap.ext` unfolds (the
+     integrand map `f ↦ charFn·(f∘sd)` is linear in μ); `psi_sum` by
+     `Finset.sum_induction` from add + `ψ0 = 0`. **Cleanup debt noted**: psi
+     should become a bundled linear map in a later pass.
+  6. `psi_muA`: per decomposition L3.6: (a) `v_a·ψμ_a = ψ(φ(v_a)·μ_a)` [1 + 2];
+     (b) telescope `(Σ_{j<p}[aj])·([a]−1) = [ap]−1` (`dirac_mul_dirac`,
+     `Finset.sum_range_succ'`); (c) expand `([ap]−1)·μ_a` via T032's identity
+     left-multiplied by `Σ_j[aj]`; transform-side geom-sum route for the
+     double-product (decomposition L3.6 attack [2]: both routes recorded);
+     (d) apply ψ termwise (3,4,5): `p ∣ aj+i`-bookkeeping or transform-side
+     X-cancellation; result `Σ_{i<a}[i] − a•1`; (e) rewrite back via T032 =
+     `v_a·μ_a`; (f) `mul_left_cancel₀` (T032 ne-zero + IsDomain).
+     End-to-end numeric trace at `p=3, a=2` in decomposition L3.6 attack [1].
+- **Mathlib lemmas**: `Finset.sum_range_succ'`, `Nat.Coprime.dvd_of_dvd_mul_left`
+  (j=0 isolation), `mul_left_cancel₀`; rest is §3 project API (`mul_apply`,
+  `dirac_mul_dirac`, `shiftDiv_mul`, `mem_pZp_of_mul`, charFn lemmas).
+- **Sources**: RJW Lem 4.7 statement (TeX 1513–1515, verbatim in decomposition);
+  source proof TeX 1517–1524 (quoted; replaced — replan block).
+- **Generality**: projection formula stated for all ν, μ (maximal); dirac lemmas
+  pointwise-general.
+- **Blueprint**: wire `kl-psi-invariant` → `PadicMeasure.psi_muA`; add a prose
+  remark to the node recording the ξ-free route (per CLAUDE.md rule 5).
+- **Cleanup**: `/cleanup` immediately after; flag psi-bundling debt.
+- **Progress**:
+
+### [T035] Restriction to `ℤ_p^×`: Euler factor removed
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
+- **Depends on**: T033, T034
+- **Parallel**: no
+- **Type**: theorem (2 sorries: `phi_apply_powCM`, `res_units_muA_apply_powCM`)
+- **Statement**: in skeleton (MuA.lean:226–233).
+- **Proof sketch** (decomposition L4.1–L4.2; source proof TeX 1535–1539 quoted there):
+  1. `phi_apply_powCM`: `show`-unfold pushforward; `powCM ∘ mulCM p = p^k • powCM`
+     by `ContinuousMap.ext` + `mul_pow`; `map_smul`.
+  2. `res_units_muA_apply_powCM`: `res_units_eq` (§3) → `μ_a − φψμ_a`;
+     `psi_muA` (T034) → `μ_a − φμ_a`; `LinearMap.sub_apply`; step 1;
+     `muA_apply_powCM` (T033); `push_cast; ring`.
+- **Mathlib lemmas**: `mul_pow`, `map_smul`, `push_cast` set.
+- **Sources**: RJW Prop 4.8 (TeX 1527–1539).
+- **Generality**: step 1 for arbitrary μ (not just μ_a).
+- **Blueprint**: wire `kl-restriction-interpolation` →
+  `PadicMeasure.res_units_muA_apply_powCM`.
+- **Cleanup**: `/cleanup` immediately; this closes MuA.lean → run the **final
+  per-file cleanup** for MuA.lean here (= CLEANUP-KL-1 folded in; verify whole-file
+  lint).
+- **Progress**:
+
+### [T036] Units-side transfer + `x⁻¹`-twist `zetaNum`
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
+- **Depends on**: T035
+- **Parallel**: yes (with T037)
+- **Type**: def-API (6 sorries: `iota_muAUnits`, `muAUnits_apply_unitsPowCM`,
+  `continuous_units_inv_val`, `unitsCmul_apply`, `zetaNum_apply_unitsPowCM`,
+  `zetaNum_moments`)
+- **Statement**: in skeleton (ZetaP.lean:40–88).
+- **Proof sketch** (decomposition L5.1–L5.3):
+  1. `iota_muAUnits`: `LinearMap.ext`; both sides `μ_a`-applied; pointwise
+     `extendByZero f ∘ no — (extendByZero (f.comp unitsValCM-style))`:
+     reuse §3 `extendByZero_comp_unitsVal` / the `mem_range_iota_iff` ⟸-direction
+     computation verbatim (UnitsZp.lean:177 proof body is the template).
+  2. `muAUnits_apply_unitsPowCM`: pointwise `extendByZero (unitsPowCM k) =
+     charFn_units · powCM k` (`ContinuousMap.ext u`; unit-case
+     `extendByZero_coe_unit`, non-unit case both sides 0); then `res`-def.
+  3. `continuous_units_inv_val`: `Units.continuous_iff`-toolkit
+     (Mathlib.Topology.Algebra.Constructions) or explicit: `u ↦ u⁻¹.val` is
+     `MulOpposite.unop ∘ Prod.snd ∘ embedProduct`, each continuous (§3 UnitsZp
+     embedProduct machinery).
+  4. `unitsCmul_apply`: `rfl`-grade (`LinearMap.mulLeft`-apply).
+  5. `zetaNum_apply_unitsPowCM`: 4 + pointwise `invCM·unitsPowCM k =
+     unitsPowCM (k−1)`: `ContinuousMap.ext u`; `(u⁻¹:ℤ_p)·(u:ℤ_p)^k`:
+     `Units.val`-arith — `← Units.val_pow_eq_pow_val`, `← Units.val_mul`,
+     `inv_mul_eq_iff`/`pow_sub_one_mul`-shape with `Nat.succ_pred_eq_of_pos hk`.
+  6. `zetaNum_moments`: 5 + 2 + T035 at `k−1`; sign-shuffle
+     `(−1)^{k−1}(1−a^k) = (−1)^k(a^k−1)` by `ring`-after-`Nat.succ_pred` cast
+     handling (`Odd/Even` not needed — `(−1)^{k−1}·(−1) = (−1)^k` via
+     `pow_succ` on `k−1+1 = k`).
+- **Mathlib lemmas**: `Units.continuous_iff` (or `Units.embedProduct`-route),
+  `Units.val_pow_eq_pow_val`, `Units.val_mul`, `Nat.succ_pred_eq_of_pos`,
+  `pow_succ`.
+- **Sources**: RJW TeX 1555–1562 (eq 4.11 + the `x⁻¹μ_a`-moment display; quoted in
+  decomposition R5/L5.3).
+- **Generality**: `unitsCmul` for arbitrary `g` (the general eq-4.11 operation, not
+  just `x⁻¹`).
+- **Blueprint**: wire `kl-theta-a` → `PadicMeasure.unitsCmul` with prose adjusted:
+  the node's θ_a is `dirac p a − 1` (§3 objects, augmentation generator); its new
+  content anchor is the well-defined `x⁻¹`-multiplication (eq 4.11). Keep faithful
+  per CLAUDE.md rule 2; do not over-claim.
+- **Cleanup**: `/cleanup` immediately after.
+- **Progress**:
+
+### [T037] Integer topological generator (p odd)
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
+- **Depends on**: none (uses §3 only)
+- **Parallel**: yes (with T030–T036)
+- **Type**: theorem (2 sorries: `topGen_pow_ne_one`, `exists_nat_topological_generator`)
+- **Statement**: in skeleton (ZetaP.lean:92–103).
+- **Proof sketch** (decomposition L5.4; **source-expansion**, cross-ref
+  Washington/Ireland–Rosen — the source's Def 4.10 takes an integer top-generator
+  implicitly):
+  1. `topGen_pow_ne_one`: suppose `a^k = 1`, `k > 0`. Then
+     `(unitsToZModPow p n a)^k = 1` ∀n (`map_pow`, `map_one` — note
+     `unitsToZModPow` is a `MonoidHom`, and `a^k = 1` in `ℤ_[p]` lifts to units:
+     `Units.ext`-style: `(a^k : ℤ_[p]ˣ) = 1` from val-injectivity). So
+     `orderOf (q_n a) ∣ k`; but `zpowers (q_n a) = ⊤` ⟹ `orderOf (q_n a) =
+     card (ZMod p^n)ˣ = φ(p^n)` (`orderOf_eq_card_of_forall_mem_zpowers`,
+     `ZMod.card_units_eq_totient`); `φ(p^n) = p^{n-1}(p−1)` unbounded
+     (`Nat.totient_prime_pow`) — pick `n` with `φ(p^n) > k`, contradiction with
+     `orderOf ∣ k` (`Nat.le_of_dvd`).
+  2. `exists_nat_topological_generator`: obtain `u₀` (§3
+     `exists_topological_generator hp2`). Set `m := (toZModPow 2 u₀).val.val`-lift
+     (the ℕ-rep of `u₀ mod p²`); `u := (PadicInt.isUnit_natCast_of_not_dvd …).unit`.
+     (a) `q_2 u = q_2 u₀` (natCast-naturality `map_natCast` of `toZModPow`,
+     `ZMod.natCast_val`-round-trip); hence `m` generates level 2.
+     (b) `m^{p−1} ≡ 1 mod p` (level-1 Fermat from level-2 generation pushed down
+     `unitsToZModPow_le`) and `m^{p−1} = 1 + p·c` with `p ∤ c` — else order at
+     level 2 divides `p−1 < φ(p²)` contradicting (a)
+     (`ZMod.unitOfCoprime`-arithmetic; extract `c` over ℤ/ℕ).
+     (c) level n: `orderOf (q_n u)` is divisible by `p−1` (push down to level 1,
+     order there is `p−1`) and by `p^{n−1}` (`orderOf_one_add_mul_prime` applied
+     to `(m:ZMod p^n)^{p−1} = 1 + p·c`-image, `p ∤ c`); `lcm = φ(p^n)` ⟹
+     `zpowers = ⊤` (`orderOf_eq_card_iff`-direction /
+     `Subgroup.eq_top_of_card_le`-style with `orderOf_dvd_card`).
+     (d) levels 0,1: from level 2 by transition-surjectivity
+     (`unitsToZModPow_le` + `Subgroup.map`-zpowers-⊤ pushforward; level 0 trivial
+     group). §3's `exists_topological_generator` proof structure (PseudoMeasure:857)
+     is the template for the level-bookkeeping.
+- **Mathlib lemmas**: `orderOf_eq_card_of_forall_mem_zpowers`,
+  `ZMod.card_units_eq_totient`, `Nat.totient_prime_pow`, `orderOf_one_add_mul_prime`
+  (ZMod-side, located during §3 work), `Nat.le_of_dvd`, `Nat.lcm_dvd`/`dvd`-algebra,
+  `ZMod.natCast_val`, `map_natCast`.
+- **Sources**: RJW TeX 1566 (the gloss) + decomposition R5 head-note
+  (cross-references). LOC ~60–80 (the board's largest single leaf — bounded,
+  toolkit proven in §3 T026).
+- **Generality**: stated for this p (no further generality available — p=2 false).
+- **Blueprint**: no §4 node (supporting lemma); mention in `kubota-leopoldt`
+  def-node prose when T038 wires it.
+- **Cleanup**: `/cleanup` immediately after.
+- **Progress**:
+
+### [T038] `ζ_p`: definition, pseudo-measure property, interpolation
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
+- **Depends on**: T036, T037
+- **Parallel**: no
+- **Type**: def + theorems (3 sorries: `IsPseudoMeasure.sub`,
+  `padicZeta_isPseudoMeasure`, `padicZeta_moments`)
+- **Statement**: in skeleton (ZetaP.lean:110–151). `padicZeta` def already compiles.
+- **Proof sketch** (decomposition L5.5–L5.7):
+  1. `IsPseudoMeasure.sub`: `intro g`; witnesses `ν₁, ν₂`; `⟨ν₁ − ν₂, by
+     rw [map_sub, mul_sub, hν₁, hν₂]⟩`.
+  2. `padicZeta_isPseudoMeasure`: unfold `padicZeta`; `isPseudoMeasure_mk'` (§3,
+     PseudoMeasure:1024) at the `choose_spec` generator-property.
+  3. `padicZeta_moments`: from `IsLocalization.mk'_spec`:
+     `([u]−1)·ζ_p = alg(zetaNum m)`; multiply `hν` by `alg([u]−1)` and the spec by
+     `alg([b]−1)`; equate, pull back along `IsFractionRing.injective`
+     (`NoZeroDivisors` ✓): `([u]−1)·ν = ([b]−1)·zetaNum m` in Λ;
+     `units_mul_apply_unitsPowCM` (§3 :753) + dirac/one moments
+     (`dirac`-apply `= u^k`; `1`-apply `= 1`):
+     `(u^k−1)·ν(x^k) = (b^k−1)·zetaNum(x^k)`; cast to ℚ_p; divide by
+     `(u^k−1) ≠ 0` (T037 `topGen_pow_ne_one` + `PadicInt.coe_injective`-cast,
+     `sub_ne_zero`); insert `zetaNum_moments` (T036); sign removal:
+     `neg_one_pow_mul_one_sub_pow_mul_zetaNeg` (T030) after `push_cast`
+     (the ℚ-lemma casts to ℚ_p: `Rat.cast`-hom on the identity).
+- **Mathlib lemmas**: `IsLocalization.mk'_spec`, `IsFractionRing.injective`,
+  `sub_ne_zero`, field algebra (`div_eq_iff`, `mul_comm`-shuffles).
+- **Sources**: RJW Def 4.10 (TeX 1565–1570), Prop 4.11 + proof (TeX 1581–1597) —
+  quotes in decomposition R5.
+- **Generality**: `padicZeta_moments` quantifies over ALL `b` and ALL witnesses
+  (the strongest faithful form; gives a-independence content of zero-divisor(iii)
+  for free at T039).
+- **Blueprint**: wire `kubota-leopoldt` (def-node) → `PadicMeasure.padicZeta`
+  (prose: mention the fixed integer-generator choice + L5.4);
+  wire `kl-zetap-interpolation` → `PadicMeasure.padicZeta_moments`.
+- **Cleanup**: `/cleanup` immediately after.
+- **Progress**:
+
+### [CLEANUP-ALL-2] Pre-milestone `/cleanup-all` (§4)
+- **Status**: open
+- **Depends on**: T030–T038
+- **Type**: cleanup
+- **Description**: project-wide cleanup before the §4 milestone theorem, per the
+  cadence rule. Sweep the four KubotaLeopoldt files + any §3 files touched
+  (Toolbox if psi-lemmas land there); verify linter set; re-render blueprint site
+  (`./scripts/ci-pages.sh`).
+
+### [T039] **MILESTONE** — Kubota–Leopoldt: existence and uniqueness
+- **Status**: open
+- **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
+- **Depends on**: T038, CLEANUP-ALL-2
+- **Parallel**: no
+- **Type**: theorem (1 sorry: `kubotaLeopoldt`)
+- **Statement**: in skeleton (ZetaP.lean:154).
+- **Proof sketch** (decomposition L5.8; source TeX 1599):
+  1. Existence: `⟨padicZeta p hp2, ⟨padicZeta_isPseudoMeasure …, fun b k hk ν hν =>
+     padicZeta_moments …⟩, ?uniq⟩`.
+  2. Uniqueness: `q` with the property; show `q = padicZeta`: set `d := q −
+     padicZeta`; `IsPseudoMeasure.sub` (T038); apply
+     `pseudoMeasure_eq_zero_of_moments` (§3 :829) at `a := u` (the T037 generator,
+     torsion-free via `topGen_pow_ne_one`): given a witness `ν` of `([u]−1)·d`,
+     produce witnesses `ν₁` of `([u]−1)q` (from `hq.2`-side: `q`'s
+     IsPseudoMeasure at `u`) and `ν₂ := ν₁ − ν` for padicZeta — or symmetrically;
+     both interpolation values equal (the property at `b := u`) ⟹
+     `ν(x^k)`-cast `= 0` ⟹ `ν(x^k) = 0` (`PadicInt`-cast injective +
+     `Rat`-cast arith); conclude `d = 0`; `sub_eq_zero`.
+     (Witness bookkeeping: `alg([u]−1)·d = alg(ν)` with `alg` injective makes all
+     witness-identifications unique — `IsFractionRing.injective` once.)
+- **Mathlib lemmas**: `sub_eq_zero`, `ExistsUnique`-intro shape; rest §3/§4 project.
+- **Sources**: RJW Thm 4.1 (TeX 1444–1447) + proof line (TeX 1599) — quoted at
+  decomposition R-KL head.
+- **Generality**: statement quantifies moments over all `b` (decomposition R-KL
+  "moment encoding" note).
+- **Blueprint**: wire `kl-existence-uniqueness` → `PadicMeasure.kubotaLeopoldt`.
+  This completes the §4 chapter except `kl-values-of-zeta` (unwired, §2-pending —
+  rationale comment in place from T033). Re-render site.
+- **Cleanup**: `/cleanup` immediately after (= final per-file cleanup for
+  ZetaP.lean, CLEANUP-KL-2 folded in). Then update CLEANUP-FINAL's scope to include
+  the §4 files.
+- **Progress**:
+
+## §4 dependency quick-view
+
+```
+T030 (zeta values)──────────────┐
+T031 (F_a, μ_a)──┬─ T032 (dirac/domain) ─┬─ T034 (ψ) ─┐
+                 └─ T033 (moments) ←T030 ┘            ├─ T035 (Res moments)
+T037 (integer generator) [independent]                │
+T036 (units/x⁻¹) ←─────────────────────────────────────┘
+T038 (ζ_p) ← T036, T037
+CLEANUP-ALL-2 ← T030..T038
+T039 MILESTONE ← T038, CLEANUP-ALL-2
+```
+Parallel capacity: 3 workers at peak (T030/T031/T037 start immediately).
+Cleanup cadence: per-ticket immediate cleanup (standing rule) ⊇ 3-ticket cadence;
+final per-file cleanups folded into T035 (MuA.lean) and T039 (ZetaP.lean);
+CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 files.

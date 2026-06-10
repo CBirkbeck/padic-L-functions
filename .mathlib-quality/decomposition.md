@@ -830,3 +830,831 @@ self-contained infrastructure clusters (AG1 ≈ 65 LOC, AG2 ≈ 60 LOC estimated
 source compression points). The single mathematical trap found (p = 2 cyclicity) is
 fenced by hypothesis. No REVIEW-PENDING leaves. The decomposition is ready for
 ticketing.
+
+---
+
+# §4 — The Kubota–Leopoldt p-adic L-function (TeX 1440–1609)
+
+## Skeleton location (§4)
+- `PadicLFunctions/KubotaLeopoldt/ZetaValues.lean` (4 sorries)
+- `PadicLFunctions/KubotaLeopoldt/ZetaValuesComplex.lean` (1 sorry)
+- `PadicLFunctions/KubotaLeopoldt/MuA.lean` (31 sorries)
+- `PadicLFunctions/KubotaLeopoldt/ZetaP.lean` (11 sorries)
+`lake build PadicLFunctions` passes, sorries only — verified 2026-06-10.
+
+## Result R-KL: `kubotaLeopoldt` (RJW Thm 4.1, TeX 1444–1447)
+
+> "There is a unique pseudo-measure $\zeta_p$ on $\Zp^\times$ such that, for all
+> $k > 0$, we have $\int_{\Zp^\times}x^k \cdot\zeta_p = (1-p^{k-1})\zeta(1-k)$."
+
+### Plain-English proof (source structure, TeX 1599)
+"Existence of the pseudo-measure is Proposition \ref{PropInterpolation2}. To conclude
+the proof we need only show uniqueness; but this follows from Lemma
+\ref{lem:zero divisor}(iii)." The chain to PropInterpolation2 is: §4.1 constructs
+`μ_a` (integer `a` coprime to `p`) via its Mahler transform `F_a` (Prop 4.4/Def 4.5)
+and computes its moments via Bernoulli values (Lem 4.2/4.3, Prop 4.6); §4.2 shows
+`ψ(μ_a) = μ_a` (Lem 4.7) hence restriction to `ℤ_p^×` multiplies the k-th moment by
+`(1−p^k)` (Prop 4.8); §4.3 multiplies by `x⁻¹` (shifting moments, eq. 4.11/TeX 1561)
+and divides by `θ_a = [a]−[1]` in `Q(ℤ_p^×)` (Def 4.10), giving a pseudo-measure by
+Lem 3.37 (= our `isPseudoMeasure_mk'`) with the stated interpolation after the sign
+removal at TeX 1596.
+
+**Moment encoding.** The source integrates a pseudo-measure via eq. (3.x)
+`∫x^k·λ := (g^k−1)^{-1}∫x^k·([g]−[1])λ` (the encoding already used by
+`pseudoMeasure_eq_zero_of_moments`, §3 board T025). The Lean main statement
+quantifies over all `b : ℤ_[p]ˣ` and all witnesses `ν` of `([b]−[1])·q ∈ Λ`:
+`∫x^k ν = (b^k−1)(1−p^{k−1})ζ(1−k)`. This is the same statement with the division
+cleared — faithful and denominator-free.
+
+**ζ-values design decision.** Every interpolation statement uses
+`zetaNeg k := (−1)^k B_{k+1}/(k+1) ∈ ℚ` (TeX 1455's own formula for `ζ(−k)`), cast
+into `ℚ_p`; `ζ(1−k) = zetaNeg (k−1)`. The complex identification is the quarantined
+bridge L0.3 (`zetaNeg_eq_riemannZeta`). The analytic-continuation statement
+`L(f_a,s) = (1−a^{1−s})ζ(s)` of Lem 4.2 is **§2 material** (Mellin transforms,
+deferred with the §2 Motivation chapter); the part of Lem 4.2 that §4 actually
+consumes is the value formula `f_a^{(k)}(0) = (−1)^k(1−a^{1+k})ζ(−k)`, whose honest
+content is the Bernoulli power-series identity L2.6 below. Blueprint node
+`kl-lem-values-zeta` therefore stays **unwired** until §2's Mellin theory exists;
+the value formula is wired through `muA_apply_powCM`.
+
+### Sub-tree R0: rational zeta values (`ZetaValues*.lean`)
+
+- **L0.1** (leaf, mathlib): `zetaNeg_zero` + def `zetaNeg`
+  - Lean: `ZetaValues.lean:17,21`
+  - Source: TeX 1455: > "$\zeta(-k) = (d^kf/dt^k)(0) = (-1)^k B_{k+1}/(k+1).$"
+  - Lean ↔ source: `zetaNeg k := (−1)^k·bernoulli (k+1)/(k+1)` is the displayed
+    formula verbatim; mathlib's `bernoulli` has `B₁ = −1/2`, matching `ζ(0) = −1/2`
+    (sanity: `zetaNeg 0 = B₁ = −1/2` ✓).
+  - Discharged by: `bernoulli_one` (`= -1/2`, Bernoulli.lean) + `norm_num`.
+  - Attacks: [1] edge `k=0`: `zetaNeg 0 = 1·B₁/1 = −1/2 = ζ(0)` ✓; [2] convention
+    drift: if the paper meant `bernoulli'` (B₁=+1/2) then `ζ(0) = +1/2`, false —
+    so the paper's display (and our def) is the `B₁=−1/2` convention, confirmed
+    against mathlib's `riemannZeta_neg_nat_eq_bernoulli` which uses `bernoulli` with
+    the same `(−1)^k` prefactor; [3] `k` odd ≥1: `zetaNeg 1 = −B₂/2 = −1/12 = ζ(−1)` ✓
+    textbook value. Verdict: SURVIVED.
+  - Prior-B2: no match (log absent/empty).
+
+- **L0.2** (leaf, mathlib): `zetaNeg_eq_zero_of_even`
+  - Lean: `ZetaValues.lean:25`
+  - Source: TeX 1596: > "we may remove the $(-1)^{k}$ as $\zeta(1-k) \neq 0$ if and
+    only if $k$ is even."
+  - Lean ↔ source: `ζ(1−k) = 0` for odd `k ≥ 3` ⟺ `zetaNeg m = 0` for even `m ≥ 2`
+    ⟺ `B_{m+1} = 0` for odd `m+1 ≥ 3`.
+  - Discharged by: `bernoulli_eq_zero_of_odd` (Bernoulli.lean:217, verified).
+  - Attacks: [1] edge `m=0`: excluded by `hk : k ≠ 0` — `zetaNeg 0 = −1/2 ≠ 0`, so
+    the hypothesis is necessary (over-removal attack fails the statement without it);
+    [2] discharge type: `bernoulli_eq_zero_of_odd {n} (h_odd : Odd n) (hlt : 1 < n)`
+    — with `n := k+1`, `Odd (k+1)` from `Even k`, `1 < k+1` from `k ≠ 0` ✓ both
+    hypotheses available; [3] counterexample search: `bernoulli 3 = 0`,
+    `bernoulli 5 = 0` known values consistent. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L0.3** (leaf, mathlib): `zetaNeg_eq_riemannZeta` (complex bridge)
+  - Lean: `ZetaValuesComplex.lean:18`
+  - Source: TeX 1455 (as L0.1) + mathlib `riemannZeta_neg_nat_eq_bernoulli`
+    (HurwitzZetaValues.lean, located by file grep).
+  - Lean ↔ source: our `zetaNeg` is definitionally the right side of mathlib's
+    `riemannZeta_neg_nat_eq_bernoulli : riemannZeta (-n) = (-1)^n * bernoulli (n+1) / (n+1)`
+    (exact statement to be confirmed at the declaration during execution; the name
+    and file are verified).
+  - Attacks: [1] statement-shape risk: mathlib's lemma may state `(-n : ℂ)` vs our
+    `-(k : ℂ)` — same term up to `push_cast`; [2] division-in-ℂ vs division-in-ℚ-then-
+    cast: `Rat.cast` is a field hom, commutes with `/` ✓; [3] junk-value attack:
+    no division-by-zero (`k+1 ≠ 0`). Verdict: SURVIVED (with the noted
+    confirm-at-execution on argument form).
+  - Prior-B2: no match.
+
+- **L0.4** (leaf, project+mathlib): `neg_one_pow_mul_one_sub_pow_mul_zetaNeg`
+  - Lean: `ZetaValues.lean:32`
+  - Source: TeX 1593–1596: > "$\int_{\Zp^\times} x^k \cdot \zeta_p =
+    (-1)^k(1-p^{k-1})\zeta(1-k)$. To get the result, we may remove the $(-1)^{k}$ as
+    $\zeta(1-k) \neq 0$ if and only if $k$ is even."
+  - Lean ↔ source: the lemma is exactly the removal step, case-split: `k = 1` ⟹
+    `1−q⁰ = 0`; `k` even ⟹ `(−1)^k = 1`; `k ≥ 3` odd ⟹ `zetaNeg (k−1) = 0` by L0.2.
+    (The source says "k even"; the `k = 1` case is covered on the source side because
+    `1−p^{k−1}` vanishes there — our proof makes that explicit.)
+  - Discharged by: L0.2 + `Even.neg_one_pow` + `ring`-algebra.
+  - Attacks: [1] edge `k=1`: LHS `= (−1)·0·(−1/2) = 0 =` RHS ✓ (this is where a naive
+    "k even" proof breaks — caught and handled); [2] edge `k=2`: `(−1)² = 1` trivial ✓;
+    [3] `k=3`: `zetaNeg 2 = 0` by L0.2 ✓; [4] generalisation attack: stated for
+    arbitrary `q : ℚ` (not just `p`) — strictly more general, no hidden hypothesis.
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+### Sub-tree R1: `F_a` and `μ_a` (RJW Prop 4.4, Def 4.5; `MuA.lean`)
+
+Internal node. Source's own proof of Prop 4.4 (TeX 1488–1494):
+> "We can expand $(1+T)^a - 1 = \sum_{n\geq 1} {a \choose n} T^n = aT\big[1+Tg(T)\big]$,
+> where $g(T) = \sum_{n\geq 2}\frac{1}{a} {a \choose n} T^{n-2}$ has coefficients in
+> $\zp$ since we have chosen $a$ coprime to $p$. Hence, expanding the geometric
+> series, we find $\frac{1}{T} - \frac{a}{(1+T)^a - 1} = \frac{1}{T} \sum_{n \geq
+> 1}(-T)^n g(T)^n$, which is visibly an element of $\Zp\lsem T\rsem$."
+
+**Realisation note (recorded design decision, not a drift).** The source's proof is
+"the denominator is `T·(unit)`, so the difference of poles cancels". We package the
+same fact equation-first: `(1+T)^a − 1 = T·geomSum a` with `geomSum a = Σ_{i<a}(1+T)^i`
+of constant coefficient `a` (a unit iff `p ∤ a` — the source's "since we have chosen
+`a` coprime to `p`"), and *define* `F_a := ((geomSum a − a)/T) · geomSum a⁻¹`. Then
+`((1+T)^a−1)·F_a = geomSum a − a` (L1.6) is the identity `F_a = 1/T − a/((1+T)^a−1)`
+with denominators cleared — the form every later step actually uses. The geometric-
+series expansion the source displays is *how it proves membership in ℤ_p⟦T⟧*; our
+unit-inverse `Ring.inverse` achieves membership definitionally. Composition is
+attack-checked at L1.6.
+
+- **L1.1** (leaf, mathlib): `PadicInt.isUnit_natCast_of_not_dvd`
+  - Lean: `MuA.lean:35`
+  - Source: TeX 1491 ("has coefficients in ℤ_p since we have chosen a coprime to p" —
+    the underlying fact: a coprime to p is a p-adic unit).
+  - Discharged by: `PadicInt.isUnit_iff` (PadicIntegers.lean:366) +
+    `PadicInt.norm_int_lt_one_iff_dvd` (:280) + `le_antisymm (norm_le_one _)`.
+  - Attacks: [1] edge `a=0`: `p ∣ 0` always, hypothesis excludes ✓; [2] edge `a=1`:
+    `IsUnit 1` ✓; [3] discharge-shape: `norm_int_lt_one_iff_dvd (k : ℤ) : ‖(k:ℤ_[p])‖ < 1 ↔ (p:ℤ) ∣ k`
+    is for `ℤ`-cast — need `Int.natCast_dvd_natCast` bridge for `(a:ℕ)`, a 1-line
+    `exact_mod_cast` ✓; [4] counterexample: none possible (standard fact).
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.2** (leaf, mathlib): `constantCoeff_geomSum`
+  - Lean: `MuA.lean:53`. Source: implicit in TeX 1490 (`Σ_{n≥1} C(a,n) Tⁿ` has the
+    `aT` leading term ⟺ cofactor has constant term `a`).
+  - Discharged by: `map_sum`, `constantCoeff_one`, `constantCoeff_X`, `map_pow`;
+    `Σ_{i<a} 1 = a` via `Finset.sum_const` + `card_range`.
+  - Attacks: [1] `a=0`: empty sum, `constantCoeff 0 = 0 = (0:ℤ_[p])` ✓ cast of 0;
+    [2] `(1+X)^i` const coeff `1^i = 1` ✓; [3] discharge: all four names standard
+    simp lemmas. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.3** (leaf, mathlib): `geomSum_mul_X`
+  - Lean: `MuA.lean:56`. Source: TeX 1490 (the same display, rearranged:
+    `(1+T)^a − 1 = T·Σ_{i<a}(1+T)^i`).
+  - Discharged by: `geom_sum_mul : (Σ i ∈ range n, x^i) * (x − 1) = x^n − 1` with
+    `x := 1+X` (so `x − 1 = X` after `add_sub_cancel_left`). NOTE: `geom_sum_mul`'s
+    current file location was not pinned by grep (Algebra/GeomSum.lean moved);
+    fallback if renamed: `mul_geom_sum` variant or a 6-line induction on `a`.
+  - Attacks: [1] `a=0`: `0 * X = (1+X)^0 − 1 = 0` ✓; [2] `a=1`: `1·X = (1+X)−1` ✓;
+    [3] commutativity orientation (left vs right factor): ℤ_p⟦X⟧ commutative,
+    `mul_comm` bridges ✓; [4] discharge-existence risk logged (name location
+    unpinned) with explicit fallback. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.4** (leaf, mathlib): `isUnit_geomSum`
+  - Lean: `MuA.lean:59`. Source: TeX 1490–1491 (unit cofactor ⟸ `a` coprime `p`).
+  - Discharged by: `PowerSeries.isUnit_iff_constantCoeff` (Inverse.lean:111,
+    verified) + L1.2 + L1.1.
+  - Attacks: [1] hypothesis necessity: `p ∣ a` ⟹ constant coeff non-unit ⟹ non-unit:
+    hypothesis is sharp ✓; [2] discharge type: `isUnit_iff_constantCoeff : IsUnit φ ↔
+    IsUnit (constantCoeff R φ)` — exact match ✓; [3] composition: 3 lemmas ≤ 3 ✓.
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.5** (leaf, mathlib): `FaNum` + `X_mul_FaNum`
+  - Lean: `MuA.lean:63,66`. Source: the `1/T·(...)` shape of TeX 1492 (the numerator
+    after the pole at `T=0` cancels; constant term of `geomSum − a` is `0` by L1.2).
+  - Discharged by: `PowerSeries.ext` + `coeff_X_mul`-family (`coeff_succ_X_mul`) +
+    L1.2 (coefficient 0 vanishes); `coeff_mk`.
+  - Attacks: [1] coefficient 0: `(X·FaNum)₀ = 0` and `(geomSum − a)₀ = a − a = 0` ✓;
+    [2] coefficient n+1: `FaNum_n = geomSum_{n+1}`, and `(a : PowerSeries)`'s
+    higher coefficients vanish (`coeff_natCast`-shape — natCast = C a, `coeff_C`) ✓;
+    [3] junk-freedom: `FaNum` is total (no hypothesis), fine. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.6** (internal, composition of L1.3–L1.5): `geomSum_mul_Fa` +
+  `one_add_X_pow_sub_one_mul_Fa`
+  - Lean: `MuA.lean:76,82`. Source: TeX 1475 (the definition of `F_a`)
+    > "$F_a(T) \defeq \frac{1}{T} - \frac{a}{(1+T)^a - 1}$"
+    cleared of denominators via the factorisation of Prop 4.4's proof.
+  - Composition: `geomSum·Fa = geomSum·FaNum·inverse(geomSum) = FaNum` by
+    `Ring.inverse_mul_cancel` (L1.4); then `((1+X)^a−1)·Fa = X·geomSum·Fa =
+    X·FaNum = geomSum − a` by L1.3 + L1.5.
+  - Attacks (composition): [1] could children hold and parent fail? The only glue is
+    associativity/commutativity in a CommRing — no; [2] `Ring.inverse` junk when
+    `p ∣ a`: both lemmas carry `hpa`, junk fenced ✓; [3] **sign check against the
+    source display** (the blueprint review previously flagged the source's
+    `Σ(−T)ⁿg(T)ⁿ` as having a sign slip): our route never uses that display — the
+    characterising identity is sign-unambiguous, and its `k=1, a=2` instance was
+    hand-checked: `F₂ = 1/T − 2/(T²+2T) = (T+2−2)/(T(T+2)) = 1/(T+2)`, and
+    `((1+T)²−1)·1/(T+2) = T(T+2)/(T+2) = T = geomSum 2 − 2 = (2+T) − 2` ✓.
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.7** (leaf, project): `muA` + `mahlerTransform_muA`
+  - Lean: `MuA.lean:88,92`. Source: TeX 1496–1498:
+    > "Let $\mu_a$ be the measure on $\Zp$ whose Mahler transform is $F_a(T)$."
+  - Discharged by: `mahlerLinearEquiv` (MahlerTransform.lean:160, sorry-free) —
+    `apply_symm_apply`.
+  - Attacks: [1] existence presupposition: the source needs Prop 4.4 (F_a ∈ ℤ_p⟦T⟧)
+    *and* Thm 3.20 (transform bijective) — both in hand (`mahlerLinearEquiv`);
+    [2] discharge: `LinearEquiv.apply_symm_apply` exact shape ✓; [3] defeq-drift:
+    `mahlerLinearEquiv` vs `mahlerTransform` — relation lemma exists in
+    MahlerTransform.lean (`mahlerTransform_ofPowerSeries`); confirm which gives the
+    1-liner at execution. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.8** (leaf, project): `binomialSeries_natCast`
+  - Lean: `MuA.lean:95`. Source: bridging fact for TeX 1490 (`(1+T)^a` for integer
+    `a` is the `a`-fold product; the Mahler transform of `δ_a` is `binomialSeries a`).
+  - Discharged by: project-private `binomialSeries_mul_nat` (Toolbox.lean:184-190,
+    `binomialSeries (c·k) = binomialSeries c ^ k`) at `c = 1` + `binomialSeries_one`
+    — wait, need `binomialSeries 1 = 1 + X`: from `binomialSeries_coeff`
+    (`C(1,0)=1, C(1,1)=1, C(1,n≥2)=0` via `Ring.choose` on ℕ-cast). The Toolbox
+    private lemma must be re-derived or de-privatised — ticket notes this (the
+    statement is 3 lines from `binomialSeries_add` by induction anyway).
+  - Attacks: [1] `a=0`: `binomialSeries 0 = 1 = (1+X)^0` ✓ (`binomialSeries_zero`
+    exists, used in Toolbox); [2] `Ring.choose` on `ℤ_[p]` at natCast equals
+    `Nat.choose` (`Ring.choose_natCast` exists — used by §3 T005 work) ✓;
+    [3] privacy obstacle is real and logged: plan = local rederivation. Verdict:
+    SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.9** (internal, composition): `dirac_natCast_sub_one_mul_muA`
+  - Lean: `MuA.lean:101`. Source: the measure-side reading of TeX 1475's identity
+    (the source works on transforms; `mahlerRingEquiv` is a ring iso — RJW Thm 3.20,
+    proven — so the identity transfers verbatim).
+  - Composition: apply `(mahlerRingEquiv p).injective`; transform of LHS:
+    `((1+X)^a − 1)·F_a` via `mahlerTransform_dirac` + L1.8 + ring-iso
+    multiplicativity; transform of RHS: `geomSum − a` via `map_sum`,
+    `mahlerTransform_dirac`, L1.8 (at each `i`), and `a • 1 ↦ a • 1`
+    (transform is ℤ_p-linear, `map_one`); conclude by L1.6.
+  - Attacks: [1] children-true-parent-false: glue is injectivity of a ring iso +
+    linearity — no gap; [2] `1` vs `dirac 0`: RHS uses ring-`1`; transform of `1`
+    is `1` (`mahlerTransform_one`, Convolution.lean) and `binomialSeries 0 = 1` —
+    consistent ✓; [3] smul-vs-natCast mismatch: `(a : ℤ_[p]) • (1 : Λ)` transforms to
+    `(a:ℤ_[p]) • (1 : ℤ_[p]⟦X⟧) = (a : ℤ_[p]⟦X⟧)` — matches L1.6's RHS cast ✓
+    (`Nat.cast_smul_eq_nsmul`-style bridging noted). Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L1.10** (leaf, mathlib): `instIsDomain` + `dirac_natCast_sub_one_ne_zero`
+  - Lean: `MuA.lean:107,110`. Source: TeX 1175 (§3, quoted in §3 tree: Λ(G) domain
+    for the cyclotomic use) — here the ambient fact "Λ(ℤ_p) ≅ ℤ_p⟦T⟧ is a domain"
+    that the cancellation in R3 needs; the source cancels `θ_a`-style nonzero
+    elements freely (TeX 1589, "independent of the choice of a by Lemma 3.36(iii)").
+  - Discharged by: `mahlerRingEquiv` + `MulEquiv.isDomain` (transport; exact mathlib
+    name to confirm — candidates `RingEquiv.isDomain`/`Function.Injective.isDomain`)
+    + ℤ_p⟦X⟧ domain instance (mathlib: PowerSeries over a domain is a domain ✓
+    standard instance); ne-zero: transform `(1+X)^a − 1 ≠ 0` since coefficient 1 is
+    `a ≠ 0` (cast-injective on ℕ for `a ≠ 0` mod nothing — `Nat.cast_injective` on
+    char-0 ℤ_p ✓).
+  - Attacks: [1] `a=0` edge: `ha : a ≠ 0` required and stated ✓ (`dirac 0 − 1 = 0`
+    really is zero — the hypothesis is sharp); [2] coefficient-1 computation:
+    `coeff 1 ((1+X)^a − 1) = C(a,1) = a` via binomial expansion ✓; [3] transport
+    name risk: three candidate mathlib spellings listed, one will fire. Verdict:
+    SURVIVED.
+  - Prior-B2: no match.
+
+### Sub-tree R2: moments of `μ_a` (RJW Lem 4.2/4.3 value-formula + Prop 4.6)
+
+Internal node. Source's proof of Prop 4.6 (TeX 1505–1507):
+> "By Corollary \ref{cor:eval at x^k}, the left-hand side is
+> $(\partial^k\sA_{\mu_a})(0)$. By definition of $\mu_a$ and Lemma
+> \ref{lem:define F_a} this is $(\partial^kF_a)(0) = f_a^{(k)}(0)$. This equals the
+> right-hand side by Lemma \ref{lem:values of zeta}."
+
+and of Lem 4.3 (TeX 1473–1479):
+> "Under the substitution $e^t = T+1$, the derivative $d/dt$ becomes the operator
+> $\partial = (1+T)\frac{d}{dT}$. In particular, if we define [$F_a$] we have
+> $f_a^{(k)}(0) = \big( \partial^k F_a \big)(0)$."
+
+The value formula from Lem 4.2 (TeX 1463): `f_a^{(k)}(0) = (−1)^k(1−a^{1+k})ζ(−k)`,
+whose proof "follows from calculations similar to those in the proof of Lemma
+\ref{lem:FormulaZeta}" — i.e. the Taylor expansion of `1/(e^t−1)` by Bernoulli
+numbers. Formal-series realisation: `t·f_a(t) = B(t) − B(at)` where
+`B = bernoulliPowerSeries` (mathlib: `bernoulliPowerSeries_mul_exp_sub_one :
+bernoulliPowerSeries A * (exp A − 1) = X`, Bernoulli.lean:273, verified), since
+`f_a = 1/(e^t−1) − a/(e^{at}−1)` and `B(t) = t/(e^t−1)`, `B(at) = at/(e^{at}−1)`.
+
+- **L2.1** (leaf, project): `cor:eval at x^k` — **already proven**: `apply_powCM`
+  (Toolbox.lean:116, sorry-free). Cited, not re-ticketed.
+
+- **L2.2** (leaf, mathlib): `map_del`
+  - Lean: `MuA.lean:139`. Source: coefficient-cast plumbing (implicit; the source
+    works in ℚ-coefficients silently when writing `B_{k+1}/(k+1)`).
+  - Discharged by: `PowerSeries.ext` + `coeff_map` + `coeff_derivativeFun` +
+    ring-hom arithmetic (`map_mul/map_add/map_natCast`).
+  - Attacks: [1] `derivativeFun` commutes with `map` only because coefficients map
+    multiplicatively against `(n+1) : ℕ`-casts — `map_natCast` handles ✓; [2] the
+    `(1+X)·` factor maps to `(1+X)·` (`map_one`, `map_X`) ✓; [3] hom direction:
+    `Coe.ringHom : ℤ_[p] →+* ℚ_[p]` injective — not even needed here (pure
+    naturality). Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L2.3** (leaf, mathlib): `hasSubst_exp_sub_one`
+  - Lean: `MuA.lean:131`. Source: the substitution `e^t = T+1` of TeX 1474 read
+    backwards (`T = e^t − 1`), well-defined as `constantCoeff (exp − 1) = 0`.
+  - Discharged by: `HasSubst.of_constantCoeff_zero'` (the §3 route used for
+    `mahlerTransform_pushforward_mulCM`) + `constantCoeff_exp` (Exp.lean:59 region,
+    `exp` has constant coefficient 1) + `map_sub`.
+  - Attacks: [1] exact constructor name: §3 used `HasSubst.of_constantCoeff_zero'` —
+    same call shape here ✓ (project precedent compiles); [2] `constantCoeff (exp−1)
+    = 1 − 1 = 0` ✓; [3] nilpotency vs topological smallness: `HasSubst` for
+    PowerSeries-subst needs constant coeff zero (algebraic), not topology — exactly
+    our case ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L2.4** (leaf, mathlib): `derivativeFun_subst_exp` (chain rule)
+  - Lean: `MuA.lean:135`. Source: TeX 1474: > "Under the substitution $e^t = T+1$,
+    the derivative $d/dt$ becomes the operator $\partial = (1+T)\frac{d}{dT}$."
+  - Discharged by: `PowerSeries.derivative_subst` (Derivative.lean:184, verified:
+    `d⁄dX A (f.subst g) = (d⁄dX A f).subst g * d⁄dX A g`) + `derivative_exp`
+    (`d(exp) = exp`, Exp.lean:72 region) + the algebra
+    `(dF)(e^t−1)·e^t = ((1+T)·dF)(e^t−1)` since `1 + (e^t−1) = e^t` — i.e.
+    `subst` is a ring hom (`substAlgHom`/`subst_mul/subst_add`) and
+    `(1+X).subst (exp−1) = exp`.
+  - Attacks: [1] `d⁄dX` vs `derivativeFun`: the bundled `d⁄dX A` is defeq/bridged to
+    `derivativeFun` (same file; `derivative_apply`-style lemma) — bridging noted as
+    possible off-script rewrite; [2] chain-rule hypothesis: `derivative_subst`
+    requires `HasSubst g` = L2.3 ✓; [3] composition-order: mathlib gives
+    `(dF).subst g * dg`; we must commute the product to match `((1+X)·dF).subst g`
+    — `subst_mul` + `mul_comm`, no obstruction in CommRing ✓; [4] edge `F = C c`:
+    both sides 0 ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L2.5** (leaf, mathlib): `constantCoeff_subst_exp` + `constantCoeff_iterate_derivativeFun`
+  - Lean: `MuA.lean:141,145`. Source: TeX 1478 (`(∂^k F_a)(0)` — evaluation at
+    `T = 0` ⟺ `t = 0`).
+  - Discharged by: `constantCoeff_subst` (Substitution.lean:244, verified) with
+    `constantCoeff (exp−1) = 0` collapsing the sum to the `n=0` term; iterate:
+    induction on `k` with `coeff_derivativeFun` (`coeff n (dG) = coeff (n+1) G·(n+1)`)
+    giving `constantCoeff (D^k G) = k!·coeff k G`.
+  - Attacks: [1] `constantCoeff_subst`'s exact form is a `finsum`/`tsum`-style
+    expression — collapsing needs `pow_zero`/junk-term analysis; flagged as the one
+    fiddly spot, fallback: `coeff_subst` at index 0 directly; [2] factorial
+    accumulation order: `D^[k+1] = D^[k] ∘ D` vs `D ∘ D^[k]` — `Function.iterate_succ'`
+    vs `iterate_succ` both available, induction set up to match ✓; [3] edge `k=0`:
+    `0! = 1`, `constantCoeff = coeff 0` ✓ (`coeff_zero_eq_constantCoeff`).
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L2.6** (internal, composition): `X_mul_subst_exp_Fa` — the Bernoulli identity
+  - Lean: `MuA.lean:161`. Source: Lem 4.2's value formula (TeX 1463) +
+    `lem:FormulaZeta`'s Bernoulli expansion; formal content as derived above:
+    `t·f̂_a = B(t) − B(at)` in `ℚ_p⟦t⟧` where `f̂_a := (map F_a).subst (exp−1)`.
+  - Composition (multiply-and-cancel): both sides times `(rescale a exp − 1)`
+    (a nonzerodivisor: `ℚ_p⟦t⟧` domain, coefficient 1 equals `a ≠ 0`):
+    LHS·: `X·f̂_a·(e^{at}−1) = X·subst(((1+X)^a−1)·F_a) = X·subst(geomSum − a)`
+    [L1.6 mapped + `substAlgHom` ring-hom + L2.3; `subst((1+X)^a) = exp^a =
+    rescale a exp` by `exp_pow_eq_rescale_exp` (Exp.lean:153, verified)];
+    RHS·: `(B − rescale a B)·(e^{at}−1)`, where `B·(e^{at}−1) = B·(e^t−1)·Σ_{i<p
+    wait — Σ_{j<a}e^{jt}} = X·Σ_{j<a}e^{jt}` [`bernoulliPowerSeries_mul_exp_sub_one`
+    + the substituted L1.3: `e^{at}−1 = (e^t−1)·Σ_{j<a}e^{jt}`] and
+    `rescale a B·(e^{at}−1) = rescale a (B·(e^t−1)) = rescale a X = aX`
+    [`rescale` ring hom + `rescale_X`-computation + `rescale a exp = exp^a`];
+    so RHS· `= X·Σ_{j<a}e^{jt} − aX = X·(subst(geomSum) − a) =` LHS· ✓; cancel.
+  - Attacks (composition, this is the load-bearing algebra): [1] **numeric check**
+    `a = 2`, coefficient of `t¹` in `t·f̂₂`: `f̂₂ = 1/(e^t−1) − 2/(e^{2t}−1)`;
+    `B(t) = 1 − t/2 + t²/12 − …`, `B(2t) = 1 − t + t²/3 − …`; `B(t) − B(2t) =
+    t/2 − t²/4 + …`; so `[t¹](t·f̂₂) = 1/2 = f̂₂(0)`. Direct: `f₂(t) = 1/(e^t−1) −
+    2/(e^{2t}−1) → (1/t − 1/2 + …) − 2(1/(2t) − 1/2 + …)·` hmm `2/(e^{2t}−1) =
+    (1/t)·(2t/(e^{2t}−1))·` `= (1/t)B(2t)`-shape: `f₂ = (B(t) − B(2t))/t =
+    1/2 − t/4 + …` so `f₂(0) = 1/2 = (1−2^{0+1})·B₁/1 = (−1)·(−1/2)` ✓ matches
+    `(1−a^{k+1})B_{k+1}/(k+1)` at `k=0` ✓; [2] `rescale a (exp − 1) = exp^a − 1`
+    needs `rescale` to fix `1` — `map_one` of the ring hom `rescale` ✓; [3] the
+    nonzerodivisor: `a ≠ 0` in `ℚ_p` from `hpa` (a ≠ 0 in ℕ since `p ∤ a` and
+    `p ∣ 0`) + char-0 cast-injectivity ✓; [4] `rescale_X`: `rescale a X = a•X`
+    or `C a * X` — exact mathlib spelling to confirm at execution (coeff-level
+    fallback: `coeff_rescale` = `aⁿ·coeff n`); [5] could the children hold and the
+    composition fail? All glue is ring-hom algebra in a domain — no. Verdict:
+    SURVIVED.
+  - Prior-B2: no match.
+
+- **L2.7** (internal, composition): `muA_apply_powCM` (**RJW Prop 4.6**)
+  - Lean: `MuA.lean:167`. Source: TeX 1500–1507 (quoted at R2 head; the proof is
+    exactly the three-step chain).
+  - Composition: `μ_a(x^k) = constantCoeff (del^[k] F_a)` [L2.1 = `apply_powCM` +
+    `mahlerTransform_muA`]; cast to ℚ_p and commute `map` through `del^[k]` and
+    `constantCoeff` [L2.2 + `constantCoeff_map`, induction]; apply L2.5-iterate
+    [via L2.4-induction]: `= k!·coeff k (f̂_a)`; extract `coeff k` from L2.6:
+    `coeff (k+1) (X·f̂_a) = coeff k f̂_a` (`coeff_succ_X_mul`) and
+    `coeff (k+1) (B − rescale a B) = (1 − a^{k+1})·(B_{k+1}/(k+1)!)`
+    [`bernoulliPowerSeries`-coeff def + `coeff_rescale`]; multiply by `k!`:
+    `(1−a^{k+1})·B_{k+1}/(k+1) = (−1)^k(1−a^{k+1})·zetaNeg k` since
+    `(−1)^k·(−1)^k = 1`.
+  - Attacks: [1] `k! / (k+1)! = 1/(k+1)` arithmetic in ℚ_p: `Nat.factorial_succ` +
+    `field_simp` — `(k+1)! ≠ 0` in ℚ_p (char 0, `Nat.cast_ne_zero`,
+    `factorial_ne_zero`) ✓; [2] `algebraMap ℚ ℚ_[p]` vs `Rat.cast`: same function
+    (`eq_ratCast`/`Rat.cast_def`-bridge, standard) ✓; [3] edge `k=0`:
+    `μ_a(1) = F_a(0)`: check `F₂(0) = 1/2`?? — wait `F_a ∈ ℤ_p⟦T⟧` and `F₂(0) =
+    1/2 ∈ ℤ_p` requires `p ≠ 2` — and indeed `p ∤ a = 2` forces `p` odd here ✓
+    consistency (for general `a`: `F_a(0) = FaNum(0)/a = C(a,2)/a·`-shape`
+    = (a−1)/2`-do the math: `FaNum(0) = coeff 1 geomSum = Σ_{i<a} i = a(a−1)/2`,
+    so `F_a(0) = (a−1)/2`; and the moment formula at `k=0`:
+    `(1−a)·B₁ = (1−a)(−1/2) = (a−1)/2` ✓✓ EXACT MATCH — strong numeric
+    confirmation of the whole chain); [4] cast-square `((μ : ℤ_[p]) : ℚ_[p])`
+    well-formed ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+### Sub-tree R3: `ψ(μ_a) = μ_a` (RJW Lem 4.7) — **recorded replan**
+
+Source's own proof (TeX 1517–1524):
+> "We show the result by considering the action on power series. We wish to show
+> $\psi(F_a) = F_a$. First note that $F_a(T) = \frac{1}{T} - a \cdot\sigma_a(\frac{1}{T})$,
+> for $\sigma_a$ as in \S\ref{SubSectionphipsi}. As $\psi$ commutes with $\sigma_a$,
+> we have $\psi(F_a) = \psi(\frac{1}{T}) - a\cdot \sigma_a\psi(\frac{1}{T})$, so it
+> suffices to show $\psi(\frac{1}{T}) = \frac{1}{T}$. By definition (cf.\ equation
+> \eqref{Eqphipsi}) we have $(\varphi \circ \psi)(\frac{1}{T}) = p^{-1} \sum_{\xi \in
+> \mu_p} \frac{1}{(1 + T) \xi - 1} = \frac{1}{(1 + T)^p - 1} = \varphi(\frac{1}{T})$,
+> as can be seen by calculating the partial fraction expansion. By injectivity of
+> $\varphi$, we deduce that $\psi(\frac{1}{T}) = \frac{1}{T}$, and conclude."
+
+**Replan (T018/T026-pattern; binding justification).** The source's computation runs
+through (i) the element `1/T ∉ ℤ_p⟦T⟦` (a Laurent-type object our `Λ(ℤ_p) ≅ ℤ_p⟦T⟧`
+does not contain) and (ii) the roots-of-unity formula `Eqphipsi` over `ℤ_p[μ_p]`
+(deferred with the O_L-coefficient pass — plan.md "Deferred"). Both obstacles
+disappear after clearing denominators by `(1+T)^a − 1`: the *same* partial-fraction
+identity `Σ_{ξ^p=1} 1/((1+T)ξ−1) = p/((1+T)^p−1)` is, in cleared form, the geometric
+identity `Σ_{i<p}(1+T)^i·((1+T)−1-shifted)` — concretely, the proof becomes:
+
+1. `(v_a) · ψ(μ_a) = ψ(φ(v_a)·μ_a)` where `v_a := [a]−[1] ∈ Λ(ℤ_p)` — the
+   **projection formula** L3.1 (`ψ(φν·μ) = ν·ψμ`), which is `Eqphipsi`'s only
+   §4-consequence, provable measure-side with no roots of unity;
+2. `φ(v_a)·μ_a = [pa]−[0])·μ_a = (Σ_{j<p}[aj])·(([a]−[0])·μ_a) =
+   (Σ_{j<p}[aj])·(Σ_{i<a}[i] − a[0])` — finite Dirac sums via L1.9 + L3.5;
+3. `ψ` of a Dirac combination is computable termwise (`ψ[m] = [m/p]` if `p ∣ m`,
+   else `0` — L3.3/L3.4), giving `Σ_{i<a}[i] − a[0] = v_a·μ_a` again;
+4. cancel the nonzerodivisor `v_a` (L1.10).
+Every step is a finite computation in `Λ(ℤ_p)`; the source's analytic identity is
+recovered as step 2–3's bookkeeping. (Lemma-level faithfulness: the *statement*
+`ψ(μ_a) = μ_a` is TeX 1513–1515 verbatim.)
+
+- **L3.1** (leaf, project-provable): `psi_phi_mul` — projection formula
+  - Lean: `MuA.lean:182`. Source: `Eqphipsi`-consequence as argued above; measure
+    side: `ψ(φν·μ)(f) = (φν·μ)(1_{pℤ_p}·(f∘sd)) = ν(x↦μ(y↦1_{pℤ_p}(px+y)·f(sd(px+y))))`
+    [convolution `mul_apply` + `phi`-pushforward], and for the inner integrand
+    `1_{pℤ_p}(px+y) = 1_{pℤ_p}(y)`, `sd(px+y) = x + sd y` on `y ∈ pℤ_p`
+    [digit arithmetic: `digit (px+y) = digit y`], so it equals `ν(x↦ψμ(f(x+·)))
+    = (ν·ψμ)(f)`.
+  - Discharged by: `mul_apply` (Convolution.lean), `psi`-def unfolding (`show`-driven
+    as in §3's `psi_phi`), `digit`/`shiftDiv` API (Toolbox: `sub_digit_mem_span`,
+    `shiftDiv_mul`, `mem_pZp_of_mul`, `mul_shiftDiv_of_mem`).
+  - Attacks: [1] **instantiation cross-check**: `ν := 1 = [0]`: formula says
+    `ψ(φ(1)·μ) = 1·ψμ = ψμ`; `φ(1) = [0] = 1` ✓ consistent; `μ := 1`:
+    `ψ(φν) = ν·ψ(1) = ν` recovering `psi_phi` (Toolbox:377) ✓ the formula
+    *generalises* a proven §3 result — strong consistency; [2] digit-arithmetic gap:
+    need `digit (p·x + y) = digit y` — provable from `digit`'s `toZModPow 1`
+    characterisation (`p·x ≡ 0 mod p`); flagged as the one new digit lemma
+    (sub-lemma of the ticket, ~8 LOC); [3] convolution-order: `phi ν * μ` vs
+    `μ * phi ν` — ring commutative, lemma stated in the order the proof produces ✓.
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L3.2** (leaf, project): `phi_dirac`
+  - Lean: `MuA.lean:186`. Source: `φ` is pushforward by `x ↦ px` (§3.6) — on Dirac
+    masses, `φ[c] = [pc]`.
+  - Discharged by: `phi = pushforward (mulCM p)` def + `pushforward_dirac`-style
+    `rfl` (the §3 file proves `pushforward`-on-`dirac` shapes by `rfl`).
+  - Attacks: [1] `rfl`-risk: `pushforward` defined as `compRight`-precomposition —
+    `dirac x ∘ comp = dirac (m x)` is definitional ✓ (§3 precedent
+    `mahlerTransform_dirac` route); [2] `mulCM p` applies `p·x` not `x·p` —
+    commutative ✓; [3] edge `x=0`: `φ[0] = [0]` ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L3.3** (leaf, project): `psi_dirac_mul`
+  - Lean: `MuA.lean:189`. Source: `ψ`'s defining property (§3.6, `Eqphipsi`-dual):
+    `ψ∘φ = id` on Diracs; more precisely `ψ[px] = [x]`.
+  - Discharged by: `psi`-def + `isClopen_pZp`-charFn at `px` (`= 1`,
+    membership `px ∈ pℤ_p` ✓) + `shiftDiv_mul` (Toolbox: `sd(px) = x`).
+  - Attacks: [1] follows from `psi_phi` + L3.2 composed: `ψ[px] = ψφ[x] = [x]` —
+    2-lemma discharge, even simpler than direct ✓; [2] edge `x=0` ✓; [3] charFn
+    coercion friction (LocallyConstant → C) — §3 pattern handles. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L3.4** (leaf, project): `psi_dirac_of_isUnit`
+  - Lean: `MuA.lean:192`. Source: `Res_{pℤ_p}`-support: a unit is not in `pℤ_p`, so
+    the `pℤ_p`-restricted shift kills `[u]`.
+  - Discharged by: `psi`-def: `ψ[u](f) = 1_{pℤ_p}(u)·f(sd u) = 0` since
+    `u ∉ pℤ_p` (`PadicInt.isUnit_iff` norm-1 vs `pℤ_p` = norm < 1;
+    or `setOf_isUnit_eq` from Toolbox/UnitsZp).
+  - Attacks: [1] hypothesis sharpness: `x` non-unit ⟺ `x ∈ pℤ_p` ⟹ `ψ[x] ≠ 0`
+    generally — `IsUnit` is exactly the complement ✓; [2] charFn-at-point
+    evaluation lemma availability (`LocallyConstant.charFn_apply`-shape, used in §3)
+    ✓; [3] ext over `f` then pointwise — linear-map ext pattern ✓.
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L3.5** (leaf, project): `psi_add` / `psi_smul` / `psi_sum`
+  - Lean: `MuA.lean:195,198,201`. Source: implicit (the source's `ψ` is
+    ℤ_p-linear by construction; ours is defined measure-wise and the API was
+    only partially built in §3 — `psi_sub` exists).
+  - Discharged by: the same `LinearMap.ext` + definitional unfolding as `psi_sub`
+    (PseudoMeasure-era §3 work); `psi_sum` by `Finset.sum_induction`/induction from
+    `psi_add` + `psi`-of-zero (`map_zero`-style: `ψ0 = 0` definitional).
+  - Attacks: [1] cleanup-debt attack: these three + `psi_sub` say `psi` should be a
+    bundled `→ₗ` — REAL flaw of economy, logged as the dedicated cleanup item in the
+    ticket (upgrade `psi` to `psiₗ` linear map OR add the lemmas; board chooses
+    lemmas-now + cleanup-note to avoid churning §3 call sites mid-section);
+    [2] zero case: `ψ0 = 0` needed for `psi_sum` induction ✓ definitional;
+    [3] no hidden classical choice. Verdict: SURVIVED (with logged cleanup debt).
+  - Prior-B2: no match.
+
+- **L3.6** (internal, composition): `psi_muA` (**RJW Lem 4.7**)
+  - Lean: `MuA.lean:215`. Source statement (TeX 1513–1515):
+    > "We have $\psi(\mu_a) = \mu_a$."
+  - Composition: steps 1–4 of the replan block above; ingredients L3.1, L3.2, L1.9,
+    `dirac_mul_dirac` (Convolution.lean:160, `[x]·[y] = [x+y]`), L3.3, L3.4, L3.5,
+    L1.10 + `mul_left_cancel₀`. Step-2 detail: `[pa]−[0] = ([a]−[0])·(Σ_{j<p}[aj])`
+    — wait, orientation: `(Σ_{j<p}[aj])·([a]−[1])` telescopes to `[pa]−[0]`:
+    `Σ_j[aj]·[a] = Σ_j[a(j+1)]` reindexes against `Σ_j[aj]` leaving `[ap]−[0]` ✓
+    (`Finset.sum_range_succ'`-telescope); then `([pa]−[0])·μ_a =
+    (Σ_j[aj])·(([a]−[0])·μ_a) = (Σ_j[aj])·(Σ_{i<a}[i] − a[0])` by L1.9; expand by
+    `dirac_mul_dirac`: `Σ_{j<p}Σ_{i<a}[aj+i] − aΣ_{j<p}[aj]`; apply `ψ` (L3.5
+    linearity): termwise by L3.3/L3.4 — `p ∣ aj+i` with `0≤i<a, 0≤j<p` ⟺ the pair
+    is `(i,j) = (pm − aj-residue…)`: handled instead by the **division-algorithm
+    bijection** `{aj+i : j<p, i<a} = {0,…,ap−1}` (each `n < ap` uniquely `n = aj+i`)
+    so the double sum is `Σ_{n<ap}[n]`, and `ψ(Σ_{n<ap}[n]) = Σ_{p∣n, n<ap}[n/p] =
+    Σ_{m<a}[m]` (reindex `n = pm`); second sum: `p ∣ aj` with `j<p`, `p∤a` ⟺ `j=0`
+    (`Nat.Coprime.dvd_of_dvd_mul_left`), so `ψ(aΣ_j[aj]) = a[0]`; total:
+    `Σ_{m<a}[m] − a[0] = ([a]−[0])·μ_a` by L1.9 again; cancel `v_a = [a]−[1]`
+    (note `[0] = 1` in Λ — `dirac 0 = 1`, Convolution one-def) by L1.10.
+  - Attacks (composition — this is the riskiest node, attacked hardest):
+    [1] **end-to-end numeric trace at `p=3, a=2`**: `v₂·μ₂ = [0]+[1] − 2[0] =
+    [1]−[0]`; `φ(v₂)·μ₂ = ([6]−[0])·μ₂ = (Σ_{j<3}[2j])·([1]−[0]) =
+    ([0]+[2]+[4])·([1]−[0]) = [1]+[3]+[5]−[0]−[2]−[4]`; `ψ`: kills `[1],[5],[2],[4]`
+    (units mod 3), keeps `[3]↦[1], [0]↦[0]`: result `[1]−[0]`; and `ν·ψμ₂`-side:
+    `v₂·ψμ₂` must equal `[1]−[0] = v₂·μ₂` ⟹ `ψμ₂ = μ₂` ✓ the cancellation
+    closes — trace CONFIRMS every step including the unit-killing pattern;
+    [2] reindex-lemma availability: division-algorithm bijection on `range (a*p)`:
+    via the *transform-side* identity instead — `(Σ_j((1+X)^a)^j)·((1+X)^a−1) =
+    (1+X)^{ap}−1 = (Σ_{n<ap}(1+X)^n)·X`-route (geom_sum twice + X-cancellation in
+    the domain) avoids `Finset` bijections entirely; both routes recorded, worker
+    picks; [3] `[0] = 1` identification: `dirac 0 = 1` — Convolution defines `one`;
+    if not a stated lemma, it's `mahlerTransform`-injectivity + `binomialSeries_zero`
+    (2 lines, sub-lemma noted); [4] cancellation legitimacy: `v_a ≠ 0` needs
+    `a ≠ 1`?? — **ATTACK FINDS REAL EDGE**: `a = 1`: `v₁ = [1]−[1] = 0` and BOTH
+    sides of `ψμ₁ = μ₁` are `0 = 0` (F₁ = 0) — but the *cancellation proof* fails at
+    `a = 1`! RESOLUTION: `dirac_natCast_sub_one_ne_zero` requires `a ≠ 0` only —
+    recheck: `v_a = [a] − 1` has transform `(1+X)^a − 1 ≠ 0 ⟺ a ≠ 0` (coeff 1 = a).
+    At `a = 1`: `(1+X)−1 = X ≠ 0` ✓ nonzero! My `[1]−[1]` slip above confused
+    `θ_a = [a]−[1] ∈ Λ(ℤ_p^×)` (units-side, where `1 = [1-the-unit]`) with
+    `v_a = [a]−[0]·`-wait: in `Λ(ℤ_p)` the ring-one is `[0]` (additive group!), so
+    `v_a = [a] − 1 = [a] − [0]`, which at `a=1` is `[1]−[0] ≠ 0` ✓. The statement
+    `dirac_natCast_sub_one_mul_muA` with `- 1` (ring one) is correct as skeletoned;
+    the attack confirms the convention and kills the false alarm. `a = 1` works
+    end-to-end (everything is `0=0` via `F₁ = 0`, and the cancellation is by the
+    nonzero `[1]−[0]`). Verdict: SURVIVED (attack [4] sharpened the understanding;
+    no statement change needed).
+  - Prior-B2: no match.
+
+### Sub-tree R4: restriction moments (RJW Prop 4.8)
+
+Source's proof (TeX 1535–1539):
+> "Since $\mathrm{Res}_{\zpe} = 1 - \varphi \circ \psi$, we deduce that
+> $\int_{\zpe} x^k \cdot\mu_a = \int_{\Zp} x^k \cdot (1 - \varphi \circ \psi) \mu_a
+> = \int_{\Zp} x^k \cdot (1 - \varphi)\mu_a = (1 - p^k) \int_{\Zp} x^k \cdot \mu_a$,
+> where for the second equality we have used Lemma \ref{LemmaPsiInvariant}."
+
+- **L4.1** (leaf, project): `phi_apply_powCM`
+  - Lean: `MuA.lean:226`. Source: the third equality above (`∫x^k·φμ = p^k∫x^kμ`,
+    implicit one-liner in the source's display).
+  - Discharged by: `phi`-def (pushforward `mulCM p`) + pointwise `(px)^k = p^k x^k`
+    (`mul_pow`) + `μ`-linearity (`map_smul` after `smul`-rewriting the function:
+    `powCM ∘ mulCM = p^k • powCM` by `ContinuousMap.ext`).
+  - Attacks: [1] edge `k=0`: `φμ(1) = μ(1)` and `p⁰ = 1` ✓; [2] function-level vs
+    value-level smul: `C(ℤ_p,ℤ_p)`-smul lemma shape — §3 has the pattern in
+    `apply_powCM`'s proof ✓; [3] no `hpa` needed (true for all μ) — hypothesis-
+    minimal ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L4.2** (internal, composition): `res_units_muA_apply_powCM` (**RJW Prop 4.8**)
+  - Lean: `MuA.lean:233`. Source: TeX 1527–1539 (statement + proof quoted above).
+  - Composition: `res_units_eq` (Toolbox:422, `Res_{ℤ_p^×}μ = μ − φψμ`, sorry-free)
+    + L3.6 (`ψμ_a = μ_a`) + L4.1 + L2.7, then ℚ_p-algebra:
+    `(1−p^k)·(−1)^k(1−a^{k+1})·zetaNeg k`.
+  - Attacks: [1] children-true-parent-false: glue is `LinearMap.sub_apply` +
+    cast-arithmetic ✓; [2] cast of `(1−p^k)` from ℤ_p to ℚ_p: `push_cast` ✓;
+    [3] edge `k=0`: `Res μ_a(1) = (1−1)·… = 0` — sanity: total mass of
+    `Res_{units}μ_a` is `μ_a(ℤ_p^×) = (1−p⁰)(…) = 0`?? Hmm — `(1−p^k)` at `k=0` is
+    `0`, so the claim is `∫_{ℤ_p^×}1·dμ_a = 0`. Cross-check: `μ_a(ℤ_p^×) =
+    μ_a(1) − μ_a(pℤ_p)` and `μ_a(pℤ_p) = (φψμ_a)(1) = (φμ_a)(1) = μ_a(1)` by L3.6 ✓
+    `= 0` consistent — the formula correctly encodes that `μ_a` has equal total and
+    `pℤ_p` mass. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+### Sub-tree R5: `ζ_p` (RJW §4.3, Def 4.10, Prop 4.11, Thm 4.1; `ZetaP.lean`)
+
+Source TeX 1550–1563 (θ_a and x⁻¹):
+> "let $\theta_{a}$ denote the element of $\Lambda(\Zp^\times)$ corresponding to
+> $[a] - [1]$. Note that, by definition, we have $\int_{\Zp^\times} x^k
+> \cdot\theta_{a} = a^k - 1$. However, in \eqref{eq:first interpolation} it is
+> $a^{k+1} -1$ that appears. To bridge this gap, note that on $\Zp^\times$, we have
+> a well-defined operation `multiplication by $x^{-1}$' given by
+> $\int_{\Zp^\times} f(x) \cdot x^{-1}\mu \defeq \int_{\Zp^\times} x^{-1}f(x) \cdot
+> \mu$, and that $\int_{\Zp^\times} x^k \cdot x^{-1} \mu_a =
+> (-1)^k(a^k-1)(1-p^{k-1})\zeta(1-k)$."
+
+and TeX 1565–1570 (Def 4.10):
+> "Let $a$ be a topological generator of $\zpe$. The \emph{$p$-adic zeta function} is
+> $\zeta_p \defeq \frac{x^{-1}\mathrm{Res}_{\Zp^\times}\mu_a}{\theta_a} \in
+> Q(\Zp^\times)$."
+
+and TeX 1588–1597 (Prop 4.11's proof):
+> "We see $\zeta_p$ is a pseudo-measure by Lemma \ref{lem:pseudo-measure existence}.
+> It is independent of the choice of $a$ by Lemma \ref{lem:zero divisor}(iii).
+> Using Equation \eqref{eq:integrate pseudo-measure} (to integrate the
+> pseudo-measure) and Proposition \ref{PropInterpolation1}, we obtain the
+> interpolation property $\int_{\Zp^\times} x^k \cdot \zeta_p =
+> (-1)^k(1-p^{k-1})\zeta(1-k)$. To get the result, we may remove the $(-1)^{k}$ as
+> $\zeta(1-k) \neq 0$ if and only if $k$ is even."
+
+**Source-gap note (integer topological generator).** §4.1 fixes `a` an *integer*
+coprime to `p` (TeX 1455: "let $a$ be an integer coprime to $p$"); Def 4.10 takes the
+*same* `a` to be a topological generator of `ℤ_p^×` (TeX 1566). The source never
+remarks that an integer topological generator exists. Cross-reference (per the
+source-gap fallback chain): standard — an integer primitive root mod `p²` is a
+primitive root mod `p^n` for all `n` (Ireland–Rosen, *A Classical Introduction to
+Modern Number Theory*, Prop 4.1.2 region / Washington, *Cyclotomic Fields*, §3); the
+proof is the `orderOf_one_add_mul_prime` computation already imported by §3's
+`UnitsCyclic` work. This becomes leaf L5.4 (`exists_nat_topological_generator`),
+flagged as a source-expansion (not an invention: the source's construction is
+incoherent without it).
+
+- **L5.1** (leaf, project): `muAUnits` + `iota_muAUnits` + `muAUnits_apply_unitsPowCM`
+  - Lean: `ZetaP.lean:36,40,44`. Source: the `Res_{ℤ_p^×}μ_a` of Def 4.10 read as a
+    measure *on* `ℤ_p^×` (the source silently identifies measures on ℤ_p supported
+    on units with measures on `ℤ_p^×` — our `ι`-machinery from §3 makes the
+    identification explicit; `mem_range_iota_iff` (UnitsZp:177) says the
+    identification is legitimate precisely because `ψ(Res_{units}μ) = 0`).
+  - Discharged by: `extendByZero` (UnitsZp:78) precomposition;
+    `extendByZero_comp_unitsVal` (§3, used in `mem_range_iota_iff`'s proof) for the
+    `iota`-identity; pointwise `extendByZero (unitsPowCM k) = charFn_{units}·powCM k`
+    (`extendByZero_coe_unit`-family) for the moment-transfer.
+  - Attacks: [1] direction of identification: `ι(μ∘extendByZero) = Res_units μ`
+    holds unconditionally (it's the §3 proof of `mem_range_iota_iff`'s ⟸) — no
+    `ψ`-hypothesis needed for our specific μ_a ✓ (we don't even need L3.6 here);
+    [2] `unitsPowCM k` vs `powCM k ∘ val`: definitional (`unitsPowCM`-def
+    PseudoMeasure:656 is `u ↦ (u:ℤ_p)^k`) ✓; [3] zero-extension at non-units doesn't
+    disturb the integral against `Res` — exactly `res`-def ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L5.2** (leaf, mathlib+project): `continuous_units_inv_val` + `invCM` +
+  `unitsCmul` + `unitsCmul_apply`
+  - Lean: `ZetaP.lean:51,56,61,67`. Source: TeX 1555–1558 (eq. 4.11, quoted above —
+    "well-defined operation" = continuity of `x⁻¹` on `ℤ_p^×` + module structure).
+  - Discharged by: continuity: `Units.continuous_iff` / the `embedProduct`-coordinate
+    argument (UnitsZp.lean §3 already manipulates `embedProduct`-continuity;
+    `u ↦ u⁻¹.val` is the `snd∘unop` coordinate) — mathlib's units-topology toolkit
+    (`Mathlib.Topology.Algebra.Constructions`); `unitsCmul` mirrors Toolbox `cmul`
+    (:38) with `LinearMap.mulLeft ℤ_[p] g` (skeleton already type-checks this body ✓
+    so the linear-algebra shape is confirmed by the compiler).
+  - Attacks: [1] instance risk: is `C(ℤ_[p]ˣ, ℤ_[p])` an `ℤ_[p]`-algebra with
+    compatible mul? — the skeleton COMPILED `LinearMap.mulLeft ℤ_[p] g`, so yes ✓
+    (compiler-verified discharge); [2] continuity-route fallback: if no off-the-shelf
+    instance, the explicit `(embedProduct _).2.unop`-composition stands (3 lines);
+    [3] `x⁻¹` valued in `ℤ_p` not `ℤ_p^×`: matches the source's `x^{-1}f(x)`
+    integrand (a ℤ_p-valued function) ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L5.3** (internal): `zetaNum` + `zetaNum_apply_unitsPowCM` + `zetaNum_moments`
+  - Lean: `ZetaP.lean:73,77,81`. Source: TeX 1559–1562 (the display quoted above:
+    `∫x^k·x⁻¹μ_a = (−1)^k(a^k−1)(1−p^{k−1})ζ(1−k)`).
+  - Composition: `x⁻¹·x^k = x^{k−1}` pointwise on units (`inv_mul_cancel`-pow:
+    `u⁻¹·u^k = u^{k−1}` for `k ≥ 1` — `pow_sub_one`-shape via `Units.val`-arith);
+    then L5.1-transfer + L4.2 at `k−1`: `(−1)^{k−1}(1−p^{k−1})(1−a^k)·zetaNeg(k−1)`
+    and `(−1)^{k−1}(1−a^k) = (−1)^k(a^k−1)` — matching TeX 1561 exactly ✓.
+  - Attacks: [1] `k−1` ℕ-subtraction safety: `hk : 0 < k` everywhere; `k−1+1 = k`
+    (`Nat.succ_pred_eq_of_pos`) at the `pow`-bridge ✓; [2] sign-form check at `k=1`:
+    LHS `∫x·x⁻¹μ = ∫1·μ = Res-mass = 0` (R4 attack [3]); RHS `(−1)(a−1)(1−p⁰)ζ(0) =
+    0` ✓ consistent; [3] `(u⁻¹:ℤ_p)·(u:ℤ_p)^k = (u^{k−1}:ℤ_p)`: `Units.val_pow_eq_pow_val`
+    + `Units.val_mul`-arith ✓ standard. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L5.4** (leaf, project — source-expansion): `topGen_pow_ne_one` +
+  `exists_nat_topological_generator`
+  - Lean: `ZetaP.lean:92,103`. Source: TeX 1566 ("Let $a$ be a topological generator
+    of $\zpe$") + the integrality gloss documented in the R5 head-note;
+    cross-reference Washington §3 / Ireland–Rosen (integer primitive roots mod `p^n`).
+  - Discharge plan: `topGen_pow_ne_one`: if `a^k = 1` (`k>0`) then
+    `unitsToZModPow n a` has order dividing `k` for every `n`; but it generates
+    `(ZMod p^n)ˣ` of cardinality `φ(p^n) = p^{n−1}(p−1) → ∞`
+    (`ZMod.card_units_eq_totient` + `Nat.totient_prime_pow`) — contradiction for
+    `p^{n−1}(p−1) > k` (`orderOf_eq_card_of_forall_mem_zpowers`-family).
+    `exists_nat_topological_generator`: take `u₀` from `exists_topological_generator`
+    (PseudoMeasure:857, proven, `p ≠ 2`); let `m := ((toZModPow 2 u₀).val.val : ℕ)`
+    (a lift of `u₀ mod p²`); then `m ≡ u₀ mod p²` so `m` is a primitive root mod
+    `p²`; classical ascent: `ord_{p^n}(m)` is divisible by `ord_{p²}(m) = p(p−1)`,
+    and `m^{p−1} = 1 + pc` with `p ∤ c` (else `ord_{p²}(m) ∣ p−1`), so
+    `orderOf_one_add_mul_prime` (the §3-discovered mathlib lemma, ZMod-side) gives
+    the `p`-part `p^{n−1}`; total order `φ(p^n)` ⟹ generator at level `n`;
+    levels < 2 follow from level 2 by surjectivity of the transition
+    (`unitsToZModPow_le`, §3).
+  - Attacks: [1] `n = 0,1` edges: level 0 group trivial (⊤ automatic); level 1
+    follows from level 2 via the surjective transition map (zpowers-image argument —
+    `unitsToZModPow_surjective`-machinery from §3 T027) ✓ plan covers;
+    [2] `m = 0`-degeneracy: `m ≡ u₀` a unit mod `p²` ⟹ `p ∤ m` ⟹ `m ≥ 1` ✓;
+    [3] `(u:ℤ_[p]) = m` vs `u = unit-of-m`: statement uses val-equation — the
+    constructed unit is `isUnit_natCast.unit` whose val is `(m:ℤ_[p])` and we need
+    its `toZModPow`-images to match `m mod p^n`'s — `toZModPow`-natCast naturality
+    (`map_natCast`) ✓; [4] **scope attack**: is this "off-track infrastructure"? No:
+    `orderOf_one_add_mul_prime`-machinery is imported mathlib, the §3 board already
+    used the same toolkit for `exists_topological_generator`; estimated 60–80 LOC
+    against the source's 1-line gloss + the cross-referenced textbook proof
+    (~15 textbook lines). Within scope. Verdict: SURVIVED.
+  - Prior-B2: no match (name `exists_topological_generator` §3-relative: different
+    statement — that one is abstract-unit existence, this is integrality; shapes
+    distinct, no inherited defect).
+
+- **L5.5** (leaf, project): `IsPseudoMeasure.sub`
+  - Lean: `ZetaP.lean:124`. Source: implicit in the uniqueness argument (difference
+    of pseudo-measures tested by moments; the source treats pseudo-measures as a
+    module without comment).
+  - Discharged by: witness subtraction: `([g]−1)(q₁−q₂) = ([g]−1)q₁ − ([g]−1)q₂ =
+    alg(ν₁) − alg(ν₂) = alg(ν₁−ν₂)` — `mul_sub` + `map_sub`.
+  - Attacks: [1] 3-line proof, no edge; [2] also-true-for-add/smul (API completeness
+    note for cleanup); [3] none further. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L5.6** (internal): `padicZeta` + `padicZeta_isPseudoMeasure` (**RJW Def 4.10 +
+  Prop 4.11 first half**)
+  - Lean: `ZetaP.lean:110,131`. Source: TeX 1565–1570 + 1588–1589 (quoted at R5 head).
+  - Composition: `padicZeta := mk' (zetaNum m) ([u]−1, regular)` — the regularity
+    from L5.4's `topGen_pow_ne_one` + `dirac_sub_one_mem_nonZeroDivisors`
+    (PseudoMeasure:793, proven); pseudo-measure-ness is `isPseudoMeasure_mk'`
+    (PseudoMeasure:1024, proven) at the generator-hypothesis from L5.4.
+  - Attacks: [1] choice-plumbing: the `def` chains `.choose_spec.choose_spec.2.2` —
+    the skeleton COMPILES, so the ∃-structure matches ✓ (compiler-verified);
+    [2] `isPseudoMeasure_mk'`'s exact hypothesis is `∀ n, zpowers (q_n a) = ⊤` —
+    L5.4's conclusion verbatim ✓; [3] `a`-independence: NOT claimed by the def
+    (a choice is fixed); independence is delivered by the uniqueness clause of
+    R-KL — matching the source, which also derives it from zero-divisor(iii) ✓.
+    Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L5.7** (internal): `padicZeta_moments` (**RJW Prop 4.11 interpolation**)
+  - Lean: `ZetaP.lean:137`. Source: TeX 1592–1596 (quoted at R5 head; "Using
+    Equation \eqref{eq:integrate pseudo-measure} ... and Proposition
+    \ref{PropInterpolation1} ... remove the $(-1)^k$").
+  - Composition: given a witness `ν` of `([b]−1)·ζ_p`: multiply the defining
+    `mk'_spec` (`([u]−1)·ζ_p = alg(zetaNum)`) by `([b]−1)`:
+    `([u]−1)·alg(ν) = ([b]−1)·alg(zetaNum)` in `Q`, pull back along the injective
+    `algebraMap` (`IsFractionRing.injective`): `([u]−1)·ν = ([b]−1)·zetaNum` in `Λ`;
+    apply `unitsPowCM k`-moments with `units_mul_apply_unitsPowCM`
+    (PseudoMeasure:753, proven): `(u^k−1)·ν(x^k) = (b^k−1)·zetaNum(x^k)`; cast to
+    ℚ_p, divide by `u^k−1 ≠ 0` (L5.4 torsion-freeness + cast-injectivity), insert
+    L5.3's value, remove the sign by L0.4. Moments of `[u]−1`: `dirac`-moment
+    `= u^k` (`dirac`-apply def) minus `1`-moment `= 1` (`one`-apply — `[1]`'s
+    moment: `(1:ℤ_p^×)^k = 1` ✓).
+  - Attacks: [1] `[u]−1`-moment: `1 ∈ Λ(ℤ_p^×)` is `[1-the-unit]` (units-group
+    identity — `units_dirac_mul_dirac`-era convention §3): moment `1^k = 1` ✓ (the
+    R3-attack[4] confusion pre-empted: here we ARE units-side, `1 = [1]` correctly);
+    [2] division order: all in field ℚ_p after cast; `(u:ℚ_p)^k − 1 ≠ 0` ⟸
+    cast-inj + L5.4 ✓; [3] witness-uniqueness: any two witnesses agree
+    (algebraMap inj) so "every witness" = "the witness" ✓ ∀ν-form sound;
+    [4] k=1: both sides 0 (`1−p⁰ = 0` RHS; LHS `ν(x)`: 0 by the chain — consistent,
+    no contradiction) ✓. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+- **L5.8** (internal): `kubotaLeopoldt` (**RJW Thm 4.1**) — R-KL root
+  - Lean: `ZetaP.lean:154`. Source: TeX 1444–1447 (statement, quoted at top) + 1599
+    (proof: existence = Prop 4.11, uniqueness = zero-divisor(iii)).
+  - Composition: existence: `padicZeta` + L5.6 + L5.7 (the ∀b-form is exactly
+    L5.7's statement); uniqueness: `q₁, q₂` both satisfying ⟹ `q₁ − q₂` is a
+    pseudo-measure (L5.5) all of whose `([u]−1)`-witness-moments vanish (the two
+    interpolation values subtract: witnesses subtract as in L5.5's proof, moments
+    equal ⟹ difference-witness moments 0, cast-injectivity to land in ℤ_p) ⟹
+    `q₁ − q₂ = 0` by `pseudoMeasure_eq_zero_of_moments` (PseudoMeasure:829, proven)
+    at `a := u` (torsion-free by L5.4).
+  - Attacks: [1] ∃!-strength: is the ∀b-moment-property too strong to be satisfiable
+    (uniqueness easy, existence hard)? — L5.7 proves it for `padicZeta`, so no;
+    too weak for uniqueness? — the `b := u` instance alone pins `q` via
+    `pseudoMeasure_eq_zero_of_moments`, so no ✓; [2] the source states moments
+    `(1−p^{k−1})ζ(1−k)` with no `b`: our `(b^k−1)·`-factored form is the
+    eq-integrate-pseudo-measure encoding (R-KL head-note) — faithful ✓;
+    [3] hypothesis audit: `p ≠ 2` required (L5.4 ⟸ `exists_topological_generator`
+    needs `(ZMod p^n)ˣ` cyclic — FALSE at `p = 2, n ≥ 3`): stated ✓ never dropped
+    (CLAUDE.md rule 5); [4] `IsPseudoMeasure 0`-degeneracy: `0` is a pseudo-measure
+    with all moments 0 — could `∃!` accidentally select 0? Only if
+    `(1−p^{k−1})ζ(1−k) = 0` for ALL `k>0` — false (`k=2`: `(1−p)·ζ(−1) =
+    (1−p)(−1/12) ≠ 0`) ✓ the interpolation is non-degenerate. Verdict: SURVIVED.
+  - Prior-B2: no match.
+
+## §4 confidence gate
+
+1. Every leaf discharged from verified mathlib (`bernoulliPowerSeries_mul_exp_sub_one`,
+   `derivative_subst`, `exp_pow_eq_rescale_exp`, `constantCoeff_subst`,
+   `isUnit_iff_constantCoeff`, `bernoulli_eq_zero_of_odd`, `norm_int_lt_one_iff_dvd`,
+   `riemannZeta_neg_nat_eq_bernoulli` — each grep-verified at file:line above) or
+   from proven §3 project code (`apply_powCM`, `res_units_eq`, `mahlerLinearEquiv`,
+   `mahlerRingEquiv`, `dirac_mul_dirac`, `units_mul_apply_unitsPowCM`,
+   `isPseudoMeasure_mk'`, `pseudoMeasure_eq_zero_of_moments`,
+   `exists_topological_generator`, `extendByZero`/`iota` cluster). No REVIEW-PENDING
+   leaves. ✓
+2. Skeleton compiles: `lake build PadicLFunctions` green, 46 sorries, 0 errors
+   (verified 2026-06-10, twice). ✓
+3. Verbatim quotes: every leaf carries one or points to its parent's (internal nodes
+   quote the composition source). ✓
+4. Adversarial pass: every node ≥ 3 attacks; two attacks drew blood — L3.6[4]
+   (`a = 1` cancellation scare: resolved, convention confirmed, no change) and the
+   R2 numeric trace L2.7[3] which *confirmed* the chain at `k=0` exactly. No
+   unresolved flaws. ✓
+5. Prior-B2 log: `b2_log.jsonl` absent/empty — vacuously clean; the one §3-name
+   near-match (L5.4 vs `exists_topological_generator`) inspected, distinct. ✓
+6. Tree mirrors the source: R1↔Prop 4.4/Def 4.5, R2↔Lem 4.2/4.3+Prop 4.6,
+   R3↔Lem 4.7 (with the recorded ξ-free replan), R4↔Prop 4.8, R5↔§4.3+Thm 4.1;
+   each internal node quotes the source's own proof. Two deliberate deviations,
+   both recorded with justification: the R3 replan (deferred ξ-machinery) and the
+   L5.4 source-expansion (integer generator gloss). LOC estimates: L5.4 ~60–80 LOC
+   (vs 1-line gloss + ~15 textbook lines — the one estimate above 3× source);
+   L2.6 ~50 LOC (source: half-page of displays); L3.6 ~40 LOC (source: 8-line
+   proof); others ≤ 30 LOC each. ✓
+
+**Feasibility**: every §4 leaf is dischargeable from verified infrastructure; the two
+new clusters (Bernoulli/exp-substitution algebra L2.2–L2.6; integer-generator ascent
+L5.4) are bounded and self-contained. Ready for ticketing.
