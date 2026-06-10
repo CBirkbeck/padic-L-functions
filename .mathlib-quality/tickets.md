@@ -1268,7 +1268,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     haves mirroring the decomposition tree).
 
 ### [T036] Units-side transfer + `x⁻¹`-twist `zetaNum`
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/ZetaP.lean
 - **Depends on**: T035
 - **Parallel**: yes (with T037)

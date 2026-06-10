@@ -38,18 +38,30 @@ def muAUnits (a : ℕ) : PadicMeasure p ℤ_[p]ˣ :=
 
 lemma iota_muAUnits (a : ℕ) :
     iota p (muAUnits p a) = res p (isClopen_units p) (muA p a) := by
-  sorry
+  refine LinearMap.ext fun f => ?_
+  show muA p a (extendByZero p (f.comp (unitsValCM p)))
+      = muA p a ((LocallyConstant.charFn ℤ_[p] (isClopen_units p) : C(ℤ_[p], ℤ_[p])) * f)
+  rw [extendByZero_comp_unitsVal]
 
 lemma muAUnits_apply_unitsPowCM (a k : ℕ) :
     muAUnits p a (unitsPowCM p k)
       = res p (isClopen_units p) (muA p a) (powCM p k) := by
-  sorry
+  show muA p a (extendByZero p (unitsPowCM p k))
+      = muA p a ((LocallyConstant.charFn ℤ_[p] (isClopen_units p) : C(ℤ_[p], ℤ_[p]))
+          * powCM p k)
+  rw [show unitsPowCM p k = (powCM p k).comp (unitsValCM p) from
+      ContinuousMap.ext fun u => rfl,
+    extendByZero_comp_unitsVal]
 
 /-! ## Multiplication by `x⁻¹` (RJW eq. 4.11) -/
 
 lemma continuous_units_inv_val :
     Continuous fun u : ℤ_[p]ˣ => ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := by
-  sorry
+  have h : (fun u : ℤ_[p]ˣ => ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
+      = MulOpposite.unop ∘ Prod.snd ∘ Units.embedProduct ℤ_[p] := rfl
+  rw [h]
+  exact MulOpposite.continuous_unop.comp
+    (continuous_snd.comp Units.continuous_embedProduct)
 
 /-- The continuous function `x ↦ x⁻¹` on `ℤ_p^×` (valued in `ℤ_p`). -/
 def invCM : C(ℤ_[p]ˣ, ℤ_[p]) :=
@@ -63,8 +75,7 @@ def unitsCmul (g : C(ℤ_[p]ˣ, ℤ_[p])) (μ : PadicMeasure p ℤ_[p]ˣ) :
 
 @[simp]
 lemma unitsCmul_apply (g f : C(ℤ_[p]ˣ, ℤ_[p])) (μ : PadicMeasure p ℤ_[p]ˣ) :
-    unitsCmul p g μ f = μ (g * f) := by
-  sorry
+    unitsCmul p g μ f = μ (g * f) := rfl
 
 /-- The numerator `x⁻¹ · Res_{ℤ_p^×}(μ_a)` of the p-adic zeta function
 (RJW Def. 4.10). -/
@@ -73,14 +84,26 @@ def zetaNum (a : ℕ) : PadicMeasure p ℤ_[p]ˣ :=
 
 lemma zetaNum_apply_unitsPowCM (a : ℕ) {k : ℕ} (hk : 0 < k) :
     zetaNum p a (unitsPowCM p k) = muAUnits p a (unitsPowCM p (k - 1)) := by
-  sorry
+  obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  rw [Nat.succ_sub_one]
+  show muAUnits p a (invCM p * unitsPowCM p (k' + 1)) = muAUnits p a (unitsPowCM p k')
+  congr 1
+  ext u
+  show ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (u : ℤ_[p]) ^ (k' + 1) = (u : ℤ_[p]) ^ k'
+  calc ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (u : ℤ_[p]) ^ (k' + 1)
+      = (u : ℤ_[p]) ^ k' * (((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (u : ℤ_[p])) := by ring
+    _ = (u : ℤ_[p]) ^ k' := by rw [← Units.val_mul, inv_mul_cancel, Units.val_one, mul_one]
 
 /-- RJW TeX line 1561: `∫_{ℤ_p^×} x^k · x⁻¹μ_a = (−1)^k (a^k−1)(1−p^{k−1}) ζ(1−k)`. -/
 theorem zetaNum_moments {a : ℕ} (hpa : ¬ p ∣ a) {k : ℕ} (hk : 0 < k) :
     ((zetaNum p a (unitsPowCM p k) : ℤ_[p]) : ℚ_[p])
       = (-1) ^ k * ((a : ℚ_[p]) ^ k - 1) * (1 - (p : ℚ_[p]) ^ (k - 1))
           * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) := by
-  sorry
+  obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  rw [zetaNum_apply_unitsPowCM p a hk, Nat.succ_sub_one, muAUnits_apply_unitsPowCM,
+    res_units_muA_apply_powCM p hpa k']
+  rw [pow_succ (-1 : ℚ_[p]) k', pow_succ (a : ℚ_[p]) k']
+  ring
 
 /-! ## Integer topological generators -/
 

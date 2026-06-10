@@ -220,9 +220,11 @@ pseudo-measures allow. The interpolation formula
 the natural augmentation element $`\thetaa` of the Iwasawa algebra produces
 $`a^k - 1`; the gap is bridged by multiplication by $`x^{-1}`.
 
-:::definition "kl-theta-a"
+:::definition "kl-theta-a" (lean := "PadicMeasure.zetaNum_moments")
 For $`a` an integer coprime to $`p`, let $`\thetaa \in \Lam(\Zpx)` be the element
-corresponding to $`[a] - [1]`, so that
+corresponding to $`[a] - [1]` (in the formalisation: `dirac p a - 1`; the
+$`x^{-1}`-multiplication is `unitsCmul`/`invCM`, and the displayed moment formula is
+`zetaNum_moments`), so that
 $$`\int_{\Zpx} x^k \cdot \thetaa = a^k - 1.`$$
 On $`\Zpx` there is a well-defined operation *multiplication by $`x^{-1}`*, given on
 measures by $`\int_{\Zpx} f(x)\cdot x^{-1}\mu := \int_{\Zpx} x^{-1}f(x)\cdot\mu`,
