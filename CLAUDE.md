@@ -18,7 +18,19 @@ p-adic L-functions* (arXiv:2309.15692). Source TeX:
    - If a /develop pass restates or renames a planned declaration, fix the chapter
      node's statement/prose to stay faithful to both the source and the Lean.
    - Nodes for deferred material (see plan.md "Deferred") stay unwired — never wire a
-     node to a declaration that only partially realises it.
+     node to a *project* declaration that only partially realises it.
+   - **Mathlib linking (user directive 2026-06-10)**: where a node's content is
+     already formalised in mathlib, wire the node to the mathlib declaration — and
+     this *may* be something more general than the notes' statement (e.g. valuations
+     ↦ `ValuativeRel`/`IsUltrametricDist`). When the mathlib form differs from the
+     notes' (one-sided limit vs residue, series vs continuation, B₁-convention), add
+     a one-sentence prose note in the node recording the difference. The blueprint
+     is filled in chapter by chapter as the formalisation reaches each section, and
+     each section's pass includes a mathlib-linking sweep of its chapter.
+   - All chapters share the single KaTeX macro prelude in
+     `PadicLFunctionsBlueprint/TexPrelude.lean` — never add a per-chapter
+     `tex_prelude` (divergent per-module preludes overwrite each other in the
+     rendered site's shared macro table; that was the raw-`\CC`/`\roi` bug).
    - After wiring, `lake build PadicLFunctionsBlueprint` must pass (it verifies the
      refs resolve) and re-render with `./scripts/ci-pages.sh` when convenient.
 

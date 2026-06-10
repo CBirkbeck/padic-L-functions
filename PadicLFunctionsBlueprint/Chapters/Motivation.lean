@@ -3,12 +3,12 @@ import VersoManual
 import VersoBlueprint
 import PadicLFunctions
 import PadicLFunctionsBlueprint.Refs
+import PadicLFunctionsBlueprint.TexPrelude
 
 open Verso.Genre
 open Verso.Genre.Manual
 open Informal
 
-tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Fp{\mathbb{F}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\Qpx{\mathbb{Q}_p^{\times}}\def\Qbar{\overline{\mathbb{Q}}}\def\Qpbar{\overline{\mathbb{Q}_p}}\def\cO{\mathcal{O}}\def\cC{\mathcal{C}}\def\cH{\mathcal{H}}\def\cG{\mathcal{G}}\def\cN{\mathcal{N}}\def\cM{\mathcal{M}}\def\cD{\mathcal{D}}\def\cA{\mathcal{A}}\def\sX{\mathscr{X}}\def\sY{\mathscr{Y}}\def\sM{\mathscr{M}}\def\sL{\mathscr{L}}\def\sU{\mathscr{U}}\def\sW{\mathscr{W}}\def\sE{\mathscr{E}}\def\Gal{\mathrm{Gal}}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\val{\mathrm{val}}\def\res{\operatorname{res}}\def\Res{\operatorname{Res}}\def\Tr{\mathrm{Tr}}\def\Nm{\mathrm{N}}\def\Mahler{\mathfrak{M}}\def\Mellin{\mathrm{Mel}}\def\Exp{\mathrm{Exp}}\def\Col{\mathrm{Col}}\def\Log{\mathrm{Log}}\def\charid{\mathrm{char}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}\def\floor#1{\left\lfloor#1\right\rfloor}\def\A{\mathbb{A}}\def\Homc{\mathrm{Hom}_{\mathrm{cts}}}\def\roi{\mathcal{O}}\def\Rep{\mathrm{Rep}}\def\Dcris{\mathbf{D}_{\mathrm{cris}}}\def\Sha{\text{Ш}}"#
 
 #doc (Manual) "What a p-adic L-function should be" =>
 
@@ -24,7 +24,7 @@ Throughout, $`p` is a fixed prime and $`\ell` ranges over rational primes.
 
 # Classical L-functions
 
-:::definition "riemann-zeta"
+:::definition "riemann-zeta" (lean := "riemannZeta")
 The *Riemann zeta function* is
 $$`\zeta(s) = \sum_{n\geq 1} n^{-s} = \prod_{\ell}\left(1 - \ell^{-s}\right)^{-1},`
 the product — an *Euler product* — running over all primes $`\ell`; the second
@@ -34,7 +34,7 @@ holomorphic function. It admits a meromorphic continuation to all of $`\C` and
 satisfies a *functional equation* relating $`\zeta(s)` and $`\zeta(1-s)`.
 :::
 
-:::definition "mot-dedekind-zeta"
+:::definition "mot-dedekind-zeta" (lean := "NumberField.dedekindZeta")
 Let $`F` be a number field with ring of integers $`\roi_F`. The *Dedekind zeta
 function of $`F`* is
 $$`\zeta_F(s) = \sum_{0\neq I\subseteq\roi_F} \Nm(I)^{-s} = \prod_{\mathfrak p}\left(1 - \Nm(\mathfrak p)^{-s}\right)^{-1},`
@@ -42,10 +42,12 @@ where $`I` runs over the non-zero ideals of $`\roi_F` and $`\mathfrak p` over th
 non-zero prime ideals. It converges for $`\mathrm{Re}(s)>1`, continues
 meromorphically to $`\C`, and satisfies a functional equation relating $`\zeta_F(s)`
 and $`\zeta_F(1-s)`. The Euler product again reflects unique factorisation of
-ideals.
+ideals. (Mathlib's `NumberField.dedekindZeta` is exactly this Dirichlet series; the
+meromorphic continuation is not yet formalised there, though the residue behaviour
+at $`s=1` is.)
 :::
 
-:::definition "dirichlet-L-function"
+:::definition "dirichlet-L-function" (lean := "DirichletCharacter.LFunction")
 Let $`\chi:(\Z/N\Z)^{\times}\to\C^{\times}` be a Dirichlet character. Extend $`\chi`
 to $`\chi:\Z\to\C` by $`\chi(m)=\chi(m\bmod N)` when $`(m,N)=1` and $`\chi(m)=0`
 otherwise. The *Dirichlet $`L`-function of $`\chi`* is
@@ -102,12 +104,14 @@ agree; for $`V=\Qp(\chi)` one recovers the Dirichlet $`L`-function
 There are deep results and conjectures relating special values of $`L`-functions
 to arithmetic invariants. A prototype is the class number formula.
 
-:::theorem "mot-class-number-formula"
+:::theorem "mot-class-number-formula" (lean := "NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT")
 Let $`F` be a number field with $`r_1` real embeddings, $`r_2` pairs of complex
 embeddings, $`w` roots of unity, discriminant $`D`, regulator $`R` and class number
 $`h_F`. Then $`\zeta_F` has a simple pole at $`s=1` with residue
 $$`\Res_{s=1}\zeta_F(s) = \frac{2^{r_1}(2\pi)^{r_2}R}{w\sqrt{\abs{D}}}\,h_F.`
-This rests on {uses "mot-dedekind-zeta"}[].
+This rests on {uses "mot-dedekind-zeta"}[]. (Mathlib formalises this as the
+statement that $`(s-1)\zeta_F(s)` tends to the displayed residue as
+$`s \to 1^{+}` along the reals.)
 :::
 
 :::proof "mot-class-number-formula"
@@ -230,12 +234,14 @@ $`\Gamma(s-1)=\Gamma(s)/(s-1)`) yields $`\zeta(s)=L(f,s-1)/(s-1)`, i.e.
 $`(s-1)\zeta(s)=L(f,s-1)`.
 :::
 
-:::corollary "special-values-zeta"
+:::corollary "special-values-zeta" (lean := "riemannZeta_neg_nat_eq_bernoulli'")
 For every $`n\geq 0`,
 $$`\zeta(-n) = -\frac{B_{n+1}}{n+1}.`
 In particular $`\zeta(-n)\in\Q`, and $`\zeta(-n)=0` when $`n\geq 2` is even. This
 rests on {uses "mot-formula-zeta"}[], {uses "mot-mellin-transform"}[] and
-{uses "mot-bernoulli-decay"}[].
+{uses "mot-bernoulli-decay"}[]. (At $`n=0` the formula implicitly uses the
+convention $`B_1=+\tfrac12`; mathlib's `riemannZeta_neg_nat_eq_bernoulli'` states
+exactly this, via the Bernoulli numbers $`B'_j` with $`B'_1=+\tfrac12`.)
 :::
 
 :::proof "special-values-zeta"

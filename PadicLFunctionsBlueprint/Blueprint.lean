@@ -19,12 +19,12 @@ import PadicLFunctionsBlueprint.Chapters.MuInvariant
 import PadicLFunctionsBlueprint.Chapters.ModularForms
 import PadicLFunctionsBlueprint.Refs
 import PadicLFunctions
+import PadicLFunctionsBlueprint.TexPrelude
 
 open Verso.Genre
 open Verso.Genre.Manual
 open Informal
 
-tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\cO{\mathcal{O}}\def\Gal#1{\mathrm{Gal}(#1)}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}"#
 
 #doc (Manual) "An introduction to p-adic L-functions — Lean blueprint" =>
 

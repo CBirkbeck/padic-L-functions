@@ -3,12 +3,12 @@ import VersoManual
 import VersoBlueprint
 import PadicLFunctions
 import PadicLFunctionsBlueprint.Refs
+import PadicLFunctionsBlueprint.TexPrelude
 
 open Verso.Genre
 open Verso.Genre.Manual
 open Informal
 
-tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Fp{\mathbb{F}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\Qpx{\mathbb{Q}_p^{\times}}\def\Qbar{\overline{\mathbb{Q}}}\def\Qpbar{\overline{\mathbb{Q}_p}}\def\cO{\mathcal{O}}\def\cC{\mathcal{C}}\def\cH{\mathcal{H}}\def\cG{\mathcal{G}}\def\cN{\mathcal{N}}\def\cM{\mathcal{M}}\def\cD{\mathcal{D}}\def\cA{\mathcal{A}}\def\sX{\mathscr{X}}\def\sY{\mathscr{Y}}\def\sM{\mathscr{M}}\def\sL{\mathscr{L}}\def\sU{\mathscr{U}}\def\sW{\mathscr{W}}\def\sE{\mathscr{E}}\def\Gal{\mathrm{Gal}}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\val{\mathrm{val}}\def\res{\operatorname{res}}\def\Res{\operatorname{Res}}\def\Tr{\mathrm{Tr}}\def\Nm{\mathrm{N}}\def\Mahler{\mathfrak{M}}\def\Mellin{\mathrm{Mel}}\def\Exp{\mathrm{Exp}}\def\Col{\mathrm{Col}}\def\Log{\mathrm{Log}}\def\charid{\mathrm{char}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}\def\floor#1{\left\lfloor#1\right\rfloor}\def\GL{\mathrm{GL}}\def\A{\mathbb{A}}\def\sD{\mathscr{D}}\def\Ch{\mathrm{Char}}\def\ch{\mathrm{ch}}\def\HIw{\mathrm{H}^1_{\mathrm{Iw}}}\def\Hone{\mathrm{H}^1}"#
 
 #doc (Manual) "Iwasawa theory for modular forms" =>
 
@@ -40,7 +40,7 @@ The three $`\GL(1)` $`p`-adic $`L`-functions are:
   $`\zeta_p^{\mathrm{arith}} := \Col(c_\infty)`, the image under the Coleman map
   $`\Col` of the norm-coherent family of cyclotomic units $`c_\infty`.
 - *Algebraic.* The characteristic ideal
-  $`\zeta_p^{\mathrm{alg}} := \Ch_{\Lam(\Gamma^+)}(\sX_\infty^+)
+  $`\zeta_p^{\mathrm{alg}} := \Char_{\Lam(\Gamma^+)}(\sX_\infty^+)
   \subset \Lam(\Gamma^+)` of the torsion $`\Lam(\Gamma^+)`-module
   $`\sX_\infty^+` (an unramified Iwasawa module).
 
@@ -256,7 +256,7 @@ system: a non-trivial Euler system bounds the Selmer group, forcing it to be
 torsion over $`\Lam`. A finitely generated torsion $`\Lam`-module has a
 well-defined characteristic ideal by the structure theory of $`\Lam`-modules,
 and $`L_p^{\mathrm{alg}}(f)` is by definition this ideal. The construction
-mirrors $`\zeta_p^{\mathrm{alg}} = \Ch(\sX_\infty^+)` from the $`\GL(1)` case,
+mirrors $`\zeta_p^{\mathrm{alg}} = \Char(\sX_\infty^+)` from the $`\GL(1)` case,
 with $`\sX_\infty^+` replaced by the Selmer module of $`V_f`.
 :::
 

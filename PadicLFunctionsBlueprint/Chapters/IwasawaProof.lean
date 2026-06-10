@@ -3,19 +3,19 @@ import VersoManual
 import VersoBlueprint
 import PadicLFunctions
 import PadicLFunctionsBlueprint.Refs
+import PadicLFunctionsBlueprint.TexPrelude
 
 open Verso.Genre
 open Verso.Genre.Manual
 open Informal
 
-tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Fp{\mathbb{F}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\Qpx{\mathbb{Q}_p^{\times}}\def\Qbar{\overline{\mathbb{Q}}}\def\Qpbar{\overline{\mathbb{Q}_p}}\def\cO{\mathcal{O}}\def\cC{\mathcal{C}}\def\cH{\mathcal{H}}\def\cG{\mathcal{G}}\def\cN{\mathcal{N}}\def\cM{\mathcal{M}}\def\cD{\mathcal{D}}\def\cA{\mathcal{A}}\def\sX{\mathscr{X}}\def\sY{\mathscr{Y}}\def\sM{\mathscr{M}}\def\sL{\mathscr{L}}\def\sU{\mathscr{U}}\def\sW{\mathscr{W}}\def\sE{\mathscr{E}}\def\Gal{\mathrm{Gal}}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\val{\mathrm{val}}\def\res{\operatorname{res}}\def\Res{\operatorname{Res}}\def\Tr{\mathrm{Tr}}\def\Nm{\mathrm{N}}\def\Mahler{\mathfrak{M}}\def\Mellin{\mathrm{Mel}}\def\Exp{\mathrm{Exp}}\def\Col{\mathrm{Col}}\def\Log{\mathrm{Log}}\def\charid{\mathrm{char}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}\def\floor#1{\left\lfloor#1\right\rfloor}\def\GG{\Gamma}\def\DD{\mathscr{D}}\def\CC{\mathscr{C}}\def\WW{\mathscr{W}}\def\dlog{\partial\log}\def\xip{\xi_{p^n}}\def\pri{\mathfrak{p}}\def\sA{\mathscr{A}}"#
 
 #doc (Manual) "Proof of Iwasawa theorem" =>
 
 This chapter proves *Iwasawa's theorem*, namely that the Coleman map induces an
-isomorphism of $`\Lam(\GG^+)`-modules
-$$`\sU^+_{\infty,1}/\CC^+_{\infty,1} \;\xrightarrow{\sim}\; \Lam(\GG^+)/I(\GG^+)\zeta_p.`
-The strategy has four movements. First we put a $`\Lam(\GG)`-module structure on
+isomorphism of $`\Lam(\GGam^+)`-modules
+$$`\sU^+_{\infty,1}/\CC^+_{\infty,1} \;\xrightarrow{\sim}\; \Lam(\GGam^+)/I(\GGam^+)\zeta_p.`
+The strategy has four movements. First we put a $`\Lam(\GGam)`-module structure on
 the norm-coherent local units $`\sU_{\infty,1}` and show the Coleman map is
 equivariant for it. Next we compute the kernel and cokernel of the Coleman map by
 analysing each constituent map; this is the *fundamental exact sequence*. Then we
@@ -24,8 +24,8 @@ the relevant group rings. Finally we feed the generators through the Coleman map
 to read off the image of the cyclotomic units, and conclude.
 
 Throughout, $`p` is an odd prime, $`F_\infty = \Q(\mu_{p^\infty})`,
-$`\GG = \Gal(F_\infty/\Q) \cong \Zpx` via the cyclotomic character $`\chi`, and
-$`\GG^+` is the quotient by complex conjugation. We write
+$`\GGam = \Gal(F_\infty/\Q) \cong \Zpx` via the cyclotomic character $`\chi`, and
+$`\GGam^+` is the quotient by complex conjugation. We write
 $`K_n = \Qp(\mu_{p^n})`, $`\pi_n = \xi_{p^n}-1` for a uniformiser, $`\sU_n` for
 the local units of $`K_n`, $`\sU_{n,1}` for those congruent to $`1` modulo
 $`\pri_n`, and $`\sU_\infty = \varprojlim_n \sU_n`,
@@ -38,11 +38,11 @@ where $`\sA` is the Mahler transform identifying measures with power series.
 
 # Equivariance properties of the Coleman map
 
-Iwasawa's theorem is a statement about $`\Lam(\GG^+)`-modules, so it is essential
+Iwasawa's theorem is a statement about $`\Lam(\GGam^+)`-modules, so it is essential
 to work over the *full* Iwasawa algebra rather than just $`\Zp`. Since
-$`\Lam(\GG)` is the completed group ring of $`\GG` over $`\Zp`, giving
-$`\sU_\infty` a $`\Lam(\GG)`-module structure amounts to equipping it with
-compatible actions of $`\Zp` and of $`\GG`. The Galois group acts naturally; the
+$`\Lam(\GGam)` is the completed group ring of $`\GGam` over $`\Zp`, giving
+$`\sU_\infty` a $`\Lam(\GGam)`-module structure amounts to equipping it with
+compatible actions of $`\Zp` and of $`\GGam`. The Galois group acts naturally; the
 obstruction is the $`\Zp`-action, since the integer power map $`u\mapsto u^a` does
 not extend continuously from $`\Z` to $`\Zp` on all of $`\sU_\infty`.
 
@@ -111,12 +111,12 @@ $`c\in\mu_{p-1}`. Conversely every $`c\in\mu_{p-1}` is a constant, lies in $`\WW
 and is killed by $`\dlog`. Therefore $`\ker(\dlog|_\WW)=\mu_{p-1}`.
 :::
 
-The Galois group $`\GG=\Gal(F_\infty/\Q)\cong\Gal(K_\infty/\Qp)` acts on
-$`\sU_\infty`. For $`a\in\Zpx` we write $`\sigma_a\in\GG` for the element with
+The Galois group $`\GGam=\Gal(F_\infty/\Q)\cong\Gal(K_\infty/\Qp)` acts on
+$`\sU_\infty`. For $`a\in\Zpx` we write $`\sigma_a\in\GGam` for the element with
 $`\chi(\sigma_a)=a`.
 
 :::proposition "iwproof-galois-equiv"
-The Coleman map $`\Col : \sU_\infty \to \Lam(\GG)` is $`\GG`-equivariant: for all
+The Coleman map $`\Col : \sU_\infty \to \Lam(\GGam)` is $`\GGam`-equivariant: for all
 $`a\in\Zpx` and $`u\in\sU_\infty`, $`\Col(\sigma_a u) = \sigma_a\,\Col(u)`.
 :::
 
@@ -135,25 +135,25 @@ cancels the factor $`a^{-1}` from $`\partial^{-1}`, leaving $`\Col` equivariant.
 This depends on {uses "coleman-map"}[].
 :::
 
-Since the $`\GG`-action fixes $`1\in\mu_{p-1}` it stabilises $`\sU_{\infty,1}`, and
+Since the $`\GGam`-action fixes $`1\in\mu_{p-1}` it stabilises $`\sU_{\infty,1}`, and
 this action commutes with the $`\Zp`-action there. Hence $`\sU_{\infty,1}` is a
-$`\Lam(\GG)`-module, and we may summarise the section as follows.
+$`\Lam(\GGam)`-module, and we may summarise the section as follows.
 
 :::corollary "coleman-equivariance"
-The Coleman map restricts to a homomorphism of $`\Lam(\GG)`-modules
-$$`\Col : \sU_{\infty,1} \longrightarrow \Lam(\GG).`
+The Coleman map restricts to a homomorphism of $`\Lam(\GGam)`-modules
+$$`\Col : \sU_{\infty,1} \longrightarrow \Lam(\GGam).`
 :::
 
 :::proof "coleman-equivariance"
 Combine {uses "iwproof-zp-action"}[] ($`\Zp`-equivariance on $`\sU_{\infty,1}`) with
-{uses "iwproof-galois-equiv"}[] ($`\GG`-equivariance). The two actions commute and
-together generate the $`\Lam(\GG)`-action, so $`\Col` is $`\Lam(\GG)`-linear.
+{uses "iwproof-galois-equiv"}[] ($`\GGam`-equivariance). The two actions commute and
+together generate the $`\Lam(\GGam)`-action, so $`\Col` is $`\Lam(\GGam)`-linear.
 :::
 
 *Remark.* The renormalisation "divide by $`x`" used in constructing $`\zeta_p`
 reappears here as $`\partial^{-1}`. The relation
 $`\partial^{-1}\circ\sigma_a=a^{-1}\sigma_a\circ\partial^{-1}` shows $`\partial^{-1}`
-is exactly what makes $`\Col` $`\GG`-equivariant. Conceptually $`\zeta` and
+is exactly what makes $`\Col` $`\GGam`-equivariant. Conceptually $`\zeta` and
 $`\zeta_p` are the $`L`-functions of the trivial Galois representation, the
 cyclotomic units form an Euler system for the twist $`\Qp(1)`, and $`\partial^{-1}`
 bridges the two.
@@ -290,19 +290,19 @@ $`\varphi(f)=a_0+pa_rT^r+\cdots\ne f`, so $`\ker(1-\varphi)=\Zp`.
 :::
 
 :::definition "iwproof-zp-one"
-Let $`\Zp(1):=\varprojlim_n\mu_{p^n}`: the module $`\Zp` carrying the $`\GG`-action
+Let $`\Zp(1):=\varprojlim_n\mu_{p^n}`: the module $`\Zp` carrying the $`\GGam`-action
 $`\sigma\cdot x=\chi(\sigma)x` through the cyclotomic character. It is an integral
 form of $`\Qp(1)`.
 :::
 
 :::theorem "fundamental-exact-sequence"
-The Coleman map induces an exact sequence of $`\GG`-modules
+The Coleman map induces an exact sequence of $`\GGam`-modules
 $$`0 \to \mu_{p-1}\times\Zp(1) \longrightarrow \sU_\infty \xrightarrow{\Col}
-\Lam(\GG) \longrightarrow \Zp(1) \to 0,`
-where the last map is $`\mu\mapsto\int_\GG \chi\,d\mu`. Restricting to
-$`\sU_{\infty,1}` it induces an exact sequence of $`\Lam(\GG)`-modules
+\Lam(\GGam) \longrightarrow \Zp(1) \to 0,`
+where the last map is $`\mu\mapsto\int_\GGam \chi\,d\mu`. Restricting to
+$`\sU_{\infty,1}` it induces an exact sequence of $`\Lam(\GGam)`-modules
 $$`0 \to \Zp(1) \longrightarrow \sU_{\infty,1} \xrightarrow{\Col}
-\Lam(\GG) \longrightarrow \Zp(1) \to 0.`
+\Lam(\GGam) \longrightarrow \Zp(1) \to 0.`
 :::
 
 :::proof "fundamental-exact-sequence"
@@ -314,11 +314,11 @@ $`\{(1+T)^a:a\in\Zp\}` under $`\Delta`, which interpolates the tower
 $`(\xi_{p^n}^a)_n`, so pulling back to $`\sU_\infty` yields the factor
 $`\Zp(1)=\{(\xi_{p^n}^a)_n:a\in\Zp\}`. The fourth and fifth maps are isomorphisms.
 Assembling kernels gives kernel $`\mu_{p-1}\times\Zp(1)`, and the only cokernel is
-the $`\Zp` from the third map, identified as $`\Zp(1)` via $`\int_\GG\chi`. For
-$`\GG`-equivariance: $`\mu_{p-1}\times\Zp(1)` is $`\GG`-stable, $`\Col` is
+the $`\Zp` from the third map, identified as $`\Zp(1)` via $`\int_\GGam\chi`. For
+$`\GGam`-equivariance: $`\mu_{p-1}\times\Zp(1)` is $`\GGam`-stable, $`\Col` is
 equivariant by {uses "coleman-equivariance"}[], and the last map is equivariant since
-$`\int_\GG\chi(x)\,\sigma\mu=\chi(\sigma)\int_\GG\chi\,d\mu`, matching the
-$`\GG`-action on $`\Zp(1)`. Restricting to $`\sU_{\infty,1}` removes the $`\mu_{p-1}`
+$`\int_\GGam\chi(x)\,\sigma\mu=\chi(\sigma)\int_\GGam\chi\,d\mu`, matching the
+$`\GGam`-action on $`\Zp(1)`. Restricting to $`\sU_{\infty,1}` removes the $`\mu_{p-1}`
 factor, using {uses "iwproof-units-split"}[] and {uses "iwproof-mu-killed"}[].
 :::
 
@@ -352,14 +352,14 @@ $`\gamma\in\DD_n^+` iff $`e=0`, giving (i).
 
 :::corollary "iwproof-cyc-gen-cyclic"
 If $`a` generates $`(\Z/p^n\Z)^\times`, then $`\gamma_{n,a}` generates $`\DD_n^+` as
-a $`\Z[\GG_n^+]`-module.
+a $`\Z[\GGam_n^+]`-module.
 :::
 
 :::proof "iwproof-cyc-gen-cyclic"
 Any $`b` prime to $`p` is $`b\equiv a^r \pmod{p^n}` for some $`r`, and the telescoping
 product $`\gamma_{n,b}=\prod_{i=0}^{r-1}\tfrac{\xi_{p^n}^{a^{i+1}}-1}{\xi_{p^n}^{a^i}-1}
 =\prod_{i=0}^{r-1}(\gamma_{n,a})^{\sigma_a^i}` exhibits every generator from
-{uses "iwproof-cyc-gen"}[] as a $`\Z[\GG_n^+]`-translate of $`\gamma_{n,a}`.
+{uses "iwproof-cyc-gen"}[] as a $`\Z[\GGam_n^+]`-translate of $`\gamma_{n,a}`.
 :::
 
 # Generators for the local cyclotomic units
@@ -391,7 +391,7 @@ $`\prod_i g_i^{b_i}=g`. Hence $`g` is in the $`\Zp`-span.
 Let $`a\in\Z` be a topological generator of $`\Zpx` and $`w\in\mu_{p-1}\subset\sU_n`
 with $`aw\equiv 1\pmod{\pri_n}`. Then: (i) $`w\gamma_{n,a}\in\sU_{n,1}`; and (ii)
 $`(w\gamma_{n,a})^{p-1}=\gamma_{n,a}^{p-1}\in\sU_{n,1}^+` generates the cyclic
-$`\Z[\GG_n^+]`-module $`(p-1)\DD_n^+=\set{\gamma^{p-1}:\gamma\in\DD_n^+}`.
+$`\Z[\GGam_n^+]`-module $`(p-1)\DD_n^+=\set{\gamma^{p-1}:\gamma\in\DD_n^+}`.
 :::
 
 :::proof "iwproof-global-gen-2"
@@ -408,21 +408,21 @@ $`w^{p-1}=1` gives $`\gamma_{n,a}^{p-1}=(w\gamma_{n,a})^{p-1}`.
 
 :::lemma_ "iwproof-local-gen"
 Let $`a\in\Z` be a topological generator of $`\Zpx` and $`w\in\mu_{p-1}` with
-$`aw\equiv 1\pmod{\pri_n}`. Then: (i) $`\CC_{n,1}^+` is a cyclic $`\Zp[\GG_n^+]`-module
+$`aw\equiv 1\pmod{\pri_n}`. Then: (i) $`\CC_{n,1}^+` is a cyclic $`\Zp[\GGam_n^+]`-module
 generated by $`w\gamma_{n,a}`; and (ii) $`\CC_{\infty,1}^+` is a cyclic
-$`\Lam(\GG^+)`-module generated by $`(w\gamma_{n,a})_{n\ge 1}`.
+$`\Lam(\GGam^+)`-module generated by $`(w\gamma_{n,a})_{n\ge 1}`.
 :::
 
 :::proof "iwproof-local-gen"
 (i) By {uses "iwproof-global-gen-2"}[], $`(p-1)\DD_{n,1}^+\subset\sU_{n,1}^+` is
-generated over $`\Z[\GG_n^+]` by $`(w\gamma_{n,a})^{p-1}`. By
+generated over $`\Z[\GGam_n^+]` by $`(w\gamma_{n,a})^{p-1}`. By
 {uses "iwproof-closure"}[], its $`p`-adic closure $`(p-1)\CC_{n,1}^+` is generated over
-$`\Zp[\GG_n^+]` by the same element. As $`p-1` is invertible in $`\Zp`,
+$`\Zp[\GGam_n^+]` by the same element. As $`p-1` is invertible in $`\Zp`,
 $`(p-1)\CC_{n,1}^+=\CC_{n,1}^+`; and since $`w\gamma_{n,a}\equiv 1\pmod{\pri_n}` is the
 unique $`(p-1)`-th root of $`(w\gamma_{n,a})^{p-1}` lying in $`\CC_{n,1}^+`, the module
 is generated by $`w\gamma_{n,a}`. (ii) Taking the inverse limit,
-$`\CC_{\infty,1}^+\cong\varprojlim_n\Zp[\GG_n^+]\cdot w\gamma_{n,a}
-\cong\Lam(\GG^+)\cdot(w\gamma_{n,a})_n`. This depends on {uses "cyclotomic-units"}[].
+$`\CC_{\infty,1}^+\cong\varprojlim_n\Zp[\GGam_n^+]\cdot w\gamma_{n,a}
+\cong\Lam(\GGam^+)\cdot(w\gamma_{n,a})_n`. This depends on {uses "cyclotomic-units"}[].
 :::
 
 # End of the proof
@@ -430,16 +430,16 @@ $`\CC_{\infty,1}^+\cong\varprojlim_n\Zp[\GG_n^+]\cdot w\gamma_{n,a}
 We can now assemble the pieces and prove Iwasawa's theorem.
 
 :::theorem "iwproof-iwasawa-final"
-The Coleman map induces: (i) a short exact sequence of $`\Lam(\GG)`-modules
-$$`0 \to \sU_{\infty,1}/\CC_{\infty,1} \to \Lam(\GG)/I(\GG)\zeta_p \to \Zp(1) \to 0;`
-and (ii) an isomorphism of $`\Lam(\GG^+)`-modules
-$$`\sU^+_{\infty,1}/\CC^+_{\infty,1} \xrightarrow{\sim} \Lam(\GG^+)/I(\GG^+)\zeta_p.`
+The Coleman map induces: (i) a short exact sequence of $`\Lam(\GGam)`-modules
+$$`0 \to \sU_{\infty,1}/\CC_{\infty,1} \to \Lam(\GGam)/I(\GGam)\zeta_p \to \Zp(1) \to 0;`
+and (ii) an isomorphism of $`\Lam(\GGam^+)`-modules
+$$`\sU^+_{\infty,1}/\CC^+_{\infty,1} \xrightarrow{\sim} \Lam(\GGam^+)/I(\GGam^+)\zeta_p.`
 Part (ii) is the statement of {uses "iwasawa-zeros-theorem"}[Iwasawa's theorem].
 :::
 
 :::proof "iwproof-iwasawa-final"
 Start from the fundamental exact sequence
-$`0\to\Zp(1)\to\sU_{\infty,1}\xrightarrow{\Col}\Lam(\GG)\to\Zp(1)\to 0` of
+$`0\to\Zp(1)\to\sU_{\infty,1}\xrightarrow{\Col}\Lam(\GGam)\to\Zp(1)\to 0` of
 {uses "fundamental-exact-sequence"}[]. It remains to compute the image of the
 cyclotomic units. By {uses "iwproof-local-gen"}[] it suffices to evaluate $`\Col` on
 $`(\xi_{p^n}^b\gamma_{n,a})_n` for $`a,b\in\Zpx`. Since $`\xi_{p^n}^b` lies in the
@@ -448,13 +448,13 @@ $`\gamma_{n,a}=\xi_{p^n}^{(1-a)/2}c_n(a)`, this reduces to $`\Col(c(a))`, which 
 Coleman computation of $`\zeta_p` equals $`([\sigma_a]-[1])\zeta_p`, depending on
 {uses "kubota-leopoldt"}[]. As $`a` ranges over $`\Zpx`, the elements
 $`[\sigma_a]-[1]` generate the augmentation ideal, so the image of $`\CC_{\infty,1}`
-(resp. $`\CC_{\infty,1}^+`) is $`I(\GG)\zeta_p` (resp. $`I(\GG^+)\zeta_p`), depending
+(resp. $`\CC_{\infty,1}^+`) is $`I(\GGam)\zeta_p` (resp. $`I(\GGam^+)\zeta_p`), depending
 on {uses "ideal-of-zeta-p"}[]. Quotienting the fundamental sequence by this image
 gives the exact sequence
-$`0\to\sU_{\infty,1}/\CC_{\infty,1}\to\Lam(\GG)/I(\GG)\zeta_p\to\Zp(1)\to 0`,
+$`0\to\sU_{\infty,1}/\CC_{\infty,1}\to\Lam(\GGam)/I(\GGam)\zeta_p\to\Zp(1)\to 0`,
 which is (i). For (ii), take invariants under the order-two group
-$`\ang{c}\subset\GG` generated by complex conjugation. As $`p` is odd this functor
+$`\ang{c}\subset\GGam` generated by complex conjugation. As $`p` is odd this functor
 is exact, and $`c` acts on $`\Zp(1)` by $`-1`, so $`\Zp(1)^{\ang c}=0`; the sequence
 collapses to the isomorphism
-$`\sU_{\infty,1}^+/\CC_{\infty,1}^+\xrightarrow{\sim}\Lam(\GG^+)/I(\GG^+)\zeta_p`.
+$`\sU_{\infty,1}^+/\CC_{\infty,1}^+\xrightarrow{\sim}\Lam(\GGam^+)/I(\GGam^+)\zeta_p`.
 :::

@@ -3,12 +3,12 @@ import VersoManual
 import VersoBlueprint
 import PadicLFunctions
 import PadicLFunctionsBlueprint.Refs
+import PadicLFunctionsBlueprint.TexPrelude
 
 open Verso.Genre
 open Verso.Genre.Manual
 open Informal
 
-tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Fp{\mathbb{F}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\Qpx{\mathbb{Q}_p^{\times}}\def\Qbar{\overline{\mathbb{Q}}}\def\Qpbar{\overline{\mathbb{Q}_p}}\def\cO{\mathcal{O}}\def\cC{\mathcal{C}}\def\cH{\mathcal{H}}\def\cG{\mathcal{G}}\def\cN{\mathcal{N}}\def\cM{\mathcal{M}}\def\cD{\mathcal{D}}\def\cA{\mathcal{A}}\def\sX{\mathscr{X}}\def\sY{\mathscr{Y}}\def\sM{\mathscr{M}}\def\sL{\mathscr{L}}\def\sU{\mathscr{U}}\def\sW{\mathscr{W}}\def\sE{\mathscr{E}}\def\Gal{\mathrm{Gal}}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\val{\mathrm{val}}\def\res{\operatorname{res}}\def\Res{\operatorname{Res}}\def\Tr{\mathrm{Tr}}\def\Nm{\mathrm{N}}\def\Mahler{\mathfrak{M}}\def\Mellin{\mathrm{Mel}}\def\Exp{\mathrm{Exp}}\def\Col{\mathrm{Col}}\def\Log{\mathrm{Log}}\def\charid{\mathrm{char}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}\def\floor#1{\left\lfloor#1\right\rfloor}\def\cClc{\mathscr{C}^{\mathrm{lc}}}\def\sMlc{\mathscr{M}^{\mathrm{lc}}}\def\cCla{\mathscr{C}^{\mathrm{la}}}\def\sDla{\mathscr{D}^{\mathrm{la}}}\def\sD{\mathscr{D}}\def\cW{\mathcal{W}}\def\binomc#1#2{\left(\!\begin{array}{c}#1\\#2\end{array}\!\right)}\def\rp{\mathscr{R}^{+}}\def\Am{\mathscr{A}}\def\vp{v_p}\def\vC{v_{\mathscr{C}}}\def\OL{\mathscr{O}_L}\def\one{\mathbf{1}}"#
 
 #doc (Manual) "Measures and the Iwasawa algebra" =>
 
@@ -29,20 +29,25 @@ denotes its ring of integers.
 We first fix the functional-analytic language. The reader comfortable with
 $`p`-adic Banach spaces and orthonormal bases may skip to the next section.
 
-:::definition "meas-valuation"
+:::definition "meas-valuation" (lean := "ValuativeRel, IsUltrametricDist")
 Let $`B` be an $`L`-vector space. A *valuation* on $`B` is a function
 $`v : B \to \R \cup \set{+\infty}` such that (i) $`v(x) = +\infty` iff $`x = 0`;
 (ii) $`v(x+y) \geq \min(v(x), v(y))` for all $`x,y \in B`; and (iii)
 $`v(\lambda x) = \vp(\lambda) + v(x)` for all $`\lambda \in L`, $`x \in B`. Such a
-valuation induces a norm, hence a topology, on $`B`.
+valuation induces a norm, hence a topology, on $`B`. (In mathlib, valuations on
+rings and fields are abstracted by `ValuativeRel`; the vector-space notion above
+corresponds, via $`v = -\log\norm{\cdot}`, to ultrametric norms, i.e.
+`IsUltrametricDist`, which is the language the formalisation uses throughout.)
 :::
 
-:::definition "meas-banach"
+:::definition "meas-banach" (lean := "NormedSpace, CompleteSpace")
 An *$`L`-Banach space* is a complete topological $`L`-vector space $`B` whose
 topology is induced from a valuation $`v` (in the sense of {bpref "meas-valuation"}[]).
+(Mathlib expresses this as a complete normed space, `NormedSpace` +
+`CompleteSpace`, with the ultrametric inequality supplied per-space.)
 :::
 
-:::definition "meas-orthonormal"
+:::definition "meas-orthonormal" (lean := "ZeroAtInftyContinuousMap")
 Let $`I` be a set and $`\ell^0_\infty(I, L)` the $`L`-Banach space of families
 $`(a_i)_{i \in I}` in $`L` tending to $`0` (for every $`\epsilon > 0`,
 $`\abs{a_i}_L < \epsilon` for all but finitely many $`i`), with valuation
@@ -50,12 +55,16 @@ $`v((a_i)_i) = \inf_{i} \vp(a_i)`. An *orthonormal basis* of an $`L`-Banach spac
 $`B` is a family $`(e_i)_{i \in I}` for which the map
 $$`\ell^0_\infty(I, L) \longrightarrow B, \qquad (a_i)_i \longmapsto \sum_{i} a_i e_i`
 is an isometric isomorphism. (If $`B` has valuation $`v_B` with
-$`v_B(B) = \vp(L)`, such a basis always exists.)
+$`v_B(B) = \vp(L)`, such a basis always exists. Mathlib has the space
+$`\ell^0_\infty(I,L)` as `ZeroAtInftyContinuousMap` — written $`C_0(I, L)` — and
+orthonormal bases appear as concrete isometric equivalences onto it, such as
+`PadicInt.mahlerEquiv` below.)
 :::
 
-:::definition "meas-dual-topology"
+:::definition "meas-dual-topology" (lean := "NormedSpace.Dual, WeakDual")
 Let $`B` be an $`L`-Banach space and $`B^* = \mathrm{Hom}_{\mathrm{cts}}(B, L)` its
-continuous dual. The *strong topology* is induced by the dual valuation
+continuous dual. (Mathlib: `NormedSpace.Dual` carries the strong topology,
+`WeakDual` the weak one.) The *strong topology* is induced by the dual valuation
 $`v^*(\mu) = \inf_{x \in B}\big(\vp(\mu(x)) - v(x)\big)`; it is the topology of
 uniform convergence. The *weak topology* is induced by the semivaluations
 $`v_x(\mu) = \vp(\mu(x))` for $`x \in B`; it is the topology of pointwise
@@ -68,7 +77,7 @@ topology, and $`B` is reflexive precisely when $`B^*` carries the weak topology.
 We now fix the setting. Let $`G` be a profinite abelian group; the cases
 $`G = \Zp` and $`G = \Zpx` are of most interest.
 
-:::definition "meas-cts-functions"
+:::definition "meas-cts-functions" (lean := "ContinuousMap")
 Let $`\cC(G, L)` be the $`L`-vector space of continuous functions $`\phi : G \to L`,
 equipped with the valuation $`\vC(\phi) = \inf_{x \in G} \vp(\phi(x))`. As $`G` is
 compact this is well-defined, induces the sup norm, and makes $`\cC(G, L)` an

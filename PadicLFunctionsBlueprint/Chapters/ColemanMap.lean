@@ -3,12 +3,12 @@ import VersoManual
 import VersoBlueprint
 import PadicLFunctions
 import PadicLFunctionsBlueprint.Refs
+import PadicLFunctionsBlueprint.TexPrelude
 
 open Verso.Genre
 open Verso.Genre.Manual
 open Informal
 
-tex_prelude r#"\def\Z{\mathbb{Z}}\def\Q{\mathbb{Q}}\def\R{\mathbb{R}}\def\C{\mathbb{C}}\def\N{\mathbb{N}}\def\F{\mathbb{F}}\def\Zp{\mathbb{Z}_p}\def\Qp{\mathbb{Q}_p}\def\Cp{\mathbb{C}_p}\def\Fp{\mathbb{F}_p}\def\Zpx{\mathbb{Z}_p^{\times}}\def\Qpx{\mathbb{Q}_p^{\times}}\def\Qbar{\overline{\mathbb{Q}}}\def\Qpbar{\overline{\mathbb{Q}_p}}\def\cO{\mathcal{O}}\def\cC{\mathcal{C}}\def\cH{\mathcal{H}}\def\cG{\mathcal{G}}\def\cN{\mathcal{N}}\def\cM{\mathcal{M}}\def\cD{\mathcal{D}}\def\cA{\mathcal{A}}\def\sX{\mathscr{X}}\def\sY{\mathscr{Y}}\def\sM{\mathscr{M}}\def\sL{\mathscr{L}}\def\sU{\mathscr{U}}\def\sW{\mathscr{W}}\def\sE{\mathscr{E}}\def\sV{\mathscr{V}}\def\sG{\mathscr{G}}\def\Gal{\mathrm{Gal}}\def\Frob{\mathrm{Frob}}\def\Lam{\Lambda}\def\Teich{\omega}\def\ord{\mathrm{ord}}\def\val{\mathrm{val}}\def\res{\operatorname{res}}\def\Res{\operatorname{Res}}\def\Tr{\mathrm{Tr}}\def\Nm{\mathrm{N}}\def\Mahler{\mathfrak{M}}\def\Mellin{\mathrm{Mel}}\def\Exp{\mathrm{Exp}}\def\Col{\mathrm{Col}}\def\Log{\mathrm{Log}}\def\charid{\mathrm{char}}\def\cores{\mathrm{cores}}\def\loc{\mathrm{loc}}\def\Iw{\mathrm{Iw}}\def\GG{\mathcal{G}}\def\abs#1{\left\lvert#1\right\rvert}\def\norm#1{\left\lVert#1\right\rVert}\def\ang#1{\left\langle#1\right\rangle}\def\set#1{\left\{#1\right\}}\def\floor#1{\left\lfloor#1\right\rfloor}"#
 
 #doc (Manual) "The Coleman map" =>
 
@@ -39,9 +39,9 @@ Sending a primitive $`p^n`th root of unity to a primitive $`p^n`th root of unity
 gives an isomorphism $`\chi_n : \Gal(F_n/\Q) \xrightarrow{\sim} (\Z/p^n\Z)^{\times}`,
 characterised by $`\sigma(\xi) = \xi^{\chi_n(\sigma)}` for any
 $`\xi \in \mu_{p^n}`. Taking the inverse limit yields the *cyclotomic character*
-$$`\chi := \varprojlim_n \chi_n : \GG := \Gal(F_\infty/\Q) \xrightarrow{\sim} \Zpx,`
+$$`\chi := \varprojlim_n \chi_n : \GCal := \Gal(F_\infty/\Q) \xrightarrow{\sim} \Zpx,`
 an isomorphism of profinite groups, where $`F_\infty := \Q(\mu_{p^\infty})`. It
-induces $`\GG^+ := \Gal(F_\infty^+/\Q) \cong \Zpx/\{\pm 1\}`.
+induces $`\GCal^+ := \Gal(F_\infty^+/\Q) \cong \Zpx/\{\pm 1\}`.
 :::
 
 :::definition "col-units-tower"
@@ -54,8 +54,8 @@ the inverse limit taken with respect to the norm maps
 $`N_{n,n-1} : K_n \to K_{n-1}`. Together with its norm-1 submodule
 $`\sU_{\infty,1} := \varprojlim_n \sU_{n,1}` (where
 $`\sU_{n,1} = \{u \in \sU_n : u \equiv 1 \pmod{\mathfrak p_n}\}`) it is a compact
-$`\Zp`-module carrying a continuous action of $`\GG`, hence of the Iwasawa algebra
-$`\Lam(\GG)`. This {uses "col-cyclotomic-character"}[] $`\GG`-action is the main
+$`\Zp`-module carrying a continuous action of $`\GCal`, hence of the Iwasawa algebra
+$`\Lam(\GCal)`. This {uses "col-cyclotomic-character"}[] $`\GCal`-action is the main
 reason for passing to infinite level.
 :::
 

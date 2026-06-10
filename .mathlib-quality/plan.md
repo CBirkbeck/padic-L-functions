@@ -144,3 +144,51 @@ Basic ──→ MahlerTransform ──→ Convolution ──→ Toolbox ──�
   this deferral intact).
 - §2 Mellin/L(f_a,s) analytic continuation → §2 chapter pass
   (`kl-values-of-zeta` wiring blocked on it).
+
+## §5 addendum (2026-06-10) — Interpolation at Dirichlet characters (TeX 1610–1979)
+
+### Mathlib survey B + §5-specific (all grep-verified at file:line in the pinned mathlib)
+
+| Concept | Mathlib status | Our action |
+|---------|---------------|------------|
+| `DirichletCharacter R N`, `conductor`, `IsPrimitive`, `changeLevel`, `primitiveCharacter`, `Even/Odd`, `FactorsThrough` | `NumberTheory/DirichletCharacter/Basic.lean` (221–301, 418–427) | USE |
+| Gauss sum `gaussSum χ ψ` | `NumberTheory/GaussSum.lean:72` | USE |
+| Rem 5.3(ii) `G(χ) = χ(a)Σχ(c)ε^{ac}` | `gaussSum_mulShift` (GaussSum.lean:76), **`gaussSum_mulShift_of_isPrimitive`** (DirichletCharacter/GaussSum.lean:57 — all `a`, incl. non-units) | USE |
+| Rem 5.3(i) `G(χ)G(χ⁻¹) = χ(−1)p^n` | only field-level `gaussSum_mul_gaussSum_eq_card` (GaussSum.lean:145; `ZMod p^n` is not a field for n ≥ 2) | **DEFINE+PROVE at general level N for primitive χ** (PR candidate; route: Ramanujan-sum/unit-sum split, ingredients `AddChar.sum_mulShift`-style all present) |
+| Dirichlet L-function (analytic continuation) | `DirichletCharacter.LFunction` = `ZMod.LFunction` = Hurwitz combination (DirichletContinuation.lean:61, ZMod.lean:83) | USE (complex bridge only) |
+| Hurwitz zeta at −k via Bernoulli polynomials | `hurwitzZeta_neg_nat` (HurwitzZetaValues.lean:189) | USE → derive `L(χ,−k) = −B_{k+1,χ}/(k+1)` complex-side (quarantined bridge file, ZetaValuesComplex-pattern) |
+| Generalised Bernoulli numbers `B_{k,χ}` | **MISSING** | DEFINE in the coefficient field via `Polynomial.bernoulli` (BernoulliPolynomials.lean), with API |
+| Mahler basis for general coefficients | `PadicInt.mahlerEquiv : C(ℤ_[p], E) ≃ₗᵢ[ℤ_[p]] C₀(ℕ, E)`, E any `[NormedAddCommGroup] [Module ℤ_[p]] [IsBoundedSMul] [IsUltrametricDist] [CompleteSpace]` (MahlerBasis.lean:356) | USE — this is the O_L-widening input; §3 dual-side arguments re-run verbatim |
+| Continuous additive characters of ℤ_p / `(1+r)^x` | **`PadicInt.addChar_of_value_at_one`, `continuousAddCharEquiv`** for complete ultrametric normed ℤ_[p]-algebras (Padics/AddChar.lean:59,102) | USE — gives ξ-characters `x ↦ ξ^x` AND `⟨x⟩^s` (§5.3) for free |
+| Topological power-series substitution `F((1+T)ξ−1)` | `PowerSeries.eval₂/aeval`, `HasEval = IsTopologicallyNilpotent` (PowerSeries/Evaluation.lean), needs `IsLinearTopology S S` + complete | USE for ξ-formulas if/where the paper route is taken (instance plumbing on `O_L⟦T⟧` w/ `WithPiTopology` to verify); measure-side ξ-free replans otherwise |
+| ℂ_p, Q̄_p | `PadicComplex`, `PadicAlgCl` + `𝓞_ℂ_[p]` (Padics/Complex.lean) | available as ambient for root-of-unity systems |
+| p-adic exp/log (Lem 5.14) | **MISSING** (no p-adic exp/log in mathlib) | REPLAN: `⟨x⟩^s` via `addChar_of_value_at_one` (binomial/character route, no exp); Lem 5.14's exp statement stays a prose node (or own API-gap cluster if user wants it literal) |
+| Teichmüller ω | `Perfection.teichmuller` (RingTheory/Teichmuller.lean, perfection-based — extraction friction for ℤ_p) | DEFINE directly (`ω(x) = lim x^{p^n}`, Cauchy by Fermat+binomial; small API: value-roots-of-unity, ≡ x mod p, multiplicative, section of reduction) |
+| Valuations | `ValuativeRel` (RingTheory/Valuation/ValuativeRel/Basic.lean:74) + Padics instances | blueprint-link only (§3.1 prelims) |
+| measure-side Mahler/Amice | still **MISSING** in mathlib (no overlap with §3) | project stays novel |
+
+### §5 design decisions (Generality)
+1. **Coefficient widening (rule-6 break, planned cluster):** parametrise
+   `PadicLFunctions/Measure/*` by a coefficient ring `R` with exactly the
+   `mahlerEquiv`/`Padics.AddChar` typeclass set — `[NormedCommRing R]
+   [Algebra ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]` (+ `NormMulClass R`,
+   `IsDomain R` per-lemma where needed); ℤ_p-specific proofs (T001-style
+   norm-attainment) re-attacked at decomposition. §4 files stay instantiated at
+   `R := ℤ_[p]` — no churn. The paper's "fixed finite L/ℚ_p, coefficients O_L"
+   instantiates R := 𝓞_L; scalar-extension Λ_{ℤ_p}(X) → Λ_R(X) is the power-series
+   coefficient-inclusion under Mahler.
+2. **χ valued in the coefficients:** `χ : DirichletCharacter L (p^n)` with L the
+   p-adic coefficient field (NOT ℂ) — B_{k,χ} ∈ L directly; complex statements
+   quarantined in a bridge file via an L ↪ ℂ embedding (ZetaValuesComplex pattern).
+3. **Twist μ_χ defined measure-side** (∫f·μ_χ = ∫χ̃f·μ, χ̃ the locally constant
+   zero-extension through `toZModPow`) — no roots of unity in the definition; the
+   ξ-expression for 𝓐_{μ_χ} (Lem 5.4 / EqRestrictionFormula) is then a theorem.
+4. **ξ-machinery vs ξ-free**: paper route preferred (user directive); where the
+   paper's computation passes through objects our Λ lacks (Laurent 1/T) or needs
+   μ_{p^n} ⊂ L hypotheses a statement doesn't, the T034 projection-formula pattern
+   (`psi_phi_mul` + Dirac telescopes, e.g. ψ(F_η) = η(p)F_η via the geometric
+   factorisation ((1+T)^pε^{pc}−1) = ((1+T)ε^c−1)·Σ_{j<p}((1+T)ε^c)^j) is the
+   recorded replan. Decided leaf-by-leaf in decomposition.md with quotes.
+5. **§5.3**: ω by direct limit construction; `⟨x⟩^s` via `addChar_of_value_at_one`;
+   ζ_{p,i}/L_p(θ,s) as functions on ℤ_p (analyticity deferred with §3.7 to §6–7);
+   p odd structural throughout (μ_{p−1}×(1+pℤ_p) decomposition).
