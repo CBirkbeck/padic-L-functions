@@ -1764,7 +1764,19 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~50 LOC total (5 lemmas).
 
 ### [T503] genBernoulli: trivial character + parity + cyclotomic product
-- **Status**: open | **File**: Interpolation/GenBernoulli.lean | **Depends on**: none
+- **Status**: done (2026-06-10T22:55Z)
+- **Progress**: all three proven. genBernoulli_one (B_{k,1} = bernoulli' k via
+  bernoulli_eval_one). genBernoulli_eq_zero (parity): level-one branch via
+  bernoulli'_odd_eq_zero; main branch via the ZMod-indexed sum (image-bijection
+  a ↦ a+1 with boundary terms killed by χ(0)=0), Equiv.neg reflection with
+  ZMod.val_neg_of_ne_zero, and the mapped reflection identity
+  bernoulli_eval_one_sub through algebraMap ℚ L; factor 2 ≠ 0 (CharZero).
+  prod_primitiveRoot_mul_sub_one: STATEMENT CORRECTED at proof time — the
+  skeleton form was FALSE for even M ((Y−1)(−Y−1) = 1−Y²); hypothesis Odd M
+  added (faithful: used only at M = p^n, p odd); proof via Kummer
+  X_pow_sub_C_eq_prod evaluated at 1 + Finset.prod_neg + Odd.neg_one_pow.
+  Recorded as a decomposition-attack miss (L5.1.10c didn't try even M).
+  VERIFICATION: build green, axioms standard. | **File**: Interpolation/GenBernoulli.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `genBernoulli_one`, `genBernoulli_eq_zero`,
   `prod_primitiveRoot_mul_sub_one` (L5.1.9/L5.1.11/L5.1.10c).

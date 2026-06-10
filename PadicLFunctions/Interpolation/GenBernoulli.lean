@@ -3,6 +3,7 @@ Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
+import Mathlib.FieldTheory.KummerExtension
 import Mathlib.NumberTheory.BernoulliPolynomials
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.NumberTheory.DirichletCharacter.Basic
@@ -50,7 +51,10 @@ noncomputable def LvalNeg (χ : DirichletCharacter L N) (k : ℕ) : L :=
 `bernoulli'` numbers (`B_k(1) = bernoulli' k`), so `LvalNeg` matches §4's
 `zetaNeg`-route values: `ζ(−k) = −B'_{k+1}/(k+1)`. -/
 theorem genBernoulli_one (k : ℕ) :
-    (1 : DirichletCharacter L 1).genBernoulli k = (bernoulli' k : ℚ) • (1 : L) := by sorry
+    (1 : DirichletCharacter L 1).genBernoulli k = (bernoulli' k : ℚ) • (1 : L) := by
+  simp only [DirichletCharacter.genBernoulli, Finset.range_one, Finset.sum_singleton,
+    Nat.cast_one, one_zpow, one_mul, Nat.cast_zero, zero_add, div_one, map_one]
+  rw [Polynomial.eval_one_map, Polynomial.bernoulli_eval_one, Algebra.smul_def, mul_one]
 
 /-- L5.1.11 (parity vanishing): `B_{k,χ} = 0` when `χ(−1) ≠ (−1)^k` —
 except in the degenerate trivial-character case `k = 1`.
@@ -60,7 +64,134 @@ if `χ(−1)(−1)^k = 1`" (shifted by one index here). Route: the involution
 `a ↦ N − a` on the defining sum plus `B_k(1−x) = (−1)^k B_k(x)`. -/
 theorem genBernoulli_eq_zero (χ : DirichletCharacter L N) {k : ℕ}
     (h : χ (-1) ≠ (-1 : L) ^ k) (hk : χ ≠ 1 ∨ k ≠ 1) :
-    χ.genBernoulli k = 0 := by sorry
+    χ.genBernoulli k = 0 := by
+  set f : ℚ →+* L := algebraMap ℚ L with hf
+  set B : Polynomial L := (Polynomial.bernoulli k).map f with hB
+  -- the reflection identity, mapped through the algebra map
+  have hrefl : ∀ x : ℚ, B.eval (f (1 - x)) = (-1 : L) ^ k * B.eval (f x) := by
+    intro x
+    rw [hB, Polynomial.eval_map, Polynomial.eval₂_at_apply, Polynomial.eval_map,
+      Polynomial.eval₂_at_apply, Polynomial.bernoulli_eval_one_sub, map_mul, map_pow,
+      map_neg, map_one]
+  rcases eq_or_ne N 1 with rfl | hN
+  · -- level one: `χ = 1`, so `k` is odd and `≠ 1`, and `B'_k = 0`
+    have hχ1 : χ = 1 := DirichletCharacter.level_one χ
+    have hodd : Odd k := by
+      by_contra he
+      rw [Nat.not_odd_iff_even] at he
+      refine h ?_
+      rw [hχ1, he.neg_one_pow]
+      exact MulChar.one_apply (isUnit_one.neg)
+    have hk1 : k ≠ 1 := by
+      rcases hk with hχ | hk1
+      · exact absurd hχ1 hχ
+      · exact hk1
+    rw [hχ1, genBernoulli_one, bernoulli'_odd_eq_zero hodd (by
+      rcases hodd with ⟨m, hm⟩
+      omega)]
+    simp
+  -- main case `N ≥ 2`
+  have hN2 : 2 ≤ N := by
+    have := NeZero.pos N
+    omega
+  haveI : Fact (1 < N) := ⟨by omega⟩
+  have hχ0 : χ (0 : ZMod N) = 0 := χ.map_nonunit not_isUnit_zero
+  have hNL : ((N : ℕ) : L) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  -- the `ZMod`-indexed sum
+  set T : L := ∑ b : ZMod N, χ b * B.eval (((b.val : ℕ) : L) / (N : L)) with hT
+  -- the defining sum equals `T` (shift `a ↦ a+1`, both boundary terms vanish)
+  have hsum_eq : ∑ a ∈ range N, χ ((a : ZMod N) + 1)
+        * B.eval (((a : L) + 1) / (N : L)) = T := by
+    rw [hT]
+    rw [show (Finset.univ : Finset (ZMod N))
+        = Finset.image (fun a : ℕ => ((a + 1 : ℕ) : ZMod N)) (range N) from by
+      refine (Finset.eq_univ_of_card _ ?_).symm
+      rw [Finset.card_image_of_injOn, Finset.card_range]
+      · simp [ZMod.card]
+      · intro a ha b hb hab
+        simp only [Finset.coe_range, Set.mem_Iio] at ha hb
+        have hmod := (ZMod.natCast_eq_natCast_iff' (a+1) (b+1) N).1 hab
+        rcases eq_or_ne (a+1) N with h1 | h1 <;> rcases eq_or_ne (b+1) N with h2 | h2
+        · omega
+        · rw [h1, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+        · rw [h2, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+        · rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hmod; omega]
+    rw [Finset.sum_image (by
+      intro a ha b hb hab
+      simp only [Finset.coe_range, Set.mem_Iio] at ha hb
+      have hmod := (ZMod.natCast_eq_natCast_iff' (a+1) (b+1) N).1 hab
+      rcases eq_or_ne (a+1) N with h1 | h1 <;> rcases eq_or_ne (b+1) N with h2 | h2
+      · omega
+      · rw [h1, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+      · rw [h2, Nat.mod_self, Nat.mod_eq_of_lt (by omega)] at hmod; omega
+      · rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hmod; omega)]
+    refine Finset.sum_congr rfl fun a ha => ?_
+    rw [Finset.mem_range] at ha
+    rcases eq_or_ne (a + 1) N with hend | hend
+    · -- boundary `a+1 = N`: both sides vanish through `χ(0) = 0`
+      have hcast : ((a : ZMod N) + 1) = 0 := by
+        have h0 : ((a + 1 : ℕ) : ZMod N) = 0 := by rw [hend, ZMod.natCast_self]
+        push_cast at h0
+        exact h0
+      have hcast' : ((a + 1 : ℕ) : ZMod N) = 0 := by push_cast; exact hcast
+      simp [hcast, hcast', hχ0]
+    · have hval : ((a + 1 : ℕ) : ZMod N).val = a + 1 :=
+        ZMod.val_natCast_of_lt (by omega)
+      rw [hval]
+      push_cast
+      ring_nf
+  -- reflection: `T = χ(−1)·(−1)^k · T` via the negation bijection on `ZMod N`
+  have hflip : T = (χ (-1) * (-1 : L) ^ k) * T := by
+    rw [hT, Finset.mul_sum]
+    rw [← Equiv.sum_comp (Equiv.neg (ZMod N))
+      (fun b => χ b * B.eval (((b.val : ℕ) : L) / (N : L)))]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rcases eq_or_ne b 0 with rfl | hb0
+    · simp only [Equiv.neg_apply, neg_zero, hχ0, zero_mul, mul_zero]
+    · have hneg : (Equiv.neg (ZMod N) b) = -b := rfl
+      rw [hneg]
+      have hχneg : χ (-b) = χ (-1) * χ b := by
+        rw [show (-b : ZMod N) = -1 * b from by ring, map_mul]
+      haveI : NeZero b := ⟨hb0⟩
+      have hvneg : ((-b).val : ℕ) = N - b.val := ZMod.val_neg_of_ne_zero b
+      have hble : b.val ≤ N := (ZMod.val_lt b).le
+      have hpt : (((-b).val : ℕ) : L) / (N : L) = f (1 - (b.val : ℚ) / (N : ℚ)) := by
+        rw [hvneg, map_sub, map_one, map_div₀, map_natCast, map_natCast,
+          Nat.cast_sub hble]
+        field_simp
+      have hpt2 : ((b.val : ℕ) : L) / (N : L) = f ((b.val : ℚ) / (N : ℚ)) := by
+        rw [map_div₀, map_natCast, map_natCast]
+      rw [hpt, hrefl, hχneg, hpt2]
+      ring
+  -- conclude: the factor `1 − χ(−1)(−1)^k = 2 ≠ 0`
+  have hu2 : χ (-1) * χ (-1) = 1 := by
+    rw [← map_mul]
+    simp
+  have hkey : χ (-1) * (-1 : L) ^ k = -1 := by
+    rcases Nat.even_or_odd k with he | ho
+    · rw [he.neg_one_pow] at h ⊢
+      rcases (mul_self_eq_one_iff.1 hu2) with h1 | h1
+      · exact absurd h1 (by simpa using h)
+      · rw [h1]; ring
+    · rw [ho.neg_one_pow] at h ⊢
+      rcases (mul_self_eq_one_iff.1 hu2) with h1 | h1
+      · rw [h1]; ring
+      · exact absurd h1 (by simpa using h)
+  rw [hkey] at hflip
+  have hT0 : T = 0 := by
+    have h2 : (2 : L) * T = 0 := by linear_combination hflip
+    have h2ne : (2 : L) ≠ 0 := two_ne_zero
+    exact (mul_eq_zero.1 h2).resolve_left h2ne
+  rw [DirichletCharacter.genBernoulli]
+  have hfinal : ∑ a ∈ range N, χ (a + 1 : ℕ)
+      * Polynomial.eval (((a : L) + 1) / (N : L)) ((Polynomial.bernoulli k).map (algebraMap ℚ L))
+      = T := by
+    rw [← hsum_eq]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [← hf, ← hB]
+    push_cast
+    ring_nf
+  rw [hfinal, hT0, mul_zero]
 
 section generatingFunction
 
@@ -78,11 +209,26 @@ theorem genBernoulliPowerSeries_mul (χ : DirichletCharacter L N) :
       = ∑ a ∈ range N, χ (a + 1 : ℕ) • (X * rescale ((a : L) + 1) (exp L)) := by sorry
 
 /-- L5.1.10c: the cyclotomic product `∏_{c<M} (ζ^c·Y − 1) = Y^M − 1` for `ζ` a
-primitive `M`-th root of unity (used to clear the denominators of `F_{χ,a}`
-at `Y = 1+X`; the `p`-power instance of W3's product argument). -/
+primitive `M`-th root of unity and **odd** `M` (used to clear the denominators
+of `F_{χ,a}` at `Y = 1+X`, at `M = p^n` with `p` odd). The skeleton's
+unconditional form was FALSE for even `M` (at `M = 2`, `ζ = −1`:
+`(Y−1)(−Y−1) = 1−Y²`) — statement corrected at proof time, recorded in T503. -/
 theorem prod_primitiveRoot_mul_sub_one {R : Type*} [CommRing R] [IsDomain R]
-    {ζ : R} {M : ℕ} (hζ : IsPrimitiveRoot ζ M) (Y : R) :
-    ∏ c ∈ range M, (ζ ^ c * Y - 1) = Y ^ M - 1 := by sorry
+    {ζ : R} {M : ℕ} (hM : Odd M) (hζ : IsPrimitiveRoot ζ M) (Y : R) :
+    ∏ c ∈ range M, (ζ ^ c * Y - 1) = Y ^ M - 1 := by
+  have hM0 : 0 < M := hM.pos
+  have hpoly := X_pow_sub_C_eq_prod hζ hM0 (rfl : Y ^ M = Y ^ M)
+  have heval := congrArg (Polynomial.eval 1) hpoly
+  simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X,
+    Polynomial.eval_C, Polynomial.eval_prod, one_pow] at heval
+  calc ∏ c ∈ range M, (ζ ^ c * Y - 1)
+      = ∏ c ∈ range M, -(1 - ζ ^ c * Y) := Finset.prod_congr rfl fun c _ => by ring
+    _ = (-1) ^ M * ∏ c ∈ range M, (1 - ζ ^ c * Y) := by
+        rw [Finset.prod_neg]
+        simp [Finset.card_range]
+    _ = Y ^ M - 1 := by
+        rw [← heval, hM.neg_one_pow]
+        ring
 
 end generatingFunction
 
