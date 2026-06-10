@@ -117,6 +117,39 @@ lemma charTwist_muA_exp_identity {ζ : integerRing K} {N : ℕ}
     PowerSeries.exp_pow_eq_rescale_exp, PowerSeries.coe_substAlgHom hg] at hsub
   simpa only [map_pow] using hsub
 
+/-- T509 (v-a), the `K`-valued Gauss collapse: for `χK` primitive mod `p^n`
+and `ζ'` a primitive `p^n`-th root of unity in `K`,
+`Σ_{c<p^n} χK⁻¹(c)·ζ'^{cj} = χK(j)·G(χK⁻¹)` for every `j` (the non-unit `j`
+case carried by the primitive-character vanishing inside
+`gaussSum_mulShift_of_isPrimitive`). -/
+lemma sum_inv_char_zeta_pow {n : ℕ}
+    {χK : DirichletCharacter K (p ^ n)} (hχK : χK.IsPrimitive)
+    {ζ' : K} (hζ' : IsPrimitiveRoot ζ' (p ^ n)) (j : ℕ) :
+    ∑ c ∈ Finset.range (p ^ n), χK⁻¹ ((c : ℕ) : ZMod (p ^ n)) * ζ' ^ (c * j)
+      = χK ((j : ℕ) : ZMod (p ^ n))
+        * gaussSum χK⁻¹ (AddChar.zmodChar (p ^ n) hζ'.pow_eq_one) := by
+  have hχinv : χK⁻¹.IsPrimitive :=
+    (DirichletCharacter.conductor_inv χK).trans hχK
+  have hsum : ∑ c ∈ Finset.range (p ^ n),
+        χK⁻¹ ((c : ℕ) : ZMod (p ^ n)) * ζ' ^ (c * j)
+      = gaussSum χK⁻¹ ((AddChar.zmodChar (p ^ n) hζ'.pow_eq_one).mulShift
+          ((j : ℕ) : ZMod (p ^ n))) := by
+    rw [gaussSum]
+    refine Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod (p ^ n))) (fun a => a.val)
+      ?_ ?_ ?_ ?_ ?_
+    · intro c _
+      exact Finset.mem_univ _
+    · intro a _
+      exact Finset.mem_range.mpr (ZMod.val_lt a)
+    · intro c hc
+      exact ZMod.val_natCast_of_lt (Finset.mem_range.mp hc)
+    · intro a _
+      exact ZMod.natCast_zmod_val a
+    · intro c _
+      rw [AddChar.mulShift_apply, ← Nat.cast_mul,
+        AddChar.zmodChar_apply' hζ'.pow_eq_one, mul_comm j c]
+  rw [hsum, gaussSum_mulShift_of_isPrimitive _ hχinv, inv_inv]
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,
