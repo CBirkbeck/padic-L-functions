@@ -117,6 +117,48 @@ lemma charTwist_muA_exp_identity {ζ : integerRing K} {N : ℕ}
     PowerSeries.exp_pow_eq_rescale_exp, PowerSeries.coe_substAlgHom hg] at hsub
   simpa only [map_pow] using hsub
 
+/-- T509 (v-c): powers of rescaled exponentials: `(E_b)^l = E_{l·b}`. -/
+lemma rescale_exp_pow (b : K) (l : ℕ) :
+    (PowerSeries.rescale b (PowerSeries.exp K)) ^ l
+      = PowerSeries.rescale ((l : K) * b) (PowerSeries.exp K) := by
+  induction l with
+  | zero =>
+    simp [PowerSeries.rescale_zero, PowerSeries.constantCoeff_exp]
+  | succ l ih =>
+    rw [pow_succ, ih, PowerSeries.exp_mul_exp_eq_exp_add,
+      show ((l : K) * b + b) = ((l + 1 : ℕ) : K) * b by push_cast; ring]
+
+/-- T509 (v-b): the division-algorithm reindex
+`Σ_{i<a}Σ_{j<N} f(i + a·j) = Σ_{m<a·N} f m`. -/
+lemma sum_range_mul_eq_sum_range {M : Type*} [AddCommMonoid M] (f : ℕ → M)
+    {a : ℕ} (N : ℕ) (ha : 0 < a) :
+    ∑ i ∈ Finset.range a, ∑ j ∈ Finset.range N, f (i + a * j)
+      = ∑ m ∈ Finset.range (a * N), f m := by
+  rw [← Finset.sum_product (s := Finset.range a) (t := Finset.range N)
+    (f := fun q => f (q.1 + a * q.2))]
+  refine Finset.sum_nbij' (fun q => q.1 + a * q.2) (fun m => (m % a, m / a))
+    ?_ ?_ ?_ ?_ ?_
+  · rintro ⟨i, j⟩ hq
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hq
+    refine Finset.mem_range.mpr ?_
+    calc i + a * j < a + a * j := Nat.add_lt_add_right hq.1 _
+      _ = a * (j + 1) := by ring
+      _ ≤ a * N := Nat.mul_le_mul_left a hq.2
+  · intro m hm
+    rw [Finset.mem_range] at hm
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range]
+    exact ⟨Nat.mod_lt m ha, Nat.div_lt_of_lt_mul hm⟩
+  · rintro ⟨i, j⟩ hq
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hq
+    refine Prod.ext ?_ ?_
+    · simp [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hq.1]
+    · simp [Nat.add_mul_div_left _ _ ha, Nat.div_eq_of_lt hq.1]
+  · intro m _
+    exact Nat.mod_add_div m a
+  · intro q _
+    rfl
+
+omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] in
 /-- T509 (v-a), the `K`-valued Gauss collapse: for `χK` primitive mod `p^n`
 and `ζ'` a primitive `p^n`-th root of unity in `K`,
 `Σ_{c<p^n} χK⁻¹(c)·ζ'^{cj} = χK(j)·G(χK⁻¹)` for every `j` (the non-unit `j`
