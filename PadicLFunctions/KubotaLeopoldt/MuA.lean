@@ -140,6 +140,14 @@ lemma dirac_natCast_sub_one_mul_muA {a : ℕ} (hpa : ¬ p ∣ a) :
 instance instIsDomain : IsDomain (PadicMeasure p ℤ_[p]) :=
   MulEquiv.isDomain (PowerSeries ℤ_[p]) (mahlerRingEquiv p).toMulEquiv
 
+instance : SMulCommClass ℤ_[p] (PadicMeasure p ℤ_[p]) (PadicMeasure p ℤ_[p]) where
+  smul_comm c μ ν := by
+    show c • (μ * ν) = μ * (c • ν)
+    apply mahlerTransform_injective p
+    rw [mahlerTransform_smul, mahlerTransform_mul, mahlerTransform_mul,
+      mahlerTransform_smul]
+    exact (mul_smul_comm c _ _).symm
+
 lemma dirac_natCast_sub_one_ne_zero {a : ℕ} (ha : a ≠ 0) :
     (dirac p ((a : ℕ) : ℤ_[p]) - 1 : PadicMeasure p ℤ_[p]) ≠ 0 := by
   intro h
@@ -353,32 +361,187 @@ RJW Lem. 4.7 (replan note: replaces the source's roots-of-unity partial-fraction
 computation, TeX lines 1517–1524). -/
 theorem psi_phi_mul (ν μ : PadicMeasure p ℤ_[p]) :
     psi p (phi p ν * μ) = ν * psi p μ := by
-  sorry
+  refine LinearMap.ext fun f => ?_
+  show (phi p ν * μ) ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+      f.comp (shiftDiv p)) = (ν * psi p μ) f
+  rw [mul_apply, mul_apply]
+  show ν ((convInner p μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+      f.comp (shiftDiv p))).comp (mulCM p (p : ℤ_[p]))) = ν (convInner p (psi p μ) f)
+  congr 1
+  ext x
+  show μ (((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+        f.comp (shiftDiv p)).comp ⟨fun y => (p : ℤ_[p]) * x + y, by fun_prop⟩)
+      = μ ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) *
+        (f.comp ⟨fun y => x + y, by fun_prop⟩).comp (shiftDiv p))
+  congr 1
+  ext y
+  simp only [ContinuousMap.comp_apply, ContinuousMap.mul_apply, ContinuousMap.coe_mk,
+    LocallyConstant.coe_continuousMap, LocallyConstant.coe_charFn]
+  by_cases hy : ‖y‖ < 1
+  · have hmem : (p : ℤ_[p]) * x + y ∈ {z : ℤ_[p] | ‖z‖ < 1} :=
+      lt_of_le_of_lt (PadicInt.nonarchimedean _ _) (max_lt (mem_pZp_of_mul p) hy)
+    rw [Set.indicator_of_mem hmem, Set.indicator_of_mem (by exact hy)]
+    simp only [Pi.one_apply, one_mul]
+    rw [show (p : ℤ_[p]) * x + y = (p : ℤ_[p]) * (x + shiftDiv p y) by
+        rw [mul_add, mul_shiftDiv_of_mem p hy],
+      shiftDiv_mul]
+  · have hnmem : (p : ℤ_[p]) * x + y ∉ {z : ℤ_[p] | ‖z‖ < 1} := by
+      intro hmem
+      apply hy
+      calc ‖y‖ = ‖((p : ℤ_[p]) * x + y) + -((p : ℤ_[p]) * x)‖ := by ring_nf
+        _ ≤ max ‖(p : ℤ_[p]) * x + y‖ ‖-((p : ℤ_[p]) * x)‖ := PadicInt.nonarchimedean _ _
+        _ < 1 := max_lt hmem (by rw [norm_neg]; exact mem_pZp_of_mul p)
+    rw [Set.indicator_of_notMem hnmem, Set.indicator_of_notMem (by exact hy), zero_mul,
+      zero_mul]
 
 @[simp]
-lemma phi_dirac (x : ℤ_[p]) : phi p (dirac p x) = dirac p ((p : ℤ_[p]) * x) := by
-  sorry
+lemma phi_dirac (x : ℤ_[p]) : phi p (dirac p x) = dirac p ((p : ℤ_[p]) * x) :=
+  LinearMap.ext fun _ => rfl
 
 @[simp]
 lemma psi_dirac_mul (x : ℤ_[p]) : psi p (dirac p ((p : ℤ_[p]) * x)) = dirac p x := by
-  sorry
+  rw [← phi_dirac, psi_phi]
 
 lemma psi_dirac_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : psi p (dirac p x) = 0 := by
-  sorry
+  refine LinearMap.ext fun f => ?_
+  show (LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) x
+      * (f.comp (shiftDiv p)) x = 0
+  have hnmem : x ∉ {z : ℤ_[p] | ‖z‖ < 1} := by
+    simp [PadicInt.isUnit_iff.1 hx]
+  rw [show ((LocallyConstant.charFn ℤ_[p] (isClopen_pZp p) : C(ℤ_[p], ℤ_[p])) x : ℤ_[p])
+      = Set.indicator {z : ℤ_[p] | ‖z‖ < 1} 1 x from rfl,
+    Set.indicator_of_notMem hnmem, zero_mul]
 
-lemma psi_add (μ ν : PadicMeasure p ℤ_[p]) : psi p (μ + ν) = psi p μ + psi p ν := by
-  sorry
+lemma psi_zero : psi p (0 : PadicMeasure p ℤ_[p]) = 0 :=
+  LinearMap.ext fun _ => rfl
 
-lemma psi_smul (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]) : psi p (c • μ) = c • psi p μ := by
-  sorry
+lemma psi_add (μ ν : PadicMeasure p ℤ_[p]) : psi p (μ + ν) = psi p μ + psi p ν :=
+  LinearMap.ext fun _ => rfl
+
+lemma psi_smul (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]) : psi p (c • μ) = c • psi p μ :=
+  LinearMap.ext fun _ => rfl
 
 lemma psi_sum {ι : Type*} (s : Finset ι) (f : ι → PadicMeasure p ℤ_[p]) :
     psi p (∑ i ∈ s, f i) = ∑ i ∈ s, psi p (f i) := by
-  sorry
+  classical
+  induction s using Finset.induction with
+  | empty => simpa using psi_zero p
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, psi_add, ih]
 
-/-- **RJW Lem. 4.7 (`LemmaPsiInvariant`)**: `ψ(μ_a) = μ_a`. -/
+/-- `δ_0 = 1` in `Λ(ℤ_p)`. -/
+lemma dirac_zero_eq_one : dirac p (0 : ℤ_[p]) = 1 := by
+  apply mahlerTransform_injective p
+  rw [mahlerTransform_dirac, mahlerTransform_one, binomialSeries_zero]
+
+/-- `ψ(δ_n) = δ_{n/p}` if `p ∣ n`, and `0` otherwise (`n : ℕ`). -/
+lemma psi_dirac_natCast (n : ℕ) :
+    psi p (dirac p ((n : ℕ) : ℤ_[p]))
+      = if p ∣ n then dirac p ((n / p : ℕ) : ℤ_[p]) else 0 := by
+  by_cases hn : p ∣ n
+  · obtain ⟨m, rfl⟩ := hn
+    rw [if_pos ⟨m, rfl⟩,
+      show (((p * m : ℕ)) : ℤ_[p]) = (p : ℤ_[p]) * (m : ℤ_[p]) by push_cast; ring,
+      psi_dirac_mul, Nat.mul_div_cancel_left m hp.out.pos]
+  · rw [if_neg hn]
+    exact psi_dirac_of_isUnit p (PadicInt.isUnit_natCast_of_not_dvd hn)
+
+/-- **RJW Lem. 4.7 (`LemmaPsiInvariant`)**: `ψ(μ_a) = μ_a`.
+
+The source's proof runs through the roots-of-unity formula for `φ∘ψ` (TeX
+1517–1524); here the same content is the elementary computation
+`([a]−1)·ψμ_a = ψ(([ap]−1)·μ_a) = ψ((Σ_{j<p}[aj])·([a]−1)·μ_a) = ([a]−1)·μ_a`,
+using the projection formula and the finite Dirac identities. -/
 theorem psi_muA {a : ℕ} (hpa : ¬ p ∣ a) : psi p (muA p a) = muA p a := by
-  sorry
+  classical
+  have haN : a ≠ 0 := fun h => hpa (h ▸ dvd_zero p)
+  -- φ([a] − 1) = [ap] − 1
+  have hphi_va : phi p (dirac p ((a : ℕ) : ℤ_[p]) - 1)
+      = dirac p ((a * p : ℕ) : ℤ_[p]) - 1 := by
+    rw [map_sub, phi_dirac, ← dirac_zero_eq_one, phi_dirac, mul_zero]
+    congr 2
+    push_cast
+    ring
+  -- telescope: (Σ_{j<p} [aj])·([a] − 1) = [ap] − 1
+  have htel : (∑ j ∈ Finset.range p, dirac p ((a * j : ℕ) : ℤ_[p]))
+      * (dirac p ((a : ℕ) : ℤ_[p]) - 1)
+      = dirac p ((a * p : ℕ) : ℤ_[p]) - 1 := by
+    rw [mul_sub, mul_one, Finset.sum_mul,
+      Finset.sum_congr rfl (fun j (_ : j ∈ Finset.range p) =>
+        show dirac p ((a * j : ℕ) : ℤ_[p]) * dirac p ((a : ℕ) : ℤ_[p])
+            = dirac p ((a * (j + 1) : ℕ) : ℤ_[p]) by
+          rw [dirac_mul_dirac]; congr 1; push_cast; ring),
+      ← Finset.sum_sub_distrib, Finset.sum_range_sub
+        (fun j => dirac p ((a * j : ℕ) : ℤ_[p]))]
+    simp [dirac_zero_eq_one]
+  -- (Σ_{j<p}[aj])·(Σ_{i<a}[i]) = Σ_{n<ap}[n]
+  have htr : ∀ b : ℕ, mahlerTransform p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p]))
+      = geomSum p b := fun b => by
+    rw [show mahlerTransform p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p]))
+        = mahlerTransformₗ p (∑ i ∈ Finset.range b, dirac p ((i : ℕ) : ℤ_[p])) from rfl,
+      map_sum, geomSum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [show mahlerTransformₗ p (dirac p ((i : ℕ) : ℤ_[p]))
+        = mahlerTransform p (dirac p ((i : ℕ) : ℤ_[p])) from rfl,
+      mahlerTransform_dirac, binomialSeries_nat]
+  have hgeom : (∑ j ∈ Finset.range p, dirac p ((a * j : ℕ) : ℤ_[p]))
+      * (∑ i ∈ Finset.range a, dirac p ((i : ℕ) : ℤ_[p]))
+      = ∑ n ∈ Finset.range (a * p), dirac p ((n : ℕ) : ℤ_[p]) := by
+    have htrj : mahlerTransform p (∑ j ∈ Finset.range p, dirac p ((a * j : ℕ) : ℤ_[p]))
+        = ∑ j ∈ Finset.range p, ((1 + X : PowerSeries ℤ_[p]) ^ a) ^ j := by
+      rw [show mahlerTransform p (∑ j ∈ Finset.range p, dirac p ((a * j : ℕ) : ℤ_[p]))
+          = mahlerTransformₗ p (∑ j ∈ Finset.range p, dirac p ((a * j : ℕ) : ℤ_[p]))
+          from rfl, map_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      rw [show mahlerTransformₗ p (dirac p ((a * j : ℕ) : ℤ_[p]))
+          = mahlerTransform p (dirac p ((a * j : ℕ) : ℤ_[p])) from rfl,
+        mahlerTransform_dirac, binomialSeries_nat, ← pow_mul]
+    apply mahlerTransform_injective p
+    rw [mahlerTransform_mul, htr, htr, htrj]
+    refine mul_right_cancel₀ (X_ne_zero (R := ℤ_[p])) ?_
+    rw [mul_assoc, geomSum_mul_X, geom_sum_mul, geomSum_mul_X, ← pow_mul]
+  -- ψ(Σ_{n<ap}[n]) = Σ_{m<a}[m]
+  have hpsi1 : psi p (∑ n ∈ Finset.range (a * p), dirac p ((n : ℕ) : ℤ_[p]))
+      = ∑ m ∈ Finset.range a, dirac p ((m : ℕ) : ℤ_[p]) := by
+    rw [psi_sum, Finset.sum_congr rfl fun n _ => psi_dirac_natCast p n,
+      Finset.sum_ite, Finset.sum_const_zero, add_zero]
+    refine Finset.sum_nbij' (fun n => n / p) (fun m => p * m) ?_ ?_ ?_ ?_ ?_
+    · intro n hn
+      simp only [Finset.mem_filter, Finset.mem_range] at hn
+      exact Finset.mem_range.2 (Nat.div_lt_of_lt_mul (by rw [mul_comm]; exact hn.1))
+    · intro m hm
+      simp only [Finset.mem_range] at hm
+      refine Finset.mem_filter.2 ⟨Finset.mem_range.2 ?_, ⟨m, rfl⟩⟩
+      rw [mul_comm a p]
+      exact mul_lt_mul_of_pos_left hm hp.out.pos
+    · intro n hn
+      exact Nat.mul_div_cancel' (Finset.mem_filter.1 hn).2
+    · intro m _
+      exact Nat.mul_div_cancel_left m hp.out.pos
+    · intro n _
+      rfl
+  -- ψ(Σ_{j<p}[aj]) = 1
+  have hpsi2 : psi p (∑ j ∈ Finset.range p, dirac p ((a * j : ℕ) : ℤ_[p])) = 1 := by
+    rw [psi_sum, Finset.sum_congr rfl fun j _ => psi_dirac_natCast p (a * j),
+      Finset.sum_eq_single 0]
+    · simp [dirac_zero_eq_one]
+    · intro j hj hj0
+      rw [if_neg]
+      intro hdvd
+      rcases (Nat.Prime.dvd_mul hp.out).1 hdvd with h | h
+      · exact hpa h
+      · exact absurd (Nat.le_of_dvd (Nat.pos_of_ne_zero hj0) h)
+          (not_le.2 (Finset.mem_range.1 hj))
+    · intro h
+      exact absurd (Finset.mem_range.2 hp.out.pos) h
+  -- assemble and cancel [a] − 1
+  have key : (dirac p ((a : ℕ) : ℤ_[p]) - 1) * psi p (muA p a)
+      = (dirac p ((a : ℕ) : ℤ_[p]) - 1) * muA p a := by
+    have h1 : (dirac p ((a : ℕ) : ℤ_[p]) - 1) * psi p (muA p a)
+        = psi p ((dirac p ((a * p : ℕ) : ℤ_[p]) - 1) * muA p a) := by
+      rw [← hphi_va, psi_phi_mul]
+    rw [h1, ← htel, mul_assoc, dirac_natCast_sub_one_mul_muA p hpa, mul_sub,
+      hgeom, mul_smul_comm, mul_one, psi_sub, hpsi1, psi_smul, hpsi2]
+  exact mul_left_cancel₀ (dirac_natCast_sub_one_ne_zero p haN) key
 
 /-! ## Restriction to `ℤ_p^×` (RJW §4.2) -/
 

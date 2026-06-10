@@ -173,7 +173,7 @@ $`\varphi` and $`\psi` are the operators on measures (and on power series, via t
 Mahler transform) introduced in the toolbox; on power series $`\varphi` acts by
 $`F \mapsto F((1+T)^p - 1)`. We first record a key invariance of $`\mua`.
 
-:::lemma_ "kl-psi-invariant"
+:::lemma_ "kl-psi-invariant" (lean := "PadicMeasure.psi_muA")
 The measure $`\mua` satisfies $`\psi(\mua) = \mua`; equivalently
 $`\psi(\Fa) = \Fa`.
 :::

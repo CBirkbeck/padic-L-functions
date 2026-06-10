@@ -1180,7 +1180,7 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
     Cleanup: degraded mode — delQ-merge debt re-flagged for tooled pass.
 
 ### [T034] ψ-invariance: projection formula + `ψ(μ_a) = μ_a`
-- **Status**: open
+- **Status**: done (2026-06-10)
 - **File**: PadicLFunctions/KubotaLeopoldt/MuA.lean
 - **Depends on**: T031, T032
 - **Parallel**: yes (with T033)
@@ -1223,6 +1223,17 @@ Total proof tickets 28 → ⌈28/3⌉ = 10 ≤ 11 per-file cleanups + CLEANUP-FI
   remark to the node recording the ξ-free route (per CLAUDE.md rule 5).
 - **Cleanup**: `/cleanup` immediately after; flag psi-bundling debt.
 - **Progress**:
+  - 2026-06-10: DONE — 11 declarations (8 planned + psi_zero, dirac_zero_eq_one,
+    psi_dirac_natCast, + SMulCommClass ℤ_[p] Λ Λ instance which the smul-mul algebra
+    needed). psi_phi_mul exactly per decomposition L3.1 (digit arithmetic via
+    y = p·sd(y) substitution — no new digit lemma needed; ∉-case by ultrametric
+    sandwich). psi_muA per the replanned route: telescope + transform-side geom
+    product (X-cancellation, no Finset reindex for the product; the ψ-side reindex
+    via Finset.sum_nbij'). rw-gotcha: dirac identity rewrote both sides at once.
+    Axioms standard. Blueprint: kl-psi-invariant → psi_muA wired + ξ-free note
+    already in file docstring; builds. Cleanup: degraded — psi-bundling debt
+    re-flagged (psi_zero/add/smul/sum are all rfl-grade: psi should be a LinearMap
+    in a tooled pass).
 
 ### [T035] Restriction to `ℤ_p^×`: Euler factor removed
 - **Status**: open
