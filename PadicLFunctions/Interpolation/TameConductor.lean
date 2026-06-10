@@ -36,6 +36,7 @@ def toFieldChar {N : ℕ} (χ : DirichletCharacter (integerRing K) N) :
     DirichletCharacter K N :=
   χ.ringHomComp (integerRing K).subtype
 
+omit [CharZero K] in
 /-- T509 step (iii), the per-`c` identity (†c): the `κ_{ζ^c−1}`-twisted base
 change of `μ_a` has its Mahler transform characterised by the
 `substAffine`-transport of §4's `F_a`-identity:
@@ -64,6 +65,7 @@ lemma charTwist_muA_mahler_identity {ζ : integerRing K} {N : ℕ}
     ← pow_mul] at h5
   exact h5
 
+omit [CharZero K] in
 /-- The `substAffine (ζ^c−1)`-image of the base-changed geometric sum:
 `S_c(Σ_{i<a}(1+X)^i) = Σ_{i<a} ζ^{ci}·(1+X)^i`. -/
 lemma substAffine_map_geomSum {ζ : integerRing K} {N : ℕ}
@@ -117,6 +119,7 @@ lemma charTwist_muA_exp_identity {ζ : integerRing K} {N : ℕ}
     PowerSeries.exp_pow_eq_rescale_exp, PowerSeries.coe_substAlgHom hg] at hsub
   simpa only [map_pow] using hsub
 
+omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- T509 (v-c): powers of rescaled exponentials: `(E_b)^l = E_{l·b}`. -/
 lemma rescale_exp_pow (b : K) (l : ℕ) :
     (PowerSeries.rescale b (PowerSeries.exp K)) ^ l
@@ -158,7 +161,56 @@ lemma sum_range_mul_eq_sum_range {M : Type*} [AddCommMonoid M] (f : ℕ → M)
   · intro q _
     rfl
 
-omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] in
+omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
+/-- T509 (v-d): the `j`-indexed form of the generating-function identity T504
+at level `p^n` over `K`: `X·Σ_{j<p^n} χK(j)·E_j = genBPS_χK·(E_{p^n} − 1)`
+(boundary terms `j = 0` and `j = p^n` vanish through `χK(0) = 0`). -/
+lemma X_mul_sum_char_rescale_exp {n : ℕ} (hn : 1 ≤ n)
+    (χK : DirichletCharacter K (p ^ n)) :
+    PowerSeries.X * ∑ j ∈ Finset.range (p ^ n),
+        PowerSeries.C (χK ((j : ℕ) : ZMod (p ^ n)))
+          * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
+      = (PowerSeries.mk fun k => χK.genBernoulli k * (k.factorial : K)⁻¹)
+          * (PowerSeries.rescale (((p : ℕ) ^ n : ℕ) : K) (PowerSeries.exp K)
+              - 1) := by
+  haveI : Fact (1 < p ^ n) :=
+    ⟨Nat.one_lt_pow (by omega) hp.out.one_lt⟩
+  rw [genBernoulliPowerSeries_mul χK]
+  set h : ℕ → PowerSeries K := fun j =>
+    χK ((j : ℕ) : ZMod (p ^ n)) •
+      (PowerSeries.X * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K))
+    with hh
+  have h0 : h 0 = 0 := by
+    simp only [hh, Nat.cast_zero]
+    rw [χK.map_nonunit not_isUnit_zero, zero_smul]
+  have hpn : h (p ^ n) = 0 := by
+    simp only [hh]
+    rw [show (((p ^ n : ℕ)) : ZMod (p ^ n)) = 0 from ZMod.natCast_self _,
+      χK.map_nonunit not_isUnit_zero, zero_smul]
+  have hshift : ∑ b ∈ Finset.range (p ^ n), h (b + 1)
+      = ∑ j ∈ Finset.range (p ^ n), h j := by
+    have hs := Finset.sum_range_succ' h (p ^ n)
+    rw [Finset.sum_range_succ, h0, hpn, add_zero, add_zero] at hs
+    exact hs.symm
+  calc PowerSeries.X * ∑ j ∈ Finset.range (p ^ n),
+        PowerSeries.C (χK ((j : ℕ) : ZMod (p ^ n)))
+          * PowerSeries.rescale ((j : ℕ) : K) (PowerSeries.exp K)
+      = ∑ j ∈ Finset.range (p ^ n), h j := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        simp only [hh]
+        rw [PowerSeries.smul_eq_C_mul]
+        ring
+    _ = ∑ b ∈ Finset.range (p ^ n), h (b + 1) := hshift.symm
+    _ = ∑ b ∈ Finset.range (p ^ n), χK ((b + 1 : ℕ) : ZMod (p ^ n)) •
+          (PowerSeries.X * PowerSeries.rescale ((b : K) + 1)
+            (PowerSeries.exp K)) := by
+        refine Finset.sum_congr rfl fun b _ => ?_
+        simp only [hh]
+        norm_num
+
+omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
+  [CharZero K] in
 /-- T509 (v-a), the `K`-valued Gauss collapse: for `χK` primitive mod `p^n`
 and `ζ'` a primitive `p^n`-th root of unity in `K`,
 `Σ_{c<p^n} χK⁻¹(c)·ζ'^{cj} = χK(j)·G(χK⁻¹)` for every `j` (the non-unit `j`
