@@ -2048,6 +2048,35 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   are stated over ℚ_[p] in MuA.lean — the K-analogues need restating over K
   (same proofs; the field K plays ℚ_[p]'s role; `del K` exists in
   MeasureR/Toolbox).
+  ROUTE REFINEMENT for (iii)–(v) (recorded before compaction): PARITY-FREE,
+  the 10c Odd-product is NOT needed. Chain: (iii) base-change §4's
+  characterising identity to K and hit with the ring hom `substAffine (ζ^c−1)`:
+  since substAffine r (1+X) = C(1+r)·(1+X), this gives per-c
+  `(C(ζ^{ca})(1+X)^a − 1)·𝓐(κ_c μ_K) = substAffine (geomSumK) − a` (†c);
+  (iv) map to K⟦X⟧ and apply formal `subst (exp K − 1)` (ring hom; §4
+  coe_substAlgHom pattern): `(ζ^{ca}·rescale a exp − 1)·H_c =
+  Σ_{i<a} ζ^{ci}·rescale i exp − a` (‡c) with H_c := (map K 𝓐(κ_cμ))∘(e^t−1);
+  (v) MASTER IDENTITY (all formal in K⟦t⟧, domain): multiply Σ_c χ⁻¹(c)•(‡c)
+  through by the two geometric cofactors — KEY FACTS: χ⁻¹(0) = 0 drops the
+  c = 0 term so every remaining denominator has unit constant term in the
+  FIELD K; the geometric identities `(ζ^c e^t − 1)·Σ_{j<p^n}(ζ^c e^t)^j =
+  e^{p^n t} − 1` (and the a-version) are formal and parity-free; the inner
+  sums `Σ_c χ⁻¹(c)ζ^{cj} = χ(j)·G(χ⁻¹)` collapse by the SAME
+  `gaussSum_mulShift_of_isPrimitive` + sum_nbij' bridge as T508 (factor that
+  bridge out as a reusable lemma `sum_inv_char_pow_eq_gaussSum`-style when
+  writing!); then T504's `genBernoulliPowerSeries_mul` at modulus p^n
+  identifies the χ(j)e^{jt}-sums with the genBernoulli series at the two
+  rescalings (j-shift b+1 as in T504's statement), and cancellation of the
+  nonzero e-factors (domain K⟦t⟧, §4 hreg-pattern) yields
+  `X·Σ_c χ⁻¹(c)•H_c = G(χ⁻¹)·(genBPS_χ − χ(a)·a·rescale a genBPS_χ)`-shape
+  [VERIFY exact Euler-shape against the source display TeX 1697 + the
+  planning trace at L5.1.10 attack [1] before stating]. Then
+  `coeff_{k+1}` of both sides + the K-bridge (constantCoeff_iterate_delQ
+  over K + MeasureR apply_powCM + T508 at powCM k) extracts
+  `G(χ⁻¹)·∫χ̃x^k dμ_aK = G(χ⁻¹)·(−(1−χ(a)a^{k+1}))·LvalNeg`, and G(χ⁻¹) ≠ 0
+  (norm 1 by T502's `norm_gaussSum_eq_one`... NOTE that's for the K-valued
+  gaussSum — the integerRing-valued one: nonzero via norm = 1 through the
+  subtype) cancels in the field K.
 
 ### [T510] **MILESTONE: RJW Theorem 5.1** — ∫χ(x)x^k·ζ_p = L(χ,1−k)
 - **Status**: open | **File**: TameConductor.lean | **Depends on**: CLEANUP-ALL-3
