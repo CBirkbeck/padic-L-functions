@@ -1612,7 +1612,17 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sources**: RJW Def 3.6 TeX 755–765 (§3 tree quotes).
 
 ### [TW3] Widen MahlerTransform.lean + Convolution.lean
-- **Status**: in_progress (2026-06-10T17:50Z) | **Depends on**: TW2 | **Type**: refactor
+- **Status**: done (2026-06-10T18:35Z)
+- **Progress**: 2026-06-10: MeasureR/MahlerTransform.lean + MeasureR/Convolution.lean
+  complete, ZERO sorries. mahlerCM basis through the isometric algebra map (new
+  Coefficients lemmas: norm_algebraMap_eq, isometry_algebraMap, IsBoundedSMul);
+  full Thm 3.20 over R: mahlerLinearEquiv + CommRing transport + mahlerRingEquiv +
+  mul_apply (Chu-Vandermonde via algebraMap, congrArg-Subtype.val bridges) +
+  dirac_mul_dirac. mahlerTransform_dirac restated as mapped binomialSeries
+  (avoids BinomialRing on R — recorded). De-privated
+  PadicMeasure.fwdDiff_iter_mahler_zero. VERIFICATION: zero diagnostics both
+  files; axioms standard (lean_verify mul_apply); lake build green (3520).
+  CLEANUP: tooled-inline at authoring; formal pass at CLEANUP-W1. | **Depends on**: TW2 | **Type**: refactor
 - **Contract**: W-r3 — mathlib `mahlerEquiv` is already E-general; re-parametrise
   `mahlerCoeff/mahlerTransform/ofPowerSeries/mahlerLinearEquiv/mahlerRingEquiv`
   and the convolution transport to R. Re-check each `PadicInt.*`-specific call
