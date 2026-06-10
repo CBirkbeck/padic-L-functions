@@ -2048,6 +2048,15 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   are stated over ℚ_[p] in MuA.lean — the K-analogues need restating over K
   (same proofs; the field K plays ℚ_[p]'s role; `del K` exists in
   MeasureR/Toolbox).
+  STEP (iii) DONE (2026-06-10): `substAffine_X`/`substAffine_C`/
+  `substAffine_one_add_X` API in Twist.lean; per-c identity
+  `charTwist_muA_mahler_identity` in TameConductor.lean:
+  `(C(ζ^{ca})(1+X)^a − 1)·𝓐(κ_{ζ^c−1}(μ_a)_K) = substAffine (ζ^c−1)
+  (map geomSum) − a` — proven by hitting the K-mapped §4 identity with the
+  substAffine ring hom (simp only [map_*] + the C-power regroup). Build green.
+  NEXT: step (iv)/(v) per the refinement below — the formal subst (exp K − 1)
+  of (†c) [needs the K-analogue of §4's hasSubst_exp_sub_one + map-to-K of the
+  identity], then the master identity.
   ROUTE REFINEMENT for (iii)–(v) (recorded before compaction): PARITY-FREE,
   the 10c Odd-product is NOT needed. Chain: (iii) base-change §4's
   characterising identity to K and hit with the ring hom `substAffine (ζ^c−1)`:

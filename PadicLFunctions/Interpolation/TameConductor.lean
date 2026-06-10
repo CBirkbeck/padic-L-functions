@@ -36,6 +36,34 @@ def toFieldChar {N : ℕ} (χ : DirichletCharacter (integerRing K) N) :
     DirichletCharacter K N :=
   χ.ringHomComp (integerRing K).subtype
 
+/-- T509 step (iii), the per-`c` identity (†c): the `κ_{ζ^c−1}`-twisted base
+change of `μ_a` has its Mahler transform characterised by the
+`substAffine`-transport of §4's `F_a`-identity:
+`(ζ^{ca}(1+T)^a − 1)·𝓐(κ_{ζ^c−1}·(μ_a)_K) = S_c(geomSum a) − a`. -/
+lemma charTwist_muA_mahler_identity {ζ : integerRing K} {N : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ N)) (c : ℕ) {a : ℕ} (hpa : ¬ (p : ℕ) ∣ a) :
+    (PowerSeries.C (ζ ^ (c * a)) * (1 + PowerSeries.X) ^ a - 1)
+        * mahlerTransform p K (twist p K
+            (charCM (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c))
+            (baseChange p K (PadicMeasure.muA p a)))
+      = substAffine (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c)
+          (PowerSeries.map (algebraMap ℤ_[p] (integerRing K))
+            (PadicMeasure.geomSum p a))
+        - (a : PowerSeries (integerRing K)) := by
+  rw [mahlerTransform_charTwist_eq_substAffine, mahlerTransform_baseChange,
+    PadicMeasure.mahlerTransform_muA]
+  have h4 := congrArg (PowerSeries.map (algebraMap ℤ_[p] (integerRing K)))
+    (PadicMeasure.one_add_X_pow_sub_one_mul_Fa p hpa)
+  simp only [map_mul, map_sub, map_pow, map_add, map_one, PowerSeries.map_X,
+    map_natCast] at h4
+  have h5 := congrArg
+    (substAffine (ζ ^ c - 1) (tendsto_pow_pow_sub_one hζ c)) h4
+  simp only [map_mul, map_sub, map_pow, map_one, map_natCast,
+    substAffine_one_add_X] at h5
+  rw [show (1 + (ζ ^ c - 1) : integerRing K) = ζ ^ c by ring, mul_pow, ← map_pow,
+    ← pow_mul] at h5
+  exact h5
+
 /-- L5.1.10: the χ-twisted moments of the base-changed `μ_a` (RJW
 eq:special value theorem 1, TeX 1727–1730, uniform `LvalNeg` form): for `χ`
 primitive mod `p^n` (`n ≥ 1`), `a` coprime to `p`, `k : ℕ`,

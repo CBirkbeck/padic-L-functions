@@ -338,6 +338,37 @@ noncomputable def substAffine (r : integerRing K)
   PowerSeries.eval₂Hom PowerSeries.WithPiTopology.continuous_C
     (hasEval_affine r hr)
 
+@[simp]
+lemma substAffine_X (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0)) :
+    substAffine r hr PowerSeries.X
+      = (1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1 := by
+  rw [show substAffine r hr PowerSeries.X
+      = PowerSeries.eval₂ PowerSeries.C
+          ((1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1) PowerSeries.X from
+    congrFun (PowerSeries.coe_eval₂Hom PowerSeries.WithPiTopology.continuous_C
+      (hasEval_affine r hr)) PowerSeries.X]
+  exact PowerSeries.eval₂_X _ _
+
+@[simp]
+lemma substAffine_C (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0)) (b : integerRing K) :
+    substAffine r hr (PowerSeries.C b) = PowerSeries.C b := by
+  rw [show substAffine r hr (PowerSeries.C b)
+      = PowerSeries.eval₂ PowerSeries.C
+          ((1 + PowerSeries.X) * PowerSeries.C (1 + r) - 1) (PowerSeries.C b) from
+    congrFun (PowerSeries.coe_eval₂Hom PowerSeries.WithPiTopology.continuous_C
+      (hasEval_affine r hr)) (PowerSeries.C b)]
+  exact PowerSeries.eval₂_C _ _ _
+
+/-- `substAffine r` sends `1 + X` to `C(1+r)·(1+X)`. -/
+lemma substAffine_one_add_X (r : integerRing K)
+    (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0)) :
+    substAffine r hr (1 + PowerSeries.X)
+      = PowerSeries.C (1 + r) * (1 + PowerSeries.X) := by
+  rw [map_add, map_one, substAffine_X]
+  ring
+
 /-- The coefficients of the affine substitution are the L5.1.6 tsums. -/
 lemma coeff_substAffine (r : integerRing K)
     (hr : Filter.Tendsto (r ^ ·) Filter.atTop (nhds 0))
