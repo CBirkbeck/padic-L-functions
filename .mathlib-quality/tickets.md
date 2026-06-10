@@ -1570,7 +1570,28 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   decomposition; the instance pack has no source-lines — infrastructure).
 
 ### [TW2] Widen Measure/Basic.lean to coefficient ring R
-- **Status**: open | **File**: Measure/Basic.lean | **Depends on**: TW1 | **Type**: refactor
+- **Status**: done (2026-06-10T17:45Z)
+- **REPLAN NOTE (route, 2026-06-10T17:20Z)**: in-place parameter swap rejected
+  after measurement: ~420 call sites, and `ℤ_[p]` is definitionally-but-not-
+  syntactically `↥(integerRing ℚ_[p])` (PadicInt is its own subtype with its own
+  instance tower) — an in-place swap breaks every §4 call site with instance-
+  diamond repairs, violating the "§4 unaffected" DoD. ROUTE: parallel general
+  layer `PadicLFunctions/MeasureR/*.lean` over `(K : NormedField, ultrametric,
+  complete; R := integerRing K)` mirroring Measure/* — the ambient field makes
+  the W-r1 division/continuity argument work exactly as in the ℤ_p case; §3/§4
+  stay frozen; TW6's baseChange bridges `PadicMeasure p X → MeasureR ℚ_[p]-…`
+  via the TW1 algebra map. TW2 := MeasureR/Basic.lean; TW3–TW5 scope updated
+  to the corresponding MeasureR files. plan.md "parameter-insertion" promise
+  superseded by this recorded note (same lemmas+proof routes, new placement).
+- **Progress**: 2026-06-10: MeasureR/Basic.lean complete, zero sorries —
+  `MeasureR K X` (abbrev, LinearMap-transparent like §3), dirac/compRight/
+  pushforward + simp API, `norm_apply_le` (field-division route per W-r1:
+  attained sup + divide-by-scalar in K, integrality from ball-valuedness),
+  `continuous`, `ext_locallyConstant` (reuses §3 Fubini general approximation
+  lemma per W-r2). VERIFICATION: zero diagnostics; axioms standard
+  (lean_verify on norm_apply_le); lake build green (3518 jobs). CLEANUP:
+  tooled-inline at authoring (abbrev-not-def lesson recorded; rfl-bridge for
+  subtype-norm). Formal file pass at CLEANUP-W1. | **File**: Measure/Basic.lean | **Depends on**: TW1 | **Type**: refactor
 - **Contract**: re-parametrise `PadicMeasure p X := C(X, ℤ_[p]) →ₗ[ℤ_[p]] ℤ_[p]`
   to `PadicMeasure R X := C(X, R) →ₗ[R] R` over
   `variable (R : Type*) [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]`
