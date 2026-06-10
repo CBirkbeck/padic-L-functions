@@ -46,6 +46,7 @@ lemma mul_def (μ ν : MeasureR K ℤ_[p]) :
     μ * ν = (mahlerLinearEquiv p K).symm (mahlerLinearEquiv p K μ * mahlerLinearEquiv p K ν) :=
   rfl
 
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 lemma one_def : (1 : MeasureR K ℤ_[p]) = dirac K ℤ_[p] 0 := rfl
 
 /-- The Mahler transform is multiplicative. -/
@@ -103,6 +104,7 @@ def convInner (ν : MeasureR K ℤ_[p]) (f : C(ℤ_[p], integerRing K)) :
 
 variable {p K}
 
+omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 @[simp]
 lemma convInner_apply (ν : MeasureR K ℤ_[p]) (f : C(ℤ_[p], integerRing K)) (x : ℤ_[p]) :
     convInner p K ν f x = ν (f.comp ⟨fun y => x + y, by fun_prop⟩) := rfl
@@ -128,7 +130,7 @@ theorem mul_apply (μ ν : MeasureR K ℤ_[p]) (f : C(ℤ_[p], integerRing K)) :
   apply mahlerTransform_injective
   refine PowerSeries.ext fun n => ?_
   rw [mahlerTransform_mul, PowerSeries.coeff_mul, coeff_mahlerTransform]
-  show _ = μ (convInner p K ν (mahlerCM p K n))
+  change _ = μ (convInner p K ν (mahlerCM p K n))
   -- Chu–Vandermonde on the Mahler basis, mapped through the algebra map
   have hcomp : ∀ x : ℤ_[p],
       (mahlerCM p K n).comp (⟨fun y => x + y, by fun_prop⟩ : C(ℤ_[p], ℤ_[p]))

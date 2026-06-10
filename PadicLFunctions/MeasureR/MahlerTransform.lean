@@ -154,7 +154,7 @@ private lemma fwdDiff_iter_mahlerCM_zero (n k : ℕ) :
       = algebraMap ℤ_[p] (integerRing K) (Δ_[1]^[n] (⇑(mahler k : C(ℤ_[p], ℤ_[p]))) 0) := by
     rw [fwdDiff_iter_eq_sum_shift, fwdDiff_iter_eq_sum_shift, map_sum]
     refine Finset.sum_congr rfl fun i _ => ?_
-    simp [mahlerCM_apply, map_zsmul]
+    simp [mahlerCM_apply]
   rw [key, PadicMeasure.fwdDiff_iter_mahler_zero]
   split <;> simp
 
@@ -165,7 +165,7 @@ theorem mahlerTransform_ofPowerSeries (g : PowerSeries (integerRing K)) :
     mahlerTransform p K (ofPowerSeries p K g) = g := by
   refine PowerSeries.ext fun k => ?_
   rw [coeff_mahlerTransform]
-  show ∑' n, Δ_[1]^[n] (⇑(mahlerCM p K k)) 0 * PowerSeries.coeff n g
+  change ∑' n, Δ_[1]^[n] (⇑(mahlerCM p K k)) 0 * PowerSeries.coeff n g
       = PowerSeries.coeff k g
   simp_rw [fwdDiff_iter_mahlerCM_zero, ite_mul, one_mul, zero_mul]
   exact tsum_ite_eq k _
@@ -180,7 +180,7 @@ def mahlerLinearEquiv :
     invFun := ofPowerSeries p K
     left_inv := fun μ => by
       refine LinearMap.ext fun f => ?_
-      show ∑' n, Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n (mahlerTransform p K μ) = μ f
+      change ∑' n, Δ_[1]^[n] (⇑f) 0 * PowerSeries.coeff n (mahlerTransform p K μ) = μ f
       simp_rw [coeff_mahlerTransform]
       exact (apply_eq_tsum μ f).symm
     right_inv := mahlerTransform_ofPowerSeries (p := p) (K := K) }

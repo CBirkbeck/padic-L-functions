@@ -96,11 +96,12 @@ instance : IsLinearTopology (integerRing L) (integerRing L) := by
   simp [ballIdeal, Metric.mem_closedBall, dist_zero_right, hmax,
     AddSubgroupClass.coe_norm]
 
+omit [CompleteSpace L] in
 /-- The algebra map `ℤ_[p] → integerRing L` is an isometry (it is the
 restriction of the scalar embedding `ℚ_[p] → L`). -/
 lemma norm_algebraMap_eq (x : ℤ_[p]) :
     ‖algebraMap ℤ_[p] (integerRing L) x‖ = ‖x‖ := by
-  show ‖algebraMap ℚ_[p] L (x : ℚ_[p])‖ = ‖x‖
+  change ‖algebraMap ℚ_[p] L (x : ℚ_[p])‖ = ‖x‖
   rw [norm_algebraMap', PadicInt.norm_def]
 
 lemma isometry_algebraMap : Isometry (algebraMap ℤ_[p] (integerRing L)) :=

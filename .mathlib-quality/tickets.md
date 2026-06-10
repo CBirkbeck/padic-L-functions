@@ -1631,7 +1631,15 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **DoD**: as TW2.
 
 ### [CLEANUP-W1] /cleanup on Coefficients.lean + Basic.lean + MahlerTransform.lean + Convolution.lean
-- **Status**: open | **Depends on**: TW3 | **Type**: cleanup (cadence: 3 tickets)
+- **Status**: done (2026-06-10T18:50Z) | **Depends on**: TW3 | **Type**: cleanup (cadence: 3 tickets)
+- **Progress**: scope = the new W-layer (Coefficients + MeasureR/{Basic,
+  MahlerTransform,Convolution}). Full-severity diagnostic audit via lean-lsp:
+  9 findings (1 unused simp arg, 4 show-changed-goal -> change, 4 unused
+  section vars -> omit) — all fixed; build green, new files zero-warning.
+  Per-decl golf was applied inline at authoring (same session, live linter);
+  worker-per-decl ceremony recorded as not-redispatched for just-authored
+  lint-clean decls (deviation note; the §3-files' standing show-warnings
+  remain CLEANUP-FINAL scope).
 
 ### [TW4] Widen Toolbox.lean + UnitsZp.lean + Fubini.lean
 - **Status**: open | **Depends on**: CLEANUP-W1 | **Type**: refactor
