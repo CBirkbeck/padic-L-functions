@@ -1994,7 +1994,7 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   appears.
 
 ### [T509] Moments of the twisted measure (F_{χ,a}-values)
-- **Status**: in_progress | **File**: Interpolation/TameConductor.lean (+GenBernoulli) | **Depends on**: CLEANUP-51, T504
+- **Status**: done | **File**: Interpolation/TameConductor.lean (+GenBernoulli) | **Depends on**: CLEANUP-51, T504
 - **Type**: theorem cluster
 - **Statement**: `twistMuA_moments` per L5.1.10 (uniform formula via LvalNeg)
   + sub-leaves 10b (twisted F_a-expansion, cleared via 10c-product).
@@ -2173,6 +2173,19 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   as hg], derivativeFun_subst_exp-K, constantCoeff_subst_exp-K,
   constantCoeff_iterate_delQ-K — copy proofs with ℚ_[p] → K), MeasureR
   `apply_powCM` + `mahlerTransform_baseChange` to land twist_muA_moments.
+  **T509 DONE (2026-06-10)**: `twist_muA_moments` PROVEN — the full chain
+  (iii)→(iv)→(v-a..e)→(v-f) landed: per-c substAffine-transport, exp-subst,
+  telescoped clearing, FINAL-10b, T508-transport, Gauss-nonvanishing (NOTE
+  `mul_gaussSum_inv_eq_gaussSum` is Field-source-only, unusable at ZMod p^n;
+  `AddChar.inv_mulShift` + `gaussSum_mulShift_of_isPrimitive` is the route),
+  delField-bridge extraction, factorial endgame. STATEMENT REPLAN (in
+  docstring): `(hζ : IsPrimitiveRoot ζ (p^n))` threaded into the statement —
+  the source's ambient ε_{p^n}; T510's statements must thread it too.
+  Verification: lake build green; axioms = {propext, Classical.choice,
+  Quot.sound} on twist_muA_moments + all v-helpers (a first lean_verify
+  returned sorryAx from a STALE LSP elaboration — re-verified clean after the
+  build settled). Only T510's two skeleton sorries remain in
+  TameConductor.lean.
   OLD-NEXT (superseded): (v-a) + the toFieldChar-IsPrimitive lemma in
   TameConductor.lean (or Characters.lean for the primitivity transport).
   NEXT after: step (v) per the plan above — the formal subst (exp K − 1)
