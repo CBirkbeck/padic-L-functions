@@ -3358,3 +3358,25 @@ Gate note: decomposition R6 is at draft-1 — per-leaf attack-blocks in the
 binding format and the c2/c4-survey completions are folded into each
 ticket's execution preamble (the §5 T521-precedent); the route-level
 attacks that already fired are recorded in R6 (replans 1–5).
+
+### [T618] Boundary p-adic logarithm (unit-ball multiplicativity)
+- **Status**: open | **File**: PadicExp.lean (+ ExtLog.lean bridge)
+- **Depends on**: T522, T607, T608 | **Parent**: T616 | **Type**: lemmas
+- **Statement**: `formalLog : PowerSeries K` (coeffs 0, (−1)^{n−1}/n);
+  `one_add_mul_derivative_formalLog : (1+X)·D(formalLog) = 1`;
+  `phiSeries_formalLog : phiSeries p formalLog = (p:K) • formalLog`
+  (∂-match via one_add_mul_derivative_phiSeries + ker-∂ pin);
+  `seriesEval_formalLog : ‖z−1‖ < 1 → seriesEval formalLog (z−1) = padicLog z`
+  (series alignment); `padicLog_pow_p_of_norm_lt_one : ‖z−1‖ < 1 →
+  padicLog (z^p) = p • padicLog z` (eval the formal identity via
+  seriesEval_phi_of_summable_prod, linear-growth summability);
+  `padicLog_mul_of_norm_lt_one` (p-power descent to the exp-ball, T522's
+  padicLog_mul, torsion-free cancel); `padicLog_pow_of_norm_lt_one`;
+  `extLog_eq_padicLog_of_norm_lt_one` (descent witness (p^j,0,x^{p^j})).
+- **Proof sketch**: as in the Statement field — all tools exist after
+  T605–T615 (recorded route, parent T616's flag 2026-06-11/12).
+- **Mathlib lemmas**: existing project API only.
+- **Sources**: Washington §5.1 (log on the unit ball); decomposition R6.6.
+- **Generality**: K-coefficients (the ambient); padicLog-statements over
+  the PadicExp L when free.
+- **Sizing**: ~80–120 LOC (toolkit exists).
