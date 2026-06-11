@@ -2842,3 +2842,23 @@ Eqphipsi, pigeonhole-unit — and pinned the boundary-iteration subtlety);
 (γ) survey completion: c1/c2 mathlib names (area B), b7/b1 mathlib check
 (ker-∂, digit machinery), character-sum lemma names (p3, p7);
 (δ) skeleton `lake build` green. Tickets (1g) only after the gate.
+
+
+### R6.6 (added 2026-06-11, mid-execution replan — binding for W6b/P6)
+ATTACK SUCCEEDED at T605 (B2-grade, logged in b2_log.jsonl): the digit
+decomposition is FALSE over field coefficients (over ℚ, (1+T)^p − 1 has
+unit linear term, so φ is bijective and digits are non-unique). It is the
+p-adically INTEGRAL statement (proved over integerRing K by
+measure-transport through mahlerRingEquiv). Every downstream use of ψ on
+the FIELD-coefficient series F̃_θ was therefore ill-posed. REALIGNED
+(the c₀-design; same mathematics, ψ-free scaffolding): with
+W := (G-cleared)F̃ − 𝓐_ρ one has ∂W = φ(B) for a concrete bounded B;
+choosing the formal antiderivative C (C(0) = 0, p∂C = B) gives
+W = φC + c₀ with c₀ constant; evaluating at 0 and at the ξ^i − 1 (where
+φ-images collapse to constant terms) yields
+p·𝓐_ρ(0) = p·F̃(0) − Σ_i F̃(ξ^i−1), using sum_seriesEval_mahlerK (the
+realised Eqphipsi at the INTEGRAL level) and ψρ = 0. The trace becomes
+sum_seriesEval_Ftilde : Σ_i F̃(ξ^i−1) = θ(p)·F̃(0) (cases per TeX
+2115–2155). Restated skeleton: FormalPsi b3' (∂φ-commutation),
+exists_antideriv, b6' (integral Eqphipsi), mahlerK moved here;
+ValuesAtOne p6' (mass identity), p7' (trace).

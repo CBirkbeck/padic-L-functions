@@ -3021,7 +3021,15 @@ reference declarations by name (the §5 T521-pattern).
   during T601–T604. Tooled CLEANUP-FINAL may revisit.
 
 ### [T605] The digit decomposition of power series
-- **Status**: in_progress (2026-06-11) | **File**: MeasureR/FormalPsi.lean | **Depends on**: none
+- **Status**: done (2026-06-11) — WITH B2 STATEMENT-FIX (logged)
+- **Progress**: the planned general-CommRing statement is FALSE over fields
+  (R = ℚ, p = 2: (1+X)^p − 1 = unit·X makes phiSeries bijective, digits
+  non-unique) — caught at the adversarial briefing, b2_log.jsonl appended.
+  Fixed: psiSeries junk-totalised (dite on ∃!-digits) over general R;
+  existsUnique_digits proven over integerRing K via the MEASURE-TRANSPORT
+  route (measure-level p-residue decomposition through mahlerRingEquiv) —
+  replacing the planner's triangular-recursion sketch (mathematically
+  wrong; recorded). Subagent pass; axioms standard; dependents build. | **File**: MeasureR/FormalPsi.lean | **Depends on**: none
 - **Parallel**: yes (chain W6b head) | **Type**: theorem
 - **Statement**: skeleton `existsUnique_digits` (W6b-b1).
 - **Proof sketch**: the family (1+T)^i·((1+T)^p−1)^j has leading
@@ -3039,7 +3047,10 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~60–90 LOC (the formal-cluster engine).
 
 ### [T606] psiSeries API
-- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605
+- **Status**: done (2026-06-11) | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605
+- **Progress**: DONE (same pass): psiSeries_phi/C/add/C_mul over
+  integerRing K via IsDigitDecomp-uniqueness; psiSeries_map gained an
+  honest ∃!-soundness hypothesis (junk-total psiSeries). Axioms standard.
 - **Type**: lemmas
 - **Statement**: skeleton `psiSeries_phi`, `psiSeries_C`, `psiSeries_add`,
   `psiSeries_C_mul`, `psiSeries_map` (W6b-b2/b8).
@@ -3051,11 +3062,13 @@ reference declarations by name (the §5 T521-pattern).
 - **Sources**: decomposition R6 W6b.
 - **Sizing**: ~80 LOC.
 
-### [T607] ψ–∂ commutation and ker ∂
+### [T607] φ–∂ commutation, antiderivative, ker ∂ (REALIGNED R6.6)
 - **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
 - **Type**: lemmas
-- **Statement**: skeleton `psiSeries_one_add_mul_derivative`,
-  `eq_C_constantCoeff_of_one_add_mul_derivative_eq_zero` (W6b-b3/b7).
+- **Statement** (realigned to the c₀-design — field-ψ is junk):
+  `one_add_mul_derivative_phiSeries` (∂φ = p·φ∂, R-generic),
+  `exists_antideriv` (K char-0: B = p·∂C with C(0) = 0),
+  `eq_C_constantCoeff_of_one_add_mul_derivative_eq_zero` (ker ∂).
 - **Proof sketch**: b3: differentiate the digit decomposition;
   ∂((1+T)^i·φG) = i·(1+T)^i·φG + p·(1+T)^i·φ(∂G) (sub-lemma
   ∂φ = p·φ∂ via PowerSeries.derivative_subst — the §4 A-explicit idiom);
@@ -3070,8 +3083,10 @@ reference declarations by name (the §5 T521-pattern).
 ### [T608] The ψ-bridge, evaluation layer, and evaluated Eqphipsi
 - **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
 - **Type**: lemmas
-- **Statement**: skeleton `mahlerTransform_psi`, `seriesEval_zero_arg`,
-  `seriesEval_phi`, `psiSeries_eval_zero` (W6b-b4/b5/b6).
+- **Statement** (b6 realigned to the INTEGRAL level, replan R6.6):
+  `mahlerTransform_psi`, `seriesEval_zero_arg`, `seriesEval_phi`,
+  `sum_seriesEval_mahlerK` (Σ_i 𝓐_μ(ξ^i−1) = p·𝓐_{ψμ}(0); summability
+  internal — bounded integral coefficients; mahlerK def moved here).
 - **Proof sketch**: b4 against the project's measure-ψ (digit-shift): show
   the Mahler transform of ψμ satisfies the digit-0 characterisation —
   φ𝓐_{ψμ} relates to the Mahler of Res_{pℤ_p} (project psi/phi toolbox
@@ -3199,7 +3214,11 @@ reference declarations by name (the §5 T521-pattern).
 ### [T615] The constant pin: 𝓐(ρ_θ) = F̃_θ − φψF̃_θ
 - **Status**: open | **File**: ValuesAtOne.lean
 - **Depends on**: T613, T614, T607, T606 | **Type**: theorem
-- **Statement**: skeleton `mahlerK_rhoTheta_eq` (P6-p6).
+- **Statement** (REALIGNED R6.6, c₀-design):
+  `p_mul_constantCoeff_mahlerK_rhoTheta` — p·𝓐_ρ(0)·G-form =
+  p·F̃(0) − Σ_i F̃(ξ^i−1); via W := CG⁻¹F̃ − 𝓐_ρ, ∂W = φB,
+  antiderivative + ker∂ + ξ-point evaluation + sum_seriesEval_mahlerK
+  + psi_rhoTheta.
 - **Proof sketch**: both sides ∂-agree (T613 + T614 + ψ∂-commutation b3
   pushing ∂ through φψ: ∂(φψF̃) = p·φ(∂ψF̃) = φψ(∂F̃)); difference D has
   (1+X)·derivative(D) = 0 ⟹ D = C(D₀) (b7); ψ(LHS) = 0 (T614-support +
@@ -3211,7 +3230,8 @@ reference declarations by name (the §5 T521-pattern).
 ### [T616] The evaluated trace of F̃_θ
 - **Status**: open | **File**: ValuesAtOne.lean
 - **Depends on**: T608, T603, T604, T612 | **Type**: theorem
-- **Statement**: skeleton `constantCoeff_psiSeries_Ftilde` (P6-p7).
+- **Statement** (REALIGNED R6.6, ψ-free): `sum_seriesEval_Ftilde` —
+  Σ_i F̃(ξ^i−1) = θ(p)·F̃(0); cases as before.
 - **Proof sketch**: b6 (psiSeries_eval_zero) on F̃: need seriesEval F̃ at
   ξ^i−1: per-c resummation Ftilde_eval (spawn as helper): seriesEval of
   logSeriesAt(u) at z = extLog((1+z)u−1) via (1+z)u−1 = (u−1)(1+uz/(u−1)),
