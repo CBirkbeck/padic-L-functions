@@ -58,7 +58,7 @@ formula vanish.
 
 # The complex value at s = 1
 
-:::theorem "val1-classical-gauss-expansion"
+:::theorem "val1-classical-gauss-expansion" (lean := "PadicLFunctions.ValuesAtOneComplex.LSeries_eq_gaussSum_inv_mul_sum")
 For $`\Re(s)>1` one has
 $$`L(\theta,s) = \frac{1}{G(\theta^{-1})}\sum_{c\in(\Z/N\Z)^\times}\theta^{-1}(c)\sum_{n\geq 1}\frac{\varepsilon_N^{\,nc}}{n^{s}}.`
 This rests on {uses "dirichlet-L-function"}[].
@@ -78,7 +78,7 @@ $`\theta(-1)/G(\theta^{-1})`, and the change of variables $`c\mapsto -c` removes
 $`\theta(-1)` and flips the sign in the exponent, yielding the stated formula.
 :::
 
-:::theorem "val1-classical-s1"
+:::theorem "val1-classical-s1" (lean := "PadicLFunctions.ValuesAtOneComplex.LFunction_one_eq")
 Theorem {bpref "p-adic-value-s1"}[] (i) holds: evaluating
 {bpref "val1-classical-gauss-expansion"}[] at $`s=1` gives the asserted closed
 formula for $`L(\theta,1)`.

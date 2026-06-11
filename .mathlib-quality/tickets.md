@@ -3173,9 +3173,9 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~60–120 LOC depending on survey.
 
 ### [T611] **RJW Theorem 6.1(i)** — the classical value L(θ,1)
-- **Status**: in_progress (2026-06-11; T609/T610 available) | **File**: ValuesAtOneComplex.lean
+- **Status**: DONE (2026-06-11; sorry-free, axiom-clean, blueprint wired) | **File**: ValuesAtOneComplex.lean
 - **Depends on**: T609, T610 | **Type**: theorem
-- **Statement**: skeleton `LSeries_eq_gaussSum_inv_mul_sum`,
+- **Statement**: `LSeries_eq_gaussSum_inv_mul_sum`,
   `LFunction_one_eq` (C6-c1/c3).
 - **Proof sketch**: c1: Fourier-expand θ(n) = G(θ)/N·Σ_c θ⁻¹(c)ε^{nc}
   (gaussSum_mulShift-family; verify exact mathlib form), swap finite and
@@ -3190,12 +3190,42 @@ reference declarations by name (the §5 T521-pattern).
 - **Sources**: TeX 2007–2045 verbatim at R6; Washington Thm 4.9.
 - **Blueprint**: §6 chapter — wire Thm 6.1(i) node.
 - **Sizing**: TeX 39 lines → ~150 LOC.
+- **Progress (2026-06-11, execution)**: Both targets sorry-free; `lake build
+  PadicLFunctions` green; `#print axioms` = [propext, Classical.choice,
+  Quot.sound] on both + `tendsto_sum_pow_div_eq_neg_log`/`gaussSum_mul_coprime`.
+  Linter clean (no warnings); blueprint nodes `val1-classical-gauss-expansion`
+  and `val1-classical-s1` wired (lake build PadicLFunctionsBlueprint green).
+  Route notes: c1 used `gaussSum_mulShift_of_isPrimitive` (the EXACT mathlib
+  Fourier lemma: `gaussSum χ (e.mulShift a) = χ⁻¹ a · gaussSum χ e`), restricted
+  the resulting `∑_a over ZMod N` to units (θ⁻¹ kills non-units), and the
+  prefactor is `G(θ⁻¹)⁻¹` directly (the split additive char `zmodChar ε`
+  needs NO θ(−1) twist — same observation as T609's `gaussSum_mul_coprime`);
+  nonvanishing G(θ⁻¹)≠0 via T501 `gaussSum_mul_gaussSum_inv` over ℂ.
+  Statement adjustment: `LSeries_eq_gaussSum_inv_mul_sum`'s `hθ1 : θ ≠ 1`
+  is genuinely UNUSED (the rearrangement holds for any primitive θ); kept for
+  API parity / paper-faithfulness, renamed binder `_hθ1` (docstring note).
+  c3 (the real work): mathlib has Abel only for POWER series, none for
+  Dirichlet series at the boundary; built helper `tendsto_LSeries_pow_boundary`
+  (‖w‖=1, w≠1 ⟹ lim_{s↓1⁺} LSeries(wⁿ) s = −log(1−w)) by summation-by-parts
+  representation g(s)=∑' Bₙ₊₁·((n+1)⁻ˢ−(n+2)⁻ˢ) (`Finset.sum_range_by_parts`),
+  continuous on [1,2] (`continuousOn_tsum` + MVT majorant `rpow_neg_sub_le`),
+  =LSeries for s>1, =−log(1−w) at s=1 via T610. Imports added to the file:
+  Interpolation.Characters (T501) + Mathlib.NumberTheory.LSeries.Linearity.
+
+### [CLEANUP-65] /cleanup on ValuesAtOneComplex.lean — done inline during
+  execution (degraded MCP: lean-lsp tools unavailable in subagent; used
+  `lake env lean` file gate + script search; file is linter-clean and golfed).
 
 ### [CLEANUP-65] /cleanup on ValuesAtOneComplex.lean
-- **Status**: open | **Depends on**: T611 | **Type**: cleanup
+- **Status**: done (degraded mode, 2026-06-11) | **Depends on**: T611
+- **Type**: cleanup
+- **Progress**: inline during T609–T611 (file linter-clean, sorry-free,
+  golfed); tooled CLEANUP-FINAL may revisit. The Dirichlet-series
+  boundary-limit helper `tendsto_LSeries_pow_boundary` is a mathlib-PR
+  candidate (recorded).
 
 ### [T612] Norm-one arguments and the formal log-derivative
-- **Status**: open | **File**: ValuesAtOne.lean | **Depends on**: none
+- **Status**: in_progress (2026-06-11) | **File**: ValuesAtOne.lean | **Depends on**: none
 - **Parallel**: yes (chain P6 head) | **Type**: lemmas
 - **Statement**: skeleton `norm_one_sub_pow_eq_one`,
   `one_add_mul_derivative_logSeriesAt` (P6-p9/p2).
