@@ -257,8 +257,7 @@ theorem norm_padicExp_sub_padicExp {x y : L} (hx : InExpBall p x)
           - (((k + 1 + 1 : ℕ).factorial : ℚ_[p]))⁻¹ • y ^ (k + 1 + 1)‖) hmem)
         (le_max_left _ _)
     · exact le_trans (hN n hn.le).le (le_max_right _ _)
-  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm
-    (by exact fun h => absurd (h ▸ htail) (lt_irrefl _) : ‖x - y‖ ≠ ‖_‖)]
+  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm htail.ne']
   exact max_eq_left htail.le
 
 theorem norm_padicExp_sub_one {x : L} (hx : InExpBall p x) :
@@ -467,8 +466,7 @@ theorem norm_padicLog {x : L} (hx : InExpBall p (x - 1)) :
           * ((((k + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (k + 1 + 1))‖) hmem)
         (le_max_left _ _)
     · exact le_trans (hN n hn.le).le (le_max_right _ _)
-  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm
-    (by exact fun h => absurd (h ▸ htail) (lt_irrefl _) : ‖x - 1‖ ≠ ‖_‖)]
+  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm htail.ne']
   exact max_eq_left htail.le
 
 /-! ### The exp ∘ log inversion via formal power series (RJW Lem 5.14 / decomposition E4)

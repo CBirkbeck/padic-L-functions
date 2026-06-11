@@ -201,3 +201,19 @@ TeX line range and the standing-rules note exactly as the §4 cycle did; the §4
 ticket texts in tickets.md are the template). After board approval, `/beastmode`
 until the section is sorry-free, wiring blueprint nodes and cleaning up
 per-ticket as you go. Repeat for §6, §7, …
+
+---
+
+## Addendum 2026-06-11 — §5 complete
+
+The §5 cycle closed in the 2026-06-11 takeover session (this file's §1–§8
+describe the §4-era state; tickets.md is the source of truth). Headlines:
+**RJW Thm 5.1** (`tame_conductor`), **Thm 5.7** (`zetaEta_twisted_moments` +
+`eq_of_twisted_moments_eq`), **Thm 5.17** (`zetaPBranch_interpolation`),
+**Thm 5.19** (`Lp_interpolation`, new file `Interpolation/LpFunction.lean`),
+**Lem 5.14 as stated** (`PadicExp.lean`, sorry-free incl. exp/log inversion
+and the `onePAdicPow`-equivalence — replan L5.3.3 discharged). Project is
+sorry-free; axioms standard everywhere; blueprint §5 chapter wired
+(Mellin-dependent prose nodes excepted). Open: CLEANUP-FINAL only (blocked
+on lean-lsp tooling; scope note in tickets.md). Next per the user's
+sequential directive: `/develop` for §6 (board approval is the user's).

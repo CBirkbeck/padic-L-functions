@@ -924,6 +924,14 @@ description, ξ-formulas, locally analytic — per plan.md Deferred).
 
 ### [CLEANUP-FINAL] Run /cleanup-all on the whole project
 - **Status**: open — BLOCKED on tooling (requires a session with lean-lsp MCP connected for /cleanup-all's per-decl golf workers; the mathlib linter set already runs green on every build; known cosmetic debt: a handful of `show`-should-be-`change` style warnings) | **Depends on**: all above | **Type**: cleanup-all
+- **Scope widened 2026-06-11 (CL53/CL54/W2 fold-in)**: §3 Measure/* (the
+  CLEANUP-W2 final per-file pass), §5 Interpolation/* incl. the new
+  LpFunction.lean, and PadicExp.lean. Specific queued debt:
+  `master_bridge`'s maxHeartbeats 400000 (PadicExp.lean), per-decl golf of
+  the degraded-mode tickets (T519, T520, T521–T523), the `show`-linter
+  pattern project-wide, and the CLEANUP-FINAL items from the §4 handover
+  (psi-as-LinearMap, delQ→del merge, mahlerTransform_sub/smul placement,
+  instIsDomain/SMulCommClass placement).
 - Then `/pre-submit` when the user wants a checkpointed milestone.
 
 ---
@@ -1706,7 +1714,8 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   on baseChange, commit.
 
 ### [CLEANUP-W2] /cleanup-all-lite on the widened Measure/* (final per-file)
-- **Status**: open | **Depends on**: TW6 | **Type**: cleanup (final per-file ×6)
+- **Status**: done (degraded — subsumed by CLEANUP-FINAL, 2026-06-11)
+- **Depends on**: TW6 | **Type**: cleanup (final per-file ×6)
 - **Progress**:
   - 2026-06-11: sequenced with the final cleanup block (CL53/CL54/
     CLEANUP-FINAL): §5 consumers were still adding to Measure/* through T516
@@ -2863,12 +2872,27 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~100 LOC.
 
 ### [CLEANUP-54] /cleanup on PadicExp.lean (3 tickets on file → cadence + final)
-- **Status**: open | **Depends on**: T523 | **Type**: cleanup
+- **Status**: done (degraded mode, 2026-06-11) | **Depends on**: T523 | **Type**: cleanup
+- **Progress**: no lean-lsp MCP this session — degraded pass per standing
+  rule 3: build green with the mathlib linter set, zero warnings, zero
+  sorries, zero long lines; golfed the two `by exact`-ascription bridges to
+  `htail.ne'` (isometry proofs). Queued for the tooled CLEANUP-FINAL:
+  `master_bridge`'s `set_option maxHeartbeats 400000` (verified working;
+  golf candidate), per-decl golf of the T521–T523 proofs.
 
 ### [CLEANUP-53] Final per-file cleanups (§5 files)
-- **Status**: open | **Depends on**: T520 | **Type**: cleanup (Characters,
-  GenBernoulli[Complex], Twist, TameConductor, NonTame, Branches — final pass
-  each; then update CLEANUP-FINAL's scope to include §5)
+- **Status**: done (degraded mode, 2026-06-11) | **Depends on**: T520
+- **Type**: cleanup (Characters, GenBernoulli[Complex], Twist,
+  TameConductor, NonTame, Branches, LpFunction — final pass each; then
+  update CLEANUP-FINAL's scope to include §5)
+- **Progress**: substance largely discharged upstream — the tooled
+  CLEANUP-ALL-5 sweep (2026-06-11) left zero style/linter warnings
+  project-wide, and the post-ALL-5 additions (T519 Branches, T520
+  Branches+LpFunction) were cleaned per-ticket (degraded). This pass
+  verified: build green, zero warnings, zero long lines, zero sorries
+  across all §5 files incl. the new LpFunction.lean. CLEANUP-FINAL's scope
+  widened to include the §5 files (see its entry). Tooled session may
+  revisit for per-decl golf.
 
 ## §5 dependency quick-view
 ```
