@@ -3126,7 +3126,14 @@ reference declarations by name (the §5 T521-pattern).
   CLEANUP-FINAL may revisit (one maxHeartbeats site if any — none found).
 
 ### [T609] Gauss sums over coprime levels
-- **Status**: in_progress (2026-06-11) | **File**: ValuesAtOneComplex.lean | **Depends on**: none
+- **Status**: done (2026-06-11) — with statement-fix (recorded in docstring)
+- **Progress**: DONE (subagent + endgame fix in main session): the
+  skeleton's χ(D)·η(M)-twists were WRONG for the SPLIT additive character
+  (εD·εM)^x — the CRT reindex factors cleanly with NO twist (the standard
+  twisted formula is for e^{2πi/DM}; verified on paper per the planning
+  note, docstring records it). Proof: CRT ring iso + pointwise character/
+  additive-character factorisation + Equiv.sum_comp + sum_product.
+  Axioms standard. | **File**: ValuesAtOneComplex.lean | **Depends on**: none
 - **Parallel**: yes (chain C6 head) | **Type**: theorem
 - **Statement**: skeleton `gaussSum_mul_coprime` (C6-c4).
 - **Proof sketch**: CRT reindex (ZMod.chineseRemainder): a ↦ (a mod D,
@@ -3142,7 +3149,16 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~60 LOC.
 
 ### [T610] Boundary convergence of the logarithm series (SURVEY-GATED)
-- **Status**: open | **File**: ValuesAtOneComplex.lean | **Depends on**: none
+- **Status**: done (2026-06-11) — with a B2 statement-fix (logged)
+- **Progress**: DONE (subagent): the skeleton's HasSum-form is FALSE
+  (1/(n+1) not summable on the circle; only conditional convergence) —
+  b2_log appended, restated as Tendsto-of-partial-sums
+  `tendsto_sum_pow_div_eq_neg_log`. Survey findings (area B): mathlib HAS
+  Abel's limit theorem (`Complex.tendsto_tsum_powerSeries_nhdsWithin_lt`)
+  and the open-disc log Taylor series
+  (`Complex.hasSum_taylorSeries_neg_log`); Dirichlet-test partial-sum
+  bound done by hand (geom_sum_eq + 2/‖1−z‖); branch-cut continuity via
+  slitPlane (Re(1−z) > 0 off z = 1). Axioms standard. | **File**: ValuesAtOneComplex.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: theorem
 - **Statement**: skeleton `hasSum_pow_div_eq_neg_log` (C6-c2).
 - **Proof sketch**: SURVEY FIRST (the binding mathlib-search step):
@@ -3157,7 +3173,7 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~60–120 LOC depending on survey.
 
 ### [T611] **RJW Theorem 6.1(i)** — the classical value L(θ,1)
-- **Status**: open | **File**: ValuesAtOneComplex.lean
+- **Status**: in_progress (2026-06-11; T609/T610 available) | **File**: ValuesAtOneComplex.lean
 - **Depends on**: T609, T610 | **Type**: theorem
 - **Statement**: skeleton `LSeries_eq_gaussSum_inv_mul_sum`,
   `LFunction_one_eq` (C6-c1/c3).
