@@ -427,16 +427,20 @@ instead there are $`p-1` branches, one for each residue class modulo $`p-1`.
 The obstruction is that the naive definition $`x \mapsto x^s = \exp(s\log x)`
 fails: the $`p`-adic exponential does not converge on all of $`\Zpx`.
 
--- UNWIRED (rationale): the formalisation realises `x^s` as the unique
--- continuous additive character with value `x` at `1`
--- (`PadicInt.onePAdicPow`, recorded replan L5.3.3), not through `exp`/`log`;
--- this node will be wired when the p-adic exp/log cluster
--- (`PadicLFunctions/PadicExp.lean`, tickets T521–T523) proves the
--- convergence statement itself.
-:::lemma_ "interp-padic-exp"
+:::lemma_ "interp-padic-exp" (lean := "PadicLFunctions.padicExp_converges_on_pZp, PadicLFunctions.padicExp_smul_padicLog_eq_onePAdicPow")
 The $`p`-adic exponential converges on $`p\Zp`. Consequently, for every $`s \in
 \Zp` the map $`1 + p\Zp \to \Zp`, $`x \mapsto x^s := \exp(s\log x)`, is
 well-defined.
+
+In the formalisation `padicExp`/`padicLog` are developed over any complete
+ultrametric $`\Qp`-algebra field (convergence, isometry, functional
+equations, and the exp/log inversion on the open ball
+$`\|x\|^{p-1} < p^{-1}`), `padicExp_converges_on_pZp` is the first
+sentence for odd $`p`, and `padicExp_smul_padicLog_eq_onePAdicPow` both
+realises the well-definedness of $`x^s = \exp(s\log x)` on `ℤ_p` and proves
+it EQUAL to the continuous-character construction `PadicInt.onePAdicPow`
+used throughout §5.3 (uniqueness of continuous additive characters; this
+discharges the recorded replan L5.3.3).
 :::
 
 :::proof "interp-padic-exp"

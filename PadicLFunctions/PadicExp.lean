@@ -1025,6 +1025,37 @@ end Inversion
 
 section pZp
 
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- E5: an element of `pℤ_p` has `ℚ_[p]`-norm at most `p⁻¹` (the coe-norm of
+`PadicInt.norm_le_pow_iff_mem_span_pow` at exponent `1`; RJW Lem 5.14). -/
+theorem coe_norm_le_inv_of_mem_span {x : ℤ_[p]} (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
+    ‖(x : ℚ_[p])‖ ≤ (p : ℝ)⁻¹ := by
+  rw [← PadicInt.norm_def, show ((p : ℝ)⁻¹) = (p : ℝ) ^ (-((1 : ℕ) : ℤ)) by
+    rw [zpow_neg, Nat.cast_one, zpow_one]]
+  exact (PadicInt.norm_le_pow_iff_mem_span_pow x 1).2 (by simpa using hx)
+
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- E5: for odd `p`, `pℤ_p` lies strictly inside the exponential convergence
+ball: `‖x‖^{p−1} ≤ p^{−(p−1)} < p⁻¹` since `p − 1 ≥ 2` (where `hp2` enters;
+RJW Lem 5.14, TeX 1892–1893). -/
+theorem inExpBall_of_mem_span (hp2 : p ≠ 2) {x : ℤ_[p]}
+    (hx : x ∈ Ideal.span {(p : ℤ_[p])}) : InExpBall p ((x : ℚ_[p])) := by
+  have hp3 : 3 ≤ p := by
+    rcases hp.out.eq_two_or_odd' with h | h
+    · exact absurd h hp2
+    · have := hp.out.two_le; omega
+  have hppos : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hnorm := coe_norm_le_inv_of_mem_span p hx
+  have hp1 : (p : ℝ)⁻¹ ≤ 1 := by
+    rw [inv_le_one_iff₀]; exact .inr (by exact_mod_cast hp.out.one_le)
+  rw [InExpBall]
+  calc ‖(x : ℚ_[p])‖ ^ (p - 1)
+      ≤ ((p : ℝ)⁻¹) ^ (p - 1) := pow_le_pow_left₀ (norm_nonneg _) hnorm _
+    _ < ((p : ℝ)⁻¹) ^ 1 := by
+        refine pow_lt_pow_right_of_lt_one₀ (inv_pos.mpr hppos) ?_ (by omega)
+        rw [inv_lt_one_iff₀]; exact .inr (by exact_mod_cast hp.out.one_lt)
+    _ = (p : ℝ)⁻¹ := pow_one _
+
 /-- **RJW Lemma 5.14, first half** (TeX 1892–1893): "The p-adic exponential
 map converges on `pℤ_p`" — for odd `p`, `pℤ_[p]` lies in the convergence ball
 (`‖x‖ ≤ p⁻¹ < p^{−1/(p−1)}`). Stated on `ℤ_[p]` (the `L = ℚ_[p]`-instance
@@ -1032,21 +1063,78 @@ restricted to integers; `exp` of a multiple of `p` is again integral by the
 isometry). -/
 theorem padicExp_converges_on_pZp (hp2 : p ≠ 2) {x : ℤ_[p]}
     (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
-    Summable fun n : ℕ => (n.factorial : ℚ_[p])⁻¹ • ((x : ℚ_[p]) ^ n) := by sorry
+    Summable fun n : ℕ => (n.factorial : ℚ_[p])⁻¹ • ((x : ℚ_[p]) ^ n) :=
+  summable_padicExp_terms (L := ℚ_[p]) p (inExpBall_of_mem_span p hp2 hx)
 
-/-- The integral exponential on `pℤ_p` (odd `p`), valued in `1 + pℤ_p`. -/
-noncomputable def pZpExp (x : ℤ_[p]) : ℤ_[p] := sorry
+/-- The integral exponential on `pℤ_p` (odd `p`), valued in `1 + pℤ_p`.
+Junk-total: defined via the integrality certificate `‖exp x‖ ≤ 1`, with junk
+value `1` (the exponential's value at the degenerate point `0`); RJW Lem 5.14,
+decomposition E5. -/
+noncomputable def pZpExp (x : ℤ_[p]) : ℤ_[p] :=
+  if h : ‖padicExp p ((x : ℚ_[p]))‖ ≤ 1 then ⟨padicExp p ((x : ℚ_[p])), h⟩ else 1
+
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- E5: on `pℤ_p` (odd `p`) the analytic exponential is integral, so `pZpExp`
+takes its true branch: `(pZpExp x : ℚ_[p]) = exp x`. -/
+theorem pZpExp_coe (hp2 : p ≠ 2) {x : ℤ_[p]} (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
+    ((pZpExp p x : ℤ_[p]) : ℚ_[p]) = padicExp p ((x : ℚ_[p])) := by
+  have hle : ‖padicExp p ((x : ℚ_[p]))‖ ≤ 1 := by
+    have hball := inExpBall_of_mem_span p hp2 hx
+    have hsub : ‖padicExp p ((x : ℚ_[p])) - 1‖ = ‖(x : ℚ_[p])‖ :=
+      norm_padicExp_sub_one (L := ℚ_[p]) p hball
+    have hx1 : ‖(x : ℚ_[p])‖ ≤ 1 :=
+      (coe_norm_le_inv_of_mem_span p hx).trans
+        (by rw [inv_le_one_iff₀]; exact .inr (by exact_mod_cast hp.out.one_le))
+    calc ‖padicExp p ((x : ℚ_[p]))‖
+        = ‖(1 : ℚ_[p]) + (padicExp p ((x : ℚ_[p])) - 1)‖ := by ring_nf
+      _ ≤ max ‖(1 : ℚ_[p])‖ ‖padicExp p ((x : ℚ_[p])) - 1‖ :=
+          IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ 1 := by rw [hsub, norm_one]; exact max_le le_rfl hx1
+  rw [pZpExp, dif_pos hle]
 
 theorem pZpExp_sub_one_mem (hp2 : p ≠ 2) {x : ℤ_[p]}
     (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
-    pZpExp p x - 1 ∈ Ideal.span {(p : ℤ_[p])} := by sorry
+    pZpExp p x - 1 ∈ Ideal.span {(p : ℤ_[p])} := by
+  rw [← pow_one (p : ℤ_[p]), ← PadicInt.norm_le_pow_iff_mem_span_pow _ 1,
+    PadicInt.norm_def, PadicInt.coe_sub, PadicInt.coe_one, pZpExp_coe p hp2 hx,
+    norm_padicExp_sub_one (L := ℚ_[p]) p (inExpBall_of_mem_span p hp2 hx),
+    zpow_neg, Nat.cast_one, zpow_one]
+  exact coe_norm_le_inv_of_mem_span p hx
 
-/-- The integral logarithm on `1 + pℤ_p` (odd `p`), valued in `pℤ_p`. -/
-noncomputable def pZpLog (x : ℤ_[p]) : ℤ_[p] := sorry
+/-- The integral logarithm on `1 + pℤ_p` (odd `p`), valued in `pℤ_p`.
+Junk-total: defined via the integrality certificate `‖log x‖ ≤ 1`, with junk
+value `0` (the logarithm's value at the degenerate point `1`); RJW Lem 5.14,
+decomposition E5. -/
+noncomputable def pZpLog (x : ℤ_[p]) : ℤ_[p] :=
+  if h : ‖padicLog p ((x : ℚ_[p]))‖ ≤ 1 then ⟨padicLog p ((x : ℚ_[p])), h⟩ else 0
+
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- E5: on `1 + pℤ_p` (odd `p`) the analytic logarithm is integral, so `pZpLog`
+takes its true branch: `(pZpLog x : ℚ_[p]) = log x`. -/
+theorem pZpLog_coe (hp2 : p ≠ 2) {x : ℤ_[p]}
+    (hx : x - 1 ∈ Ideal.span {(p : ℤ_[p])}) :
+    ((pZpLog p x : ℤ_[p]) : ℚ_[p]) = padicLog p ((x : ℚ_[p])) := by
+  have hxsub : ((x : ℚ_[p]) - 1) = ((x - 1 : ℤ_[p]) : ℚ_[p]) := by
+    rw [PadicInt.coe_sub, PadicInt.coe_one]
+  have hball : InExpBall p ((x : ℚ_[p]) - 1) := by
+    rw [hxsub]; exact inExpBall_of_mem_span p hp2 hx
+  have hle : ‖padicLog p ((x : ℚ_[p]))‖ ≤ 1 := by
+    rw [norm_padicLog (L := ℚ_[p]) p hball, hxsub]
+    exact (coe_norm_le_inv_of_mem_span p hx).trans
+      (by rw [inv_le_one_iff₀]; exact .inr (by exact_mod_cast hp.out.one_le))
+  rw [pZpLog, dif_pos hle]
 
 theorem pZpLog_mem (hp2 : p ≠ 2) {x : ℤ_[p]}
     (hx : x - 1 ∈ Ideal.span {(p : ℤ_[p])}) :
-    pZpLog p x ∈ Ideal.span {(p : ℤ_[p])} := by sorry
+    pZpLog p x ∈ Ideal.span {(p : ℤ_[p])} := by
+  have hxsub : ((x : ℚ_[p]) - 1) = ((x - 1 : ℤ_[p]) : ℚ_[p]) := by
+    rw [PadicInt.coe_sub, PadicInt.coe_one]
+  have hball : InExpBall p ((x : ℚ_[p]) - 1) := by
+    rw [hxsub]; exact inExpBall_of_mem_span p hp2 hx
+  rw [← pow_one (p : ℤ_[p]), ← PadicInt.norm_le_pow_iff_mem_span_pow _ 1,
+    PadicInt.norm_def, pZpLog_coe p hp2 hx, norm_padicLog (L := ℚ_[p]) p hball,
+    hxsub, zpow_neg, Nat.cast_one, zpow_one]
+  exact coe_norm_le_inv_of_mem_span p hx
 
 /-- **RJW Lemma 5.14, second half** (TeX 1893–1894): "for any `s ∈ ℤ_p`, the
 function `1+pℤ_p → ℤ_p` given by `x ↦ x^s := exp(s·log(x))` is well-defined"
@@ -1055,7 +1143,64 @@ function `1+pℤ_p → ℤ_p` given by `x ↦ x^s := exp(s·log(x))` is well-def
 decomposition E5). -/
 theorem padicExp_smul_padicLog_eq_onePAdicPow (hp2 : p ≠ 2) {x : ℤ_[p]}
     (hx : x - 1 ∈ Ideal.span {(p : ℤ_[p])}) (s : ℤ_[p]) :
-    pZpExp p (s * pZpLog p x) = PadicInt.onePAdicPow p x hx s := by sorry
+    pZpExp p (s * pZpLog p x) = PadicInt.onePAdicPow p x hx s := by
+  set ℓ := pZpLog p x with hℓ
+  have hℓmem : ℓ ∈ Ideal.span {(p : ℤ_[p])} := pZpLog_mem p hp2 hx
+  -- every multiple of `log x` lies in `pℤ_p`, hence in the exponential ball
+  have hargmem : ∀ t : ℤ_[p], t * ℓ ∈ Ideal.span {(p : ℤ_[p])} :=
+    fun t => Ideal.mul_mem_left _ _ hℓmem
+  -- the integral exponential of any such multiple agrees with the analytic one
+  have hexpcoe : ∀ t : ℤ_[p],
+      ((pZpExp p (t * ℓ) : ℤ_[p]) : ℚ_[p]) = padicExp p ((t * ℓ : ℤ_[p]) : ℚ_[p]) :=
+    fun t => pZpExp_coe p hp2 (hargmem t)
+  -- the candidate character `t ↦ exp(t · log x)`
+  let κ : AddChar ℤ_[p] ℤ_[p] :=
+    { toFun := fun t => pZpExp p (t * ℓ)
+      map_zero_eq_one' := by
+        refine PadicInt.ext ?_
+        rw [zero_mul, PadicInt.coe_one]
+        have h0 : (0 : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p])} := Ideal.zero_mem _
+        rw [pZpExp_coe p hp2 h0, PadicInt.coe_zero, padicExp_zero]
+      map_add_eq_mul' := fun a b => by
+        refine PadicInt.ext ?_
+        rw [PadicInt.coe_mul, hexpcoe a, hexpcoe b, hexpcoe (a + b),
+          show ((a + b) * ℓ : ℤ_[p]) = a * ℓ + b * ℓ from by ring,
+          PadicInt.coe_add,
+          padicExp_add (L := ℚ_[p]) p (inExpBall_of_mem_span p hp2 (hargmem a))
+            (inExpBall_of_mem_span p hp2 (hargmem b))] }
+  have hℓnorm : ‖ℓ‖ ≤ 1 := by
+    rw [PadicInt.norm_def]
+    exact (coe_norm_le_inv_of_mem_span p hℓmem).trans
+      (by rw [inv_le_one_iff₀]; exact .inr (by exact_mod_cast hp.out.one_le))
+  have hκcont : Continuous κ := by
+    refine LipschitzWith.continuous (K := 1)
+      (lipschitzWith_iff_dist_le_mul.2 fun a b => ?_)
+    rw [NNReal.coe_one, one_mul, dist_eq_norm, dist_eq_norm]
+    change ‖pZpExp p (a * ℓ) - pZpExp p (b * ℓ)‖ ≤ ‖a - b‖
+    rw [PadicInt.norm_def, PadicInt.coe_sub, hexpcoe a, hexpcoe b,
+      norm_padicExp_sub_padicExp (L := ℚ_[p]) p
+        (inExpBall_of_mem_span p hp2 (hargmem a))
+        (inExpBall_of_mem_span p hp2 (hargmem b)),
+      ← PadicInt.coe_sub,
+      show (a * ℓ - b * ℓ : ℤ_[p]) = (a - b) * ℓ from by ring,
+      PadicInt.coe_mul, norm_mul, ← PadicInt.norm_def, ← PadicInt.norm_def]
+    calc ‖a - b‖ * ‖ℓ‖ ≤ ‖a - b‖ * 1 := by gcongr
+      _ = ‖a - b‖ := mul_one _
+  -- value at `1`: `exp(log x) = x` (both at the `ℚ_[p]`-level), so `κ 1 = x`
+  have hκone : κ 1 = 1 + (x - 1) := by
+    rw [add_sub_cancel]
+    refine PadicInt.ext ?_
+    change ((pZpExp p (1 * ℓ) : ℤ_[p]) : ℚ_[p]) = (x : ℚ_[p])
+    rw [one_mul, hℓ, pZpExp_coe p hp2 hℓmem, pZpLog_coe p hp2 hx]
+    refine padicExp_padicLog (L := ℚ_[p]) p ?_
+    rw [show ((x : ℚ_[p]) - 1) = ((x - 1 : ℤ_[p]) : ℚ_[p]) by
+      rw [PadicInt.coe_sub, PadicInt.coe_one]]
+    exact inExpBall_of_mem_span p hp2 hx
+  -- uniqueness of continuous additive characters: `κ = onePAdicPow p x hx`
+  have heq : κ = PadicInt.onePAdicPow p x hx :=
+    (PadicInt.eq_addChar_of_value_at_one
+      (PadicInt.tendsto_pow_atTop_nhds_zero_of_mem_span p hx) hκcont hκone)
+  exact DFunLike.congr_fun heq s
 
 end pZp
 

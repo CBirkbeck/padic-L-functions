@@ -2827,7 +2827,28 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~150 LOC (the composition is the meaty half).
 
 ### [T523] RJW Lemma 5.14 as stated + equivalence with the character route
-- **Status**: open | **File**: PadicExp.lean | **Depends on**: T522, T518 | **Type**: theorem
+- **Status**: done (finished 2026-06-11)
+- **File**: PadicExp.lean | **Depends on**: T522, T518 | **Type**: theorem
+- **Progress**:
+  - 2026-06-11 (tooled-route subagent under main-session orchestration;
+    degraded tooling — lake-build gate): E5 route verbatim. Helpers:
+    `coe_norm_le_inv_of_mem_span`, `inExpBall_of_mem_span` (hp2 enters
+    exactly here: p−1 ≥ 2 makes the ball inclusion strict),
+    `pZpExp_coe`/`pZpLog_coe` (dite-true-branch bridges). Defs filled
+    junk-total (dite on the integrality certificate; junk 1 resp. 0).
+    `padicExp_converges_on_pZp` = summable_padicExp_terms ∘ ball-inclusion;
+    `pZpExp_sub_one_mem`/`pZpLog_mem` via the isometries;
+    `padicExp_smul_padicLog_eq_onePAdicPow` by AddChar-uniqueness
+    (additivity via padicExp_add, LipschitzWith-1 continuity via the
+    isometry, value x at 1 via padicExp_padicLog, then
+    PadicInt.eq_addChar_of_value_at_one) — the recorded replan L5.3.3 is
+    now DISCHARGED: both x^s-routes formalised and proven equal.
+  - Verification: lake build green; ZERO sorry project-wide (PadicExp.lean
+    fully proven); `#print axioms` = standard 3 on all six decls; linter
+    clean.
+  - Blueprint: `interp-padic-exp` WIRED → padicExp_converges_on_pZp +
+    padicExp_smul_padicLog_eq_onePAdicPow (unwired-rationale comment
+    removed per the user-approved cluster plan); blueprint build green.
 - **Statement**: skeleton pZp-section sorries (`padicExp_converges_on_pZp`,
   `pZpExp`/`pZpLog` integral versions + membership lemmas,
   `padicExp_smul_padicLog_eq_onePAdicPow`).
