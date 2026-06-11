@@ -109,14 +109,6 @@ theorem psi_rhoTheta {D : ℕ} [NeZero D]
     {n : ℕ} (χ : DirichletCharacter (integerRing K) (p ^ n)) :
     MeasureR.psi p K (rhoTheta p K η hζ hD χ) = 0 := by sorry
 
-variable (p K)
-
-/-- The `K`-mapped Mahler transform (the NonTame `map subtype` idiom). -/
-noncomputable def mahlerK (μ : MeasureR K ℤ_[p]) : PowerSeries K :=
-  PowerSeries.map (integerRing K).subtype (MeasureR.mahlerTransform p K μ)
-
-variable {p K}
-
 /-- P6-p5 (continued): `∂𝓐(ρ_θ) = (1−φψ)F_θ` over `K` — multiplication by
 `x` recovers `Res_{ℤ_p^×}(μ_θ)` and `Res = 1 − φ∘ψ`
 (Lem 6.3's second half in the formal route; the right-hand side is `p3`'s
@@ -132,12 +124,14 @@ theorem one_add_mul_derivative_mahlerK_rhoTheta {D : ℕ} [NeZero D]
           (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))) := by
   sorry
 
-/-- P6-p6 (the constant pin; Lem 6.3 made distribution-free): the Mahler
-transform of `ρ_θ` IS `F̃_θ − φψF̃_θ` up to the Gauss-clearing unit — both
-sides have the same `∂` and both lie in `ker ψ`, and `ker ∂ ∩ ker ψ`-
-differences vanish (`ψ` fixes constants). Stated against the product
-character bookkeeping of the §5 boards. -/
-theorem mahlerK_rhoTheta_eq {D : ℕ} [NeZero D] (hD1 : 1 < D)
+/-- P6-p6' (the constant pin, c₀-design — replan R6.6; Lem 6.3 made
+distribution-free WITHOUT field-level `ψ`): the cleared mass identity
+`p·𝓐_ρ(0)·G = p·F̃(0) − Σ_{i<p} F̃(ξ^i−1)`. Internally: `W := C G⁻¹·F̃ −
+𝓐_ρ` has `∂W = φ(B)` for the bounded `B = G⁻¹-cleared 𝓐(ψ-part)`, so
+`W = φC + c₀` (antiderivative + ker ∂); evaluating at `0` and at the
+`ξ^i − 1` (where `φ`-images collapse and `Σ 𝓐_ρ(ξ^i−1) = p·𝓐_{ψρ}(0) = 0`
+by `sum_seriesEval_mahlerK` + `psi_rhoTheta`) pins `c₀`. -/
+theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
     {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
     {n : ℕ} {χ : DirichletCharacter (integerRing K) (p ^ n)}
@@ -146,7 +140,8 @@ theorem mahlerK_rhoTheta_eq {D : ℕ} [NeZero D] (hD1 : 1 < D)
     (hθ1 : θK ≠ 1)
     (hθK : θK = toFieldChar (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η
       * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
-    {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n))
+    {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n)) {ξ : K}
+    (hξ : IsPrimitiveRoot ξ p)
     {G : K} (hG : IsUnit G)
     (hGtwist : mahlerK p K (twist p K χ.toContinuousMapZp
         (muEtaCleared p K η hζ hD))
@@ -154,22 +149,23 @@ theorem mahlerK_rhoTheta_eq {D : ℕ} [NeZero D] (hD1 : 1 < D)
           PowerSeries.C (θK⁻¹ ((c : ZMod (D * p ^ n))))
             * Ring.inverse ((1 + PowerSeries.X)
               * PowerSeries.C (ε ^ c) - 1))) :
-    mahlerK p K (rhoTheta p K η hζ hD χ)
-      = PowerSeries.C G⁻¹
-        * (Ftilde p K θK hε - phiSeries p (psiSeries p (Ftilde p K θK hε))) := by
+    (p : K) * PowerSeries.constantCoeff
+        (mahlerK p K (rhoTheta p K η hζ hD χ))
+      = G⁻¹ * ((p : K) * PowerSeries.constantCoeff (Ftilde p K θK hε)
+        - ∑ i : Fin p, seriesEval (Ftilde p K θK hε) (ξ ^ (i : ℕ) - 1)) := by
   sorry
 
-/-- P6-p7: the evaluated trace of `F̃_θ`:
-`p·(ψF̃_θ)(0) = θ(p)·F̃_θ(0)` — for `n = 0` by the `c ↦ pc` automorphism
+/-- P6-p7' (the evaluated trace, ψ-free form — replan R6.6):
+`Σ_{i<p} F̃(ξ^i−1) = θ(p)·F̃(0)` — for `n = 0` by the `c ↦ pc` automorphism
 and the `μ_p`-collapse `Σ_ξ extLog(ξw−1) = extLog(w^p−1)`; for `n ≥ 1`
 both sides vanish (`θ(p) = 0`; primitive-character fiber sums —
 replan R6.3). -/
-theorem constantCoeff_psiSeries_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
+theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
     {θ : DirichletCharacter K N} (hprim : θ.IsPrimitive) (hθ1 : θ ≠ 1)
     {ε : K} (hε : IsPrimitiveRoot ε N) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
     (hdom : ∀ c ∈ Finset.range N, ¬ N ∣ c → ExtLogDomain p (ε ^ c - 1)) :
-    (p : K) * PowerSeries.constantCoeff (psiSeries p (Ftilde p K θ hε))
+    ∑ i : Fin p, seriesEval (Ftilde p K θ hε) (ξ ^ (i : ℕ) - 1)
       = θ ((p : ZMod N)) * PowerSeries.constantCoeff (Ftilde p K θ hε) := by
   sorry
 
