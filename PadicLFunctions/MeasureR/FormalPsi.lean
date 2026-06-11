@@ -49,6 +49,30 @@ omit [hp : Fact p.Prime] in
 lemma phiSeries_zero : phiSeries p (0 : PowerSeries R) = 0 := by
   rw [phiSeries, ← PowerSeries.coe_substAlgHom (hasSubst_one_add_X_pow_sub_one p), map_zero]
 
+omit [hp : Fact p.Prime] in
+/-- `φ` preserves constant coefficients (the substituend has constant term `0`). -/
+@[simp]
+lemma constantCoeff_phiSeries (G : PowerSeries R) :
+    PowerSeries.constantCoeff (phiSeries p G) = PowerSeries.constantCoeff G := by
+  have hvanish : ∀ n : ℕ, 0 < n →
+      PowerSeries.coeff 0 (((1 + PowerSeries.X) ^ p - 1 : PowerSeries R) ^ n) = 0 :=
+    fun n hn => PowerSeries.X_pow_dvd_iff.1
+      (pow_dvd_pow_of_dvd (PowerSeries.X_dvd_iff.2 (by simp)) n) 0 hn
+  rw [phiSeries, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+    PowerSeries.coeff_subst' (hasSubst_one_add_X_pow_sub_one p),
+    finsum_eq_single _ 0 fun n hn => by
+      rw [hvanish n (Nat.pos_of_ne_zero hn), smul_zero], pow_zero,
+    PowerSeries.coeff_zero_one, smul_eq_mul, mul_one,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply]
+
+omit [hp : Fact p.Prime] in
+/-- `φ(C a · G) = C a · φ(G)` (substitution is a ring hom fixing constants). -/
+lemma phiSeries_C_mul (a : R) (G : PowerSeries R) :
+    phiSeries p (PowerSeries.C a * G) = PowerSeries.C a * phiSeries p G := by
+  rw [phiSeries, phiSeries, PowerSeries.subst_mul (hasSubst_one_add_X_pow_sub_one p),
+    show ((PowerSeries.C a).subst ((1 + PowerSeries.X) ^ p - 1) : PowerSeries R)
+      = PowerSeries.C a from PowerSeries.subst_C a]
+
 /-- The digit-decomposition predicate: `G` is a family of `p` digits for `F`
 along `φ`, i.e. `F = Σ_{i<p} (1+T)^i·φ(G_i)`. -/
 def IsDigitDecomp (F : PowerSeries R) (G : Fin p → PowerSeries R) : Prop :=
@@ -595,6 +619,72 @@ theorem seriesEval_zero_arg (F : PowerSeries K) :
   rw [seriesEval, tsum_eq_single 0 fun n hn => by rw [zero_pow hn, mul_zero], pow_zero,
     mul_one, PowerSeries.coeff_zero_eq_constantCoeff_apply]
 
+omit [NormedAlgebra ℚ_[p] K] in
+/-- `seriesEval` is additive on series whose evaluations converge. -/
+theorem seriesEval_add {F H : PowerSeries K} {z : K}
+    (hF : Summable fun n : ℕ => PowerSeries.coeff n F * z ^ n)
+    (hH : Summable fun n : ℕ => PowerSeries.coeff n H * z ^ n) :
+    seriesEval (F + H) z = seriesEval F z + seriesEval H z := by
+  rw [seriesEval, seriesEval, seriesEval, ← hF.tsum_add hH]
+  exact tsum_congr fun n => by rw [map_add, add_mul]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
+/-- `seriesEval` negates. -/
+theorem seriesEval_neg (F : PowerSeries K) (z : K) :
+    seriesEval (-F) z = -seriesEval F z := by
+  rw [seriesEval, seriesEval, ← tsum_neg]
+  exact tsum_congr fun n => by rw [map_neg, neg_mul]
+
+omit [NormedAlgebra ℚ_[p] K] in
+/-- `seriesEval` subtracts on series whose evaluations converge. -/
+theorem seriesEval_sub {F H : PowerSeries K} {z : K}
+    (hF : Summable fun n : ℕ => PowerSeries.coeff n F * z ^ n)
+    (hH : Summable fun n : ℕ => PowerSeries.coeff n H * z ^ n) :
+    seriesEval (F - H) z = seriesEval F z - seriesEval H z := by
+  rw [sub_eq_add_neg, seriesEval_add hF (hH.neg.congr fun n => by rw [map_neg, neg_mul]),
+    seriesEval_neg, sub_eq_add_neg]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
+/-- `seriesEval` of a constant series is that constant. -/
+@[simp]
+theorem seriesEval_C (a : K) (z : K) : seriesEval (PowerSeries.C a) z = a := by
+  rw [seriesEval, tsum_eq_single 0 fun n hn => by
+    rw [PowerSeries.coeff_C, if_neg hn, zero_mul], PowerSeries.coeff_zero_C, pow_zero, mul_one]
+
+omit [NormedAlgebra ℚ_[p] K] in
+/-- `seriesEval (C a · F) z = a · seriesEval F z`. -/
+theorem seriesEval_C_mul (a : K) (F : PowerSeries K) (z : K) :
+    seriesEval (PowerSeries.C a * F) z = a * seriesEval F z := by
+  rw [seriesEval, seriesEval, ← tsum_mul_left]
+  exact tsum_congr fun n => by rw [PowerSeries.coeff_C_mul, mul_assoc]
+
+omit [NormedAlgebra ℚ_[p] K] in
+/-- The evaluation family of a finite sum of summable series is summable. -/
+theorem summable_seriesEval_sum {ι : Type*} (s : Finset ι) (m : ι → PowerSeries K) {z : K}
+    (hm : ∀ i ∈ s, Summable fun n : ℕ => PowerSeries.coeff n (m i) * z ^ n) :
+    Summable fun n : ℕ => PowerSeries.coeff n (∑ i ∈ s, m i) * z ^ n := by
+  classical
+  induction s using Finset.induction with
+  | empty => simpa using summable_zero
+  | insert i s hi ih =>
+    refine ((hm i (Finset.mem_insert_self i s)).add
+      (ih fun j hj => hm j (Finset.mem_insert_of_mem hj))).congr fun n => ?_
+    rw [Finset.sum_insert hi, map_add, add_mul]
+
+omit [NormedAlgebra ℚ_[p] K] in
+/-- `seriesEval` of a finite sum of summable series is the sum of evaluations. -/
+theorem seriesEval_sum {ι : Type*} (s : Finset ι) (m : ι → PowerSeries K) {z : K}
+    (hm : ∀ i ∈ s, Summable fun n : ℕ => PowerSeries.coeff n (m i) * z ^ n) :
+    seriesEval (∑ i ∈ s, m i) z = ∑ i ∈ s, seriesEval (m i) z := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp [seriesEval, PowerSeries.constantCoeff]
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, seriesEval_add (hm i (Finset.mem_insert_self i s))
+      (summable_seriesEval_sum s m fun j hj => hm j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj => hm j (Finset.mem_insert_of_mem hj), Finset.sum_insert hi]
+
+
 /-- An ultrametric normed field is a nonarchimedean ring (the ring upgrade of
 `IsUltrametricDist.nonarchimedeanAddGroup`). -/
 instance : NonarchimedeanRing K where
@@ -726,6 +816,26 @@ moved here from ValuesAtOne at the R6.6 realignment). -/
 noncomputable def mahlerK (μ : MeasureR K ℤ_[p]) : PowerSeries K :=
   PowerSeries.map (integerRing K).subtype (MeasureR.mahlerTransform p K μ)
 
+omit [CompleteSpace K] in
+/-- `mahlerK` is additive on differences. -/
+theorem mahlerK_sub (μ ν : MeasureR K ℤ_[p]) :
+    mahlerK p K (μ - ν) = mahlerK p K μ - mahlerK p K ν := by
+  rw [mahlerK, mahlerK, mahlerK, MeasureR.mahlerTransform_sub, map_sub]
+
+omit [CompleteSpace K] in
+/-- The `K`-level `φ`-transport: `𝓐_{φμ}^K = phiSeries 𝓐_μ^K` (map the
+integral `mahlerTransform_phi` through the `subtype` coefficient map). -/
+theorem mahlerK_phi (μ : MeasureR K ℤ_[p]) :
+    mahlerK p K (MeasureR.phi p K μ) = phiSeries p (mahlerK p K μ) := by
+  rw [mahlerK, mahlerTransform_phi, map_phiSeries, mahlerK]
+
+omit [CompleteSpace K] in
+/-- The `K`-mapped Mahler coefficients are integral: `‖coeff n (mahlerK μ)‖ ≤ 1`. -/
+theorem norm_coeff_mahlerK_le_one (μ : MeasureR K ℤ_[p]) (n : ℕ) :
+    ‖PowerSeries.coeff n (mahlerK p K μ)‖ ≤ 1 := by
+  rw [mahlerK, PowerSeries.coeff_map]
+  exact (PowerSeries.coeff n (MeasureR.mahlerTransform p K μ)).2
+
 omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 /-- The coefficients of `(1+X)^p − 1` powers are integral: `‖coeff k (Sⁿ)‖ ≤ 1` (they are
 `ℤ`-combinations of binomial coefficients, of norm `≤ 1` in the ultrametric field). -/
@@ -737,6 +847,16 @@ theorem norm_coeff_substSeries_pow_le_one (k n : ℕ) :
     simp only [map_pow, map_sub, map_add, map_one, PowerSeries.map_X]
   rw [hmap, PowerSeries.coeff_map, Int.coe_castRingHom]
   exact IsUltrametricDist.norm_intCast_le_one _ _
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
+/-- `n ↦ (n + 1)·rⁿ → 0` for `0 ≤ r < 1` (linear-times-geometric decay). -/
+private theorem tendsto_natCast_succ_mul_pow {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    Filter.Tendsto (fun n : ℕ => ((n : ℝ) + 1) * r ^ n) Filter.atTop (nhds 0) := by
+  have h1 : Filter.Tendsto (fun n : ℕ => (n : ℝ) * r ^ n) Filter.atTop (nhds 0) :=
+    tendsto_self_mul_const_pow_of_lt_one hr0 hr1
+  have h2 : Filter.Tendsto (fun n : ℕ => r ^ n) Filter.atTop (nhds 0) :=
+    tendsto_pow_atTop_nhds_zero_of_lt_one hr0 hr1
+  simpa only [add_mul, one_mul, add_zero] using h1.add h2
 
 omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] in
 /-- For an `‖·‖ ≤ 1`-coefficient series `G` and `‖z‖ < 1`, the total `ℕ × ℕ` family of
@@ -786,6 +906,58 @@ theorem summable_prod_of_norm_coeff_le_one {G : PowerSeries K} {z : K}
   exact Set.mem_prod.2 ⟨hn, hk⟩
 
 omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] in
+/-- Linear-growth variant of `summable_prod_of_norm_coeff_le_one`: for `‖coeff n G‖ ≤
+C·(n+1)` and `‖z‖ < 1`, the `φ`-evaluation product family is summable (`‖T n k‖ ≤
+C·(k+1)·‖z‖ᵏ` on the support `n ≤ k`). Feeds `seriesEval_phi_at_root_of_summable` for the
+antiderivative series `C₁`. -/
+theorem summable_prod_of_norm_coeff_le_linear {G : PowerSeries K} {C : ℝ}
+    (hG : ∀ n, ‖PowerSeries.coeff n G‖ ≤ C * ((n : ℝ) + 1)) {z : K} (hz : ‖z‖ < 1) :
+    Summable fun nk : ℕ × ℕ =>
+      PowerSeries.coeff nk.1 G
+        * PowerSeries.coeff nk.2 (((1 + PowerSeries.X) ^ p - 1 : PowerSeries K) ^ nk.1)
+        * z ^ nk.2 := by
+  have hCnn : 0 ≤ C := le_trans (norm_nonneg _) (by simpa using hG 0)
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    NormedAddGroup.tendsto_nhds_zero]
+  intro ε hε
+  rw [Filter.eventually_cofinite]
+  have htend : Filter.Tendsto (fun n : ℕ => C * (((n : ℝ) + 1) * ‖z‖ ^ n)) Filter.atTop (nhds 0) :=
+    by simpa using (tendsto_natCast_succ_mul_pow (norm_nonneg z) hz).const_mul C
+  obtain ⟨N, hN⟩ := (htend.eventually_lt_const hε).exists_forall_of_atTop
+  refine Set.Finite.subset (Set.Finite.prod (Set.finite_Iio (N + 1)) (Set.finite_Iio (N + 1)))
+    fun nk hnk => ?_
+  simp only [Set.mem_setOf_eq, not_lt] at hnk
+  -- on the support `n ≤ k`, `‖T n k‖ ≤ C·(k+1)·‖z‖ᵏ`
+  by_cases hnk1 : nk.2 < nk.1
+  · -- off-support term vanishes; `ε ≤ 0`, contradiction
+    exfalso
+    rw [norm_mul, norm_mul, coeff_substSeries_pow_eq_zero p hnk1, norm_zero, mul_zero,
+      zero_mul] at hnk
+    exact absurd (lt_of_lt_of_le hε hnk) (lt_irrefl _)
+  rw [not_lt] at hnk1
+  have hbd : ‖PowerSeries.coeff nk.1 G
+      * PowerSeries.coeff nk.2 (((1 + PowerSeries.X) ^ p - 1 : PowerSeries K) ^ nk.1)
+      * z ^ nk.2‖ ≤ C * (((nk.2 : ℝ) + 1) * ‖z‖ ^ nk.2) := by
+    rw [norm_mul, norm_mul, norm_pow]
+    calc ‖PowerSeries.coeff nk.1 G‖
+          * ‖PowerSeries.coeff nk.2 (((1 + PowerSeries.X) ^ p - 1 : PowerSeries K) ^ nk.1)‖
+          * ‖z‖ ^ nk.2
+        ≤ (C * ((nk.1 : ℝ) + 1)) * 1 * ‖z‖ ^ nk.2 :=
+          mul_le_mul (mul_le_mul (hG nk.1) (norm_coeff_substSeries_pow_le_one p nk.2 nk.1)
+            (norm_nonneg _) (by positivity)) le_rfl (by positivity) (by positivity)
+      _ = C * (((nk.1 : ℝ) + 1) * ‖z‖ ^ nk.2) := by ring
+      _ ≤ C * (((nk.2 : ℝ) + 1) * ‖z‖ ^ nk.2) := by
+          refine mul_le_mul_of_nonneg_left ?_ hCnn
+          exact mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.add_le_add_right hnk1 1)
+            (by positivity)
+  have hk : nk.2 < N + 1 := by
+    by_contra hge
+    rw [not_lt] at hge
+    exact absurd (lt_of_le_of_lt (le_trans hnk hbd) (hN nk.2 (by omega))) (lt_irrefl ε)
+  have hn : nk.1 < N + 1 := lt_of_le_of_lt hnk1 hk
+  exact Set.mem_prod.2 ⟨hn, hk⟩
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] in
 /-- φ-collapse at a primitive `p`-th root: for `‖·‖ ≤ 1`-coefficient `G` and
 `(1+z)^p = 1`, `(φG)(z) = constantCoeff G` (the substitution vanishes). -/
 theorem seriesEval_phi_at_root {G : PowerSeries K} (hG : ∀ n, ‖PowerSeries.coeff n G‖ ≤ 1)
@@ -795,6 +967,25 @@ theorem seriesEval_phi_at_root {G : PowerSeries K} (hG : ∀ n, ‖PowerSeries.c
   rw [tsum_eq_single 0 fun n hn => by
     rw [show (1 + z) ^ p - 1 = 0 by rw [hzp, sub_self], zero_pow hn, mul_zero]]
   rw [show (1 + z) ^ p - 1 = 0 by rw [hzp, sub_self], pow_zero, mul_one,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] in
+/-- φ-collapse at a primitive `p`-th root, summability form: for `(1+z)^p = 1`
+and the `φ`-product family summable, `(φG)(z) = constantCoeff G`. This is the
+unbounded-coefficient variant of `seriesEval_phi_at_root` needed for the
+antiderivative series of the `c₀`-design (whose coefficients are only of
+polynomial growth, not `‖·‖ ≤ 1`). -/
+theorem seriesEval_phi_at_root_of_summable {G : PowerSeries K} {z : K}
+    (hprod : Summable fun nk : ℕ × ℕ =>
+      PowerSeries.coeff nk.1 G
+        * PowerSeries.coeff nk.2 (((1 + PowerSeries.X) ^ p - 1 : PowerSeries K) ^ nk.1)
+        * z ^ nk.2)
+    (hzp : (1 + z) ^ p = 1) :
+    seriesEval (phiSeries p G) z = PowerSeries.constantCoeff G := by
+  rw [seriesEval_phi_of_summable_prod p G z hprod,
+    tsum_eq_single 0 fun n hn => by
+      rw [show (1 + z) ^ p - 1 = 0 by rw [hzp, sub_self], zero_pow hn, mul_zero],
+    show (1 + z) ^ p - 1 = 0 by rw [hzp, sub_self], pow_zero, mul_one,
     PowerSeries.coeff_zero_eq_constantCoeff_apply]
 
 set_option maxHeartbeats 1000000 in
@@ -858,6 +1049,35 @@ theorem summable_seriesEval_of_norm_coeff_le_one {F : PowerSeries K}
     exact lt_of_le_of_lt (mul_le_of_le_one_left (by positivity) (hF n)) (hN n (by omega))
   exact absurd hn (not_le.2 hlt)
 
+omit [NormedAlgebra ℚ_[p] K] in
+/-- Linear-growth summability: if `‖coeff n F‖ ≤ C·(n+1)` and `‖z‖ < 1`, the evaluation
+family is summable. The antiderivative series of the `c₀`-design and `F̃` itself have
+this shape (coefficients carry an `n⁻¹` or `(p(n+1))⁻¹` factor of polynomial norm). -/
+theorem summable_seriesEval_of_norm_coeff_le_linear {F : PowerSeries K} {C : ℝ}
+    (hF : ∀ n, ‖PowerSeries.coeff n F‖ ≤ C * ((n : ℝ) + 1)) {z : K} (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => PowerSeries.coeff n F * z ^ n := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, NormedAddGroup.tendsto_nhds_zero]
+  intro ε hε
+  rw [Filter.eventually_cofinite]
+  -- `‖coeff n F · zⁿ‖ ≤ C·(n+1)·‖z‖ⁿ → 0`, so only finitely many terms exceed `ε`
+  have hCnn : 0 ≤ C := le_trans (norm_nonneg _) (by simpa using hF 0)
+  have htend : Filter.Tendsto (fun n : ℕ => C * (((n : ℝ) + 1) * ‖z‖ ^ n)) Filter.atTop (nhds 0) :=
+    by simpa using (tendsto_natCast_succ_mul_pow (norm_nonneg z) hz).const_mul C
+  obtain ⟨N, hN⟩ := (htend.eventually_lt_const hε).exists_forall_of_atTop
+  refine Set.Finite.subset (Set.finite_Iio (N + 1)) fun n hn => ?_
+  simp only [Set.mem_setOf_eq, not_lt] at hn
+  simp only [Set.mem_Iio]
+  by_contra hge
+  rw [not_lt] at hge
+  have hlt : ‖PowerSeries.coeff n F * z ^ n‖ < ε := by
+    rw [norm_mul, norm_pow]
+    calc ‖PowerSeries.coeff n F‖ * ‖z‖ ^ n
+        ≤ (C * ((n : ℝ) + 1)) * ‖z‖ ^ n :=
+          mul_le_mul_of_nonneg_right (hF n) (by positivity)
+      _ = C * (((n : ℝ) + 1) * ‖z‖ ^ n) := by ring
+      _ < ε := hN n (by omega)
+  exact absurd hn (not_le.2 hlt)
+
 omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 /-- `φ` preserves integral coefficients: `‖coeff n (φ G)‖ ≤ 1` when `‖coeff · G‖ ≤ 1`
 (a `ℤ`-combination of `G`'s integral coefficients). -/
@@ -877,6 +1097,35 @@ theorem norm_coeff_phiSeries_le_one {G : PowerSeries K} (hG : ∀ n, ‖PowerSer
   refine hd.trans ?_
   rw [smul_eq_mul, norm_mul]
   exact mul_le_one₀ (hG d) (norm_nonneg _) (norm_coeff_substSeries_pow_le_one p n d)
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
+/-- `φ` preserves linear coefficient bounds: `‖coeff n (φ G)‖ ≤ C·(n+1)` when
+`‖coeff m G‖ ≤ C·(m+1)` (the substituent powers are integral and the support is
+`m ≤ n`, so the bound `C·(m+1) ≤ C·(n+1)` propagates through the ultrametric max). -/
+theorem norm_coeff_phiSeries_le_linear {G : PowerSeries K} {C : ℝ} (hC : 0 ≤ C)
+    (hG : ∀ m, ‖PowerSeries.coeff m G‖ ≤ C * ((m : ℝ) + 1)) (n : ℕ) :
+    ‖PowerSeries.coeff n (phiSeries p G)‖ ≤ C * ((n : ℝ) + 1) := by
+  rw [phiSeries, PowerSeries.coeff_subst' (hasSubst_one_add_X_pow_sub_one p),
+    finsum_eq_finsetSum_of_support_subset _ (s := Finset.range (n + 1)) (by
+      intro d hd
+      simp only [Function.mem_support] at hd
+      by_contra hmem
+      simp only [Finset.coe_range, Set.mem_Iio, not_lt] at hmem
+      exact hd (by rw [coeff_substSeries_pow_eq_zero p (by omega), smul_zero]))]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun d hd => ?_
+  rw [smul_eq_mul, norm_mul]
+  rcases Nat.lt_or_ge n d with hnd | hdn
+  · rw [coeff_substSeries_pow_eq_zero p hnd, norm_zero, mul_zero]; positivity
+  · calc ‖PowerSeries.coeff d G‖
+          * ‖PowerSeries.coeff n (((1 + PowerSeries.X) ^ p - 1 : PowerSeries K) ^ d)‖
+        ≤ (C * ((d : ℝ) + 1)) * 1 :=
+          mul_le_mul (hG d) (norm_coeff_substSeries_pow_le_one p n d) (norm_nonneg _)
+            (by positivity)
+      _ ≤ C * ((n : ℝ) + 1) := by
+          rw [mul_one]
+          have hdn : (d : ℝ) ≤ (n : ℝ) := by
+            exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hd)
+          exact mul_le_mul_of_nonneg_left (by linarith) hC
 
 omit [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 /-- Multiplying by the integral polynomial `(1+X)^i` preserves integral coefficients. -/

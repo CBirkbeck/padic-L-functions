@@ -425,6 +425,47 @@ theorem extLog_mul {x y : L} (hx : ExtLogDomain p x) (hy : ExtLogDomain p y) :
     ← Nat.cast_smul_eq_nsmul ℚ_[p] m (padicLog p b), smul_smul, smul_smul, mul_inv]
   congr 1 <;> congr 1 <;> field_simp
 
+/-- The extended-log domain is closed under multiplication (the product witness of
+`extLog_mul`). -/
+theorem ExtLogDomain.mul {x y : L} (hx : ExtLogDomain p x) (hy : ExtLogDomain p y) :
+    ExtLogDomain p (x * y) := by
+  obtain ⟨m, k, a, hm, hxy, ha⟩ := hx
+  obtain ⟨m', k', b, hm', hxy', hb⟩ := hy
+  have hpL : (p : L) ≠ 0 := natCast_p_ne_zero p
+  refine ⟨m * m', k * m' + k' * m, a ^ m' * b ^ m, Nat.mul_pos hm hm', ?_,
+    mul_mem_expBall p (pow_mem_expBall p ha m') (pow_mem_expBall p hb m)⟩
+  rw [mul_pow, pow_mul x m m', hxy, mul_pow, mul_comm m m', pow_mul y m' m, hxy',
+    mul_pow, ← zpow_natCast ((p : L) ^ k) m', ← zpow_mul,
+    ← zpow_natCast ((p : L) ^ k') m, ← zpow_mul, zpow_add₀ hpL]
+  ring
+
+/-- The extended-log domain is closed under finite products. -/
+theorem ExtLogDomain.prod {ι : Type*} (s : Finset ι) (f : ι → L)
+    (hf : ∀ i ∈ s, ExtLogDomain p (f i)) : ExtLogDomain p (∏ i ∈ s, f i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => exact ⟨1, 0, 1, one_pos, by rw [Finset.prod_empty, one_pow, zpow_zero, one_mul],
+      inExpBall_one_sub_one p⟩
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact ExtLogDomain.mul p (hf i (Finset.mem_insert_self i s))
+      (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
+
+/-- W6a-a9 (Finset form): additivity over a finite product of domain elements
+(`extLog (∏ f) = ∑ extLog ∘ f`). Drives the `μ_p`-collapse
+`Σ_{i<p} extLog(ξ^i w − 1) = extLog(w^p − 1)` in the trace. -/
+theorem extLog_prod {ι : Type*} (s : Finset ι) (f : ι → L)
+    (hf : ∀ i ∈ s, ExtLogDomain p (f i)) :
+    extLog p (∏ i ∈ s, f i) = ∑ i ∈ s, extLog p (f i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => rw [Finset.prod_empty, Finset.sum_empty,
+      extLog_eq_padicLog p (inExpBall_one_sub_one p), padicLog_one]
+  | insert i s hi ih =>
+    have hdom : ∀ j ∈ s, ExtLogDomain p (f j) := fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.prod_insert hi, Finset.sum_insert hi,
+      extLog_mul p (hf i (Finset.mem_insert_self i s)) (ExtLogDomain.prod p s f hdom), ih hdom]
+
 /-- W6a-a10: roots of unity have extended logarithm `0`. -/
 theorem extLog_eq_zero_of_pow_eq_one {x : L} {n : ℕ} (hn : 0 < n)
     (hx : x ^ n = 1) : extLog p x = 0 := by

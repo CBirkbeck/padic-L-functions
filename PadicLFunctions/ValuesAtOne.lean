@@ -318,13 +318,185 @@ theorem one_add_mul_derivative_mahlerK_rhoTheta {D : ℕ} [NeZero D]
         * PowerSeries.derivativeFun (mahlerTransform p K (rhoTheta p K η hζ hD χ)) from rfl,
     map_one_add_mul_derivativeFun]
 
+include hp in
+/-- `‖(n : K)⁻¹‖ ≤ n` for `n ≥ 1`: the norm of `(n : K)` is `p^{−v_p(n)}`, whose
+inverse is `p^{v_p(n)} = ordProj[p] n ≤ n`. The polynomial-growth bound for the
+`1/n`-coefficients of `logSeriesAt` / `F̃`. -/
+private theorem norm_natCast_inv_le {n : ℕ} (hn : 1 ≤ n) : ‖((n : K))⁻¹‖ ≤ (n : ℝ) := by
+  have hn0 : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  have hnK : ((n : K)) = algebraMap ℚ_[p] K (n : ℚ_[p]) := (map_natCast _ n).symm
+  have hnorm : ‖((n : K))⁻¹‖ = ((p ^ padicValNat p n : ℕ) : ℝ) := by
+    rw [norm_inv, hnK, norm_algebraMap', Padic.norm_eq_zpow_neg_valuation hn0,
+      Padic.valuation_natCast, ← zpow_neg, neg_neg, zpow_natCast]
+    push_cast; ring
+  rw [hnorm, ← Nat.factorization_def n hp.out]
+  exact_mod_cast Nat.ordProj_le p (by omega)
+
+omit [CompleteSpace K] in
+/-- Character values into `K` have norm `≤ 1` (units map to roots of unity of
+norm one, non-units to `0`). -/
+private theorem norm_dirichletChar_le_one {N : ℕ} [NeZero N] (ψ : DirichletCharacter K N)
+    (c : ZMod N) : ‖ψ c‖ ≤ 1 := by
+  rcases eq_or_ne (ψ c) 0 with h0 | h0
+  · rw [h0, norm_zero]; exact zero_le_one
+  · have hu : IsUnit c := by by_contra hu; exact h0 (ψ.map_nonunit hu)
+    obtain ⟨u, rfl⟩ := hu
+    have hpow : ψ (u : ZMod N) ^ Nat.totient N = 1 := by
+      rw [← map_pow, show ((u : ZMod N)) ^ Nat.totient N
+          = ((u ^ Nat.totient N : (ZMod N)ˣ) : ZMod N) from
+        (Units.val_pow_eq_pow_val u (Nat.totient N)).symm, ZMod.pow_totient, Units.val_one,
+        map_one]
+    exact le_of_eq (PadicLFunctions.norm_eq_one_of_pow_eq_one (L := K) hpow
+      (Nat.totient_pos.2 (NeZero.pos N)).ne')
+
+/-- `Ring.inverse (1 + X) = ∑ (−1)ⁿ Xⁿ`, hence has integral coefficients. -/
+private theorem norm_coeff_inverse_one_add_X_le_one (n : ℕ) :
+    ‖PowerSeries.coeff n (Ring.inverse (1 + PowerSeries.X : PowerSeries K))‖ ≤ 1 := by
+  have hunit : IsUnit (1 + PowerSeries.X : PowerSeries K) := by
+    rw [PowerSeries.isUnit_iff_constantCoeff, map_add, PowerSeries.constantCoeff_one,
+      PowerSeries.constantCoeff_X, add_zero]; exact isUnit_one
+  have hgeom : (1 + PowerSeries.X : PowerSeries K)
+      * (PowerSeries.mk fun n => (-1) ^ n) = 1 := by
+    have := one_add_C_mul_X_mul_geom (R := K) 1
+    rwa [map_one, one_mul,
+      show (fun n => (-(1 : K)) ^ n) = fun n => (-1 : K) ^ n from rfl] at this
+  rw [ring_inverse_eq_of_mul_eq_one hunit hgeom, PowerSeries.coeff_mk, norm_pow, norm_neg,
+    norm_one, one_pow]
+
+include hp in
+/-- Bounded antiderivative (c₀-design): when `B` has integral coefficients, the
+antiderivative `C` (from the coefficient-wise division) has linearly-bounded
+coefficients `‖coeff m C‖ ≤ p·(m+1)` — the `(p(m+1))⁻¹`-factor has polynomial
+norm. Feeds the convergence of `seriesEval (φ C₁)` in the constant pin. -/
+private theorem exists_antideriv_bounded (B : PowerSeries K)
+    (hB : ∀ n, ‖PowerSeries.coeff n B‖ ≤ 1) :
+    ∃ C : PowerSeries K, PowerSeries.constantCoeff C = 0
+      ∧ (p : K) • ((1 + PowerSeries.X) * PowerSeries.derivativeFun C) = B
+      ∧ ∀ m, ‖PowerSeries.coeff m C‖ ≤ (p : ℝ) * ((m : ℝ) + 1) := by
+  haveI := charZero_of_qpAlgebra (M := K) p
+  have hp0 : (p : K) ≠ 0 := by exact_mod_cast hp.out.ne_zero
+  have hunit : IsUnit (1 + PowerSeries.X : PowerSeries K) := by
+    rw [PowerSeries.isUnit_iff_constantCoeff, map_add, PowerSeries.constantCoeff_one,
+      PowerSeries.constantCoeff_X, add_zero]; exact isUnit_one
+  set E : PowerSeries K := (p : K)⁻¹ • (B * Ring.inverse (1 + PowerSeries.X)) with hE
+  have hpinv : ‖((p : K))⁻¹‖ ≤ (p : ℝ) := norm_natCast_inv_le (p := p) (K := K) hp.out.one_le
+  -- `‖coeff k E‖ ≤ p`  (integral product scaled by `(p:K)⁻¹` of norm `p`)
+  have hEbd : ∀ k, ‖PowerSeries.coeff k E‖ ≤ (p : ℝ) := by
+    intro k
+    rw [hE, map_smul, smul_eq_mul, norm_mul]
+    refine le_trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)) (by rw [mul_one]; exact hpinv)
+    rw [PowerSeries.coeff_mul]
+    rcases (Finset.antidiagonal k).eq_empty_or_nonempty with he | hne
+    · rw [he, Finset.sum_empty, norm_zero]; exact zero_le_one
+    obtain ⟨ab, -, hab⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne
+      (fun ab => PowerSeries.coeff ab.1 B
+        * PowerSeries.coeff ab.2 (Ring.inverse (1 + PowerSeries.X)))
+    refine hab.trans ?_
+    rw [norm_mul]
+    exact mul_le_one₀ (hB ab.1) (norm_nonneg _) (norm_coeff_inverse_one_add_X_le_one ab.2)
+  refine ⟨PowerSeries.mk fun n => if n = 0 then 0 else PowerSeries.coeff (n - 1) E / n, ?_, ?_, ?_⟩
+  · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_mk, if_pos rfl]
+  · have hDC : PowerSeries.derivativeFun
+        (PowerSeries.mk fun n => if n = 0 then 0 else PowerSeries.coeff (n - 1) E / n) = E := by
+      refine PowerSeries.ext fun n => ?_
+      rw [PowerSeries.coeff_derivativeFun, PowerSeries.coeff_mk, if_neg (Nat.succ_ne_zero n),
+        Nat.add_sub_cancel]
+      have hne : ((n : K) + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero n
+      rw [Nat.cast_succ, div_mul_cancel₀ _ hne]
+    rw [hDC, hE, mul_smul_comm, smul_smul, mul_inv_cancel₀ hp0, one_smul,
+      mul_comm (1 + PowerSeries.X), mul_assoc, Ring.inverse_mul_cancel _ hunit, mul_one]
+  · intro m
+    rw [PowerSeries.coeff_mk]
+    rcases Nat.eq_zero_or_pos m with rfl | hm
+    · rw [if_pos rfl, norm_zero]; positivity
+    · rw [if_neg (by omega : m ≠ 0), div_eq_mul_inv, norm_mul]
+      calc ‖PowerSeries.coeff (m - 1) E‖ * ‖((m : K))⁻¹‖
+          ≤ (p : ℝ) * (m : ℝ) :=
+            mul_le_mul (hEbd _) (norm_natCast_inv_le (p := p) (K := K) hm) (norm_nonneg _)
+              (by positivity)
+        _ ≤ (p : ℝ) * ((m : ℝ) + 1) :=
+            mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+
+include hp in
+/-- For a norm-one argument `‖u − 1‖ = 1` (so `‖u‖ = 1`), the positive-degree
+coefficients of `logSeriesAt u` are bounded linearly: `‖coeff n (logSeriesAt u)‖ ≤ n`
+for `n ≥ 1` (the `1/n`-factor has norm `≤ n` and `‖u/(u−1)‖ = 1`). -/
+private theorem norm_coeff_logSeriesAt_le_of_norm_one {u : K} (hu1 : ‖u - 1‖ = 1)
+    {n : ℕ} (hn : 1 ≤ n) : ‖PowerSeries.coeff n (logSeriesAt p K u)‖ ≤ (n : ℝ) := by
+  -- `‖u‖ ≤ 1`: `u = (u−1) + 1`, both summands of norm `≤ 1`
+  have hunorm : ‖u‖ ≤ 1 := by
+    calc ‖u‖ = ‖(u - 1) + 1‖ := by rw [sub_add_cancel]
+      _ ≤ max ‖u - 1‖ ‖(1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ 1 := by rw [hu1, norm_one, max_self]
+  rw [logSeriesAt, PowerSeries.coeff_mk, if_neg (by omega : n ≠ 0)]
+  have hratio : ‖u / (u - 1)‖ ≤ 1 := by rw [norm_div, hu1, div_one]; exact hunorm
+  calc ‖(-1 : K) ^ (n - 1) * ((n : K))⁻¹ * (u / (u - 1)) ^ n‖
+      = ‖((n : K))⁻¹‖ * ‖u / (u - 1)‖ ^ n := by
+        rw [norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_pow]
+    _ ≤ ‖((n : K))⁻¹‖ * 1 := by
+        refine mul_le_mul_of_nonneg_left (pow_le_one₀ (norm_nonneg _) hratio) (norm_nonneg _)
+    _ = ‖((n : K))⁻¹‖ := mul_one _
+    _ ≤ (n : ℝ) := norm_natCast_inv_le (p := p) (K := K) hn
+
+include hp in
+/-- Lem 6.2 as a coefficient bound: with the contributing roots of norm one,
+`‖coeff n F̃‖ ≤ C·(n+1)` for a uniform `C` (the positive-degree coefficients are
+linearly bounded; the constant term is absorbed). Hence `seriesEval F̃ z` converges
+for `‖z‖ < 1`. -/
+private theorem summable_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
+    {θ : DirichletCharacter K N} {ε : K} (hε : IsPrimitiveRoot ε N)
+    (hnorm : ∀ c ∈ Finset.range N, ¬ N ∣ c → ‖ε ^ c - 1‖ = 1)
+    {z : K} (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => PowerSeries.coeff n (Ftilde p K θ hε) * z ^ n := by
+  haveI : Fact (1 < N) := ⟨hN⟩
+  -- linear bound `‖coeff n F̃‖ ≤ C·(n+1)` with `C := max ‖coeff 0 F̃‖ 1`
+  set C : ℝ := max ‖PowerSeries.constantCoeff (Ftilde p K θ hε)‖ 1 with hC
+  refine summable_seriesEval_of_norm_coeff_le_linear (C := C) (fun n => ?_) hz
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- constant term: `‖coeff 0 F̃‖ ≤ C ≤ C·1`
+    rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, Nat.cast_zero]
+    calc ‖PowerSeries.constantCoeff (Ftilde p K θ hε)‖ ≤ C := le_max_left _ _
+      _ = C * ((0 : ℝ) + 1) := by ring
+  · -- positive degree: ultrametric `‖Σ_c term_c‖ ≤ max_c ‖term_c‖ ≤ n ≤ C·(n+1)`
+    rw [Ftilde, map_neg, norm_neg, map_sum]
+    have hbd : ‖∑ c ∈ Finset.range N, PowerSeries.coeff n
+          (PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c))‖ ≤ (n : ℝ) := by
+      refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun c hc => ?_
+      rw [PowerSeries.coeff_C_mul, norm_mul]
+      by_cases hcd : N ∣ c
+      · -- `θ⁻¹(c) = 0` (non-unit `c`); whole term vanishes
+        have hc0 : c = 0 := Nat.eq_zero_of_dvd_of_lt hcd (Finset.mem_range.mp hc)
+        rw [hc0, Nat.cast_zero,
+          show (θ⁻¹) (0 : ZMod N) = 0 from MulChar.map_nonunit _
+            (by rw [isUnit_zero_iff]; exact one_ne_zero ∘ Eq.symm), norm_zero, zero_mul]
+        positivity
+      · calc ‖θ⁻¹ ((c : ZMod N))‖ * ‖PowerSeries.coeff n (logSeriesAt p K (ε ^ c))‖
+            ≤ 1 * (n : ℝ) :=
+              mul_le_mul (norm_dirichletChar_le_one _ _)
+                (norm_coeff_logSeriesAt_le_of_norm_one (u := ε ^ c) (hnorm c hc hcd) hn)
+                (norm_nonneg _) zero_le_one
+          _ = (n : ℝ) := one_mul _
+    refine le_trans hbd (le_trans ?_ (le_mul_of_one_le_left (by positivity) (le_max_right _ _)))
+    linarith
+
+set_option maxHeartbeats 800000 in
 /-- P6-p6' (the constant pin, c₀-design — replan R6.6; Lem 6.3 made
 distribution-free WITHOUT field-level `ψ`): the cleared mass identity
 `p·𝓐_ρ(0)·G = p·F̃(0) − Σ_{i<p} F̃(ξ^i−1)`. Internally: `W := C G⁻¹·F̃ −
 𝓐_ρ` has `∂W = φ(B)` for the bounded `B = G⁻¹-cleared 𝓐(ψ-part)`, so
 `W = φC + c₀` (antiderivative + ker ∂); evaluating at `0` and at the
 `ξ^i − 1` (where `φ`-images collapse and `Σ 𝓐_ρ(ξ^i−1) = p·𝓐_{ψρ}(0) = 0`
-by `sum_seriesEval_mahlerK` + `psi_rhoTheta`) pins `c₀`. -/
+by `sum_seriesEval_mahlerK` + `psi_rhoTheta`) pins `c₀`.
+
+**Statement-fix (replan R6.6, recorded 2026-06-11):** the original frozen
+skeleton omitted the norm hypothesis `hnorm`. It is needed twice: (i) to
+discharge the `IsUnit (ε^c − 1)` side-condition of
+`one_add_mul_derivative_Ftilde`, and (ii) to bound `‖coeff n F̃‖` linearly so
+the evaluations `seriesEval F̃ (ξ^i − 1)` converge (Lem 6.2's `ℛ⁺`-membership,
+realised as a coefficient bound). For the contributing `c` (units mod
+`D·p^n`) the tame part `D > 1` forces `‖ε^c − 1‖ = 1` (RJW's cyclotomic-product
+fact, T612 `norm_one_sub_pow_eq_one`); `hnorm` packages this and is discharged
+identically in `LpFunction_one`. -/
 theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
     {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
@@ -336,6 +508,7 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
       * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
     {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n)) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
+    (hnorm : ∀ c ∈ Finset.range (D * p ^ n), ¬ (D * p ^ n) ∣ c → ‖ε ^ c - 1‖ = 1)
     {G : K} (hG : IsUnit G)
     (hGtwist : mahlerK p K (twist p K χ.toContinuousMapZp
         (muEtaCleared p K η hζ hD))
@@ -347,7 +520,151 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
         (mahlerK p K (rhoTheta p K η hζ hD χ))
       = G⁻¹ * ((p : K) * PowerSeries.constantCoeff (Ftilde p K θK hε)
         - ∑ i : Fin p, seriesEval (Ftilde p K θK hε) (ξ ^ (i : ℕ) - 1)) := by
-  sorry
+  haveI : Fact (1 < D * p ^ n) := ⟨hN⟩
+  -- abbreviations for the power-series objects (NOT the heavy measure terms, which
+  -- `set` would expensively abstract through `rhoTheta`/`twist`/`muEtaCleared`)
+  -- the unit hypothesis for `one_add_mul_derivative_Ftilde`, from `hnorm`
+  have hunit : ∀ c ∈ Finset.range (D * p ^ n), ¬ (D * p ^ n) ∣ c → IsUnit (ε ^ c - 1) :=
+    fun c hc hcd => isUnit_iff_ne_zero.2 (by
+      rw [← norm_pos_iff, hnorm c hc hcd]; exact one_pos)
+  -- the `ψ`-part `K`-series `B` (integral coefficients) and the antiderivative `C₁`
+  obtain ⟨C₁, hC₁0, hC₁, hC₁bd⟩ := exists_antideriv_bounded (p := p)
+    (mahlerK p K (MeasureR.psi p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))))
+    (norm_coeff_mahlerK_le_one _ _)
+  -- `(1+X)·∂(C G⁻¹·F̃) = mahlerK tw`  (proven `∂F̃` + `hGtwist`, with `C`-scalar pulled out)
+  have hCFder : (1 + PowerSeries.X) * PowerSeries.derivativeFun
+        (PowerSeries.C G⁻¹ * Ftilde p K θK hε)
+      = mahlerK p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)) := by
+    rw [show PowerSeries.derivativeFun (PowerSeries.C G⁻¹ * Ftilde p K θK hε)
+          = PowerSeries.C G⁻¹ * PowerSeries.derivativeFun (Ftilde p K θK hε) from by
+        rw [show PowerSeries.C G⁻¹ * Ftilde p K θK hε = G⁻¹ • Ftilde p K θK hε from
+          (PowerSeries.smul_eq_C_mul _ _).symm, PowerSeries.derivativeFun_smul,
+          PowerSeries.smul_eq_C_mul],
+      show (1 + PowerSeries.X) * (PowerSeries.C G⁻¹ * PowerSeries.derivativeFun (Ftilde p K θK hε))
+          = PowerSeries.C G⁻¹
+            * ((1 + PowerSeries.X) * PowerSeries.derivativeFun (Ftilde p K θK hε)) from by ring,
+      one_add_mul_derivative_Ftilde hN hθ1 hε hunit, hGtwist]
+  -- `(1+X)·∂(𝓐_ρ) = mahlerK tw − φ B`  (Res = 1 − φψ, transported)
+  have hAder : (1 + PowerSeries.X) * PowerSeries.derivativeFun
+        (mahlerK p K (rhoTheta p K η hζ hD χ))
+      = mahlerK p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+        - phiSeries p (mahlerK p K
+          (MeasureR.psi p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)))) := by
+    rw [one_add_mul_derivative_mahlerK_rhoTheta hD1 hη hζ hD χ, res_units_eq, mahlerK_sub,
+      mahlerK_phi]
+  -- the W-equation: `(1+X)·∂W = φ B` where `W := C G⁻¹·F̃ − 𝓐_ρ`
+  have hWder : (1 + PowerSeries.X) * PowerSeries.derivativeFun
+        (PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ))
+      = phiSeries p (mahlerK p K
+          (MeasureR.psi p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)))) := by
+    rw [show PowerSeries.derivativeFun
+          (PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ))
+        = PowerSeries.derivativeFun (PowerSeries.C G⁻¹ * Ftilde p K θK hε)
+          - PowerSeries.derivativeFun (mahlerK p K (rhoTheta p K η hζ hD χ)) from
+        map_sub (PowerSeries.derivative K) _ _,
+      mul_sub, hCFder, hAder]
+    ring
+  -- `(1+X)·∂(φ C₁) = φ B`  (∂φ = p·φ∂ + scalar pull-through)
+  have hphiC₁der : (1 + PowerSeries.X) * PowerSeries.derivativeFun (phiSeries p C₁)
+      = phiSeries p (mahlerK p K
+          (MeasureR.psi p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)))) := by
+    rw [one_add_mul_derivative_phiSeries,
+      show (p : K) • phiSeries p ((1 + PowerSeries.X) * PowerSeries.derivativeFun C₁)
+        = phiSeries p ((p : K) • ((1 + PowerSeries.X) * PowerSeries.derivativeFun C₁)) from by
+        rw [PowerSeries.smul_eq_C_mul, ← phiSeries_C_mul, ← PowerSeries.smul_eq_C_mul], hC₁]
+  -- `W − φ C₁` is `∂`-killed, hence the constant `C c₀`; set `c₀ := constantCoeff(W − φC₁)`
+  have hker : (1 + PowerSeries.X) * PowerSeries.derivativeFun
+      ((PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ))
+        - phiSeries p C₁) = 0 := by
+    rw [show PowerSeries.derivativeFun
+          ((PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ))
+            - phiSeries p C₁)
+        = PowerSeries.derivativeFun
+            (PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ))
+          - PowerSeries.derivativeFun (phiSeries p C₁) from
+        map_sub (PowerSeries.derivative K) _ _,
+      mul_sub, hWder, hphiC₁der, sub_self]
+  have hWeq := eq_C_constantCoeff_of_one_add_mul_derivative_eq_zero (p := p) hker
+  set c₀ := PowerSeries.constantCoeff
+    ((PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ))
+      - phiSeries p C₁) with hc₀def
+  -- so `W = φ C₁ + C c₀`
+  have hWval : PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ)
+      = phiSeries p C₁ + PowerSeries.C c₀ := by rw [← hWeq]; ring
+  -- `‖z_j‖ < 1` and `(1 + z_j)^p = 1` for `z_j = ξ^j − 1`
+  have hzlt : ∀ j : Fin p, ‖ξ ^ (j : ℕ) - 1‖ < 1 := by
+    intro j
+    rcases Nat.eq_zero_or_pos (j : ℕ) with hj0 | hjpos
+    · rw [hj0, pow_zero, sub_self, norm_zero]; exact one_pos
+    · have hcop : (j : ℕ).Coprime p :=
+        Nat.coprime_comm.mp (hp.out.coprime_iff_not_dvd.mpr fun hdvd =>
+          absurd (Nat.le_of_dvd hjpos hdvd) (by omega : ¬ p ≤ (j : ℕ)))
+      exact (by rw [pow_one] at *; exact hξ.pow_of_coprime (j : ℕ) hcop :
+        IsPrimitiveRoot (ξ ^ (j : ℕ)) (p ^ 1)).norm_sub_one_lt (p := p) le_rfl
+  have hzp : ∀ j : Fin p, (1 + (ξ ^ (j : ℕ) - 1)) ^ p = 1 := fun j => by
+    rw [show (1 : K) + (ξ ^ (j : ℕ) - 1) = ξ ^ (j : ℕ) by ring, ← pow_mul, mul_comm, pow_mul,
+      hξ.pow_eq_one, one_pow]
+  -- summability facts at `z_j = ξ^j − 1`
+  have hsumF : ∀ j : Fin p, Summable fun m : ℕ =>
+      PowerSeries.coeff m (Ftilde p K θK hε) * (ξ ^ (j : ℕ) - 1) ^ m := fun j =>
+    summable_seriesEval_Ftilde (θ := θK) hN hε hnorm (hzlt j)
+  have hsumA : ∀ j : Fin p, Summable fun m : ℕ =>
+      PowerSeries.coeff m (mahlerK p K (rhoTheta p K η hζ hD χ)) * (ξ ^ (j : ℕ) - 1) ^ m :=
+    fun j => summable_seriesEval_of_norm_coeff_le_one (norm_coeff_mahlerK_le_one _ _) (hzlt j)
+  have hsumCF : ∀ j : Fin p, Summable fun m : ℕ =>
+      PowerSeries.coeff m (PowerSeries.C G⁻¹ * Ftilde p K θK hε) * (ξ ^ (j : ℕ) - 1) ^ m :=
+    fun j => ((hsumF j).mul_left G⁻¹).congr fun m => by rw [PowerSeries.coeff_C_mul, mul_assoc]
+  -- the constant series `C c₀` evaluates summably (finite support)
+  have hsumCc₀ : ∀ j : Fin p, Summable fun m : ℕ =>
+      PowerSeries.coeff m (PowerSeries.C c₀) * (ξ ^ (j : ℕ) - 1) ^ m := fun j =>
+    summable_of_ne_finset_zero (s := {0}) fun m hm => by
+      rw [PowerSeries.coeff_C, if_neg (by simpa using hm), zero_mul]
+  have hsumphiC₁ : ∀ j : Fin p, Summable fun m : ℕ =>
+      PowerSeries.coeff m (phiSeries p C₁) * (ξ ^ (j : ℕ) - 1) ^ m := fun j =>
+    summable_seriesEval_of_norm_coeff_le_linear (C := (p : ℝ))
+      (norm_coeff_phiSeries_le_linear p (C := (p : ℝ)) (by positivity) hC₁bd) (hzlt j)
+  -- evaluating `W = φ C₁ + C c₀` at each `z_j` gives `c₀`; on the other side
+  -- `seriesEval W z_j = G⁻¹·F̃(z_j) − 𝓐_ρ(z_j)`. Sum over `j`.
+  have hsumW : ∑ j : Fin p, (G⁻¹ * seriesEval (Ftilde p K θK hε) (ξ ^ (j : ℕ) - 1)
+        - seriesEval (mahlerK p K (rhoTheta p K η hζ hD χ)) (ξ ^ (j : ℕ) - 1))
+      = (p : K) * c₀ := by
+    rw [show (∑ j : Fin p, (G⁻¹ * seriesEval (Ftilde p K θK hε) (ξ ^ (j : ℕ) - 1)
+          - seriesEval (mahlerK p K (rhoTheta p K η hζ hD χ)) (ξ ^ (j : ℕ) - 1)))
+        = ∑ j : Fin p, seriesEval
+            (PowerSeries.C G⁻¹ * Ftilde p K θK hε
+              - mahlerK p K (rhoTheta p K η hζ hD χ)) (ξ ^ (j : ℕ) - 1) from
+      Finset.sum_congr rfl fun j _ => by
+        rw [seriesEval_sub (hsumCF j) (hsumA j), seriesEval_C_mul]]
+    rw [show (∑ j : Fin p, seriesEval
+            (PowerSeries.C G⁻¹ * Ftilde p K θK hε
+              - mahlerK p K (rhoTheta p K η hζ hD χ)) (ξ ^ (j : ℕ) - 1))
+        = ∑ _j : Fin p, c₀ from Finset.sum_congr rfl fun j _ => by
+      rw [hWval, seriesEval_add (hsumphiC₁ j) (hsumCc₀ j),
+        seriesEval_phi_at_root_of_summable p
+          (summable_prod_of_norm_coeff_le_linear p (C := (p : ℝ)) hC₁bd (hzlt j)) (hzp j),
+        hC₁0, seriesEval_C, zero_add]]
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  -- the `𝓐_ρ`-sum vanishes: `Σ_j 𝓐_ρ(z_j) = p·constantCoeff (mahlerK (ψρ)) = 0`
+  have hAsum : ∑ j : Fin p, seriesEval (mahlerK p K (rhoTheta p K η hζ hD χ)) (ξ ^ (j : ℕ) - 1)
+      = 0 := by
+    rw [sum_seriesEval_mahlerK (p := p) hξ (rhoTheta p K η hζ hD χ), psi_rhoTheta hζ hD χ]
+    simp [mahlerK]
+  -- `p·c₀ = G⁻¹·Σ_j F̃(z_j)`
+  have hexpand : (p : K) * c₀ = G⁻¹ * ∑ j : Fin p, seriesEval (Ftilde p K θK hε) (ξ ^ (j : ℕ) - 1)
+      := by rw [← hsumW, Finset.sum_sub_distrib, ← Finset.mul_sum, hAsum, sub_zero]
+  -- `c₀ = G⁻¹·constantCoeff F̃ − constantCoeff 𝓐_ρ` (evaluate `W = φC₁ + C c₀` at `0`)
+  have hcWexp : c₀ = G⁻¹ * PowerSeries.constantCoeff (Ftilde p K θK hε)
+      - PowerSeries.constantCoeff (mahlerK p K (rhoTheta p K η hζ hD χ)) := by
+    have : c₀ = PowerSeries.constantCoeff
+        (PowerSeries.C G⁻¹ * Ftilde p K θK hε - mahlerK p K (rhoTheta p K η hζ hD χ)) := by
+      rw [hWval, map_add, constantCoeff_phiSeries, hC₁0, zero_add, PowerSeries.constantCoeff_C]
+    rw [this, map_sub, map_mul, PowerSeries.constantCoeff_C]
+  -- assemble the displayed identity
+  have h1 : (p : K) * c₀ = (p : K) * (G⁻¹ * PowerSeries.constantCoeff (Ftilde p K θK hε))
+      - (p : K) * PowerSeries.constantCoeff (mahlerK p K (rhoTheta p K η hζ hD χ)) := by
+    rw [hcWexp]; ring
+  rw [hexpand] at h1
+  linear_combination h1
 
 /-- P6-p7' (the evaluated trace, ψ-free form — replan R6.6):
 `Σ_{i<p} F̃(ξ^i−1) = θ(p)·F̃(0)` — for `n = 0` by the `c ↦ pc` automorphism
