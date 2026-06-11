@@ -1707,6 +1707,12 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 
 ### [CLEANUP-W2] /cleanup-all-lite on the widened Measure/* (final per-file)
 - **Status**: open | **Depends on**: TW6 | **Type**: cleanup (final per-file ×6)
+- **Progress**:
+  - 2026-06-11: sequenced with the final cleanup block (CL53/CL54/
+    CLEANUP-FINAL): §5 consumers were still adding to Measure/* through T516
+    (extendByZero factorisation in Basic.lean), and the per-decl golf needs a
+    lean-lsp-tooled session. Linter-set is green on Measure/* as of the
+    ALL-5 sweep (2026-06-11). Not a mainline blocker.
 
 ### [T501] Gauss sums: product formula at general level + norm-one
 - **Status**: done (2026-06-10T21:40Z)
@@ -2675,7 +2681,9 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   No batch debt.
 
 ### [T520] L_p(θ,s) and RJW Theorem 5.19
-- **Status**: open | **File**: Branches.lean | **Depends on**: T519, T516 | **Type**: def + theorem
+- **Status**: done (finished 2026-06-11)
+- **File**: Interpolation/LpFunction.lean (replan — see Progress) + Branches.lean
+- **Depends on**: T519, T516 | **Type**: def + theorem
 - **Statement**: `LpFunction θ s` (genuine integral against ζ_η) +
   `Lp_interpolation` (L5.3.7; eq:alternative route; ω-as-Dirichlet-character
   bridge `teichmullerChar` sub-leaf).
@@ -2683,6 +2691,50 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Blueprint**: wire the L_p/Thm 5.19 nodes; re-render; chapter complete
   except Mellin-dependent prose nodes (rationale comments).
 - **Sizing**: ~130 LOC.
+- **Progress**:
+  - 2026-06-11: REPLAN (file location): the planner placed L_p in
+    Branches.lean, but T516 inverted the import direction (NonTame imports
+    Branches for the Teichmüller prime-to-p roots), and L_p needs NonTame's
+    μ̃_η stack — so T520 lives in the new
+    `PadicLFunctions/Interpolation/LpFunction.lean` (imports NonTame; wired
+    into PadicLFunctions.lean; CL53's scope extended to include it). The
+    ω-bridge cluster (`teichmullerChar`, `teichmullerChar_toZMod`,
+    `castHom_toZModPow_eq_toZMod`) is ℤ_p-level and went to Branches.lean
+    as planned.
+  - 2026-06-11: built `teichmullerCharR` (ω over integerRing K),
+    `invUnitsCM`, `anglePowCM` (T519's continuity through the isometric
+    structure map), `zetaEtaCleared` (RJW's ζ_η as a genuine measure on
+    ℤ_p^×, cleared normalisation, restriction implicit in extension by
+    zero), `LpFunction` (RJW Def 5.18, Gauss unit divided out),
+    `twistedPChar` (χω^{−k} at level p^{max n 1}),
+    `exists_primitive_pPow_factorisation` (T516's conductor argument
+    packaged), `Lp_interpolation` (RJW Thm 5.19) — statement quantifies
+    the primitive core χ' of χω^{−k} via a factorisation hypothesis (the
+    zetaEta_twisted_moments pattern); RHS = (1−θ'(p)p^{k−1})·LvalNeg
+    (toFieldChar θ') (k−1) with θ' = η·χ' at level D·p^m.
+  - Proof route as planned (eq:alternative): k = k'+1 destructure; ε' from
+    hε by pow_of_dvd; character key χ = χ'·ω^{k'+1} at level p^{max n 1}
+    (group algebra from hχ'); pointwise integrand identity
+    x⁻¹χ(x)⟨x⟩^k = χ'(x)x^{k−1} on units (Units-level collapse +
+    congrArg Units.val + map_mul/map_pow over algebraMap); extendByZero
+    ext-case-split; zetaEta_twisted_moments at χ'; Gauss-unit cancellation.
+  - Verification: lake build green (code + blueprint), 0 sorry,
+    `#print axioms` = [propext, Classical.choice, Quot.sound] on all 10 new
+    decls (castHom_toZModPow_eq_toZMod, teichmullerChar, teichmullerCharR,
+    invUnitsCM, anglePowCM, zetaEtaCleared, LpFunction, twistedPChar,
+    exists_primitive_pPow_factorisation, Lp_interpolation).
+  - /cleanup degraded mode (no lean-lsp MCP this session): linter-set green,
+    zero long lines; added @[simp] apply-lemmas (invUnitsCM_apply,
+    anglePowCM_apply, zetaEtaCleared_apply) and de-nested the in-proof
+    shows. A tooled session may revisit.
+  - Blueprint: `interp-zeta-eta` re-wired to zetaEtaCleared +
+    zetaEta_twisted_moments (ζ_η now exists as a measure object);
+    `interp-Lp-theta` → LpFunction; `interp-Lp-interpolation` →
+    Lp_interpolation. Node prose matched to RJW's actual Thm 5.19 (the
+    ζ_{p,i}(s) = L_p(ω^i,s) identification is RJW's post-theorem REMARK —
+    moved to prose with a both-routes-kept formalisation note, as for
+    Thm 5.17). `lake build PadicLFunctionsBlueprint` green.
+  - DONE — RJW Theorem 5.19 complete; §5.3 mainline (5.17 + 5.19) closed.
 
 ### [T521] p-adic exponential: convergence, isometry, functional equation
 - **Status**: open | **File**: PadicLFunctions/PadicExp.lean | **Depends on**: none

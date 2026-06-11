@@ -396,7 +396,7 @@ the product character $`\theta^{-1}` and the root of unity $`\eps_{Dp^n} =
 \eps_D\eps_{p^n}`, giving the stated closed form.
 :::
 
-:::definition "interp-zeta-eta" (lean := "PadicLFunctions.MeasureR.zetaEta_twisted_moments")
+:::definition "interp-zeta-eta" (lean := "PadicLFunctions.MeasureR.zetaEtaCleared, PadicLFunctions.MeasureR.zetaEta_twisted_moments")
 With $`\mu_\eta` the measure of {uses "interp-mu-eta"}[] attached to $`\eta`,
 define
 $$`\zeta_\eta := x^{-1}\,\Res_{\Zpx}(\mu_\eta) \in \Lam(\Zpx).`
@@ -404,9 +404,11 @@ This is directly analogous to the construction of $`\zetap`, except that
 $`\zeta_\eta` is a genuine measure (no pseudo-measure denominator is needed). This
 uses {uses "interp-mu-eta"}[] and {uses "interp-eta-restriction"}[].
 
-In the formalisation the `x⁻¹`-shift is realised by the index shift
-`k ↦ k−1` in the moment statements (the T036 pattern):
-`zetaEta_twisted_moments` states the final display
+In the formalisation `zetaEtaCleared` is the genuine measure on `ℤ_p^×`
+(pairing `g` integrates `x⁻¹·g`, extended by zero, against the
+$`G(\eta^{-1})`-cleared $`\mu_\eta`), and in the moment statements the
+`x⁻¹`-shift is equivalently realised by the index shift `k ↦ k−1` (the
+T036 pattern): `zetaEta_twisted_moments` states the final display
 $`\int\chi(x)x^k\cdot\zeta_\eta = (1-\theta(p)p^{k-1})L(\theta,1-k)`
 directly as the $`(k-1)`-st χ-twisted moment of
 $`\Res_{\Zpx}(\mu_\eta)` (cleared by $`G(\eta^{-1})`); the Euler factor
@@ -510,7 +512,7 @@ interpolation formula itself.
 
 We package the most general statement using the measure $`\zeta_\eta`.
 
-:::definition "interp-Lp-theta"
+:::definition "interp-Lp-theta" (lean := "PadicLFunctions.MeasureR.LpFunction")
 Let $`\theta = \chi\eta` be a Dirichlet character with $`\eta` of conductor $`D`
 prime to $`p` and $`\chi` of conductor $`p^n`, $`n \geq 0`. The *$`p`-adic
 $`L`-function* of $`\theta` is
@@ -520,15 +522,26 @@ Equivalently, in terms of the unshifted measure $`\mu_\eta`,
 $$`L_p(\theta,s) = \int_{\Zpx}\chi\omega^{-1}(x)\,\ang{x}^{-s}\cdot\mu_\eta =
 \int_{\Zpx}\chi\omega^{s-1}(x)\,x^{-s}\cdot\mu_\eta.`
 This uses {uses "interp-zeta-eta"}[] and {uses "teichmuller-character"}[].
+
+In the formalisation `LpFunction` takes values in an ambient complete
+ultrametric $`\Qp`-algebra `K` (standing in for the notes' $`\Cp`), pairs
+`zetaEtaCleared` with the character `χ̃(x)·⟨x⟩^{1−s}` and divides the
+Gauss-sum clearing back out; the `eq:alternative` description in terms of
+$`\mu_\eta` is the route taken by the interpolation proof.
 :::
 
-:::theorem "interp-Lp-interpolation"
+:::theorem "interp-Lp-interpolation" (lean := "PadicLFunctions.MeasureR.Lp_interpolation")
 For all $`k \geq 1`,
 $$`L_p(\theta, 1-k) = \big(1 - \theta\omega^{-k}(p)\,p^{k-1}\big)\,
 L(\theta\omega^{-k}, 1-k).`
-Consequently $`\zeta_{p,i}(s) = L_p(\omega^i, s)`. This uses
-{uses "interp-Lp-theta"}[], {uses "interp-eta-restriction"}[],
+This uses {uses "interp-Lp-theta"}[], {uses "interp-eta-restriction"}[],
 {uses "interp-mahler-theta"}[] and {uses "dirichlet-L-function"}[].
+
+In the formalisation $`\theta\omega^{-k}` is realised at its conductor: the
+$`p`-part $`\chi\omega^{-k}` enters through its primitive core `χ'`
+(supplied by `exists_primitive_pPow_factorisation`), and the right-hand side
+is the L-value of $`\eta\cdot\chi'` exactly as in the final display of
+{uses "interp-zeta-eta"}[]; the §5.2 standing hypothesis $`D > 1` applies.
 :::
 
 :::proof "interp-Lp-interpolation"
@@ -542,10 +555,17 @@ exactly as in the non-tame proof: forming the twist $`\mu_{\psi\eta} =
 (\mu_\eta)_\psi` with its Mahler transform {uses "interp-mahler-theta"}[] and
 applying the restriction-interpolation {uses "interp-eta-restriction"}[] to it
 gives $`\int_{\Zpx}\psi(x)x^{k-1}\cdot\mu_\eta = (1-\theta\omega^{-k}(p)p^{k-1})
-L(\theta\omega^{-k},1-k)`. Setting $`\chi = \omega^i` (trivial tame part) recovers
-$`\zeta_{p,i}(s) = L_p(\omega^i,s)`, and at $`s = 1-k` with $`i \equiv k` this
-reproduces {uses "interp-branch-interpolation"}[].
+L(\theta\omega^{-k},1-k)`.
 :::
+
+Note that (as RJW record after the theorem) directly from the definitions
+$`\zeta_{p,i}(s) = L_p(\omega^i, s)`, so for arbitrary $`k > 0` the theorem
+gives $`\zeta_{p,i}(1-k) = (1-\omega^{i-k}(p)p^{k-1})L(\omega^{i-k},1-k)`,
+recovering the branch interpolation when $`k \equiv i \pmod{p-1}` (where
+$`\omega^{i-k}` is trivial). The formalisation keeps the two routes separate:
+$`\zeta_{p,i}` is built from the §4 pseudo-measure $`\zetap` (tame conductor
+$`D = 1`), while $`L_p` integrates against the genuine measure $`\zeta_\eta`
+of the $`D > 1` theory, so this identification is prose-level only.
 
 Finally, the construction $`\zeta_{p,i}` is an instance of a general transform.
 

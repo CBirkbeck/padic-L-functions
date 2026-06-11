@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.FieldTheory.Perfect
+import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.NumberTheory.Padics.AddChar
 import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -188,6 +189,44 @@ noncomputable def teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ where
 @[simp]
 lemma teichmuller_coe (x : ℤ_[p]ˣ) :
     (teichmuller p x : ℤ_[p]) = teichmullerFun p (x : ℤ_[p]) := rfl
+
+/-- Reduction mod `p^M` followed by the cast down to `ZMod p` is reduction
+mod `p` (the `toZMod`/`toZModPow` bridge for the `ω`-as-Dirichlet-character
+evaluations of T520). -/
+lemma castHom_toZModPow_eq_toZMod {M : ℕ} (hM : M ≠ 0) (x : ℤ_[p]) :
+    ZMod.castHom (dvd_pow_self p hM) (ZMod p) (toZModPow M x) = toZMod x := by
+  have happr : x - appr x M ∈ maximalIdeal ℤ_[p] := by
+    rw [PadicInt.maximalIdeal_eq_span_p]
+    refine Ideal.span_singleton_le_span_singleton.mpr (dvd_pow_self _ hM) ?_
+    exact appr_spec M x
+  calc ZMod.castHom (dvd_pow_self p hM) (ZMod p) (toZModPow M x)
+      = ((appr x M : ℕ) : ZMod p) := by
+        rw [show toZModPow M x = ((appr x M : ℕ) : ZMod (p ^ M)) from rfl,
+          map_natCast]
+    _ = ((zmodRepr x : ℕ) : ZMod p) :=
+        zmod_congr_of_sub_mem_max_ideal x _ _ happr (sub_zmodRepr_mem x)
+    _ = toZMod x := rfl
+
+/-- L5.3.7 sub-leaf (T520): the Teichmüller character `ω` as a Dirichlet
+character mod `p` (its values on `(ZMod p)ˣ` are the `(p−1)`-th roots of
+unity; non-units of `ZMod p` — i.e. `0` — go to `0`). -/
+noncomputable def teichmullerChar : DirichletCharacter ℤ_[p] p :=
+  { (teichmullerZMod p).toMonoidHom with
+    map_nonunit' := fun a ha => by
+      rw [show a = (0 : ZMod p) by
+        by_contra h
+        exact ha (isUnit_iff_ne_zero.mpr h)]
+      exact map_zero (teichmullerZMod p) }
+
+@[simp]
+lemma teichmullerChar_apply (a : ZMod p) :
+    teichmullerChar p a = teichmullerZMod p a := rfl
+
+/-- The defining compatibility `ω(x mod p) = ω(x)` (decomposition L5.3.7
+attack [1]). -/
+@[simp]
+lemma teichmullerChar_toZMod (x : ℤ_[p]) :
+    teichmullerChar p (toZMod x) = teichmullerFun p x := rfl
 
 end teichmuller
 

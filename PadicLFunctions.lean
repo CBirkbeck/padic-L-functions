@@ -27,6 +27,7 @@ import PadicLFunctions.Interpolation.Twist
 import PadicLFunctions.Interpolation.TameConductor
 import PadicLFunctions.Interpolation.NonTame
 import PadicLFunctions.Interpolation.Branches
+import PadicLFunctions.Interpolation.LpFunction
 import PadicLFunctions.PadicExp
 
 /-!
