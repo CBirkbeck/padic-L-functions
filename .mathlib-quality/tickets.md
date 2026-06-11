@@ -3288,7 +3288,7 @@ reference declarations by name (the §5 T521-pattern).
 - **Status**: open | **Depends on**: T612, T613, T614 | **Type**: cleanup
 
 ### [T615] The constant pin: 𝓐(ρ_θ) = F̃_θ − φψF̃_θ
-- **Status**: open | **File**: ValuesAtOne.lean
+- **Status**: done (2026-06-11; hnorm hypothesis added — logged)
 - **Depends on**: T613, T614, T607, T606 | **Type**: theorem
 - **Statement** (REALIGNED R6.6, c₀-design):
   `p_mul_constantCoeff_mahlerK_rhoTheta` — p·𝓐_ρ(0)·G-form =
@@ -3304,7 +3304,7 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~80 LOC.
 
 ### [T616] The evaluated trace of F̃_θ
-- **Status**: open | **File**: ValuesAtOne.lean
+- **Status**: done (2026-06-12; statement-fix hdom→hnorm logged; boundary-log prerequisite = T618)
 - **Depends on**: T608, T603, T604, T612 | **Type**: theorem
 - **Statement** (REALIGNED R6.6, ψ-free): `sum_seriesEval_Ftilde` —
   Σ_i F̃(ξ^i−1) = θ(p)·F̃(0); cases as before.
@@ -3324,10 +3324,14 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~150 LOC (the section's hardest ticket).
 
 ### [CLEANUP-ALL-6] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T601–T616 | **Type**: cleanup-all
+- **Status**: done (degraded mode, 2026-06-12) | **Depends on**: T601–T616
+- **Type**: cleanup-all
+- **Progress**: degraded sweep over the four §6 files: zero warnings,
+  zero long lines, single remaining sorry = T617 headline. Per-ticket
+  golf was continuous; tooled CLEANUP-FINAL queued.
 
 ### [T617] **MILESTONE: RJW Theorem 6.1(ii)** — L_p(θ,1) (Leopoldt)
-- **Status**: open | **File**: ValuesAtOne.lean
+- **Status**: in_progress (2026-06-12)
 - **Depends on**: T615, T616, T609, CLEANUP-ALL-6 | **Type**: theorem
 - **Statement**: skeleton `LpFunction_one` (P6-p8).
 - **Proof sketch**: LpFunction at s = 1 pairs ζ_η-cleared with χ̃·⟨x⟩⁰ = χ̃;
@@ -3360,7 +3364,13 @@ ticket's execution preamble (the §5 T521-precedent); the route-level
 attacks that already fired are recorded in R6 (replans 1–5).
 
 ### [T618] Boundary p-adic logarithm (unit-ball multiplicativity)
-- **Status**: open | **File**: PadicExp.lean (+ ExtLog.lean bridge)
+- **Status**: done (2026-06-12)
+- **Progress**: DONE (subagent): formalLog + ∂-pin φ(L) = p•L (3-line
+  ker-∂ argument as planned); eval-alignment seriesEval formalLog (z−1) =
+  padicLog z; padicLog_pow_p via the subst-eval product-Fubini bridge;
+  unit-ball padicLog_mul by p-power descent; extLog_eq_padicLog on the
+  whole open ball. Bridge lemmas live in ValuesAtOne.lean (import-graph
+  meeting point — placement note recorded). Axioms standard. | **File**: PadicExp.lean (+ ExtLog.lean bridge)
 - **Depends on**: T522, T607, T608 | **Parent**: T616 | **Type**: lemmas
 - **Statement**: `formalLog : PowerSeries K` (coeffs 0, (−1)^{n−1}/n);
   `one_add_mul_derivative_formalLog : (1+X)·D(formalLog) = 1`;
