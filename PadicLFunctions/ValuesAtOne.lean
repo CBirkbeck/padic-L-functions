@@ -344,7 +344,6 @@ ball `‖z−1‖ < 1` by aligning the convergent `padicLog` series with the for
 `seriesEval` bridge. Decomposition R6.6, ticket T618. -/
 
 omit [CompleteSpace K] [CharZero K] in
-include hp in
 /-- T618: the open unit ball `‖x − 1‖ < 1` is closed under powers (ultrametric). -/
 theorem boundary_norm_pow_sub_one_lt_one {x : K} (hx : ‖x - 1‖ < 1) (n : ℕ) : ‖x ^ n - 1‖ < 1 := by
   induction n with
@@ -408,7 +407,7 @@ seriesEval (φ formalLog) (z − 1) = seriesEval (p·formalLog) (z − 1) =
 p·padicLog z`. -/
 theorem padicLog_pow_p_of_norm_lt_one {z : K} (hz : ‖z - 1‖ < 1) :
     padicLog p (z ^ p) = (p : K) • padicLog p z := by
-  have hzp1 : ‖z ^ p - 1‖ < 1 := boundary_norm_pow_sub_one_lt_one (p := p) hz p
+  have hzp1 : ‖z ^ p - 1‖ < 1 := boundary_norm_pow_sub_one_lt_one hz p
   have h1z : (1 : K) + (z - 1) = z := by ring
   have hzp1' : ‖(1 + (z - 1)) ^ p - 1‖ < 1 := by rw [h1z]; exact hzp1
   have hprodsum := summable_prod_of_norm_coeff_le_linear (p := p) (G := formalLog K) (C := 1)
@@ -430,7 +429,7 @@ theorem padicLog_pow_pPow_of_norm_lt_one {z : K} (hz : ‖z - 1‖ < 1) (N : ℕ
   | zero => rw [pow_zero, pow_one, pow_zero, one_smul]
   | succ M ih =>
     rw [pow_succ, pow_mul, padicLog_pow_p_of_norm_lt_one (p := p)
-        (boundary_norm_pow_sub_one_lt_one (p := p) hz (p ^ M)), ih, smul_smul, pow_succ, mul_comm]
+        (boundary_norm_pow_sub_one_lt_one hz (p ^ M)), ih, smul_smul, pow_succ, mul_comm]
 
 omit [CharZero K] in
 include hp in
@@ -486,8 +485,8 @@ theorem padicLog_pow_of_norm_lt_one {x : K} (hx : ‖x - 1‖ < 1) (n : ℕ) :
   induction n with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ, padicLog_mul_of_norm_lt_one (p := p) (boundary_norm_pow_sub_one_lt_one (p := p) hx k) hx,
-      ih, succ_nsmul]
+    rw [pow_succ, padicLog_mul_of_norm_lt_one (p := p)
+        (boundary_norm_pow_sub_one_lt_one hx k) hx, ih, succ_nsmul]
 
 omit [CharZero K] in
 include hp in
@@ -846,6 +845,390 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
   rw [hexpand] at h1
   linear_combination h1
 
+/-! #### Helpers for the evaluated trace `sum_seriesEval_Ftilde` (T616, RJW TeX 2113–2155)
+
+The route (decomposition R6 P6-p7 + replans R6.3/R6.6): a per-term resummation
+`seriesEval (logSeriesAt (ε^c)) (ξ^i − 1) = extLog(ξ^i·ε^c − 1)` (split constant +
+tail, the tail being `padicLog` of `1 + ε^c(ξ^i−1)/(ε^c−1)` via the T618 layer), the
+`μ_p`-collapse `Σ_{i<p} extLog(ξ^i·ε^c − 1) = extLog(ε^{pc} − 1)`
+(`IsPrimitiveRoot.pow_sub_pow_eq_prod_sub_mul` + `extLog_prod`), and the `c ↦ pc`
+bookkeeping (automorphism for `¬p∣N`; primitive-character fiber sums for `p∣N`). -/
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- A root of unity is integral over `ℤ` (it satisfies the monic `Xⁿ − C 1`). -/
+private theorem isIntegral_of_pow_eq_one {x : K} {n : ℕ} (hn : 0 < n) (hx : x ^ n = 1) :
+    IsIntegral ℤ x :=
+  ⟨Polynomial.X ^ n - Polynomial.C 1, Polynomial.monic_X_pow_sub_C 1 hn.ne', by simp [hx]⟩
+
+omit [CompleteSpace K] [CharZero K] in
+/-- The shifted root `ξ^i·ε^c − 1` has norm one (`‖ε^c − 1‖ = 1` and the isoceles
+`‖ξ^i ε^c − ε^c‖ = ‖ξ^i − 1‖ < 1 = ‖ε^c − 1‖`). -/
+private theorem norm_pow_mul_pow_sub_one_eq_one {ε ξ : K} {N : ℕ} (hN0 : 0 < N)
+    (hε : IsPrimitiveRoot ε N) {c i : ℕ}
+    (hc1 : ‖ε ^ c - 1‖ = 1) (hil : ‖ξ ^ i - 1‖ < 1) :
+    ‖ξ ^ i * ε ^ c - 1‖ = 1 := by
+  have hεc1 : ‖ε ^ c‖ = 1 :=
+    norm_eq_one_of_pow_eq_one (L := K) (m := N)
+      (by rw [← pow_mul, mul_comm, pow_mul, hε.pow_eq_one, one_pow]) hN0.ne'
+  have hlt : ‖ξ ^ i * ε ^ c - ε ^ c‖ < ‖ε ^ c - 1‖ := by
+    rw [show ξ ^ i * ε ^ c - ε ^ c = (ξ ^ i - 1) * ε ^ c from by ring, norm_mul, hεc1,
+      mul_one, hc1]; exact hil
+  have hkey := IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (ne_of_lt hlt)
+  rw [show (ξ ^ i * ε ^ c - ε ^ c) + (ε ^ c - 1) = ξ ^ i * ε ^ c - 1 from by ring,
+    max_eq_right hlt.le, hc1] at hkey
+  exact hkey
+
+omit [CompleteSpace K] [CharZero K] in
+include hp in
+/-- T616 step 3 (domain engine): the shifted root `ξ^i·ε^c − 1` lies in the extended-log
+domain — it is integral (a root of unity minus `1`) and has norm one. -/
+private theorem extLogDomain_pow_mul_pow_sub_one {ε ξ : K} {N : ℕ} (hN0 : 0 < N)
+    (hε : IsPrimitiveRoot ε N) (hξ : IsPrimitiveRoot ξ p) {c i : ℕ}
+    (hc1 : ‖ε ^ c - 1‖ = 1) (hil : ‖ξ ^ i - 1‖ < 1) :
+    ExtLogDomain p (ξ ^ i * ε ^ c - 1) :=
+  extLogDomain_of_integral_norm_one p
+    ((((isIntegral_of_pow_eq_one (n := p) hp.out.pos hξ.pow_eq_one).pow i).mul
+      ((isIntegral_of_pow_eq_one (n := N) hN0 hε.pow_eq_one).pow c)).sub isIntegral_one)
+    (norm_pow_mul_pow_sub_one_eq_one hN0 hε hc1 hil)
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- The positive-degree coefficients of `logSeriesAt u` factor through `formalLog`:
+`coeff (n+1) (logSeriesAt u) = coeff (n+1) (formalLog) · (u/(u−1))^{n+1}`. -/
+private theorem coeff_succ_logSeriesAt (u : K) (n : ℕ) :
+    PowerSeries.coeff (n + 1) (logSeriesAt p K u)
+      = PowerSeries.coeff (n + 1) (formalLog K) * (u / (u - 1)) ^ (n + 1) := by
+  rw [logSeriesAt, PowerSeries.coeff_mk, if_neg (Nat.succ_ne_zero n), coeff_succ_formalLog,
+    Nat.add_sub_cancel, Nat.cast_succ]
+
+omit [CharZero K] in
+include hp in
+/-- Summability of `seriesEval (logSeriesAt u) z` for `‖u − 1‖ = 1`, `‖z‖ < 1` (the
+positive coefficients are `≤ n`; the constant `extLog(u−1)` is absorbed into `C`). -/
+private theorem summable_seriesEval_logSeriesAt {u z : K} (hu1 : ‖u - 1‖ = 1) (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => PowerSeries.coeff n (logSeriesAt p K u) * z ^ n := by
+  set C : ℝ := max ‖extLog p (u - 1)‖ 1 with hC
+  refine summable_seriesEval_of_norm_coeff_le_linear (C := C) (fun n => ?_) hz
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [logSeriesAt, PowerSeries.coeff_mk, if_pos rfl, Nat.cast_zero]
+    calc ‖extLog p (u - 1)‖ ≤ C := le_max_left _ _
+      _ = C * ((0 : ℝ) + 1) := by ring
+  · refine le_trans (norm_coeff_logSeriesAt_le_of_norm_one (p := p) hu1 hn) ?_
+    calc (n : ℝ) ≤ (n : ℝ) + 1 := by linarith
+      _ ≤ C * ((n : ℝ) + 1) := le_mul_of_one_le_left (by positivity) (le_max_right _ _)
+
+omit [CharZero K] in
+include hp in
+/-- T616 step 1 (the per-term resummation, half a): for `‖u − 1‖ = 1` and `‖z‖ < 1`,
+`seriesEval (logSeriesAt u) z = extLog(u − 1) + padicLog (1 + u·z/(u−1))`. Split the
+constant coefficient `extLog(u−1)` off and identify the tail with `seriesEval (formalLog)
+(u·z/(u−1)) = padicLog (1 + u·z/(u−1))` (T618 eval-alignment). -/
+private theorem seriesEval_logSeriesAt_of_norm {u z : K} (hu1 : ‖u - 1‖ = 1) (hz : ‖z‖ < 1) :
+    seriesEval (logSeriesAt p K u) z
+      = extLog p (u - 1) + padicLog p (1 + u * z / (u - 1)) := by
+  -- `‖u‖ = 1`, so `‖w‖ = ‖u·z/(u−1)‖ = ‖z‖ < 1`
+  have hunorm : ‖u‖ ≤ 1 := by
+    calc ‖u‖ = ‖(u - 1) + 1‖ := by rw [sub_add_cancel]
+      _ ≤ max ‖u - 1‖ ‖(1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ 1 := by rw [hu1, norm_one, max_self]
+  have hwnorm : ‖u * z / (u - 1)‖ < 1 := by
+    rw [norm_div, hu1, div_one, norm_mul]
+    exact lt_of_le_of_lt (mul_le_of_le_one_left (norm_nonneg _) hunorm) hz
+  have hsum := summable_seriesEval_logSeriesAt (p := p) hu1 hz
+  have hcoeff0 : PowerSeries.coeff 0 (logSeriesAt p K u) = extLog p (u - 1) := by
+    rw [logSeriesAt, PowerSeries.coeff_mk, if_pos rfl]
+  -- the `padicLog`/`formalLog` tail at `w := u·z/(u−1)`
+  have htail : padicLog p (1 + u * z / (u - 1))
+      = seriesEval (formalLog K) (u * z / (u - 1)) := by
+    rw [← seriesEval_formalLog (p := p)
+      (show ‖(1 + u * z / (u - 1)) - 1‖ < 1 from by rw [add_sub_cancel_left]; exact hwnorm),
+      add_sub_cancel_left]
+  rw [seriesEval, hsum.tsum_eq_zero_add, hcoeff0, pow_zero, mul_one, htail, seriesEval,
+    (summable_seriesEval_formalLog (p := p) hwnorm).tsum_eq_zero_add, coeff_zero_formalLog,
+    zero_mul, zero_add]
+  refine congrArg _ (tsum_congr fun n => ?_)
+  rw [coeff_succ_logSeriesAt, coeff_succ_formalLog,
+    show u * z / (u - 1) = (u / (u - 1)) * z from by ring, mul_pow]
+  ring
+
+omit [CompleteSpace K] [CharZero K] in
+include hp in
+/-- T616: any element of the open unit ball `‖x − 1‖ < 1` lies in the extended-log
+domain (a `p`-power iterate lands in the exp ball; `exists_pPow_pow_inExpBall`). -/
+private theorem extLogDomain_of_norm_sub_one_lt_one {x : K} (hx : ‖x - 1‖ < 1) :
+    ExtLogDomain p x := by
+  obtain ⟨j, hj⟩ := exists_pPow_pow_inExpBall (p := p) hx
+  exact ⟨p ^ j, 0, x ^ p ^ j, pow_pos hp.out.pos j, by rw [zpow_zero, one_mul], hj⟩
+
+omit [CharZero K] in
+include hp in
+/-- T616 step 1 (the per-term identity): for `‖ε^c − 1‖ = 1` and `‖ξ^i − 1‖ < 1`
+(with `ε` integral over `ℤ`), `seriesEval (logSeriesAt (ε^c)) (ξ^i − 1) =
+extLog(ξ^i·ε^c − 1)`. Combine the resummation (`seriesEval_logSeriesAt_of_norm`) with
+the factorisation `ξ^i·ε^c − 1 = (ε^c − 1)·(1 + ε^c(ξ^i−1)/(ε^c−1))` and
+`extLog_mul`/`extLog_eq_padicLog`. -/
+private theorem seriesEval_logSeriesAt_eq_extLog {ε ξ : K} (hεint : IsIntegral ℤ ε) {c i : ℕ}
+    (hc1 : ‖ε ^ c - 1‖ = 1) (hil : ‖ξ ^ i - 1‖ < 1) :
+    seriesEval (logSeriesAt p K (ε ^ c)) (ξ ^ i - 1) = extLog p (ξ ^ i * ε ^ c - 1) := by
+  set u : K := ε ^ c with hu
+  set z : K := ξ ^ i - 1 with hz
+  have hune : (u - 1) ≠ 0 := by rw [← norm_pos_iff, hu, hc1]; exact one_pos
+  -- `‖u‖ = 1`, `‖w‖ = ‖u z/(u−1)‖ = ‖z‖ < 1`
+  have hunorm : ‖u‖ ≤ 1 := by
+    calc ‖u‖ = ‖(u - 1) + 1‖ := by rw [sub_add_cancel]
+      _ ≤ max ‖u - 1‖ ‖(1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ 1 := by rw [hu, hc1, norm_one, max_self]
+  have hwnorm : ‖u * z / (u - 1)‖ < 1 := by
+    rw [norm_div, hu, hc1, div_one, norm_mul]
+    exact lt_of_le_of_lt (mul_le_of_le_one_left (norm_nonneg _) hunorm) hil
+  have hwsub : ‖(1 + u * z / (u - 1)) - 1‖ < 1 := by rw [add_sub_cancel_left]; exact hwnorm
+  -- the factorisation `ξ^i ε^c − 1 = (u − 1)·(1 + u z/(u−1))`
+  have hfac : ξ ^ i * ε ^ c - 1 = (u - 1) * (1 + u * z / (u - 1)) := by
+    rw [← hu, show ξ ^ i = z + 1 from by rw [hz]; ring]
+    field_simp
+    ring
+  rw [seriesEval_logSeriesAt_of_norm (p := p) hc1 hil, hfac,
+    extLog_mul p (extLogDomain_of_integral_norm_one p
+      ((hεint.pow c).sub isIntegral_one) (by rw [← hu]; exact hc1))
+      (extLogDomain_of_norm_sub_one_lt_one (p := p) hwsub),
+    extLog_eq_padicLog_of_norm_lt_one (p := p) hwsub]
+
+omit [CharZero K] in
+include hp in
+/-- A `±1` sign is invisible to `extLog`: `extLog((−1)^m · x) = extLog x`
+(induction via `extLog_neg`). -/
+private theorem extLog_neg_one_pow_mul {x : K} (hx : ExtLogDomain p x) (m : ℕ) :
+    extLog p ((-1 : K) ^ m * x) = extLog p x := by
+  induction m with
+  | zero => rw [pow_zero, one_mul]
+  | succ k ih =>
+    have hdom : ExtLogDomain p ((-1 : K) ^ k * x) :=
+      ExtLogDomain.mul p
+        (extLogDomain_of_integral_norm_one p ((IsIntegral.neg isIntegral_one).pow k)
+          (by rw [norm_pow, norm_neg, norm_one, one_pow])) hx
+    rw [pow_succ, show (-1 : K) ^ k * (-1) * x = -((-1) ^ k * x) from by ring,
+      extLog_neg p hdom, ih]
+
+omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+include hp in
+/-- Reindex a `Fin p`-sum over the powers of a primitive `p`-th root as a sum over
+`nthRootsFinset p 1` (`i ↦ ξ^i` is a bijection). -/
+private theorem sum_fin_pow_eq_sum_nthRootsFinset {ξ : K} (hξ : IsPrimitiveRoot ξ p)
+    (f : K → K) :
+    ∑ i : Fin p, f (ξ ^ (i : ℕ)) = ∑ ζ ∈ Polynomial.nthRootsFinset p (1 : K), f ζ := by
+  haveI : NeZero p := ⟨hp.out.ne_zero⟩
+  refine Finset.sum_nbij (fun i => ξ ^ (i : ℕ))
+    (fun i _ => (Polynomial.mem_nthRootsFinset hp.out.pos (1 : K)).mpr (by
+      rw [← pow_mul, mul_comm, pow_mul, hξ.pow_eq_one, one_pow]))
+    (fun a _ b _ hab => Fin.ext (hξ.pow_inj a.2 b.2 hab)) (fun ζ hζ => ?_) (fun i _ => rfl)
+  -- surjectivity: every `ζ ∈ nthRootsFinset p 1` is `ξ^i` for some `i < p`
+  obtain ⟨i, hik, rfl⟩ := hξ.eq_pow_of_pow_eq_one
+    ((Polynomial.mem_nthRootsFinset hp.out.pos (1 : K)).mp hζ)
+  exact ⟨⟨i, hik⟩, Finset.mem_coe.mpr (Finset.mem_univ _), rfl⟩
+
+omit [CharZero K] in
+include hp in
+/-- T616 step 3 (the `μ_p`-collapse): for a primitive `p`-th root `ξ`, an `‖·‖ = 1`
+unit `ε^c` (`ε` integral over `ℤ`) with `‖ξ^i − 1‖ < 1`,
+`Σ_{i<p} extLog(ξ^i·ε^c − 1) = extLog(ε^{pc} − 1)`. Uses the product identity
+`∏_{i<p}(ξ^i·Y − 1) = (−1)^{p+1}·(Y^p − 1)`
+(`IsPrimitiveRoot.pow_sub_pow_eq_prod_sub_mul`), `extLog_prod`, and the sign-stripping
+`extLog_neg_one_pow_mul`. -/
+private theorem sum_extLog_pow_mul_collapse {ε ξ : K} {N : ℕ} (hN0 : 0 < N)
+    (hε : IsPrimitiveRoot ε N) (hεint : IsIntegral ℤ ε) (hξ : IsPrimitiveRoot ξ p) {c : ℕ}
+    (hc1 : ‖ε ^ c - 1‖ = 1) (hil : ∀ i : Fin p, ‖ξ ^ (i : ℕ) - 1‖ < 1) :
+    ∑ i : Fin p, extLog p (ξ ^ (i : ℕ) * ε ^ c - 1) = extLog p (ε ^ (p * c) - 1) := by
+  haveI : NeZero p := ⟨hp.out.ne_zero⟩
+  -- each factor `ξ^i ε^c − 1` is in the extended-log domain
+  have hdomζ : ∀ ζ ∈ Polynomial.nthRootsFinset p (1 : K),
+      ExtLogDomain p (ζ * ε ^ c - 1) := by
+    intro ζ hζmem
+    obtain ⟨i, hik, rfl⟩ := hξ.eq_pow_of_pow_eq_one
+      ((Polynomial.mem_nthRootsFinset hp.out.pos (1 : K)).mp hζmem)
+    exact extLogDomain_pow_mul_pow_sub_one hN0 hε hξ hc1 (hil ⟨i, hik⟩)
+  -- the `μ_p` product identity: `∏_ζ (ζ·ε^c − 1) = (−1)^p·(1 − ε^{pc})`
+  have hprodId : ∏ ζ ∈ Polynomial.nthRootsFinset p (1 : K), (ζ * ε ^ c - 1)
+      = (-1 : K) ^ p * (1 - (ε ^ c) ^ p) := by
+    rw [show (1 : K) - (ε ^ c) ^ p = (1 : K) ^ p - (ε ^ c) ^ p from by rw [one_pow],
+      hξ.pow_sub_pow_eq_prod_sub_mul (x := 1) (y := ε ^ c) hp.out.pos,
+      show (-1 : K) ^ p = ∏ _ζ ∈ Polynomial.nthRootsFinset p (1 : K), (-1 : K) from by
+        rw [Finset.prod_const, hξ.card_nthRootsFinset],
+      ← Finset.prod_mul_distrib]
+    exact Finset.prod_congr rfl fun ζ _ => by ring
+  -- `‖ε^{pc} − 1‖ = ‖(ε^c)^p − 1‖ = 1` (product of the norm-one factors `ξ^i ε^c − 1`)
+  have hnorm_pc : ‖(ε ^ c) ^ p - 1‖ = 1 := by
+    have hnormprod : ‖∏ ζ ∈ Polynomial.nthRootsFinset p (1 : K), (ζ * ε ^ c - 1)‖ = 1 := by
+      rw [norm_prod, Finset.prod_eq_one fun ζ hζmem => ?_]
+      obtain ⟨i, hik, rfl⟩ := hξ.eq_pow_of_pow_eq_one
+        ((Polynomial.mem_nthRootsFinset hp.out.pos (1 : K)).mp hζmem)
+      exact norm_pow_mul_pow_sub_one_eq_one hN0 hε hc1 (hil ⟨i, hik⟩)
+    rw [hprodId, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul,
+      show (1 : K) - (ε ^ c) ^ p = -((ε ^ c) ^ p - 1) from by ring, norm_neg] at hnormprod
+    exact hnormprod
+  rw [sum_fin_pow_eq_sum_nthRootsFinset hξ (fun ζ => extLog p (ζ * ε ^ c - 1)),
+    ← extLog_prod p _ _ hdomζ, hprodId,
+    show (-1 : K) ^ p * (1 - (ε ^ c) ^ p) = (-1 : K) ^ (p + 1) * ((ε ^ c) ^ p - 1) from by
+      rw [pow_succ]; ring,
+    extLog_neg_one_pow_mul (extLogDomain_of_integral_norm_one p
+      (((hεint.pow c).pow p).sub isIntegral_one) hnorm_pc),
+    ← pow_mul, mul_comm c p]
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- T616 step 4 (the `p∣N` primitive-character fiber sum, replan R6.3): for a primitive
+`ψ : DirichletCharacter K N` and `M ∣ N` with `ψ` NOT factoring through `M`, the sum of
+`ψ` over any residue fibre `{c : ZMod N | c ≡ r mod M}` vanishes. Proof: pick a unit
+`v ≡ 1 mod M` with `ψ v ≠ 1` (failure of factoring), and note `c ↦ v·c` permutes the
+fibre (it fixes residues mod M), so `S = ψ(v)·S`, forcing `S = 0`. -/
+private theorem sum_dirichlet_fiber_eq_zero {N M : ℕ} [NeZero N] (hMN : M ∣ N)
+    {ψ : DirichletCharacter K N} (hψ : ¬ ψ.FactorsThrough M) (r : ZMod M) :
+    ∑ c ∈ Finset.univ.filter (fun c : ZMod N => ZMod.castHom hMN (ZMod M) c = r), ψ c = 0 := by
+  classical
+  -- a unit `v ≡ 1 mod M` (i.e. in `ker (unitsMap hMN)`) with `ψ v ≠ 1`
+  obtain ⟨v, hvker, hvψ⟩ : ∃ v : (ZMod N)ˣ, ZMod.unitsMap hMN v = 1 ∧ ψ.toUnitHom v ≠ 1 := by
+    by_contra hcon
+    push Not at hcon
+    exact hψ ((DirichletCharacter.factorsThrough_iff_ker_unitsMap hMN).mpr fun v hv => by
+      rw [MonoidHom.mem_ker]; exact hcon v (by rwa [MonoidHom.mem_ker] at hv))
+  -- `castHom hMN (v : ZMod N) = 1`
+  have hvcast : ZMod.castHom hMN (ZMod M) (v : ZMod N) = 1 := by
+    have := congrArg (Units.val) hvker
+    rwa [ZMod.unitsMap_val, Units.val_one] at this
+  -- `ψ (v : ZMod N) ≠ 1`
+  have hvψ' : ψ ((v : ZMod N)) ≠ 1 := by
+    rw [← MulChar.coe_toUnitHom ψ v, Ne, Units.val_eq_one]; exact hvψ
+  -- `castHom hMN (v⁻¹ : ZMod N) = 1` too
+  have hvcastinv : ZMod.castHom hMN (ZMod M) ((v⁻¹ : (ZMod N)ˣ) : ZMod N) = 1 := by
+    have hinv : ZMod.unitsMap hMN v⁻¹ = 1 := by rw [map_inv, hvker, inv_one]
+    have := congrArg Units.val hinv
+    rwa [ZMod.unitsMap_val, Units.val_one] at this
+  set S := ∑ c ∈ Finset.univ.filter (fun c : ZMod N => ZMod.castHom hMN (ZMod M) c = r), ψ c with hS
+  -- `c ↦ v·c` permutes the fibre, twisting the sum by `ψ v`
+  have hperm : S = ψ ((v : ZMod N)) * S := by
+    rw [hS, Finset.mul_sum]
+    refine (Finset.sum_nbij' (fun c => (v : ZMod N) * c) (fun c => (v⁻¹ : (ZMod N)ˣ) * c)
+      ?_ ?_ ?_ ?_ ?_).symm
+    · intro c hc
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hc ⊢
+      rw [map_mul, hvcast, one_mul]; exact hc
+    · intro c hc
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hc ⊢
+      rw [map_mul, hvcastinv, one_mul]; exact hc
+    · intro c _; rw [← mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mul]
+    · intro c _; rw [← mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mul]
+    · intro c _; rw [map_mul]
+  -- `(1 − ψ v)·S = 0` with `ψ v ≠ 1`
+  have : (1 - ψ ((v : ZMod N))) * S = 0 := by rw [sub_mul, one_mul, ← hperm]; ring
+  rcases mul_eq_zero.mp this with h | h
+  · exact absurd (sub_eq_zero.mp h).symm hvψ'
+  · exact h
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+include hp in
+/-- T616 step 4 (the `c ↦ pc` bookkeeping, both cases — replans R6.3): for primitive
+`θ` of level `N > 1` and a primitive `N`-th root `ε`,
+`Σ_{c<N} θ⁻¹(c)·extLog(ε^{pc} − 1) = θ(p)·Σ_{c<N} θ⁻¹(c)·extLog(ε^c − 1)`. The function
+`extLog(ε^a − 1)` is `ε`-cyclic so reindexes over `ZMod N`; for `¬p∣N` the unit `p`
+substitutes (`c ↦ pc`, `θ⁻¹(p⁻¹) = θ(p)`); for `p∣N` both sides vanish — `θ(p) = 0`
+and the `LHS` groups along the `p`-to-`1` map into fibres killed by
+`sum_dirichlet_fiber_eq_zero` (primitivity of `θ⁻¹`). -/
+private theorem sum_theta_inv_mul_extLog_pc {N : ℕ} [NeZero N] (hN : 1 < N)
+    {θ : DirichletCharacter K N} (hprim : θ.IsPrimitive) {ε : K} (hε : IsPrimitiveRoot ε N) :
+    ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ (p * c) - 1)
+      = θ ((p : ZMod N)) * ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ c - 1) := by
+  classical
+  haveI : Fact (1 < N) := ⟨hN⟩
+  -- `g a := extLog(ε^{a.val} − 1)` on `ZMod N`; `ε` is cyclic so `ε^k = ε^{(k:ZMod N).val}`
+  set g : ZMod N → K := fun a => extLog p (ε ^ a.val - 1) with hgdef
+  have hcyc : ∀ k : ℕ, ε ^ k = ε ^ ((k : ZMod N)).val := fun k => by
+    conv_lhs => rw [← Nat.div_add_mod k N, pow_add, pow_mul, hε.pow_eq_one, one_pow, one_mul]
+    rw [ZMod.val_natCast]
+  -- reindex both `range N` sums over `ZMod N`, identifying `extLog(ε^c − 1) = g c`
+  have hreindex : ∀ f : ZMod N → K, ∑ c ∈ Finset.range N, f ((c : ZMod N))
+      = ∑ a : ZMod N, f a := fun f =>
+    Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod N)) (fun a => a.val)
+      (fun c _ => Finset.mem_univ _) (fun a _ => Finset.mem_range.mpr (ZMod.val_lt a))
+      (fun c hc => ZMod.val_natCast_of_lt (Finset.mem_range.mp hc))
+      (fun a _ => ZMod.natCast_zmod_val a) (fun c _ => rfl)
+  have hLHS : ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ (p * c) - 1)
+      = ∑ a : ZMod N, θ⁻¹ a * g (((p : ℕ) : ZMod N) * a) := by
+    rw [← hreindex (fun a => θ⁻¹ a * g (((p : ℕ) : ZMod N) * a))]
+    refine Finset.sum_congr rfl fun c _ => ?_
+    rw [hgdef]
+    simp only
+    rw [show ((p : ℕ) : ZMod N) * ((c : ℕ) : ZMod N) = ((p * c : ℕ) : ZMod N) from by
+      push_cast; ring]
+    rw [← hcyc (p * c)]
+  have hRHS : ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ c - 1)
+      = ∑ a : ZMod N, θ⁻¹ a * g a := by
+    rw [← hreindex (fun a => θ⁻¹ a * g a)]
+    exact Finset.sum_congr rfl fun c _ => by rw [hgdef]; simp only; rw [← hcyc c]
+  rw [hLHS, hRHS]
+  by_cases hpN : (p : ℕ) ∣ N
+  · -- `p ∣ N`: both sides vanish
+    have hpnu : ¬ IsUnit ((p : ℕ) : ZMod N) := by
+      rw [ZMod.isUnit_iff_coprime, Nat.Prime.coprime_iff_not_dvd hp.out]; exact fun h => h hpN
+    rw [θ.map_nonunit hpnu, zero_mul]
+    -- group the `a`-sum along the `p`-to-`1` map `a ↦ p·a` (fibres mod `N/p`)
+    obtain ⟨M, rfl⟩ := hpN
+    have hM0 : 0 < M := by
+      rcases Nat.eq_zero_or_pos M with h | h
+      · rw [h, mul_zero] at hN; omega
+      · exact h
+    haveI : NeZero M := ⟨hM0.ne'⟩
+    have hMdvd : M ∣ p * M := dvd_mul_left M p
+    -- `θ⁻¹` does not factor through `M = N/p < N` (else conductor ≤ M < N)
+    have hnotft : ¬ (θ⁻¹).FactorsThrough M := by
+      intro hft
+      have hcond : (θ⁻¹).conductor ≤ M :=
+        Nat.sInf_le ⟨hft.dvd, hft.χ₀, hft.eq_changeLevel⟩
+      rw [DirichletCharacter.conductor_inv, hprim] at hcond
+      have hMlt : M < p * M := by nlinarith [hp.out.one_lt, hM0]
+      omega
+    -- `p·a` depends only on `a mod M` (the `p`-multiple kills the `M`-difference)
+    have hpconst : ∀ a : ZMod (p * M), ((p : ℕ) : ZMod (p * M)) * a
+        = ((p : ℕ) : ZMod (p * M)) * ((ZMod.castHom hMdvd (ZMod M) a).val : ZMod (p * M)) := by
+      intro a
+      rw [show ((p : ℕ) : ZMod (p * M)) * a = ((p * a.val : ℕ) : ZMod (p * M)) from by
+          rw [Nat.cast_mul, ZMod.natCast_val, ZMod.cast_id],
+        show ((p : ℕ) : ZMod (p * M)) * ((ZMod.castHom hMdvd (ZMod M) a).val : ZMod (p * M))
+          = ((p * (ZMod.castHom hMdvd (ZMod M) a).val : ℕ) : ZMod (p * M)) from by
+          rw [Nat.cast_mul],
+        ZMod.natCast_eq_natCast_iff]
+      -- `p·a.val ≡ p·(cast_M a).val [MOD p·M]` since `a.val ≡ (cast_M a).val [MOD M]`
+      have hmod : a.val ≡ (ZMod.castHom hMdvd (ZMod M) a).val [MOD M] := by
+        have hval : (ZMod.castHom hMdvd (ZMod M) a).val = a.val % M := by
+          rw [ZMod.castHom_apply, ← ZMod.natCast_val a, ZMod.val_natCast]
+        rw [hval]; exact (Nat.mod_modEq a.val M).symm
+      exact hmod.mul_left' p
+    -- `g (p·a)` is constant on each fibre `{a : cast_M a = r}`; sum over fibres of `θ⁻¹`
+    rw [← Finset.sum_fiberwise_of_maps_to
+      (g := fun a : ZMod (p * M) => ZMod.castHom hMdvd (ZMod M) a)
+      (fun a _ => Finset.mem_univ _)]
+    refine Finset.sum_eq_zero fun r _ => ?_
+    rw [show (∑ a ∈ Finset.univ.filter (fun a => ZMod.castHom hMdvd (ZMod M) a = r),
+          θ⁻¹ a * g (((p : ℕ) : ZMod (p * M)) * a))
+        = (∑ a ∈ Finset.univ.filter (fun a => ZMod.castHom hMdvd (ZMod M) a = r), θ⁻¹ a)
+          * g (((p : ℕ) : ZMod (p * M)) * ((r.val : ZMod (p * M)))) from ?_,
+      sum_dirichlet_fiber_eq_zero hMdvd hnotft r, zero_mul]
+    rw [Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a ha => ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
+    rw [hpconst a, ha]
+  · -- `¬p∣N`: `p` is a unit; substitute `a ↦ p·a`
+    obtain ⟨u, hpu⟩ : IsUnit ((p : ℕ) : ZMod N) :=
+      (ZMod.isUnit_iff_coprime p N).mpr ((hp.out.coprime_iff_not_dvd).mpr hpN)
+    have hθθinv : θ ((p : ℕ) : ZMod N) * θ⁻¹ ((p : ℕ) : ZMod N) = 1 := by
+      rw [← MulChar.mul_apply, mul_inv_cancel θ, MulChar.one_apply (hpu ▸ u.isUnit)]
+    rw [Finset.mul_sum]
+    refine Finset.sum_nbij' (fun a => ((p : ℕ) : ZMod N) * a)
+      (fun a => ((u⁻¹ : (ZMod N)ˣ) : ZMod N) * a) (fun a _ => Finset.mem_univ _)
+      (fun a _ => Finset.mem_univ _) ?_ ?_ ?_
+    · intro a _; rw [← hpu, ← mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mul]
+    · intro a _; rw [← hpu, ← mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mul]
+    · intro a _
+      -- `f a = θ⁻¹(a)·g(p·a)` equals `g'(p·a) = θ(p)·(θ⁻¹(p·a)·g(p·a))`
+      rw [map_mul, ← mul_assoc, ← mul_assoc, hθθinv, one_mul]
+
+omit [CharZero K] in
 /-- P6-p7' (the evaluated trace, ψ-free form — replan R6.6):
 `Σ_{i<p} F̃(ξ^i−1) = θ(p)·F̃(0)` — for `n = 0` by the `c ↦ pc` automorphism
 and the `μ_p`-collapse `Σ_ξ extLog(ξw−1) = extLog(w^p−1)`; for `n ≥ 1`
@@ -863,28 +1246,110 @@ to `1`). It is replaced by the norm-one hypothesis
 the tame `D > 1` cyclotomic-product fact (T612 `norm_one_sub_pow_eq_one`),
 preserving its provability.
 
-**REMAINING GAP (analytic, recorded `b2_log.jsonl` 2026-06-12):** the proof
-reduces to the per-term identity `seriesEval (logSeriesAt u) z = extLog((1+z)u−1)`
-(`u = ε^c`, `z = ξ^i − 1`), whose tail series is the `padicLog` series at
-`w = u z/(u−1)`. Closing it requires `extLog (1 + w) = padicLog (1 + w)` for
-`‖w‖ < 1`, i.e. boundary `p`-adic-log multiplicativity
-`padicLog (x^n) = n • padicLog x` on the whole open ball `‖x − 1‖ < 1`
-(the arguments `ξ^i − 1`, `i ≠ 0`, sit on the exp-ball boundary
-`‖·‖^{p−1} = p⁻¹`, where `extLog_eq_padicLog`/`padicLog_pow` — proven only
-INSIDE the exp ball — do not apply). This `‖·‖ < 1` log theory (~Washington
-§5.1, formal-series additivity of `log` evaluated, or a 2-variable Cauchy
-product) is not yet in `PadicExp`; it is the single outstanding prerequisite.
-The `μ_p`-collapse (`extLog_prod` + `IsPrimitiveRoot.prod_pow_sub_one_eq_order`),
-`c ↦ pc` bookkeeping (automorphism / primitive-fiber sums), and summability
-(`summable_seriesEval_Ftilde`) are all in place. -/
+The analytic prerequisite (boundary `p`-adic-log multiplicativity
+`extLog (1 + w) = padicLog (1 + w)` for `‖w‖ < 1`, since the arguments `ξ^i − 1`,
+`i ≠ 0`, sit on the exp-ball boundary `‖·‖^{p−1} = p⁻¹`) is supplied by the T618
+layer (`extLog_eq_padicLog_of_norm_lt_one` / `padicLog_pow_p_of_norm_lt_one`,
+above). The proof assembles: the per-term identity
+`seriesEval (logSeriesAt (ε^c)) (ξ^i − 1) = extLog(ξ^i·ε^c − 1)`
+(`seriesEval_logSeriesAt_eq_extLog`); the `μ_p`-collapse
+`Σ_{i<p} extLog(ξ^i·ε^c − 1) = extLog(ε^{pc} − 1)` (`sum_extLog_pow_mul_collapse`);
+and the `c ↦ pc` bookkeeping `Σ_c θ⁻¹(c)·extLog(ε^{pc} − 1) = θ(p)·Σ_c θ⁻¹(c)·
+extLog(ε^c − 1)` (`sum_theta_inv_mul_extLog_pc`: automorphism for `¬p∣N`,
+primitive-character fiber sums for `p∣N`). -/
 theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
-    {θ : DirichletCharacter K N} (hprim : θ.IsPrimitive) (hθ1 : θ ≠ 1)
+    {θ : DirichletCharacter K N} (hprim : θ.IsPrimitive) (_hθ1 : θ ≠ 1)
     {ε : K} (hε : IsPrimitiveRoot ε N) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
     (hnorm : ∀ c ∈ Finset.range N, ¬ N ∣ c → ‖ε ^ c - 1‖ = 1) :
     ∑ i : Fin p, seriesEval (Ftilde p K θ hε) (ξ ^ (i : ℕ) - 1)
       = θ ((p : ZMod N)) * PowerSeries.constantCoeff (Ftilde p K θ hε) := by
-  sorry
+  haveI : Fact (1 < N) := ⟨hN⟩
+  have hεint : IsIntegral ℤ ε := isIntegral_of_pow_eq_one (NeZero.pos N) hε.pow_eq_one
+  -- `θ⁻¹ c = 0` exactly when `N ∣ c` (in `range N`, that is `c = 0`)
+  have hθ0 : ∀ c ∈ Finset.range N, N ∣ c → θ⁻¹ ((c : ZMod N)) = 0 := fun c hc hcd => by
+    rw [show ((c : ℕ) : ZMod N) = 0 from by
+      rw [Nat.eq_zero_of_dvd_of_lt hcd (Finset.mem_range.mp hc), Nat.cast_zero]]
+    exact MulChar.map_nonunit _ (by rw [isUnit_zero_iff]; exact one_ne_zero ∘ Eq.symm)
+  -- `‖ξ^i − 1‖ < 1` for every `i : Fin p`
+  have hzlt : ∀ i : Fin p, ‖ξ ^ (i : ℕ) - 1‖ < 1 := by
+    intro i
+    rcases Nat.eq_zero_or_pos (i : ℕ) with hi0 | hipos
+    · rw [hi0, pow_zero, sub_self, norm_zero]; exact one_pos
+    · have hcop : (i : ℕ).Coprime p :=
+        Nat.coprime_comm.mp (hp.out.coprime_iff_not_dvd.mpr fun hdvd =>
+          absurd (Nat.le_of_dvd hipos hdvd) (by omega : ¬ p ≤ (i : ℕ)))
+      exact (by rw [pow_one] at *; exact hξ.pow_of_coprime (i : ℕ) hcop :
+        IsPrimitiveRoot (ξ ^ (i : ℕ)) (p ^ 1)).norm_sub_one_lt (p := p) le_rfl
+  -- Step A: `seriesEval F̃ (ξ^i − 1) = −Σ_c θ⁻¹(c)·extLog(ξ^i·ε^c − 1)`
+  have hstepA : ∀ i : Fin p, seriesEval (Ftilde p K θ hε) (ξ ^ (i : ℕ) - 1)
+      = -∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ξ ^ (i : ℕ) * ε ^ c - 1) := by
+    intro i
+    rw [Ftilde, seriesEval_neg]
+    refine congrArg Neg.neg ?_
+    -- expand `seriesEval (Σ_c C(θ⁻¹c)·logSeriesAt) (ξ^i−1) = Σ_c θ⁻¹(c)·seriesEval(logSeriesAt)`
+    rw [seriesEval,
+      show (∑' n : ℕ, PowerSeries.coeff n (∑ c ∈ Finset.range N,
+            PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c)) * (ξ ^ (i : ℕ) - 1) ^ n)
+        = ∑' n : ℕ, ∑ c ∈ Finset.range N, PowerSeries.coeff n
+            (PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c)) * (ξ ^ (i : ℕ) - 1) ^ n
+        from tsum_congr fun n => by rw [map_sum, Finset.sum_mul]]
+    rw [Summable.tsum_finsetSum fun c hc => ?_]
+    · refine Finset.sum_congr rfl fun c hc => ?_
+      by_cases hcd : N ∣ c
+      · rw [hθ0 c hc hcd]
+        simp only [zero_mul, map_zero, tsum_zero]
+      · rw [show (∑' n : ℕ, PowerSeries.coeff n
+              (PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c))
+                * (ξ ^ (i : ℕ) - 1) ^ n)
+            = θ⁻¹ ((c : ZMod N)) * seriesEval (logSeriesAt p K (ε ^ c)) (ξ ^ (i : ℕ) - 1) from by
+          rw [seriesEval, ← (summable_seriesEval_logSeriesAt (p := p) (hnorm c hc hcd)
+            (hzlt i)).tsum_mul_left]
+          exact tsum_congr fun n => by rw [PowerSeries.coeff_C_mul, mul_assoc],
+          seriesEval_logSeriesAt_eq_extLog (p := p) hεint (hnorm c hc hcd) (hzlt i)]
+    · -- summability of each `c`-term at `ξ^i − 1`
+      by_cases hcd : N ∣ c
+      · refine (summable_of_ne_finset_zero (s := ∅) fun n _ => ?_)
+        rw [PowerSeries.coeff_C_mul, hθ0 c hc hcd, zero_mul, zero_mul]
+      · exact ((summable_seriesEval_logSeriesAt (p := p) (hnorm c hc hcd)
+          (hzlt i)).mul_left (θ⁻¹ ((c : ZMod N)))).congr fun n => by
+            rw [PowerSeries.coeff_C_mul, mul_assoc]
+  -- Step B: sum Step A over `i`, swap, apply the `μ_p`-collapse per `c`
+  rw [Finset.sum_congr rfl fun i _ => hstepA i]
+  -- `Σ_i (−Σ_c ...) = −Σ_c (Σ_i ...)`  then the `μ_p`-collapse on the inner `i`-sum
+  rw [show (∑ i : Fin p, -∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+            * extLog p (ξ ^ (i : ℕ) * ε ^ c - 1))
+        = -∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+            * ∑ i : Fin p, extLog p (ξ ^ (i : ℕ) * ε ^ c - 1) from by
+      calc (∑ i : Fin p, -∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+              * extLog p (ξ ^ (i : ℕ) * ε ^ c - 1))
+          = -∑ i : Fin p, ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+              * extLog p (ξ ^ (i : ℕ) * ε ^ c - 1) := by rw [← Finset.sum_neg_distrib]
+        _ = -∑ c ∈ Finset.range N, ∑ i : Fin p, θ⁻¹ ((c : ZMod N))
+              * extLog p (ξ ^ (i : ℕ) * ε ^ c - 1) := by rw [Finset.sum_comm]
+        _ = -∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+              * ∑ i : Fin p, extLog p (ξ ^ (i : ℕ) * ε ^ c - 1) := by
+            refine congrArg Neg.neg (Finset.sum_congr rfl fun c _ => ?_)
+            rw [Finset.mul_sum]]
+  -- collapse `Σ_i extLog(ξ^i ε^c − 1) = extLog(ε^{pc} − 1)` per contributing `c`
+  rw [show (∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+            * ∑ i : Fin p, extLog p (ξ ^ (i : ℕ) * ε ^ c - 1))
+        = ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ (p * c) - 1) from
+    Finset.sum_congr rfl fun c hc => by
+      by_cases hcd : N ∣ c
+      · rw [hθ0 c hc hcd, zero_mul, zero_mul]
+      · rw [sum_extLog_pow_mul_collapse (p := p) (NeZero.pos N) hε hεint hξ
+          (hnorm c hc hcd) hzlt]]
+  -- the `c ↦ pc` bookkeeping + the constant-coefficient identity
+  rw [sum_theta_inv_mul_extLog_pc (p := p) hN hprim hε,
+    show PowerSeries.constantCoeff (Ftilde p K θ hε)
+        = -∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ c - 1) from ?_]
+  · ring
+  · -- `constantCoeff F̃ = −Σ_c θ⁻¹(c)·extLog(ε^c − 1)` (coeff 0 of `logSeriesAt = extLog(ε^c−1)`)
+    rw [Ftilde, map_neg, map_sum, neg_inj]
+    refine Finset.sum_congr rfl fun c _ => ?_
+    rw [map_mul, PowerSeries.constantCoeff_C, logSeriesAt,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_mk, if_pos rfl]
 
 /-- **RJW Theorem 6.1(ii)** (Leopoldt; `s=1 theorem`(ii), TeX 1992–1995):
 "We have `L_p(θ,1) = −(1 − θ(p)p⁻¹)·G(θ⁻¹)⁻¹·
