@@ -2791,7 +2791,33 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~180 LOC (Washington's §5.1 proofs span ~1.5 pages).
 
 ### [T522] p-adic logarithm and exp/log inversion
-- **Status**: open | **File**: PadicExp.lean | **Depends on**: T521 | **Type**: lemmas
+- **Status**: done (finished 2026-06-11)
+- **File**: PadicExp.lean | **Depends on**: T521 | **Type**: lemmas
+- **Progress**:
+  - 2026-06-11 (main session): `sub_one_mul_padicValNat_succ_le`
+    ((p−1)·v_p(n+1) ≤ n via Bernoulli), `norm_succ_inv_smul_pow_le`
+    (geometric log-term decay, rpow-free), `summable_padicLog_terms`,
+    `padicLog_one`, `norm_succ_inv_smul_pow_lt` (tail domination m ≥ 1),
+    `norm_padicLog` (dominant-term argument, mirrors the exp isometry).
+  - 2026-06-11 (tooled subagent, lean-lsp): the composition trio
+    `padicExp_padicLog`, `padicLog_padicExp`, `padicLog_mul` via the pinned
+    Washington Prop 5.3 route — formal identities `exp_subst_log`
+    ((1+X)·DF = F recursion) and `log_subst_exp_sub_one` (derivative.ext)
+    using mathlib's `PowerSeries.log` (it exists — `HasSubst.log`,
+    `deriv_log`); evaluation bridge `master_bridge` (per-power
+    `tsum_eval_pow` by iterated nonarchimedean Cauchy product + ultrametric
+    Fubini `Summable.tsum_comm` over ℕ×ℕ; total summability from the
+    Legendre multinomial bound `norm_coeff_pow_le`:
+    ‖[X^k](G^n)‖^{p−1} ≤ p^{k−n}); `padicLog_mul` free from the pair +
+    `padicExp_add`. ~20 helper lemmas added (all docstringed, in
+    section Inversion).
+  - Verification: lake build green, 0 sorry in T522 scope (6 remain =
+    T523 pZp section), `#print axioms` = standard 3 on all of
+    padicLog_one/norm_padicLog/summable_padicLog_terms/padicExp_padicLog/
+    padicLog_padicExp/padicLog_mul. Linter clean (omits added).
+  - Note for cleanup: `master_bridge` carries
+    `set_option maxHeartbeats 400000` (verified working value; golf
+    candidate for a tooled cleanup pass).
 - **Statement**: skeleton E4 sorries (`padicLog_one`, `norm_padicLog`,
   `padicExp_padicLog`, `padicLog_padicExp`, `padicLog_mul`).
 - **Proof sketch**: decomposition E4 (series composition with ultrametric

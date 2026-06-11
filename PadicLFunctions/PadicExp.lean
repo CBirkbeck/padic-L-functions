@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 import PadicLFunctions.Coefficients
 import PadicLFunctions.Interpolation.Branches
+import Mathlib.RingTheory.PowerSeries.Log
 
 /-!
 # The p-adic exponential and logarithm (RJW Lem 5.14)
@@ -308,27 +309,719 @@ theorem padicExp_add {x y : L} (hx : InExpBall p x) (hy : InExpBall p y) :
       rw [Algebra.smul_def, map_natCast, mul_comm],
     smul_smul, hchoose]
 
+/-- `(p−1)·v_p(n+1) ≤ n`: the valuation growth of the logarithm denominators
+(`p^v ∣ n+1` and Bernoulli `1 + v(p−1) ≤ p^v`). -/
+theorem sub_one_mul_padicValNat_succ_le (n : ℕ) :
+    (p - 1) * padicValNat p (n + 1) ≤ n := by
+  set v : ℕ := padicValNat p (n + 1) with hv
+  have hdvd : p ^ v ∣ n + 1 := pow_padicValNat_dvd
+  have hle : p ^ v ≤ n + 1 := Nat.le_of_dvd (Nat.succ_pos n) hdvd
+  have hbern : 1 + (v : ℤ) * ((p : ℤ) - 1) ≤ (p : ℤ) ^ v := by
+    have h2 : (-2 : ℤ) ≤ (p : ℤ) - 1 := by
+      have := hp.out.pos
+      omega
+    simpa using one_add_mul_le_pow h2 v
+  have hgoal : ((p - 1 : ℕ) : ℤ) * (v : ℤ) ≤ (n : ℤ) := by
+    have hps : ((p - 1 : ℕ) : ℤ) = (p : ℤ) - 1 := by
+      have := hp.out.one_le
+      push_cast [Nat.cast_sub this]
+      ring
+    have hle' : ((p : ℤ)) ^ v ≤ (n : ℤ) + 1 := by exact_mod_cast hle
+    rw [hps]
+    linarith [hbern, hle']
+  exact_mod_cast hgoal
+
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- The logarithm terms decay geometrically at the `(p−1)`-th power level:
+`‖(−1)^n·(n+1)⁻¹•y^{n+1}‖^{p−1} ≤ ‖y‖^{p−1}·(p‖y‖^{p−1})^n`. -/
+theorem norm_succ_inv_smul_pow_le (y : L) (n : ℕ) :
+    ‖(-1 : L) ^ n * (((n : ℚ_[p]) + 1)⁻¹ • y ^ (n + 1))‖ ^ (p - 1)
+      ≤ ‖y‖ ^ (p - 1) * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ n := by
+  rw [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_smul,
+    norm_inv, norm_pow, mul_pow, inv_pow]
+  have hval : ‖((n : ℚ_[p]) + 1)‖ = (p : ℝ) ^ (-(padicValNat p (n + 1) : ℤ)) := by
+    rw [show ((n : ℚ_[p]) + 1) = ((n + 1 : ℕ) : ℚ_[p]) from by push_cast; ring,
+      Padic.norm_eq_zpow_neg_valuation
+        (Nat.cast_ne_zero.2 (Nat.succ_ne_zero n)),
+      Padic.valuation_natCast]
+  have hfac : (‖((n : ℚ_[p]) + 1)‖ ^ (p - 1))⁻¹ ≤ (p : ℝ) ^ n := by
+    rw [hval, ← zpow_natCast _ (p - 1), ← zpow_mul, ← zpow_neg,
+      ← zpow_natCast (p : ℝ) n]
+    refine zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_lt.le) ?_
+    have := sub_one_mul_padicValNat_succ_le p n
+    push_cast
+    nlinarith [this]
+  calc (‖((n : ℚ_[p]) + 1)‖ ^ (p - 1))⁻¹ * (‖y‖ ^ (n + 1)) ^ (p - 1)
+      ≤ (p : ℝ) ^ n * (‖y‖ ^ (n + 1)) ^ (p - 1) :=
+        mul_le_mul_of_nonneg_right hfac (by positivity)
+    _ = ‖y‖ ^ (p - 1) * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ n := by
+        rw [mul_pow, ← pow_mul, ← pow_mul,
+          show (n + 1) * (p - 1) = (p - 1) + n * (p - 1) from by
+            rw [Nat.succ_mul, Nat.add_comm],
+          pow_add, pow_mul]
+        ring
+
+/-- On the open exponential ball, the logarithm terms are summable. -/
+theorem summable_padicLog_terms {y : L} (hy : InExpBall p y) :
+    Summable fun n : ℕ => (-1 : L) ^ n * (((n : ℚ_[p]) + 1)⁻¹ • y ^ (n + 1)) := by
+  rw [summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop,
+    tendsto_zero_iff_norm_tendsto_zero]
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hT0 : 0 ≤ (p : ℝ) * ‖y‖ ^ (p - 1) := by positivity
+  have hT1 : (p : ℝ) * ‖y‖ ^ (p - 1) < 1 :=
+    calc (p : ℝ) * ‖y‖ ^ (p - 1) < (p : ℝ) * (p : ℝ)⁻¹ :=
+          mul_lt_mul_of_pos_left hy hp0
+      _ = 1 := mul_inv_cancel₀ hp0.ne'
+  have hpow : Tendsto (fun n : ℕ => ‖y‖ ^ (p - 1) * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ n)
+      atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hT0 hT1).const_mul
+      (‖y‖ ^ (p - 1))
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  have hε1 : 0 < min ε 1 := lt_min hε one_pos
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hpow ((min ε 1) ^ (p - 1))
+    (pow_pos hε1 _)
+  refine ⟨N, fun n hn => ?_⟩
+  have hsmall := hN n hn
+  rw [Real.dist_eq, sub_zero] at hsmall ⊢
+  rw [abs_of_nonneg (by positivity)] at hsmall ⊢
+  have hlt : ‖(-1 : L) ^ n * (((n : ℚ_[p]) + 1)⁻¹ • y ^ (n + 1))‖ ^ (p - 1)
+      < (min ε 1) ^ (p - 1) :=
+    lt_of_le_of_lt (norm_succ_inv_smul_pow_le p y n) hsmall
+  exact lt_of_lt_of_le
+    (lt_of_pow_lt_pow_left₀ _ hε1.le hlt) (min_le_left _ _)
+
 /-- E4: the `p`-adic logarithm `log(x) = ∑ (−1)^{n+1}(x−1)^n/n`, junk-total
 (meaningful for `‖x − 1‖ < 1`). -/
 noncomputable def padicLog (x : L) : L :=
   ∑' n : ℕ, (-1 : L) ^ n * (((n : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1))
 
-@[simp] theorem padicLog_one : padicLog p (1 : L) = 0 := by sorry
+omit [IsUltrametricDist L] [CompleteSpace L] in
+@[simp] theorem padicLog_one : padicLog p (1 : L) = 0 := by
+  rw [padicLog]
+  simp
+
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- The tail terms of the logarithm are strictly dominated by the linear
+term on the open exponential ball: `‖(−1)^m(m+1)⁻¹•y^{m+1}‖ < ‖y‖` for
+`m ≥ 1`. -/
+theorem norm_succ_inv_smul_pow_lt {y : L} (hy : InExpBall p y) (hy0 : y ≠ 0)
+    {m : ℕ} (hm : 1 ≤ m) :
+    ‖(-1 : L) ^ m * (((m : ℚ_[p]) + 1)⁻¹ • y ^ (m + 1))‖ < ‖y‖ := by
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hd0 : 0 < ‖y‖ := norm_pos_iff.mpr hy0
+  have hT1 : (p : ℝ) * ‖y‖ ^ (p - 1) < 1 :=
+    calc (p : ℝ) * ‖y‖ ^ (p - 1) < (p : ℝ) * (p : ℝ)⁻¹ :=
+          mul_lt_mul_of_pos_left hy hp0
+      _ = 1 := mul_inv_cancel₀ hp0.ne'
+  have hpow : ‖(-1 : L) ^ m * (((m : ℚ_[p]) + 1)⁻¹ • y ^ (m + 1))‖ ^ (p - 1)
+      < ‖y‖ ^ (p - 1) := by
+    refine lt_of_le_of_lt (norm_succ_inv_smul_pow_le p y m) ?_
+    calc ‖y‖ ^ (p - 1) * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ m
+        ≤ ‖y‖ ^ (p - 1) * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ 1 := by
+          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+          exact pow_le_pow_of_le_one (by positivity) hT1.le hm
+      _ < ‖y‖ ^ (p - 1) := by
+          rw [pow_one]
+          exact mul_lt_of_lt_one_right (by positivity) hT1
+  exact lt_of_pow_lt_pow_left₀ _ hd0.le hpow
 
 theorem norm_padicLog {x : L} (hx : InExpBall p (x - 1)) :
-    ‖padicLog p x‖ = ‖x - 1‖ := by sorry
+    ‖padicLog p x‖ = ‖x - 1‖ := by
+  rcases eq_or_ne x 1 with rfl | hx1
+  · simp
+  have hy0 : x - 1 ≠ 0 := sub_ne_zero.mpr hx1
+  have hd0 : 0 < ‖x - 1‖ := norm_pos_iff.mpr hy0
+  have hsum := summable_padicLog_terms p hx
+  rw [padicLog, hsum.tsum_eq_zero_add]
+  simp only [pow_zero, one_mul, Nat.cast_zero, zero_add, inv_one, one_smul,
+    pow_one]
+  have htail : ‖∑' n : ℕ, (-1 : L) ^ (n + 1)
+      * ((((n + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1 + 1))‖ < ‖x - 1‖ := by
+    have hterm : ∀ n : ℕ, ‖(-1 : L) ^ (n + 1)
+        * ((((n + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1 + 1))‖ < ‖x - 1‖ :=
+      fun n => norm_succ_inv_smul_pow_lt p hx hy0 (by omega)
+    have htend : Tendsto (fun n : ℕ => ‖(-1 : L) ^ (n + 1)
+        * ((((n + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1 + 1))‖)
+        atTop (𝓝 0) := by
+      have h2 : Summable fun n : ℕ => (-1 : L) ^ (n + 1)
+          * ((((n + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1 + 1)) :=
+        (summable_nat_add_iff 1).mpr hsum
+      simpa using h2.tendsto_atTop_zero.norm
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
+      (htend.eventually_lt_const (half_pos hd0))
+    set C : ℝ := max ((Finset.range (N + 1)).sup' (by simp)
+        fun n => ‖(-1 : L) ^ (n + 1)
+          * ((((n + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1 + 1))‖)
+      (‖x - 1‖ / 2) with hC
+    have hCd : C < ‖x - 1‖ := by
+      rw [hC]
+      refine max_lt ((Finset.sup'_lt_iff _).mpr fun n _ => hterm n) ?_
+      linarith
+    refine lt_of_le_of_lt (IsUltrametricDist.norm_tsum_le_of_forall_le
+      fun n => ?_) hCd
+    rcases le_or_gt n N with hn | hn
+    · have hmem : n ∈ Finset.range (N + 1) := Finset.mem_range.mpr (by omega)
+      exact le_trans (Finset.le_sup'
+        (fun k => ‖(-1 : L) ^ (k + 1)
+          * ((((k + 1 : ℕ) : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (k + 1 + 1))‖) hmem)
+        (le_max_left _ _)
+    · exact le_trans (hN n hn.le).le (le_max_right _ _)
+  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm
+    (by exact fun h => absurd (h ▸ htail) (lt_irrefl _) : ‖x - 1‖ ≠ ‖_‖)]
+  exact max_eq_left htail.le
+
+/-! ### The exp ∘ log inversion via formal power series (RJW Lem 5.14 / decomposition E4)
+
+The two inverse identities are obtained by the Washington Prop 5.3 route: prove the
+*formal* identities `(exp).subst (log) = 1 + X` and `(log).subst (exp − 1) = X` over
+`ℚ_[p]` (derivative + coefficient recursion), then transport them to convergent sums in
+`L` through an ultrametric evaluation bridge (`master_bridge`) built from the
+nonarchimedean Cauchy product and Fubini. -/
+
+section Inversion
+
+open PowerSeries
+
+variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L]
+  [IsUltrametricDist L] [CompleteSpace L]
+
+/-- `(1 + X)·D(log) = 1` over any `ℚ`-algebra: the formal geometric identity
+`D(log(1+X)) = 1/(1+X)`. -/
+theorem oneAddX_mul_derivative_log (A : Type*) [CommRing A] [Algebra ℚ A] :
+    (1 + PowerSeries.X) * (d⁄dX A (PowerSeries.log A)) = 1 := by
+  rw [deriv_log]
+  ext n
+  rw [coeff_one]
+  match n with
+  | 0 => simp
+  | (k + 1) =>
+    rw [add_mul, one_mul, map_add, coeff_succ_X_mul, coeff_mk, coeff_mk,
+      if_neg (Nat.succ_ne_zero k)]
+    simp only [map_pow, map_neg, map_one]
+    rw [pow_succ]
+    ring
+
+/-- **Formal identity (i)** (RJW Lem 5.14 / decomposition E4, Washington Prop 5.3 route):
+`exp(log(1 + X)) = 1 + X` as formal power series over `ℚ_[p]`. Proved from
+`(1 + X)·D F = F` with `F(0) = 1` by coefficient recursion. -/
+theorem exp_subst_log :
+    (exp ℚ_[p]).subst (PowerSeries.log ℚ_[p]) = 1 + PowerSeries.X := by
+  have hg : HasSubst (PowerSeries.log ℚ_[p]) := HasSubst.log
+  set F := (exp ℚ_[p]).subst (PowerSeries.log ℚ_[p]) with hF
+  have hDF : d⁄dX ℚ_[p] F = F * d⁄dX ℚ_[p] (PowerSeries.log ℚ_[p]) := by
+    rw [hF, derivative_subst ℚ_[p] hg, derivative_exp]
+  have hrec : (1 + PowerSeries.X) * d⁄dX ℚ_[p] F = F := by
+    rw [hDF, ← mul_assoc, mul_comm (1 + PowerSeries.X) F, mul_assoc,
+      oneAddX_mul_derivative_log, mul_one]
+  have hc0 : constantCoeff F = 1 := by
+    rw [hF, show (constantCoeff ((exp ℚ_[p]).subst (PowerSeries.log ℚ_[p])))
+        = MvPowerSeries.constantCoeff ((exp ℚ_[p]).subst (PowerSeries.log ℚ_[p])) from rfl,
+      constantCoeff_subst hg, finsum_eq_single _ 0 fun d hd => by
+        have h0 : MvPowerSeries.constantCoeff (PowerSeries.log ℚ_[p]) = (0 : ℚ_[p]) :=
+          constantCoeff_log
+        rw [map_pow, h0, zero_pow hd, smul_zero]]
+    simp
+  have hc1 : coeff 1 F = 1 := by
+    have e0 := congrArg (coeff 0) hrec
+    rw [add_mul, one_mul, map_add, coeff_zero_X_mul, add_zero, coeff_derivative] at e0
+    simp only [Nat.cast_zero, zero_add, mul_one] at e0
+    rw [e0, coeff_zero_eq_constantCoeff, hc0]
+  have hrecn : ∀ m : ℕ,
+      coeff (m + 2) F * ((m : ℚ_[p]) + 2) = -(m : ℚ_[p]) * coeff (m + 1) F := by
+    intro m
+    have e := congrArg (coeff (m + 1)) hrec
+    rw [add_mul, one_mul, map_add, coeff_succ_X_mul, coeff_derivative, coeff_derivative] at e
+    push_cast at e ⊢
+    linear_combination e
+  have hzero : ∀ k : ℕ, coeff (k + 2) F = 0 := by
+    intro k
+    induction k with
+    | zero =>
+      have h := hrecn 0
+      simp only [Nat.cast_zero, neg_zero, zero_mul, zero_add] at h
+      exact (mul_eq_zero.mp h).resolve_right (by norm_num)
+    | succ k ih =>
+      have h := hrecn (k + 1)
+      rw [ih, mul_zero] at h
+      have hne : ((k : ℚ_[p]) + 1 + 2) ≠ 0 := by
+        rw [show ((k : ℚ_[p]) + 1 + 2) = ((k + 3 : ℕ) : ℚ_[p]) from by push_cast; ring]
+        exact Nat.cast_ne_zero.mpr (by omega)
+      push_cast at h
+      exact (mul_eq_zero.mp h).resolve_right hne
+  ext n
+  match n with
+  | 0 => rw [coeff_zero_eq_constantCoeff, hc0]; simp
+  | 1 => rw [hc1, map_add, coeff_one, coeff_X]; simp
+  | (k + 2) => rw [hzero k, map_add, coeff_one, coeff_X]; simp
+
+/-- **Formal identity (ii)** (RJW Lem 5.14 / decomposition E4, Washington Prop 5.3 route):
+`log(1 + (exp − 1)) = X` as formal power series over `ℚ_[p]`. Proved by `derivative.ext`
+from `D(log.subst(exp−1)) = 1` and matching constant coefficients. -/
+theorem log_subst_exp_sub_one :
+    (PowerSeries.log ℚ_[p]).subst (exp ℚ_[p] - 1) = PowerSeries.X := by
+  have hg : HasSubst (exp ℚ_[p] - 1) := HasSubst.exp_sub_one
+  refine PowerSeries.derivative.ext ?_ ?_
+  · rw [derivative_subst ℚ_[p] hg, map_sub, derivative_exp, Derivation.map_one_eq_zero,
+      sub_zero, derivative_X]
+    have key : ((1 + PowerSeries.X) * d⁄dX ℚ_[p] (PowerSeries.log ℚ_[p])).subst
+        (exp ℚ_[p] - 1) = 1 := by
+      rw [oneAddX_mul_derivative_log, ← coe_substAlgHom hg, map_one]
+    have hone : (1 : PowerSeries ℚ_[p]).subst (exp ℚ_[p] - 1) = 1 := by
+      rw [← coe_substAlgHom hg, map_one]
+    rw [subst_mul hg, subst_add hg, hone, subst_X hg,
+      show (1 : PowerSeries ℚ_[p]) + (exp ℚ_[p] - 1) = exp ℚ_[p] from by ring] at key
+    rw [mul_comm]
+    exact key
+  · rw [PowerSeries.constantCoeff_X]
+    refine constantCoeff_subst_eq_zero ?_ _ constantCoeff_log
+    have h : PowerSeries.constantCoeff (exp ℚ_[p] - 1) = (0 : ℚ_[p]) := by
+      rw [map_sub, map_one, constantCoeff_exp, sub_self]
+    exact h
+
+omit [CompleteSpace L] in
+/-- The `n`-th power of an (unconditionally) summable family, as a `HasSum` over tuples
+`Fin n → ℕ` — the iterated nonarchimedean Cauchy product. -/
+theorem hasSum_pow_fin {f : ℕ → L} {a : L} (hf : HasSum f a) (n : ℕ) :
+    HasSum (fun φ : Fin n → ℕ => ∏ i, f (φ i)) (a ^ n) := by
+  induction n with
+  | zero =>
+    have h : (fun φ : Fin 0 → ℕ => ∏ i, f (φ i)) = fun _ => (1 : L) := by funext φ; simp
+    rw [h, pow_zero]
+    exact hasSum_unique _
+  | succ n ih =>
+    have hmul := hf.mul_of_nonarchimedean ih
+    rw [pow_succ, mul_comm (a ^ n) a]
+    refine ((Fin.consEquiv (fun _ : Fin (n + 1) => ℕ)).hasSum_iff).mp ?_
+    have heq : (fun φ : Fin (n + 1) → ℕ => ∏ i, f (φ i)) ∘ (Fin.consEquiv (fun _ => ℕ))
+        = fun mψ : ℕ × (Fin n → ℕ) => f mψ.1 * ∏ i, f (mψ.2 i) := by
+      funext mψ
+      simp only [Function.comp_apply, Fin.consEquiv_apply, Fin.prod_univ_succ, Fin.cons_zero,
+        Fin.cons_succ]
+    rw [heq]
+    exact hmul
+
+omit [CompleteSpace L] in
+/-- Evaluating `G ^ n` at `y` is the `n`-th power of evaluating `G` at `y`: the summability
+half (by induction via the nonarchimedean Cauchy product). -/
+theorem summable_eval_pow (G : PowerSeries ℚ_[p]) (y : L)
+    (hG : Summable fun m : ℕ => (coeff m G : ℚ_[p]) • y ^ m) (n : ℕ) :
+    Summable fun k : ℕ => (coeff k (G ^ n) : ℚ_[p]) • y ^ k := by
+  induction n with
+  | zero =>
+    refine Summable.congr (f := fun k : ℕ => if k = 0 then (1 : L) else 0)
+      (summable_of_ne_finset_zero (s := {0}) fun k hk => ?_) (fun k => ?_)
+    · simp only [Finset.mem_singleton] at hk
+      rw [if_neg hk]
+    · rw [pow_zero, coeff_one]
+      split_ifs with h <;> simp [h]
+  | succ n ih =>
+    set f : ℕ → L := fun m => (coeff m G : ℚ_[p]) • y ^ m with hf
+    set g : ℕ → L := fun k => (coeff k (G ^ n) : ℚ_[p]) • y ^ k with hg
+    have hfg : Summable fun ab : ℕ × ℕ => f ab.1 * g ab.2 := hG.mul_of_nonarchimedean ih
+    refine (summable_sum_mul_antidiagonal_of_summable_mul (f := f) (g := g) hfg).congr
+      fun j => ?_
+    rw [pow_succ', coeff_mul, Finset.sum_smul]
+    refine Finset.sum_congr rfl fun ab hab => ?_
+    have hj : ab.1 + ab.2 = j := Finset.mem_antidiagonal.mp hab
+    simp only [hf, hg]
+    rw [smul_mul_smul_comm, show y ^ ab.1 * y ^ ab.2 = y ^ j from by rw [← pow_add, hj]]
+
+omit [CompleteSpace L] in
+/-- Evaluating `G ^ n` at `y` is the `n`-th power of evaluating `G` at `y`: the value
+identity (by induction via the nonarchimedean Cauchy product). -/
+theorem tsum_eval_pow (G : PowerSeries ℚ_[p]) (y : L)
+    (hG : Summable fun m : ℕ => (coeff m G : ℚ_[p]) • y ^ m) (n : ℕ) :
+    (∑' m : ℕ, (coeff m G : ℚ_[p]) • y ^ m) ^ n
+      = ∑' k : ℕ, (coeff k (G ^ n) : ℚ_[p]) • y ^ k := by
+  induction n with
+  | zero =>
+    rw [pow_zero, tsum_eq_single 0 fun k hk => by rw [pow_zero, coeff_one, if_neg hk, zero_smul]]
+    simp
+  | succ n ih =>
+    have hGn : Summable fun k : ℕ => (coeff k (G ^ n) : ℚ_[p]) • y ^ k :=
+      summable_eval_pow p G y hG n
+    rw [pow_succ', ih]
+    set f : ℕ → L := fun m => (coeff m G : ℚ_[p]) • y ^ m with hf
+    set g : ℕ → L := fun k => (coeff k (G ^ n) : ℚ_[p]) • y ^ k with hg
+    have hfg : Summable fun ab : ℕ × ℕ => f ab.1 * g ab.2 := hG.mul_of_nonarchimedean hGn
+    rw [hG.tsum_mul_tsum_eq_tsum_sum_antidiagonal hGn hfg]
+    refine tsum_congr fun j => ?_
+    rw [pow_succ', coeff_mul, Finset.sum_smul]
+    refine Finset.sum_congr rfl fun ab hab => ?_
+    have hj : ab.1 + ab.2 = j := Finset.mem_antidiagonal.mp hab
+    simp only [hf, hg]
+    rw [smul_mul_smul_comm, show y ^ ab.1 * y ^ ab.2 = y ^ j from by rw [← pow_add, hj]]
+
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- The scalar family `n ↦ [Xⁿ]F · [Xᵏ](Gⁿ)` has finite support (for `HasSubst G`),
+hence is summable. -/
+theorem summable_coeff_pow_scalar (F G : PowerSeries ℚ_[p]) (hG : HasSubst G) (k : ℕ) :
+    Summable fun n : ℕ => (coeff n F : ℚ_[p]) * (coeff k (G ^ n) : ℚ_[p]) := by
+  obtain ⟨N, hN⟩ := (hG.eventually_coeff_pow_eq_zero k).exists_forall_of_atTop
+  refine summable_of_ne_finset_zero (s := Finset.range N) fun n hn => ?_
+  simp only [Finset.mem_range, not_lt] at hn
+  rw [hN n hn k le_rfl, mul_zero]
+
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- The inner identity matching `PowerSeries.coeff_subst`: `∑ₙ [Xⁿ]F · [Xᵏ](Gⁿ) = [Xᵏ](F∘G)`
+(the `tsum` is a finite sum since `[Xᵏ](Gⁿ) = 0` for `n > k`). -/
+theorem tsum_coeff_pow_eq_coeff_subst (F G : PowerSeries ℚ_[p]) (hG : HasSubst G) (k : ℕ) :
+    (∑' n : ℕ, (coeff n F : ℚ_[p]) * (coeff k (G ^ n) : ℚ_[p]))
+      = (coeff k (F.subst G) : ℚ_[p]) := by
+  obtain ⟨N, hN⟩ := (hG.eventually_coeff_pow_eq_zero k).exists_forall_of_atTop
+  rw [tsum_eq_sum (s := Finset.range N) fun n hn => by
+    rw [hN n (by simpa [Finset.mem_range] using hn) k le_rfl, mul_zero],
+    show (coeff k (F.subst G) : ℚ_[p]) = PowerSeries.coeff k (F.subst G) from rfl,
+    coeff_subst' hG F k, finsum_eq_finsetSum_of_support_subset _ (s := Finset.range N) ?_]
+  · exact Finset.sum_congr rfl fun n _ => by rw [smul_eq_mul]
+  · intro n hn
+    simp only [Function.mem_support] at hn
+    simp only [Finset.coe_range, Set.mem_Iio]
+    by_contra hle
+    rw [not_lt] at hle
+    exact hn (by rw [hN n hle k le_rfl, smul_zero])
+
+set_option maxHeartbeats 400000 in
+-- The nested `tsum` rewrites over `PowerSeries.coeff` exceed the default heartbeat budget.
+/-- **Evaluation bridge** (RJW Lem 5.14 / decomposition E4, Washington Prop 5.3 route):
+the evaluation at `y` of a formal substitution `F.subst G` equals the composed convergent
+sum, provided the total product family over `ℕ × ℕ` is summable. The proof regroups the
+double sum by ultrametric Fubini (`Summable.tsum_comm`), using `tsum_eval_pow` for the inner
+power and `tsum_coeff_pow_eq_coeff_subst` for the formal coefficients. -/
+theorem master_bridge (F G : PowerSeries ℚ_[p]) (y : L) (hG : HasSubst G)
+    (hGsum : Summable fun m : ℕ => (coeff m G : ℚ_[p]) • y ^ m)
+    (hprod : Summable fun nk : ℕ × ℕ =>
+      ((coeff nk.1 F : ℚ_[p]) * (coeff nk.2 (G ^ nk.1) : ℚ_[p])) • y ^ nk.2) :
+    (∑' n : ℕ, (coeff n F : ℚ_[p]) • (∑' m : ℕ, (coeff m G : ℚ_[p]) • y ^ m) ^ n)
+      = ∑' k : ℕ, (coeff k (F.subst G) : ℚ_[p]) • y ^ k := by
+  set T : ℕ × ℕ → L := fun nk =>
+    ((coeff nk.1 F : ℚ_[p]) * (coeff nk.2 (G ^ nk.1) : ℚ_[p])) • y ^ nk.2 with hT
+  have hL : (∑' n : ℕ, (coeff n F : ℚ_[p]) • (∑' m : ℕ, (coeff m G : ℚ_[p]) • y ^ m) ^ n)
+      = ∑' n : ℕ, ∑' k : ℕ, T (n, k) := by
+    refine tsum_congr fun n => ?_
+    rw [tsum_eval_pow p G y hGsum n,
+      ← (summable_eval_pow p G y hGsum n).tsum_const_smul ((coeff n F : ℚ_[p]))]
+    refine tsum_congr fun k => ?_
+    rw [hT]
+    simp only []
+    rw [smul_smul]
+  have hR : (∑' k : ℕ, (coeff k (F.subst G) : ℚ_[p]) • y ^ k)
+      = ∑' k : ℕ, ∑' n : ℕ, T (n, k) := by
+    refine tsum_congr fun k => ?_
+    rw [← tsum_coeff_pow_eq_coeff_subst p F G hG k,
+      ← (summable_coeff_pow_scalar p F G hG k).tsum_smul_const (y ^ k)]
+  rw [hL, hR]
+  exact hprod.tsum_comm.symm
+
+omit [NormedAlgebra ℚ_[p] L] [CompleteSpace L] in
+/-- Ultrametric power bound: `‖∑ f i‖ᵐ ≤ C` whenever every term satisfies `‖f i‖ᵐ ≤ C`. -/
+theorem pow_norm_sum_le {ι : Type*} (s : Finset ι) (f : ι → L) {m : ℕ} (hm : 1 ≤ m)
+    {C : ℝ} (hC : 0 ≤ C) (hf : ∀ i ∈ s, ‖f i‖ ^ m ≤ C) :
+    ‖∑ i ∈ s, f i‖ ^ m ≤ C := by
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · simp only [Finset.sum_empty, norm_zero]
+    rw [zero_pow (by omega)]
+    exact hC
+  · obtain ⟨i₀, hi₀, hsup⟩ := Finset.exists_mem_eq_sup' hne fun i => ‖f i‖
+    have hle : ‖∑ i ∈ s, f i‖ ≤ ‖f i₀‖ := by
+      rw [← hsup]
+      exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+        (le_trans (norm_nonneg _) (Finset.le_sup' (fun i => ‖f i‖) hi₀))
+        (fun i hi => Finset.le_sup' (fun i => ‖f i‖) hi)
+    calc ‖∑ i ∈ s, f i‖ ^ m ≤ ‖f i₀‖ ^ m := pow_le_pow_left₀ (norm_nonneg _) hle m
+      _ ≤ C := hf i₀ hi₀
+
+/-- Legendre-type bound on a single multinomial term of `[Xᵏ](Gⁿ)`: if `[Xʲ]G` obeys
+`‖[Xʲ]G‖^{p−1} ≤ p^{j−1}` and `[X⁰]G = 0`, then each tuple product is bounded by `p^{k−n}`
+(telescoping `(p−1)·v_p(lᵢ) ≤ lᵢ − 1`). -/
+theorem norm_coeff_prod_le (G : PowerSeries ℚ_[p])
+    (hcoeff : ∀ j : ℕ, 1 ≤ j → ‖(coeff j G : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (j - 1))
+    (hc0 : (coeff 0 G : ℚ_[p]) = 0) (n k : ℕ) (l : ℕ →₀ ℕ)
+    (hl : l ∈ Finset.finsuppAntidiag (Finset.range n) k) :
+    ‖∏ i ∈ Finset.range n, (coeff (l i) G : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (k - n) := by
+  by_cases hex : ∃ i ∈ Finset.range n, l i = 0
+  · obtain ⟨i, hi, hi0⟩ := hex
+    rw [Finset.prod_eq_zero hi (by rw [hi0, hc0]), norm_zero,
+      zero_pow (by have := hp.out.one_lt; omega)]
+    positivity
+  · simp only [not_exists, not_and] at hex
+    have hpos : ∀ i ∈ Finset.range n, 1 ≤ l i :=
+      fun i hi => Nat.one_le_iff_ne_zero.mpr (hex i hi)
+    rw [norm_prod, Finset.mem_finsuppAntidiag] at *
+    obtain ⟨hsum, _⟩ := hl
+    rw [← Finset.prod_pow]
+    refine le_trans (Finset.prod_le_prod (fun i _ => by positivity)
+      fun i hi => hcoeff (l i) (hpos i hi)) ?_
+    rw [Finset.prod_pow_eq_pow_sum]
+    have hsumeq : ∑ i ∈ Finset.range n, (l i - 1) = k - n := by
+      have hd : ∑ i ∈ Finset.range n, (l i - 1)
+          = (∑ i ∈ Finset.range n, l i) - (∑ i ∈ Finset.range n, 1) := by
+        rw [← Finset.sum_tsub_distrib]
+        exact fun i hi => hpos i hi
+      rw [hd, Finset.sum_const, Finset.card_range, smul_eq_mul, mul_one,
+        show (∑ i ∈ Finset.range n, l i) = k from hsum]
+    rw [hsumeq]
+
+/-- Legendre-type bound on the substituted-power coefficients: `‖[Xᵏ](Gⁿ)‖^{p−1} ≤ p^{k−n}`
+for `G` with `[X⁰]G = 0` and `‖[Xʲ]G‖^{p−1} ≤ p^{j−1}` (the multinomial expansion bounded
+termwise by `norm_coeff_prod_le`). -/
+theorem norm_coeff_pow_le (G : PowerSeries ℚ_[p])
+    (hcoeff : ∀ j : ℕ, 1 ≤ j → ‖(coeff j G : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (j - 1))
+    (hc0 : (coeff 0 G : ℚ_[p]) = 0) (n k : ℕ) :
+    ‖(coeff k (G ^ n) : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (k - n) := by
+  rw [coeff_pow]
+  refine pow_norm_sum_le (L := ℚ_[p]) _ _ (by have := hp.out.one_lt; omega) (by positivity)
+    fun l hl => norm_coeff_prod_le p G hcoeff hc0 n k l hl
+
+omit [NormedAlgebra ℚ_[p] L] [IsUltrametricDist L] [CompleteSpace L] in
+/-- `[Xᵏ](Gⁿ) = 0` for `k < n` when `[X⁰]G = 0` (order of `Gⁿ` is `≥ n`). -/
+theorem coeff_pow_eq_zero_of_lt (G : PowerSeries ℚ_[p]) (hc0 : constantCoeff G = 0)
+    {n k : ℕ} (hkn : k < n) : (coeff k (G ^ n) : ℚ_[p]) = 0 :=
+  coeff_of_lt_order _ (lt_of_lt_of_le (by exact_mod_cast hkn)
+    (le_order_pow_of_constantCoeff_eq_zero n hc0))
+
+/-- The product family of the evaluation bridge is summable, by the uniform geometric bound
+`‖[Xⁿ]F · [Xᵏ](Gⁿ) · yᵏ‖^{p−1} ≤ p⁻¹·(p‖y‖^{p−1})ᵏ` (decaying since `‖y‖^{p−1} < p⁻¹`),
+plus the support condition `n ≤ k`. -/
+theorem summable_prod_family (F G : PowerSeries ℚ_[p]) (y : L) (hy : InExpBall p y)
+    (hF : ∀ n : ℕ, 1 ≤ n → ‖(coeff n F : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (n - 1))
+    (hGc : ∀ j : ℕ, 1 ≤ j → ‖(coeff j G : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (j - 1))
+    (hG0 : constantCoeff G = 0) :
+    Summable fun nk : ℕ × ℕ =>
+      ((coeff nk.1 F : ℚ_[p]) * (coeff nk.2 (G ^ nk.1) : ℚ_[p])) • y ^ nk.2 := by
+  have hGc0 : (coeff 0 G : ℚ_[p]) = 0 := by rw [coeff_zero_eq_constantCoeff]; exact hG0
+  rw [summable_iff_tendsto_cofinite_zero, NormedAddGroup.tendsto_nhds_zero]
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hp1 : 1 ≤ p - 1 := by have := hp.out.one_lt; omega
+  have hρ1 : (p : ℝ) * ‖y‖ ^ (p - 1) < 1 :=
+    calc (p : ℝ) * ‖y‖ ^ (p - 1) < (p : ℝ) * (p : ℝ)⁻¹ := mul_lt_mul_of_pos_left hy hp0
+      _ = 1 := mul_inv_cancel₀ hp0.ne'
+  have hρ0 : 0 ≤ (p : ℝ) * ‖y‖ ^ (p - 1) := by positivity
+  intro ε hε
+  rw [Filter.eventually_cofinite]
+  have htend : Tendsto (fun k : ℕ => (p : ℝ)⁻¹ * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ k) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul ((p : ℝ)⁻¹)
+  obtain ⟨K, hK⟩ := (htend.eventually_lt_const
+    (by positivity : (0 : ℝ) < ε ^ (p - 1))).exists_forall_of_atTop
+  apply Set.Finite.subset (Set.Finite.prod (Set.finite_Iio (K + 1)) (Set.finite_Iio (K + 1)))
+  intro x hx
+  simp only [Set.mem_setOf_eq, not_lt] at hx
+  have hTne : ((coeff x.1 F : ℚ_[p]) * (coeff x.2 (G ^ x.1) : ℚ_[p])) • y ^ x.2 ≠ 0 := by
+    intro h0
+    rw [h0, norm_zero] at hx
+    linarith [hx, hε]
+  have hle : x.1 ≤ x.2 := by
+    by_contra hlt
+    rw [not_le] at hlt
+    exact hTne (by rw [coeff_pow_eq_zero_of_lt p G hG0 hlt, mul_zero, zero_smul])
+  simp only [Set.mem_prod, Set.mem_Iio]
+  rcases Nat.eq_zero_or_pos x.1 with h0 | h1n
+  · rw [h0, pow_zero] at hTne
+    have hx20 : x.2 = 0 := by
+      by_contra hx2
+      exact hTne (by rw [coeff_one, if_neg hx2, mul_zero, zero_smul])
+    exact ⟨by omega, by omega⟩
+  · have hk : x.2 ≤ K := by
+      by_contra hgt
+      rw [not_le] at hgt
+      have hb : ‖((coeff x.1 F : ℚ_[p]) * (coeff x.2 (G ^ x.1) : ℚ_[p])) • y ^ x.2‖ ^ (p - 1)
+          ≤ ‖y‖ ^ (x.2 * (p - 1)) * (p : ℝ) ^ (x.2 - 1) := by
+        rw [norm_smul, mul_pow, norm_mul, mul_pow, norm_pow, ← pow_mul]
+        calc (‖(coeff x.1 F : ℚ_[p])‖ ^ (p - 1) * ‖(coeff x.2 (G ^ x.1) : ℚ_[p])‖ ^ (p - 1))
+              * ‖y‖ ^ (x.2 * (p - 1))
+            ≤ ((p : ℝ) ^ (x.1 - 1) * (p : ℝ) ^ (x.2 - x.1)) * ‖y‖ ^ (x.2 * (p - 1)) := by
+              refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+              exact mul_le_mul (hF x.1 h1n) (norm_coeff_pow_le p G hGc hGc0 x.1 x.2)
+                (by positivity) (by positivity)
+          _ = ‖y‖ ^ (x.2 * (p - 1)) * (p : ℝ) ^ (x.2 - 1) := by
+              rw [← pow_add, show (x.1 - 1) + (x.2 - x.1) = x.2 - 1 from by omega]
+              ring
+      have hb2 : ‖y‖ ^ (x.2 * (p - 1)) * (p : ℝ) ^ (x.2 - 1)
+          = (p : ℝ)⁻¹ * ((p : ℝ) * ‖y‖ ^ (p - 1)) ^ x.2 := by
+        rw [mul_pow, ← pow_mul, mul_comm x.2 (p - 1),
+          show (p : ℝ) ^ x.2 = (p : ℝ) * (p : ℝ) ^ (x.2 - 1) from by
+            rw [← pow_succ']; congr 1; omega]
+        field_simp
+      rw [hb2] at hb
+      have hεb : ε ^ (p - 1)
+          ≤ ‖((coeff x.1 F : ℚ_[p]) * (coeff x.2 (G ^ x.1) : ℚ_[p])) • y ^ x.2‖ ^ (p - 1) :=
+        pow_le_pow_left₀ hε.le hx _
+      linarith [le_trans hεb hb, hK x.2 hgt.le]
+    exact ⟨by omega, by omega⟩
+
+/-- `(‖(n : ℚ_[p])‖^{p−1})⁻¹ ≤ p^{n−1}` for `n ≥ 1` (the inverted Legendre bound for the
+plain integer `n`, used for the `log` coefficients). -/
+theorem norm_natCast_inv_pow_le (n : ℕ) (hn : 1 ≤ n) :
+    (‖(n : ℚ_[p])‖ ^ (p - 1))⁻¹ ≤ (p : ℝ) ^ (n - 1) := by
+  have hval : ‖(n : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p n : ℤ)) := by
+    rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.2 (by omega : n ≠ 0)),
+      Padic.valuation_natCast]
+  rw [hval, ← zpow_natCast _ (p - 1), ← zpow_mul, ← zpow_neg, ← zpow_natCast (p : ℝ) (n - 1)]
+  refine zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_lt.le) ?_
+  have hkey : (p - 1) * padicValNat p ((n - 1) + 1) ≤ n - 1 :=
+    sub_one_mul_padicValNat_succ_le p (n - 1)
+  rw [show (n - 1) + 1 = n from by omega] at hkey
+  push_cast
+  have hZ : ((p : ℤ) - 1) * (padicValNat p n : ℤ) ≤ (n : ℤ) - 1 := by
+    have h2 : ((p - 1 : ℕ) : ℤ) * (padicValNat p n : ℤ) ≤ ((n - 1 : ℕ) : ℤ) := by
+      exact_mod_cast hkey
+    rw [show ((p - 1 : ℕ) : ℤ) = (p : ℤ) - 1 from by have := hp.out.one_le; omega,
+      show ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 from by omega] at h2
+    exact h2
+  linarith [hZ]
+
+/-- The `exp` coefficients obey the Legendre bound `‖[Xⁿ]exp‖^{p−1} ≤ p^{n−1}`. -/
+theorem norm_coeff_exp_le (n : ℕ) (hn : 1 ≤ n) :
+    ‖(coeff n (exp ℚ_[p]) : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (n - 1) := by
+  rw [coeff_exp, one_div, map_inv₀, map_natCast, norm_inv, inv_pow]
+  exact norm_factorial_inv_pow_le p hn
+
+/-- The `log` coefficients obey the Legendre bound `‖[Xⁿ]log‖^{p−1} ≤ p^{n−1}`. -/
+theorem norm_coeff_log_le (n : ℕ) (hn : 1 ≤ n) :
+    ‖(coeff n (PowerSeries.log ℚ_[p]) : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (n - 1) := by
+  rw [coeff_log, if_neg (by omega : n ≠ 0), map_div₀, map_pow, map_neg, map_one, map_natCast,
+    norm_div, norm_pow, norm_neg, norm_one, one_pow, div_pow, one_pow]
+  rw [← inv_eq_one_div]
+  exact norm_natCast_inv_pow_le p n hn
+
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- `padicExp z = ∑ₙ [Xⁿ]exp · zⁿ`: the exponential as the evaluation of `PowerSeries.exp`. -/
+theorem padicExp_eq_tsum_coeff (z : L) :
+    padicExp p z = ∑' n : ℕ, (coeff n (exp ℚ_[p]) : ℚ_[p]) • z ^ n := by
+  rw [padicExp]
+  exact tsum_congr fun n => by rw [coeff_exp, one_div, map_inv₀, map_natCast]
+
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- Termwise match of the `padicLog` series with the `PowerSeries.log` coefficients. -/
+theorem padicLog_term_eq (x : L) (n : ℕ) :
+    (-1 : L) ^ n * (((n : ℚ_[p]) + 1)⁻¹ • (x - 1) ^ (n + 1))
+      = (coeff (n + 1) (PowerSeries.log ℚ_[p]) : ℚ_[p]) • (x - 1) ^ (n + 1) := by
+  have hneg : (-1 : L) ^ n = (algebraMap ℚ_[p] L) ((-1 : ℚ_[p]) ^ n) := by
+    rw [map_pow, map_neg, map_one]
+  rw [Algebra.smul_def, Algebra.smul_def, hneg, ← mul_assoc, ← map_mul, coeff_log,
+    if_neg (Nat.succ_ne_zero n)]
+  congr 2
+  rw [map_div₀, map_pow, map_neg, map_one, map_natCast]
+  push_cast
+  rw [pow_succ, pow_succ, mul_comm ((-1 : ℚ_[p]) ^ n) _]
+  ring
+
+/-- `padicLog x = ∑ₙ [Xⁿ]log · (x − 1)ⁿ`: the logarithm as the evaluation of
+`PowerSeries.log` at `x − 1`. -/
+theorem padicLog_eq_tsum_coeff {x : L} (hx : InExpBall p (x - 1)) :
+    padicLog p x = ∑' n : ℕ, (coeff n (PowerSeries.log ℚ_[p]) : ℚ_[p]) • (x - 1) ^ n := by
+  have hsum0 : Summable fun n : ℕ =>
+      (coeff (n + 1) (PowerSeries.log ℚ_[p]) : ℚ_[p]) • (x - 1) ^ (n + 1) :=
+    (summable_padicLog_terms p hx).congr fun n => padicLog_term_eq p x n
+  have hsum : Summable fun n : ℕ =>
+      (coeff n (PowerSeries.log ℚ_[p]) : ℚ_[p]) • (x - 1) ^ n :=
+    (summable_nat_add_iff 1).mp hsum0
+  rw [padicLog, hsum.tsum_eq_zero_add, coeff_log, if_pos rfl, zero_smul, zero_add]
+  exact tsum_congr fun n => padicLog_term_eq p x n
+
+/-- `∑ₘ [Xᵐ](exp − 1) · yᵐ = padicExp y − 1`: peeling the (vanishing) constant term. -/
+theorem tsum_coeff_exp_sub_one (y : L) (hy : InExpBall p y) :
+    (∑' m : ℕ, (coeff m (exp ℚ_[p] - 1) : ℚ_[p]) • y ^ m) = padicExp p y - 1 := by
+  have hexp : Summable fun n : ℕ => (coeff n (exp ℚ_[p]) : ℚ_[p]) • y ^ n := by
+    refine (summable_padicExp_terms p hy).congr fun n => ?_
+    rw [coeff_exp, one_div, map_inv₀, map_natCast]
+  have hsub : Summable fun n : ℕ => (coeff n (exp ℚ_[p] - 1) : ℚ_[p]) • y ^ n := by
+    refine (summable_nat_add_iff 1).mp (((summable_nat_add_iff 1).mpr hexp).congr fun n => ?_)
+    rw [map_sub, coeff_one, if_neg (Nat.succ_ne_zero n), sub_zero]
+  rw [padicExp_eq_tsum_coeff, hsub.tsum_eq_zero_add, hexp.tsum_eq_zero_add]
+  have h0 : (coeff 0 (exp ℚ_[p] - 1) : ℚ_[p]) • y ^ 0 = 0 := by
+    rw [map_sub, coeff_one, if_pos rfl, coeff_zero_eq_constantCoeff, constantCoeff_exp,
+      sub_self, zero_smul]
+  have h1 : (coeff 0 (exp ℚ_[p]) : ℚ_[p]) • y ^ 0 = 1 := by
+    rw [coeff_zero_eq_constantCoeff, constantCoeff_exp, pow_zero, one_smul]
+  rw [h0, h1, zero_add, add_comm (1 : L) _, add_sub_assoc, sub_self, add_zero]
+  exact tsum_congr fun m => by rw [map_sub, coeff_one, if_neg (Nat.succ_ne_zero m), sub_zero]
+
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- `∑ₖ [Xᵏ](1 + X) · yᵏ = 1 + y`. -/
+private theorem eval_oneAddX (y : L) :
+    (∑' k : ℕ, (coeff k (1 + PowerSeries.X : PowerSeries ℚ_[p]) : ℚ_[p]) • y ^ k) = 1 + y := by
+  have hsupp : ∀ k : ℕ, 2 ≤ k →
+      (coeff k (1 + PowerSeries.X : PowerSeries ℚ_[p]) : ℚ_[p]) • y ^ k = 0 := fun k hk => by
+    rw [map_add, coeff_one, coeff_X, if_neg (by omega : k ≠ 0), if_neg (by omega : k ≠ 1),
+      add_zero, zero_smul]
+  rw [tsum_eq_sum (s := {0, 1}) fun k hk => hsupp k (by
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hk; omega),
+    Finset.sum_insert (by simp), Finset.sum_singleton,
+    map_add, coeff_one, coeff_X, if_pos rfl, if_neg (by omega : (0 : ℕ) ≠ 1), add_zero,
+    map_add, coeff_one, coeff_X, if_neg (by omega : (1 : ℕ) ≠ 0), if_pos rfl, zero_add,
+    pow_zero, one_smul, pow_one, one_smul]
+
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- `∑ₖ [Xᵏ](X) · yᵏ = y`. -/
+private theorem eval_X (y : L) :
+    (∑' k : ℕ, (coeff k (PowerSeries.X : PowerSeries ℚ_[p]) : ℚ_[p]) • y ^ k) = y := by
+  rw [tsum_eq_single 1 fun k hk => by rw [coeff_X, if_neg (by omega : k ≠ 1), zero_smul],
+    coeff_X, if_pos rfl, pow_one, one_smul]
 
 /-- E4: `exp` inverts `log` on the matched balls (series composition with
 ultrametric Fubini; Washington Prop 5.3 route — decomposition E4). -/
 theorem padicExp_padicLog {x : L} (hx : InExpBall p (x - 1)) :
-    padicExp p (padicLog p x) = x := by sorry
+    padicExp p (padicLog p x) = x := by
+  have hGsum : Summable fun m : ℕ =>
+      (coeff m (PowerSeries.log ℚ_[p]) : ℚ_[p]) • (x - 1) ^ m :=
+    (summable_nat_add_iff 1).mp
+      ((summable_padicLog_terms p hx).congr fun n => padicLog_term_eq p x n)
+  rw [padicExp_eq_tsum_coeff, padicLog_eq_tsum_coeff p hx,
+    master_bridge p (exp ℚ_[p]) (PowerSeries.log ℚ_[p]) (x - 1) HasSubst.log hGsum
+      (summable_prod_family p (exp ℚ_[p]) (PowerSeries.log ℚ_[p]) (x - 1) hx
+        (fun n hn => norm_coeff_exp_le p n hn) (fun j hj => norm_coeff_log_le p j hj)
+        constantCoeff_log),
+    exp_subst_log, eval_oneAddX]
+  ring
 
+/-- E4: `log` inverts `exp` on the matched balls (series composition with
+ultrametric Fubini; Washington Prop 5.3 route — decomposition E4). -/
 theorem padicLog_padicExp {x : L} (hx : InExpBall p x) :
-    padicLog p (padicExp p x) = x := by sorry
+    padicLog p (padicExp p x) = x := by
+  have hb : InExpBall p (padicExp p x - 1) := by
+    rw [InExpBall, norm_padicExp_sub_one p hx]; exact hx
+  have hexp : Summable fun n : ℕ => (coeff n (exp ℚ_[p]) : ℚ_[p]) • x ^ n :=
+    (summable_padicExp_terms p hx).congr fun n => by rw [coeff_exp, one_div, map_inv₀, map_natCast]
+  have hGsum : Summable fun m : ℕ => (coeff m (exp ℚ_[p] - 1) : ℚ_[p]) • x ^ m :=
+    (summable_nat_add_iff 1).mp (((summable_nat_add_iff 1).mpr hexp).congr fun n => by
+      rw [map_sub, coeff_one, if_neg (Nat.succ_ne_zero n), sub_zero])
+  have hG0 : constantCoeff (exp ℚ_[p] - 1) = 0 := by
+    rw [map_sub, map_one, constantCoeff_exp, sub_self]
+  have hGc : ∀ j : ℕ, 1 ≤ j →
+      ‖(coeff j (exp ℚ_[p] - 1) : ℚ_[p])‖ ^ (p - 1) ≤ (p : ℝ) ^ (j - 1) := fun j hj => by
+    rw [map_sub, coeff_one, if_neg (by omega : j ≠ 0), sub_zero]
+    exact norm_coeff_exp_le p j hj
+  rw [padicLog_eq_tsum_coeff p hb, ← tsum_coeff_exp_sub_one p x hx,
+    master_bridge p (PowerSeries.log ℚ_[p]) (exp ℚ_[p] - 1) x HasSubst.exp_sub_one hGsum
+      (summable_prod_family p (PowerSeries.log ℚ_[p]) (exp ℚ_[p] - 1) x hx
+        (fun n hn => norm_coeff_log_le p n hn) hGc hG0),
+    log_subst_exp_sub_one, eval_X]
 
+/-- E4 / RJW Lem 5.14: the logarithm is multiplicative on `1 + 𝔪` — derived from the two
+inversions and the exponential functional equation (decomposition E4, Step C). -/
 theorem padicLog_mul {x y : L} (hx : InExpBall p (x - 1))
     (hy : InExpBall p (y - 1)) :
-    padicLog p (x * y) = padicLog p x + padicLog p y := by sorry
+    padicLog p (x * y) = padicLog p x + padicLog p y := by
+  set a := padicLog p x with ha
+  set b := padicLog p y with hb
+  have hballa : InExpBall p a := by rw [InExpBall, ha, norm_padicLog p hx]; exact hx
+  have hballb : InExpBall p b := by rw [InExpBall, hb, norm_padicLog p hy]; exact hy
+  have hballab : InExpBall p (a + b) := by
+    have hmax : ‖a + b‖ ≤ max ‖a‖ ‖b‖ := IsUltrametricDist.norm_add_le_max a b
+    rw [InExpBall]
+    rcases le_total ‖a‖ ‖b‖ with h | h
+    · exact lt_of_le_of_lt (pow_le_pow_left₀ (norm_nonneg _)
+        (le_trans hmax (by rw [max_eq_right h])) _) hballb
+    · exact lt_of_le_of_lt (pow_le_pow_left₀ (norm_nonneg _)
+        (le_trans hmax (by rw [max_eq_left h])) _) hballa
+  have hea : padicExp p a = x := padicExp_padicLog p hx
+  have heb : padicExp p b = y := padicExp_padicLog p hy
+  rw [show x * y = padicExp p (a + b) from by rw [padicExp_add p hballa hballb, hea, heb],
+    padicLog_padicExp p hballab]
+
+end Inversion
 
 section pZp
 
