@@ -318,6 +318,7 @@ theorem one_add_mul_derivative_mahlerK_rhoTheta {D : ℕ} [NeZero D]
         * PowerSeries.derivativeFun (mahlerTransform p K (rhoTheta p K η hζ hD χ)) from rfl,
     map_one_add_mul_derivativeFun]
 
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
 include hp in
 /-- `‖(n : K)⁻¹‖ ≤ n` for `n ≥ 1`: the norm of `(n : K)` is `p^{−v_p(n)}`, whose
 inverse is `p^{v_p(n)} = ordProj[p] n ≤ n`. The polynomial-growth bound for the
@@ -332,7 +333,7 @@ private theorem norm_natCast_inv_le {n : ℕ} (hn : 1 ≤ n) : ‖((n : K))⁻¹
   rw [hnorm, ← Nat.factorization_def n hp.out]
   exact_mod_cast Nat.ordProj_le p (by omega)
 
-omit [CompleteSpace K] in
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
 /-- Character values into `K` have norm `≤ 1` (units map to roots of unity of
 norm one, non-units to `0`). -/
 private theorem norm_dirichletChar_le_one {N : ℕ} [NeZero N] (ψ : DirichletCharacter K N)
@@ -349,6 +350,7 @@ private theorem norm_dirichletChar_le_one {N : ℕ} [NeZero N] (ψ : DirichletCh
     exact le_of_eq (PadicLFunctions.norm_eq_one_of_pow_eq_one (L := K) hpow
       (Nat.totient_pos.2 (NeZero.pos N)).ne')
 
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
 /-- `Ring.inverse (1 + X) = ∑ (−1)ⁿ Xⁿ`, hence has integral coefficients. -/
 private theorem norm_coeff_inverse_one_add_X_le_one (n : ℕ) :
     ‖PowerSeries.coeff n (Ring.inverse (1 + PowerSeries.X : PowerSeries K))‖ ≤ 1 := by
@@ -363,6 +365,7 @@ private theorem norm_coeff_inverse_one_add_X_le_one (n : ℕ) :
   rw [ring_inverse_eq_of_mul_eq_one hunit hgeom, PowerSeries.coeff_mk, norm_pow, norm_neg,
     norm_one, one_pow]
 
+omit [CompleteSpace K] [CharZero K] in
 include hp in
 /-- Bounded antiderivative (c₀-design): when `B` has integral coefficients, the
 antiderivative `C` (from the coefficient-wise division) has linearly-bounded
@@ -417,6 +420,7 @@ private theorem exists_antideriv_bounded (B : PowerSeries K)
         _ ≤ (p : ℝ) * ((m : ℝ) + 1) :=
             mul_le_mul_of_nonneg_left (by linarith) (by positivity)
 
+omit [CompleteSpace K] [CharZero K] in
 include hp in
 /-- For a norm-one argument `‖u − 1‖ = 1` (so `‖u‖ = 1`), the positive-degree
 coefficients of `logSeriesAt u` are bounded linearly: `‖coeff n (logSeriesAt u)‖ ≤ n`
@@ -438,6 +442,7 @@ private theorem norm_coeff_logSeriesAt_le_of_norm_one {u : K} (hu1 : ‖u - 1‖
     _ = ‖((n : K))⁻¹‖ := mul_one _
     _ ≤ (n : ℝ) := norm_natCast_inv_le (p := p) (K := K) hn
 
+omit [CharZero K] in
 include hp in
 /-- Lem 6.2 as a coefficient bound: with the contributing roots of norm one,
 `‖coeff n F̃‖ ≤ C·(n+1)` for a uniform `C` (the positive-degree coefficients are
@@ -480,6 +485,8 @@ private theorem summable_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
     linarith
 
 set_option maxHeartbeats 800000 in
+-- The c₀-design proof chains many `rw`s over `PowerSeries.coeff`/`derivativeFun`
+-- through the heavy `rhoTheta`/`twist` measure terms; the elaboration is heartbeat-heavy.
 /-- P6-p6' (the constant pin, c₀-design — replan R6.6; Lem 6.3 made
 distribution-free WITHOUT field-level `ψ`): the cleared mass identity
 `p·𝓐_ρ(0)·G = p·F̃(0) − Σ_{i<p} F̃(ξ^i−1)`. Internally: `W := C G⁻¹·F̃ −
@@ -501,15 +508,15 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
     {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
     {n : ℕ} {χ : DirichletCharacter (integerRing K) (p ^ n)}
-    (hχ : χ.IsPrimitive)
+    (_hχ : χ.IsPrimitive)
     {θK : DirichletCharacter K (D * p ^ n)} (hN : 1 < D * p ^ n)
     (hθ1 : θK ≠ 1)
-    (hθK : θK = toFieldChar (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η
+    (_hθK : θK = toFieldChar (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η
       * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
     {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n)) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
     (hnorm : ∀ c ∈ Finset.range (D * p ^ n), ¬ (D * p ^ n) ∣ c → ‖ε ^ c - 1‖ = 1)
-    {G : K} (hG : IsUnit G)
+    {G : K} (_hG : IsUnit G)
     (hGtwist : mahlerK p K (twist p K χ.toContinuousMapZp
         (muEtaCleared p K η hζ hD))
       = PowerSeries.C G⁻¹ * (-∑ c ∈ Finset.range (D * p ^ n),
@@ -670,12 +677,38 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
 `Σ_{i<p} F̃(ξ^i−1) = θ(p)·F̃(0)` — for `n = 0` by the `c ↦ pc` automorphism
 and the `μ_p`-collapse `Σ_ξ extLog(ξw−1) = extLog(w^p−1)`; for `n ≥ 1`
 both sides vanish (`θ(p) = 0`; primitive-character fiber sums —
-replan R6.3). -/
+replan R6.3).
+
+**Statement-fix (replan R6.6, recorded 2026-06-11 in `b2_log.jsonl`):** the
+frozen `hdom : ∀ c, ¬N∣c → ExtLogDomain (ε^c − 1)` is too weak — the per-term
+identity needs the SHIFTED arguments `ξ^i·ε^c − 1` to lie in the extended-log
+domain, which does not follow from `hdom` in the ramified case (`ε^c` reducing
+to `1`). It is replaced by the norm-one hypothesis
+`hnorm : ∀ c, ¬N∣c → ‖ε^c − 1‖ = 1`, from which every shifted domain follows
+(`‖ξ^i ε^c − 1‖ = 1` by ultrametric isoceles + roots-of-unity integrality, then
+`extLogDomain_of_integral_norm_one`). `LpFunction_one` discharges `hnorm` from
+the tame `D > 1` cyclotomic-product fact (T612 `norm_one_sub_pow_eq_one`),
+preserving its provability.
+
+**REMAINING GAP (analytic, recorded `b2_log.jsonl` 2026-06-12):** the proof
+reduces to the per-term identity `seriesEval (logSeriesAt u) z = extLog((1+z)u−1)`
+(`u = ε^c`, `z = ξ^i − 1`), whose tail series is the `padicLog` series at
+`w = u z/(u−1)`. Closing it requires `extLog (1 + w) = padicLog (1 + w)` for
+`‖w‖ < 1`, i.e. boundary `p`-adic-log multiplicativity
+`padicLog (x^n) = n • padicLog x` on the whole open ball `‖x − 1‖ < 1`
+(the arguments `ξ^i − 1`, `i ≠ 0`, sit on the exp-ball boundary
+`‖·‖^{p−1} = p⁻¹`, where `extLog_eq_padicLog`/`padicLog_pow` — proven only
+INSIDE the exp ball — do not apply). This `‖·‖ < 1` log theory (~Washington
+§5.1, formal-series additivity of `log` evaluated, or a 2-variable Cauchy
+product) is not yet in `PadicExp`; it is the single outstanding prerequisite.
+The `μ_p`-collapse (`extLog_prod` + `IsPrimitiveRoot.prod_pow_sub_one_eq_order`),
+`c ↦ pc` bookkeeping (automorphism / primitive-fiber sums), and summability
+(`summable_seriesEval_Ftilde`) are all in place. -/
 theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
     {θ : DirichletCharacter K N} (hprim : θ.IsPrimitive) (hθ1 : θ ≠ 1)
     {ε : K} (hε : IsPrimitiveRoot ε N) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
-    (hdom : ∀ c ∈ Finset.range N, ¬ N ∣ c → ExtLogDomain p (ε ^ c - 1)) :
+    (hnorm : ∀ c ∈ Finset.range N, ¬ N ∣ c → ‖ε ^ c - 1‖ = 1) :
     ∑ i : Fin p, seriesEval (Ftilde p K θ hε) (ξ ^ (i : ℕ) - 1)
       = θ ((p : ZMod N)) * PowerSeries.constantCoeff (Ftilde p K θ hε) := by
   sorry

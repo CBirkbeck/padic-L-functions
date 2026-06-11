@@ -425,6 +425,7 @@ theorem extLog_mul {x y : L} (hx : ExtLogDomain p x) (hy : ExtLogDomain p y) :
     ← Nat.cast_smul_eq_nsmul ℚ_[p] m (padicLog p b), smul_smul, smul_smul, mul_inv]
   congr 1 <;> congr 1 <;> field_simp
 
+omit [CompleteSpace L] in
 /-- The extended-log domain is closed under multiplication (the product witness of
 `extLog_mul`). -/
 theorem ExtLogDomain.mul {x y : L} (hx : ExtLogDomain p x) (hy : ExtLogDomain p y) :
@@ -439,6 +440,7 @@ theorem ExtLogDomain.mul {x y : L} (hx : ExtLogDomain p x) (hy : ExtLogDomain p 
     ← zpow_natCast ((p : L) ^ k') m, ← zpow_mul, zpow_add₀ hpL]
   ring
 
+omit [CompleteSpace L] in
 /-- The extended-log domain is closed under finite products. -/
 theorem ExtLogDomain.prod {ι : Type*} (s : Finset ι) (f : ι → L)
     (hf : ∀ i ∈ s, ExtLogDomain p (f i)) : ExtLogDomain p (∏ i ∈ s, f i) := by

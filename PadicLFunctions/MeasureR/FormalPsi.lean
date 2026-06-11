@@ -620,6 +620,7 @@ theorem seriesEval_zero_arg (F : PowerSeries K) :
     mul_one, PowerSeries.coeff_zero_eq_constantCoeff_apply]
 
 omit [NormedAlgebra ℚ_[p] K] in
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
 /-- `seriesEval` is additive on series whose evaluations converge. -/
 theorem seriesEval_add {F H : PowerSeries K} {z : K}
     (hF : Summable fun n : ℕ => PowerSeries.coeff n F * z ^ n)
@@ -635,7 +636,7 @@ theorem seriesEval_neg (F : PowerSeries K) (z : K) :
   rw [seriesEval, seriesEval, ← tsum_neg]
   exact tsum_congr fun n => by rw [map_neg, neg_mul]
 
-omit [NormedAlgebra ℚ_[p] K] in
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
 /-- `seriesEval` subtracts on series whose evaluations converge. -/
 theorem seriesEval_sub {F H : PowerSeries K} {z : K}
     (hF : Summable fun n : ℕ => PowerSeries.coeff n F * z ^ n)
@@ -651,39 +652,12 @@ theorem seriesEval_C (a : K) (z : K) : seriesEval (PowerSeries.C a) z = a := by
   rw [seriesEval, tsum_eq_single 0 fun n hn => by
     rw [PowerSeries.coeff_C, if_neg hn, zero_mul], PowerSeries.coeff_zero_C, pow_zero, mul_one]
 
-omit [NormedAlgebra ℚ_[p] K] in
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
 /-- `seriesEval (C a · F) z = a · seriesEval F z`. -/
 theorem seriesEval_C_mul (a : K) (F : PowerSeries K) (z : K) :
     seriesEval (PowerSeries.C a * F) z = a * seriesEval F z := by
   rw [seriesEval, seriesEval, ← tsum_mul_left]
   exact tsum_congr fun n => by rw [PowerSeries.coeff_C_mul, mul_assoc]
-
-omit [NormedAlgebra ℚ_[p] K] in
-/-- The evaluation family of a finite sum of summable series is summable. -/
-theorem summable_seriesEval_sum {ι : Type*} (s : Finset ι) (m : ι → PowerSeries K) {z : K}
-    (hm : ∀ i ∈ s, Summable fun n : ℕ => PowerSeries.coeff n (m i) * z ^ n) :
-    Summable fun n : ℕ => PowerSeries.coeff n (∑ i ∈ s, m i) * z ^ n := by
-  classical
-  induction s using Finset.induction with
-  | empty => simpa using summable_zero
-  | insert i s hi ih =>
-    refine ((hm i (Finset.mem_insert_self i s)).add
-      (ih fun j hj => hm j (Finset.mem_insert_of_mem hj))).congr fun n => ?_
-    rw [Finset.sum_insert hi, map_add, add_mul]
-
-omit [NormedAlgebra ℚ_[p] K] in
-/-- `seriesEval` of a finite sum of summable series is the sum of evaluations. -/
-theorem seriesEval_sum {ι : Type*} (s : Finset ι) (m : ι → PowerSeries K) {z : K}
-    (hm : ∀ i ∈ s, Summable fun n : ℕ => PowerSeries.coeff n (m i) * z ^ n) :
-    seriesEval (∑ i ∈ s, m i) z = ∑ i ∈ s, seriesEval (m i) z := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp [seriesEval, PowerSeries.constantCoeff]
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, seriesEval_add (hm i (Finset.mem_insert_self i s))
-      (summable_seriesEval_sum s m fun j hj => hm j (Finset.mem_insert_of_mem hj)),
-      ih fun j hj => hm j (Finset.mem_insert_of_mem hj), Finset.sum_insert hi]
-
 
 /-- An ultrametric normed field is a nonarchimedean ring (the ring upgrade of
 `IsUltrametricDist.nonarchimedeanAddGroup`). -/
