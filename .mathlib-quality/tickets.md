@@ -2965,7 +2965,15 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~70 LOC.
 
 ### [T603] Integral norm-one elements lie in the extLog domain
-- **Status**: in_progress (2026-06-11) | **File**: ExtLog.lean | **Depends on**: T602
+- **Status**: done (2026-06-11)
+- **Progress**: DONE (tooled-route subagent, degraded tooling): pigeonhole
+  n ↦ z^n into ℤ[z]⧸(p) (finite via Module.finite_of_fg_torsion — route
+  deviation from the ZMod-p-module chain, recorded); norm-cancellation
+  WITHOUT z̄-invertibility per the attack-pinned design; helpers
+  norm_le_one_of_mem_adjoin_int (adjoin_induction),
+  finite_adjoin_int_quotient, norm_eq_one_of_inExpBall_sub_one. Two new
+  mathlib imports (FiniteAbelian.Basic, Finiteness.Cardinality). Axioms
+  standard; linter clean. | **File**: ExtLog.lean | **Depends on**: T602
 - **Type**: lemmas
 - **Statement**: skeleton `exists_pow_sub_one_norm_le`,
   `extLogDomain_of_integral_norm_one` (W6a-a5/a11).
@@ -2983,7 +2991,12 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~80 LOC (the cluster's engine).
 
 ### [T604] extLog: well-definedness and API
-- **Status**: open | **File**: ExtLog.lean | **Depends on**: T601
+- **Status**: done (2026-06-11) | **File**: ExtLog.lean | **Depends on**: T601
+- **Progress**: DONE (same pass as T603): extLog_witness_smul_eq core
+  (k·m' = k'·m via zpow_right_injective₀ at base p⁻¹; norm-1 of ball
+  members via ultrametric isoceles), then a7–a10b as planned (witnesses
+  composed; extLog_neg via (−1)-witness (2,0,1)). Axioms standard ×7
+  (whole file sorry-free); linter clean.
 - **Type**: def-lemmas
 - **Statement**: skeleton `extLog_eq_of_witness`, `extLog_eq_padicLog`,
   `extLog_mul`, `extLog_eq_zero_of_pow_eq_one`, `extLog_neg` (W6a-a7–a10;
@@ -3001,11 +3014,14 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~100 LOC.
 
 ### [CLEANUP-61] /cleanup on ExtLog.lean
-- **Status**: open | **Depends on**: T601, T602, T603, T604 | **Type**: cleanup
-  (cadence 4-tickets + final, merged)
+- **Status**: done (degraded mode, 2026-06-11) | **Depends on**: T601, T602, T603, T604
+- **Type**: cleanup (cadence 4-tickets + final, merged)
+- **Progress**: degraded pass (no lean-lsp MCP): linter set green, zero
+  warnings, zero long lines, file sorry-free; per-ticket golf was applied
+  during T601–T604. Tooled CLEANUP-FINAL may revisit.
 
 ### [T605] The digit decomposition of power series
-- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: none
+- **Status**: in_progress (2026-06-11) | **File**: MeasureR/FormalPsi.lean | **Depends on**: none
 - **Parallel**: yes (chain W6b head) | **Type**: theorem
 - **Statement**: skeleton `existsUnique_digits` (W6b-b1).
 - **Proof sketch**: the family (1+T)^i·((1+T)^p−1)^j has leading
