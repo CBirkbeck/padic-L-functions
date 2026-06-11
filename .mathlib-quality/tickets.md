@@ -2920,7 +2920,12 @@ Standing rules apply (CLAUDE.md). Statements live in the skeleton — tickets
 reference declarations by name (the §5 T521-pattern).
 
 ### [T601] Exp-ball multiplicativity and log of powers
-- **Status**: open | **File**: ExtLog.lean | **Depends on**: none
+- **Status**: done (2026-06-11) | **File**: ExtLog.lean | **Depends on**: none
+- **Progress**: DONE first pass — norm_lt_one_of_inExpBall (helper),
+  mul_mem_expBall ((y−1)z+(z−1) decomposition, ultrametric max),
+  pow_mem_expBall (induction), padicLog_pow (padicLog_mul induction +
+  succ_nsmul). Axioms standard ×4; build green; degraded-mode cleanup
+  (linter green, no long lines).
 - **Parallel**: yes (chain W6a head) | **Type**: lemmas
 - **Statement**: skeleton `mul_mem_expBall`, `padicLog_pow` (W6a-a1/a2).
 - **Proof sketch**: a1 ultrametric: yz−1 = (y−1)z + (z−1), norm ≤ max,
@@ -2934,7 +2939,15 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: source one-liners → ~40 LOC.
 
 ### [T602] p-power descent into the exponential ball
-- **Status**: open | **File**: ExtLog.lean | **Depends on**: none
+- **Status**: done (2026-06-11)
+- **Progress**: DONE — norm_natCast_p (helper: ‖p‖_L = p⁻¹ via
+  norm_algebraMap' + Padic.norm_p), norm_pow_p_sub_one_le (binomial peel
+  via sum_range_succ' + Nat.Prime.dvd_choose_self +
+  IsUltrametricDist.norm_natCast_le_one), exists_pPow_pow_inExpBall
+  (decay r_{k+1} ≤ t0·r_k with t0 := max(r0^{p−1},p⁻¹) < 1, geometric
+  tendsto at the (p−1)-power level — boundary passed THROUGH per the
+  attack note). Axioms standard ×3; linter clean (omits added);
+  degraded-mode cleanup. | **File**: ExtLog.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `norm_pow_p_sub_one_le`, `exists_pPow_pow_inExpBall`
   (W6a-a3/a4).
@@ -2952,7 +2965,7 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~70 LOC.
 
 ### [T603] Integral norm-one elements lie in the extLog domain
-- **Status**: open | **File**: ExtLog.lean | **Depends on**: T602
+- **Status**: in_progress (2026-06-11) | **File**: ExtLog.lean | **Depends on**: T602
 - **Type**: lemmas
 - **Statement**: skeleton `exists_pow_sub_one_norm_le`,
   `extLogDomain_of_integral_norm_one` (W6a-a5/a11).
