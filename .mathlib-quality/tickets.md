@@ -2737,8 +2737,41 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
   - DONE — RJW Theorem 5.19 complete; §5.3 mainline (5.17 + 5.19) closed.
 
 ### [T521] p-adic exponential: convergence, isometry, functional equation
-- **Status**: open | **File**: PadicLFunctions/PadicExp.lean | **Depends on**: none
+- **Status**: done (finished 2026-06-11)
+- **File**: PadicLFunctions/PadicExp.lean | **Depends on**: none
 - **Parallel**: yes (chain D head; user-added cluster) | **Type**: def + lemmas
+- **Progress**:
+  - 2026-06-11: E1 was free — mathlib has the full nonarchimedean stack:
+    `NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero` (complete
+    case) + `HasSum.mul_of_nonarchimedean` +
+    `Summable.tsum_mul_tsum_eq_tsum_sum_antidiagonal`
+    (Topology/Algebra/InfiniteSum/Nonarchimedean.lean + Ring.lean). Added
+    the missing 2-line bridge `instance : NonarchimedeanRing L` from
+    `IsUltrametricDist` (MATHLIB-PR candidate, noted in docstring).
+  - E2 via `sub_one_mul_padicValNat_factorial_lt_of_ne_zero` (exact
+    Legendre form) + `Padic.norm_eq_zpow_neg_valuation` +
+    `Padic.valuation_natCast`. Helpers extracted:
+    `norm_factorial_inv_pow_le` (inverted bound),
+    `norm_factorial_inv_smul_pow_le` (geometric term decay, rpow-free at
+    the (p−1)-power level per the recorded design).
+  - E3: `summable_padicExp_terms` (E1 + geometric bound + ε-transfer
+    through strict pow-monotonicity); `padicExp_zero` (tsum_eq_single);
+    isometry via NEW `norm_factorial_inv_smul_pow_sub_lt` (m ≥ 2 tail
+    strictly dominated — geom_sum₂_mul + ultrametric sum bound + strict
+    Legendre on the OPEN ball, attack [3] honoured) + dominant-term
+    argument (tendsto-tail uniform bound C < d via range-sup' + d/2;
+    `IsUltrametricDist.norm_tsum_le_of_forall_le` +
+    `norm_add_eq_max_of_norm_ne_norm`); `norm_padicExp_sub_one` at y = 0;
+    `padicExp_add` via the attack-pinned route — NOT norm-summable Cauchy
+    products: `mul_of_nonarchimedean` summability + antidiagonal formula +
+    `Nat.sum_antidiagonal_eq_sum_range_succ` + add_pow +
+    `Nat.choose_mul_factorial_mul_factorial` scalar algebra.
+  - Verification: lake build green, 0 sorry in the T521 declarations
+    (11 remain in file = T522/T523 scope), `#print axioms` =
+    [propext, Classical.choice, Quot.sound] on all 10 new decls.
+  - /cleanup degraded mode (no lean-lsp MCP): linter green (omits added),
+    no long lines. Blueprint: none for T521 (per plan — T523 wires
+    Lem 5.14).
 - **Statement**: skeleton sorries E1–E3 (`summable_iff_tendsto_cofinite_zero`,
   `norm_factorial_le`, `padicExp_zero`, `norm_padicExp_sub_padicExp`,
   `norm_padicExp_sub_one`, `padicExp_add`).
