@@ -333,6 +333,179 @@ private theorem norm_natCast_inv_le {n : ℕ} (hn : 1 ≤ n) : ‖((n : K))⁻¹
   rw [hnorm, ← Nat.factorization_def n hp.out]
   exact_mod_cast Nat.ordProj_le p (by omega)
 
+/-! #### The boundary `p`-adic logarithm (T618 / Washington §5.1)
+
+`padicLog`'s `p`-power law `padicLog (z^p) = p·padicLog z` and multiplicativity are
+proven in `PadicExp` only INSIDE the exponential ball `‖z−1‖^{p−1} < p⁻¹`. The
+arguments `1 − ε_N^c`, `ξ^i − 1` of RJW Thm 6.1(ii) sit on the boundary
+`‖·‖^{p−1} = p⁻¹` of that ball. This block extends those facts to the WHOLE open unit
+ball `‖z−1‖ < 1` by aligning the convergent `padicLog` series with the formal
+`formalLog` and pushing `phiSeries_formalLog : φ formalLog = p·formalLog` through the
+`seriesEval` bridge. Decomposition R6.6, ticket T618. -/
+
+omit [CompleteSpace K] [CharZero K] in
+include hp in
+/-- T618: the open unit ball `‖x − 1‖ < 1` is closed under powers (ultrametric). -/
+theorem boundary_norm_pow_sub_one_lt_one {x : K} (hx : ‖x - 1‖ < 1) (n : ℕ) : ‖x ^ n - 1‖ < 1 := by
+  induction n with
+  | zero => rw [pow_zero, sub_self, norm_zero]; exact one_pos
+  | succ k ih =>
+    have hbd : ‖x ^ (k + 1) - 1‖ ≤ max ‖x ^ k - 1‖ ‖x - 1‖ := by
+      rw [show x ^ (k + 1) - 1 = (x ^ k - 1) * x + (x - 1) from by rw [pow_succ]; ring]
+      refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le_max ?_ le_rfl)
+      have hx1 : ‖x‖ ≤ 1 := by
+        calc ‖x‖ = ‖(x - 1) + 1‖ := by rw [sub_add_cancel]
+          _ ≤ max ‖x - 1‖ ‖(1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+          _ ≤ 1 := by rw [norm_one]; exact max_le hx.le le_rfl
+      rw [norm_mul]; exact mul_le_of_le_one_right (norm_nonneg _) hx1
+    exact lt_of_le_of_lt hbd (max_lt ih hx)
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+include hp in
+/-- T618: the coefficients of `formalLog` are linearly bounded `‖coeff n‖ ≤ n + 1`
+(the `1/n`-factor has norm `≤ n`). Drives summability of `seriesEval (formalLog K) z`
+for `‖z‖ < 1`. -/
+private theorem norm_coeff_formalLog_le (n : ℕ) :
+    ‖PowerSeries.coeff n (formalLog K)‖ ≤ (n : ℝ) + 1 := by
+  cases n with
+  | zero => rw [coeff_zero_formalLog, norm_zero]; positivity
+  | succ m =>
+    rw [coeff_succ_formalLog, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    calc ‖((m : K) + 1)⁻¹‖ = ‖(((m + 1 : ℕ) : K))⁻¹‖ := by rw [Nat.cast_succ]
+      _ ≤ ((m + 1 : ℕ) : ℝ) := norm_natCast_inv_le (p := p) (K := K) (by omega)
+      _ ≤ (↑(m + 1) : ℝ) + 1 := by push_cast; linarith
+
+omit [CharZero K] in
+include hp in
+/-- T618: `seriesEval (formalLog K) z` converges for `‖z‖ < 1` (linear-growth
+coefficients). -/
+private theorem summable_seriesEval_formalLog {z : K} (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => PowerSeries.coeff n (formalLog K) * z ^ n :=
+  summable_seriesEval_of_norm_coeff_le_linear (C := 1)
+    (fun n => by simpa using norm_coeff_formalLog_le (p := p) n) hz
+
+omit [CharZero K] in
+include hp in
+/-- T618 (the eval-alignment): for `‖z − 1‖ < 1`, `seriesEval (formalLog K) (z − 1) =
+padicLog p z`. Reindex by one (`coeff 0 = 0`) and match the scalar `((n:ℚ_[p])+1)⁻¹`
+against `((n:K)+1)⁻¹` through `algebraMap`. -/
+theorem seriesEval_formalLog {z : K} (hz : ‖z - 1‖ < 1) :
+    seriesEval (formalLog K) (z - 1) = padicLog p z := by
+  have hsum := summable_seriesEval_formalLog (p := p) hz
+  rw [seriesEval, hsum.tsum_eq_zero_add, coeff_zero_formalLog, zero_mul, zero_add, padicLog]
+  refine tsum_congr fun n => ?_
+  rw [coeff_succ_formalLog, Algebra.smul_def,
+    show algebraMap ℚ_[p] K ((n : ℚ_[p]) + 1)⁻¹ = ((n : K) + 1)⁻¹ from by
+      rw [map_inv₀, map_add, map_natCast, map_one]]
+  ring
+
+omit [CharZero K] in
+include hp in
+/-- T618: `padicLog p (z^p) = (p : K) • padicLog p z` for `‖z − 1‖ < 1` — the
+boundary `p`-power law. Evaluate `phiSeries_formalLog` at `z − 1` through the
+`seriesEval` bridge: `padicLog (z^p) = seriesEval formalLog (z^p − 1) =
+seriesEval (φ formalLog) (z − 1) = seriesEval (p·formalLog) (z − 1) =
+p·padicLog z`. -/
+theorem padicLog_pow_p_of_norm_lt_one {z : K} (hz : ‖z - 1‖ < 1) :
+    padicLog p (z ^ p) = (p : K) • padicLog p z := by
+  have hzp1 : ‖z ^ p - 1‖ < 1 := boundary_norm_pow_sub_one_lt_one (p := p) hz p
+  have h1z : (1 : K) + (z - 1) = z := by ring
+  have hzp1' : ‖(1 + (z - 1)) ^ p - 1‖ < 1 := by rw [h1z]; exact hzp1
+  have hprodsum := summable_prod_of_norm_coeff_le_linear (p := p) (G := formalLog K) (C := 1)
+    (fun n => by simpa using norm_coeff_formalLog_le (p := p) n) hz
+  -- evaluate `φ formalLog` at `z − 1`, two ways
+  have hbridge : seriesEval (phiSeries p (formalLog K)) (z - 1) = padicLog p (z ^ p) := by
+    rw [seriesEval_phi_of_summable_prod p (formalLog K) (z - 1) hprodsum,
+      ← seriesEval, seriesEval_formalLog (p := p) hzp1', h1z]
+  rw [← hbridge, phiSeries_formalLog, PowerSeries.smul_eq_C_mul, seriesEval_C_mul,
+    seriesEval_formalLog (p := p) hz, smul_eq_mul]
+
+omit [CharZero K] in
+include hp in
+/-- T618: `padicLog p (z ^ (p ^ N)) = (p ^ N : K) • padicLog p z` for `‖z − 1‖ < 1`
+(iterate the `p`-power law; each intermediate `z ^ (p ^ i)` stays in the unit ball). -/
+theorem padicLog_pow_pPow_of_norm_lt_one {z : K} (hz : ‖z - 1‖ < 1) (N : ℕ) :
+    padicLog p (z ^ (p ^ N)) = ((p : K) ^ N) • padicLog p z := by
+  induction N with
+  | zero => rw [pow_zero, pow_one, pow_zero, one_smul]
+  | succ M ih =>
+    rw [pow_succ, pow_mul, padicLog_pow_p_of_norm_lt_one (p := p)
+        (boundary_norm_pow_sub_one_lt_one (p := p) hz (p ^ M)), ih, smul_smul, pow_succ, mul_comm]
+
+omit [CharZero K] in
+include hp in
+/-- T618: multiplicativity of `padicLog` on the WHOLE open unit ball
+`‖x − 1‖, ‖y − 1‖ < 1` (descend to the exp ball: choose `N` with `x^{p^N}`, `y^{p^N}`,
+`(xy)^{p^N}` all in the ball — `exists_pPow_pow_inExpBall` thrice with `N := max` — apply
+the exp-ball `padicLog_mul` at level `p^N` and cancel the `p^N`-scalar). -/
+theorem padicLog_mul_of_norm_lt_one {x y : K} (hx : ‖x - 1‖ < 1) (hy : ‖y - 1‖ < 1) :
+    padicLog p (x * y) = padicLog p x + padicLog p y := by
+  have hxy : ‖x * y - 1‖ < 1 := by
+    rw [show x * y - 1 = (x - 1) * y + (y - 1) from by ring]
+    have hy1 : ‖y‖ ≤ 1 := by
+      calc ‖y‖ = ‖(y - 1) + 1‖ := by rw [sub_add_cancel]
+        _ ≤ max ‖y - 1‖ ‖(1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+        _ ≤ 1 := by rw [norm_one]; exact max_le hy.le le_rfl
+    exact lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt
+      (by rw [norm_mul]; exact lt_of_le_of_lt (mul_le_of_le_one_right (norm_nonneg _) hy1) hx) hy)
+  -- a single `p^N` lands all three in the exp ball
+  obtain ⟨jx, hjx⟩ := exists_pPow_pow_inExpBall (p := p) hx
+  obtain ⟨jy, hjy⟩ := exists_pPow_pow_inExpBall (p := p) hy
+  obtain ⟨jxy, hjxy⟩ := exists_pPow_pow_inExpBall (p := p) hxy
+  -- the exp ball is closed under further `p`-powering
+  have hpow_ball : ∀ {w : K} {j : ℕ} (d : ℕ), InExpBall p (w ^ p ^ j - 1) →
+      InExpBall p (w ^ p ^ (j + d) - 1) := by
+    intro w j d hwj
+    rw [pow_add, pow_mul]
+    exact pow_mem_expBall (p := p) hwj (p ^ d)
+  set N : ℕ := max (max jx jy) jxy with hN
+  have hbx : InExpBall p (x ^ p ^ N - 1) := by
+    rw [hN, show max (max jx jy) jxy = jx + (max (max jx jy) jxy - jx) from by omega]
+    exact hpow_ball _ hjx
+  have hby : InExpBall p (y ^ p ^ N - 1) := by
+    rw [hN, show max (max jx jy) jxy = jy + (max (max jx jy) jxy - jy) from by omega]
+    exact hpow_ball _ hjy
+  have hbxy : InExpBall p (x ^ p ^ N * y ^ p ^ N - 1) := by
+    rw [← mul_pow, hN, show max (max jx jy) jxy = jxy + (max (max jx jy) jxy - jxy) from by omega]
+    exact hpow_ball _ hjxy
+  -- the exp-ball identity at level `p^N`, transported back through the `p^N`-power law
+  have hkey : padicLog p ((x * y) ^ p ^ N) = padicLog p (x ^ p ^ N) + padicLog p (y ^ p ^ N) := by
+    rw [mul_pow, padicLog_mul (p := p) hbx hby]
+  rw [padicLog_pow_pPow_of_norm_lt_one (p := p) hxy,
+    padicLog_pow_pPow_of_norm_lt_one (p := p) hx,
+    padicLog_pow_pPow_of_norm_lt_one (p := p) hy, ← smul_add] at hkey
+  have hpN : ((p : K) ^ N) ≠ 0 := pow_ne_zero _ (natCast_p_ne_zero (L := K) p)
+  exact smul_right_injective K hpN hkey
+
+omit [CharZero K] in
+include hp in
+/-- T618: `padicLog p (x ^ n) = n • padicLog p x` on the whole open unit ball
+(induction via `padicLog_mul_of_norm_lt_one`). -/
+theorem padicLog_pow_of_norm_lt_one {x : K} (hx : ‖x - 1‖ < 1) (n : ℕ) :
+    padicLog p (x ^ n) = n • padicLog p x := by
+  induction n with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ, padicLog_mul_of_norm_lt_one (p := p) (boundary_norm_pow_sub_one_lt_one (p := p) hx k) hx,
+      ih, succ_nsmul]
+
+omit [CharZero K] in
+include hp in
+/-- T618: `extLog p x = padicLog p x` on the whole open unit ball `‖x − 1‖ < 1`. The
+witness `(p^j, 0, x^{p^j})` (with `x^{p^j}` in the exp ball, `exists_pPow_pow_inExpBall`)
+computes `extLog`, and the `p^j`-power law cancels the `(p^j)⁻¹`-scalar. -/
+theorem extLog_eq_padicLog_of_norm_lt_one {x : K} (hx : ‖x - 1‖ < 1) :
+    extLog p x = padicLog p x := by
+  obtain ⟨j, hj⟩ := exists_pPow_pow_inExpBall (p := p) hx
+  have hpne : ((p ^ j : ℕ) : ℚ_[p]) ≠ 0 := by exact_mod_cast (pow_pos hp.out.pos j).ne'
+  rw [extLog_eq_of_witness (p := p) (m := p ^ j) (k := 0) (y := x ^ p ^ j)
+      (pow_pos hp.out.pos j) (by rw [zpow_zero, one_mul]) hj,
+    padicLog_pow_pPow_of_norm_lt_one (p := p) hx,
+    -- rewrite the `K`-scalar `(p:K)^j` as the `ℚ_[p]`-scalar `((p^j:ℕ):ℚ_[p])`
+    show ((p : K) ^ j) • padicLog p x = ((p ^ j : ℕ) : ℚ_[p]) • padicLog p x from by
+      rw [smul_eq_mul, Algebra.smul_def, map_natCast]; push_cast; ring,
+    smul_smul, inv_mul_cancel₀ hpne, one_smul]
+
 omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
 /-- Character values into `K` have norm `≤ 1` (units map to roots of unity of
 norm one, non-units to `0`). -/

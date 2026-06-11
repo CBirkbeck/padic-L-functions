@@ -1284,6 +1284,100 @@ theorem eq_C_constantCoeff_of_one_add_mul_derivative_eq_zero
     have hne : ((n : ℕ) + 1 : K) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero n
     rw [PowerSeries.coeff_succ_C, (mul_eq_zero.mp hcoeff).resolve_right hne]
 
+/-! ### The boundary `p`-adic logarithm via the formal log series (T618 / Washington §5.1)
+
+The formal power series `formalLog := Σ_{n≥1} (−1)^{n−1}·n⁻¹·Xⁿ` over `K` is the
+series-side avatar of `padicLog (1 + ·)`. Its key formal facts —
+`(1+X)·∂(formalLog) = 1` and `phiSeries p formalLog = p·formalLog` — transport (in
+`ValuesAtOne`) to the `‖z−1‖ < 1` multiplicativity `padicLog (z^p) = p·padicLog z`,
+extending `padicLog`'s `p`-power law from the exp ball to the whole open unit ball
+(decomposition R6.6; the single prerequisite recorded at `sum_seriesEval_Ftilde`). -/
+
+/-- T618: the formal logarithm `Σ_{n≥1} (−1)^{n−1}·n⁻¹·Xⁿ` over `K` (constant term
+`0`), the series-side of `padicLog (1 + ·)`. -/
+noncomputable def formalLog (K : Type*) [NormedField K] : PowerSeries K :=
+  PowerSeries.mk fun n => if n = 0 then 0 else (-1 : K) ^ (n - 1) * ((n : K))⁻¹
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+@[simp]
+theorem coeff_zero_formalLog : PowerSeries.coeff 0 (formalLog K) = 0 := by
+  rw [formalLog, PowerSeries.coeff_mk, if_pos rfl]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+@[simp]
+theorem constantCoeff_formalLog : PowerSeries.constantCoeff (formalLog K) = 0 := by
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_zero_formalLog]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+theorem coeff_succ_formalLog (n : ℕ) :
+    PowerSeries.coeff (n + 1) (formalLog K) = (-1 : K) ^ n * ((n : K) + 1)⁻¹ := by
+  rw [formalLog, PowerSeries.coeff_mk, if_neg (Nat.succ_ne_zero n), Nat.add_sub_cancel,
+    Nat.cast_succ]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+include hp in
+/-- T618: `(1 + X)·∂(formalLog) = 1` over `K` (char 0) — the formal geometric
+identity `∂(log(1+X)) = 1/(1+X)`. Coefficient check: at `n = 0` the value is
+`L₁ = 1`; at `n ≥ 1` it is `(n+1)·L_{n+1} + n·L_n = (−1)ⁿ + (−1)^{n−1} = 0`. -/
+theorem one_add_mul_derivative_formalLog :
+    (1 + PowerSeries.X) * PowerSeries.derivativeFun (formalLog K) = 1 := by
+  haveI := charZero_of_qpAlgebra (M := K) p
+  ext n
+  rw [add_mul, one_mul, map_add, PowerSeries.coeff_one]
+  cases n with
+  | zero =>
+    rw [PowerSeries.coeff_zero_X_mul, add_zero, PowerSeries.coeff_derivativeFun,
+      Nat.cast_zero, zero_add, coeff_succ_formalLog, if_pos rfl]
+    simp
+  | succ m =>
+    rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_derivativeFun,
+      PowerSeries.coeff_derivativeFun, if_neg (Nat.succ_ne_zero m), coeff_succ_formalLog,
+      coeff_succ_formalLog]
+    have hm1 : ((m : K) + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero m
+    have hm2 : ((m : K) + 1 + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero (m + 1)
+    push_cast
+    rw [show (-1 : K) ^ (m + 1) * ((m : K) + 1 + 1)⁻¹ * ((m : K) + 1 + 1)
+          = (-1 : K) ^ (m + 1) from by rw [mul_assoc, inv_mul_cancel₀ hm2, mul_one],
+      show (-1 : K) ^ m * ((m : K) + 1)⁻¹ * ((m : K) + 1)
+          = (-1 : K) ^ m from by rw [mul_assoc, inv_mul_cancel₀ hm1, mul_one], pow_succ]
+    ring
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+include hp in
+/-- T618: `phiSeries p formalLog = p·formalLog` over `K` (char 0). Both sides have
+the same image under `∂ = (1+X)d/dX`: `∂(φ formalLog) = p·φ(∂ formalLog) = p·φ(1) =
+p·1` (using `one_add_mul_derivative_phiSeries` and `(1+X)·∂ formalLog = 1`), and
+`∂(p·formalLog) = p·1`. The difference is `∂`-killed, hence constant; its constant
+term is `constantCoeff(φ formalLog) − p·constantCoeff formalLog = 0`. -/
+theorem phiSeries_formalLog :
+    phiSeries p (formalLog K) = (p : K) • formalLog K := by
+  haveI := charZero_of_qpAlgebra (M := K) p
+  -- `(1+X)·∂` of both sides equals `p·1`
+  have hphi1 : phiSeries p (1 : PowerSeries K) = 1 := by
+    rw [phiSeries, ← PowerSeries.coe_substAlgHom (hasSubst_one_add_X_pow_sub_one p), map_one]
+  have hLHS : (1 + PowerSeries.X) * PowerSeries.derivativeFun (phiSeries p (formalLog K))
+      = (p : K) • (1 : PowerSeries K) := by
+    rw [one_add_mul_derivative_phiSeries, one_add_mul_derivative_formalLog (p := p), hphi1]
+  have hRHS : (1 + PowerSeries.X) * PowerSeries.derivativeFun ((p : K) • formalLog K)
+      = (p : K) • (1 : PowerSeries K) := by
+    rw [PowerSeries.derivativeFun_smul, mul_smul_comm, one_add_mul_derivative_formalLog (p := p)]
+  -- the difference is `∂`-killed
+  have hker : (1 + PowerSeries.X) * PowerSeries.derivativeFun
+      (phiSeries p (formalLog K) - (p : K) • formalLog K) = 0 := by
+    rw [show PowerSeries.derivativeFun (phiSeries p (formalLog K) - (p : K) • formalLog K)
+          = PowerSeries.derivativeFun (phiSeries p (formalLog K))
+            - PowerSeries.derivativeFun ((p : K) • formalLog K) from
+        map_sub (PowerSeries.derivative K) _ _,
+      mul_sub, hLHS, hRHS, sub_self]
+  have heqC := eq_C_constantCoeff_of_one_add_mul_derivative_eq_zero (p := p) hker
+  -- the constant term of the difference is `0`
+  have hc0 : PowerSeries.constantCoeff (phiSeries p (formalLog K) - (p : K) • formalLog K)
+      = 0 := by
+    rw [map_sub, constantCoeff_phiSeries, PowerSeries.smul_eq_C_mul, map_mul,
+      PowerSeries.constantCoeff_C, constantCoeff_formalLog, mul_zero, sub_zero]
+  rw [hc0, map_zero] at heqC
+  exact sub_eq_zero.mp heqC
+
 end bridge
 
 end PadicLFunctions
