@@ -29,6 +29,10 @@ import PadicLFunctions.Interpolation.NonTame
 import PadicLFunctions.Interpolation.Branches
 import PadicLFunctions.Interpolation.LpFunction
 import PadicLFunctions.PadicExp
+import PadicLFunctions.ExtLog
+import PadicLFunctions.MeasureR.FormalPsi
+import PadicLFunctions.ValuesAtOneComplex
+import PadicLFunctions.ValuesAtOne
 
 /-!
 # p-adic L-functions

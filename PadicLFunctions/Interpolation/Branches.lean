@@ -593,7 +593,9 @@ noncomputable def zetaPBranch (hp2 : p ≠ 2) (i : ℕ) (s : ℤ_[p]) : ℚ_[p] 
 /-- **RJW Theorem 5.17** (`thm:kubota leopoldt analytic`, TeX 1921–1924):
 "For all `k ≥ 1` with `k ≡ i mod (p−1)`, we have
 `ζ_{p,i}(1−k) = (1−p^{k−1})ζ(1−k)`." The right-hand side is §4's rational
-`zetaNeg (k−1)` (the same value object as `PadicMeasure.kubotaLeopoldt`). -/
+`zetaNeg (k−1)` (the same value object as `PadicMeasure.kubotaLeopoldt`; the identification
+with the Riemann zeta function is `zetaNeg_eq_riemannZeta` in
+`KubotaLeopoldt/ZetaValuesComplex.lean`). -/
 theorem zetaPBranch_interpolation (hp2 : p ≠ 2) {i k : ℕ} (hk : 0 < k)
     (hik : (k : ZMod (p - 1)) = (i : ZMod (p - 1))) :
     zetaPBranch p hp2 i ((1 : ℤ_[p]) - (k : ℤ_[p]))
