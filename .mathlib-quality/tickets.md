@@ -2908,3 +2908,328 @@ Cadence audit: PadicExp 3/1 ✓ (CL54); Twist 3/1 ✓; NonTame 6/2 ✓ (CL52 + f
 TameConductor 2/1(final in CL53) ✓; Branches 4/1+final ✓; GenBernoulli 2+1
 (final in CL53) ✓; Characters 2 (final in CL53) ✓; pre-milestone cleanup-alls
 ×3 ✓; CLEANUP-FINAL retained as global last ✓.
+
+---
+
+# §6 board (The values at s = 1; TeX 1980–2180) — created 2026-06-11
+
+Skeleton: 4 new files (ExtLog.lean, MeasureR/FormalPsi.lean,
+ValuesAtOneComplex.lean, ValuesAtOne.lean), 28 new sorries, `lake build`
+green. Decomposition: decomposition.md R6 (verbatim quotes + replans 1–5).
+Standing rules apply (CLAUDE.md). Statements live in the skeleton — tickets
+reference declarations by name (the §5 T521-pattern).
+
+### [T601] Exp-ball multiplicativity and log of powers
+- **Status**: open | **File**: ExtLog.lean | **Depends on**: none
+- **Parallel**: yes (chain W6a head) | **Type**: lemmas
+- **Statement**: skeleton `mul_mem_expBall`, `padicLog_pow` (W6a-a1/a2).
+- **Proof sketch**: a1 ultrametric: yz−1 = (y−1)z + (z−1), norm ≤ max,
+  each factor ≤ ball-bound (‖z‖ = ‖(z−1)+1‖ ≤ 1 needs ball ⊆ unit-ball:
+  ‖z−1‖^{p−1} < p⁻¹ < 1 ⟹ ‖z−1‖ < 1); pow-monotone transfer as in
+  norm_factorial_inv_smul_pow_le. a2: induction on n via padicLog_mul +
+  a1-closure; n = 0 via padicLog_one.
+- **Mathlib lemmas**: IsUltrametricDist.norm_add_le_max, pow_lt_one_iff.
+- **Sources**: decomposition R6 W6a; Washington §5.1.
+- **Generality**: ambient L (PadicExp variables).
+- **Sizing**: source one-liners → ~40 LOC.
+
+### [T602] p-power descent into the exponential ball
+- **Status**: open | **File**: ExtLog.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: lemmas
+- **Statement**: skeleton `norm_pow_p_sub_one_le`, `exists_pPow_pow_inExpBall`
+  (W6a-a3/a4).
+- **Proof sketch**: a3 binomial w^p−1 = Σ_{i≥1}C(p,i)(w−1)^i; i = p term
+  (w−1)^p; 0<i<p terms have ‖C(p,i)‖ ≤ p⁻¹ (p ∣ choose: mathlib
+  Nat.Prime.dvd_choose_self); ultrametric finite-sum max
+  (norm_sum_le_of_forall_le_of_nonneg). a4: iterate; r_{j+1} ≤
+  r_j·max(r_j^{p−1}, p⁻¹) ≤ r_j·t with t := max(r_0^{p−1}, p⁻¹) < 1;
+  geometric until r^{p−1} < p⁻¹. ATTACK-pinned: the closed boundary
+  r = p^{-1/(p−1)} is passed THROUGH (no single-step contraction there;
+  the t-factor argument is global, decomposition R6 a4).
+- **Mathlib lemmas**: Nat.Prime.dvd_choose_self (verify name),
+  add_pow_le?? — no: Commute.add_pow expansion; tendsto_pow geometric.
+- **Sources**: decomposition R6 W6a; Washington §5.1.
+- **Sizing**: ~70 LOC.
+
+### [T603] Integral norm-one elements lie in the extLog domain
+- **Status**: open | **File**: ExtLog.lean | **Depends on**: T602
+- **Type**: lemmas
+- **Statement**: skeleton `exists_pow_sub_one_norm_le`,
+  `extLogDomain_of_integral_norm_one` (W6a-a5/a11).
+- **Proof sketch**: a5: S := Algebra.adjoin ℤ {z} is module-finite
+  (IsIntegral.fg / Algebra.adjoin.finite); S/pS finite (fg over ℤ/p);
+  pigeonhole on powers of z̄: z̄^i = z̄^{i+m} ⟹ z^i(z^m−1) ∈ p·S ⊆
+  p·(unit ball) ⟹ ‖z^i(z^m−1)‖ ≤ p⁻¹; ‖z^i‖ = 1 cancels (norm mult).
+  ATTACK-pinned: no z̄-invertibility needed (decomposition R6 a5).
+  a11: a5 gives ‖z^m−1‖ ≤ p⁻¹ < 1, then T602-a4 on w := z^m gives
+  z^{m·p^j} ∈ 1+ball: witness (m·p^j, 0, z^{m·p^j}).
+- **Mathlib lemmas**: IsIntegral, Algebra.adjoin, Module.Finite transfer,
+  finiteness of fg-ℤ-module mod p (survey exact route at execution),
+  Finite.exists_ne_map_eq_of_infinite-style pigeonhole.
+- **Sources**: decomposition R6 W6a-a5 (design note).
+- **Sizing**: ~80 LOC (the cluster's engine).
+
+### [T604] extLog: well-definedness and API
+- **Status**: open | **File**: ExtLog.lean | **Depends on**: T601
+- **Type**: def-lemmas
+- **Statement**: skeleton `extLog_eq_of_witness`, `extLog_eq_padicLog`,
+  `extLog_mul`, `extLog_eq_zero_of_pow_eq_one`, `extLog_neg` (W6a-a7–a10;
+  def a6 already in skeleton).
+- **Proof sketch**: a7: two witnesses (m,k,y), (m',k',y'): x^{mm'} both
+  ways ⟹ p^{km'−k'm}·y^{m'} = y'^{m}; taking norms, ‖y‖ = ‖y'‖ = 1 and
+  ‖p‖ = p⁻¹ < 1 force km' = k'm, cancel p-powers (field), then
+  y^{m'} = y'^m and a2: m'·log y = m·log y'; scalar algebra in ℚ_[p]-module.
+  a8: witness (1,0,x). a9: product witnesses + a1 + padicLog_mul + a7.
+  a10: x^n = 1 witness (n,0,1), padicLog_one; extLog_neg: (−x)² = x²-route:
+  extLog((−x)²) = extLog(x²) and 2·extLog(−x) = ... via a9-on-self (domain
+  of −x from x: witness with even power) — or extLog(−1) = 0 (a10) + a9.
+- **Mathlib lemmas**: norm_zpow, mul-cancellation in fields.
+- **Sources**: decomposition R6 W6a; Washington §5.1 Lemma 5.5-adjacent.
+- **Sizing**: ~100 LOC.
+
+### [CLEANUP-61] /cleanup on ExtLog.lean
+- **Status**: open | **Depends on**: T601, T602, T603, T604 | **Type**: cleanup
+  (cadence 4-tickets + final, merged)
+
+### [T605] The digit decomposition of power series
+- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: none
+- **Parallel**: yes (chain W6b head) | **Type**: theorem
+- **Statement**: skeleton `existsUnique_digits` (W6b-b1).
+- **Proof sketch**: the family (1+T)^i·((1+T)^p−1)^j has leading
+  coefficient 1 in degree i+pj (base-p digit bijection ℕ ≃ Fin p × ℕ);
+  triangular recursion: define G_i's coefficients by strong induction on
+  total degree, subtracting known lower terms; uniqueness by the same
+  triangularity (lowest-degree coefficient of a nonzero combination
+  survives). Suggest: prove coeff-extraction lemma
+  coeff (i+pj) ((1+T)^i((1+T)^p−1)^j) = 1 + upper-triangularity, then
+  build by Nat.strong induction.
+- **Mathlib lemmas**: PowerSeries.coeff_mul, coeff_pow bounds,
+  Finset.Nat digit machinery (Nat.divMod p-bijection).
+- **Sources**: decomposition R6 W6b-b1 (mirrors the project's measure-level
+  digit shift, Measure/Toolbox ψ).
+- **Sizing**: ~60–90 LOC (the formal-cluster engine).
+
+### [T606] psiSeries API
+- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605
+- **Type**: lemmas
+- **Statement**: skeleton `psiSeries_phi`, `psiSeries_C`, `psiSeries_add`,
+  `psiSeries_C_mul`, `psiSeries_map` (W6b-b2/b8).
+- **Proof sketch**: each from uniqueness of digits: exhibit the digit
+  family of the right-hand side and apply ExistsUnique.unique. For map:
+  ring-hom image of a digit decomposition is one (phiSeries commutes with
+  map: subst-map compatibility — PowerSeries.map_subst exists? verify;
+  else coefficient-wise).
+- **Sources**: decomposition R6 W6b.
+- **Sizing**: ~80 LOC.
+
+### [T607] ψ–∂ commutation and ker ∂
+- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
+- **Type**: lemmas
+- **Statement**: skeleton `psiSeries_one_add_mul_derivative`,
+  `eq_C_constantCoeff_of_one_add_mul_derivative_eq_zero` (W6b-b3/b7).
+- **Proof sketch**: b3: differentiate the digit decomposition;
+  ∂((1+T)^i·φG) = i·(1+T)^i·φG + p·(1+T)^i·φ(∂G) (sub-lemma
+  ∂φ = p·φ∂ via PowerSeries.derivative_subst — the §4 A-explicit idiom);
+  digits of ∂F are (i·G_i + p·∂G_i); extract digit 0. b7: (1+X) unit-free:
+  (1+X)·D = 0 ⟹ D = 0 (domain K⟦X⟧, 1+X ≠ 0); D F = 0 ⟹ all
+  (n+1)·coeff_{n+1} = 0 ⟹ coeff_{n+1} = 0 (CharZero K) ⟹ F = C(F 0).
+- **Mathlib lemmas**: PowerSeries.derivative_subst (A-explicit!),
+  derivativeFun coefficient formula.
+- **Sources**: decomposition R6 W6b.
+- **Sizing**: ~70 LOC.
+
+### [T608] The ψ-bridge, evaluation layer, and evaluated Eqphipsi
+- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
+- **Type**: lemmas
+- **Statement**: skeleton `mahlerTransform_psi`, `seriesEval_zero_arg`,
+  `seriesEval_phi`, `psiSeries_eval_zero` (W6b-b4/b5/b6).
+- **Proof sketch**: b4 against the project's measure-ψ (digit-shift): show
+  the Mahler transform of ψμ satisfies the digit-0 characterisation —
+  φ𝓐_{ψμ} relates to the Mahler of Res_{pℤ_p} (project psi/phi toolbox
+  identities) + uniqueness from T605. b5: eval at 0 = constantCoeff
+  (tsum_eq_single); eval-of-φ: subst-coefficient expansion + tsum
+  rearrangement (T522 master_bridge machinery is the template; reuse its
+  helper patterns). b6: evaluate the digit decomposition at ξ^i−1; the
+  φ-layer collapses ((1+(ξ^i−1))^p − 1 = 0; eval of φG at these points =
+  G(0) by b5); Σ_i ξ^{ij}-orthogonality (mathlib: IsPrimitiveRoot
+  geom_sum/orthogonality — verify exact name) leaves p·(digit-0)(0).
+  Convergence side-conditions from hconv (finitely many digit-pieces;
+  closure of summability under the manipulations).
+- **Mathlib lemmas**: IsPrimitiveRoot.geom_sum_eq_zero?? (survey at
+  execution), tsum_eq_single.
+- **Sources**: decomposition R6 W6b-b6 (replan 2: the only meaningful
+  Eqphipsi for unbounded series).
+- **Sizing**: ~120 LOC (largest W6b ticket).
+
+### [CLEANUP-63] /cleanup on MeasureR/FormalPsi.lean
+- **Status**: open | **Depends on**: T605, T606, T607, T608 | **Type**: cleanup
+
+### [T609] Gauss sums over coprime levels
+- **Status**: open | **File**: ValuesAtOneComplex.lean | **Depends on**: none
+- **Parallel**: yes (chain C6 head) | **Type**: theorem
+- **Statement**: skeleton `gaussSum_mul_coprime` (C6-c4).
+- **Proof sketch**: CRT reindex (ZMod.chineseRemainder): a ↦ (a mod D,
+  a mod M); the additive character zmodChar (εD·εM) splits as the product;
+  double-sum factorisation; the χ(D)/η(M) twists arise from the CRT
+  normalisation (a = a₁·M·M⁻¹-stuff). ADVERSARIAL note (gate): verify the
+  exact unit-twist (χ(D)η(M) vs χ(M)η(D) vs inverses) against Washington
+  Lemma 4.1-adjacent BEFORE proving; fix the skeleton statement if off —
+  statement-fix allowed pre-ticket-completion with a replan note.
+- **Mathlib lemmas**: ZMod.chineseRemainder, gaussSum defs,
+  Finset.sum_nbij CRT.
+- **Sources**: standard (Washington Ch. 4); decomposition R6 C6-c4.
+- **Sizing**: ~60 LOC.
+
+### [T610] Boundary convergence of the logarithm series (SURVEY-GATED)
+- **Status**: open | **File**: ValuesAtOneComplex.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: theorem
+- **Statement**: skeleton `hasSum_pow_div_eq_neg_log` (C6-c2).
+- **Proof sketch**: SURVEY FIRST (the binding mathlib-search step):
+  Abel's limit theorem / Dirichlet test for Σzⁿ/n on the unit circle.
+  Candidates: Mathlib.Analysis.SpecificLimits, abelSummation files,
+  `Complex.hasSum_taylorSeries_log` (open-disc version exists).
+  If boundary machinery is absent: prove via Dirichlet test (partial sums
+  of zⁿ bounded for z ≠ 1 on circle; 1/n monotone → 0) + Abel
+  continuity to identify the limit with −log(1−z) — an API-gap sub-leaf
+  to spawn per Tier A1 if needed.
+- **Sources**: TeX 2040–2044; Washington Thm 4.9.
+- **Sizing**: ~60–120 LOC depending on survey.
+
+### [T611] **RJW Theorem 6.1(i)** — the classical value L(θ,1)
+- **Status**: open | **File**: ValuesAtOneComplex.lean
+- **Depends on**: T609, T610 | **Type**: theorem
+- **Statement**: skeleton `LSeries_eq_gaussSum_inv_mul_sum`,
+  `LFunction_one_eq` (C6-c1/c3).
+- **Proof sketch**: c1: Fourier-expand θ(n) = G(θ)/N·Σ_c θ⁻¹(c)ε^{nc}
+  (gaussSum_mulShift-family; verify exact mathlib form), swap finite and
+  L-series sums (norm-summable for Re s > 1), then G(θ)G(θ⁻¹) = θ(−1)N
+  (project T501) to reach the displayed form. c3: LFunction = LSeries for
+  Re s > 1 (mathlib LFunction_eq_LSeries); take s → 1 along reals:
+  LFunction continuous at 1 (differentiableAt_LFunction, θ ≠ 1); the
+  finite c-sum of LSeries-terms converges to the log-values by T610 +
+  Abel-limit; identify.
+- **Mathlib lemmas**: DirichletCharacter.LFunction_eq_LSeries (verify),
+  differentiableAt_LFunction, gaussSum_mulShift.
+- **Sources**: TeX 2007–2045 verbatim at R6; Washington Thm 4.9.
+- **Blueprint**: §6 chapter — wire Thm 6.1(i) node.
+- **Sizing**: TeX 39 lines → ~150 LOC.
+
+### [CLEANUP-65] /cleanup on ValuesAtOneComplex.lean
+- **Status**: open | **Depends on**: T611 | **Type**: cleanup
+
+### [T612] Norm-one arguments and the formal log-derivative
+- **Status**: open | **File**: ValuesAtOne.lean | **Depends on**: none
+- **Parallel**: yes (chain P6 head) | **Type**: lemmas
+- **Statement**: skeleton `norm_one_sub_pow_eq_one`,
+  `one_add_mul_derivative_logSeriesAt` (P6-p9/p2).
+- **Proof sketch**: p9: Π_{c∈(ℤ/D)ˣ}(1−ε^c) = Φ_D(1) (mathlib cyclotomic
+  eval: X^D−1 = Π(X−ε^c)-factorisation over K + eval at 1;
+  eval_one_cyclotomic_prime / _not_prime_pow family — survey exact names);
+  ‖Φ_D(1)‖ = 1 (1 or a prime q ≠ p); each factor norm ≤ 1
+  (integral elements / ball), product = 1 forces each = 1 (ultrametric).
+  p2: coefficient-wise: ∂(logSeriesAt) coefficients telescope against the
+  geometric series of ((1+T)u−1)⁻¹ = (u−1)⁻¹·Σ(−u/(u−1))ⁿTⁿ-form
+  (Ring.inverse of unit-constant-term series; finite verification per
+  coefficient).
+- **Sources**: TeX 2102–2105; decomposition R6 P6.
+- **Sizing**: ~100 LOC.
+
+### [T613] ∂F̃_θ = F_θ
+- **Status**: open | **File**: ValuesAtOne.lean | **Depends on**: T612
+- **Type**: theorem
+- **Statement**: skeleton `one_add_mul_derivative_Ftilde` (P6-p3).
+- **Proof sketch**: sum p2 over c; the constant `1`-terms contribute
+  −Σ_c θ⁻¹(c)·1 = 0 (sum of a nontrivial character — mathlib
+  DirichletCharacter sum_eq_zero; verify name; note the sum is over
+  range N with θ⁻¹ killing non-units).
+- **Sources**: TeX 2100–2110 (Lem 6.3 proof, first display).
+- **Sizing**: ~50 LOC.
+
+### [T614] ρ_θ: support, x-multiplication, and the twist display
+- **Status**: open | **File**: ValuesAtOne.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: lemmas
+- **Statement**: skeleton `psi_rhoTheta`,
+  `one_add_mul_derivative_mahlerK_rhoTheta` + NEW (spawn at execution):
+  the hGtwist-instantiation lemma (mahlerK of the χ-twisted μ̃_η equals
+  the explicit G-cleared series — from T508's
+  mahlerTransform_charTwist_muEtaCleared, CRT-collapsed to level Dp^n).
+- **Proof sketch**: support: iota-image is unit-supported
+  (res_iota/mem_range_iota_iff + isSupportedOn_units_iff_psi_eq_zero);
+  ∂𝓐: x·ρ = Res(μ_θ) by invCM-cancellation on units
+  (extendByZero/invUnitsCM algebra, the §5 T516/T520 patterns) +
+  LemmaMultiplicationbyx = mahlerTransform_cmul_X; map-subtype the
+  identity. hGtwist: T508 display + the Σ_aΣ_b → Σ_c CRT collapse with
+  ε := ζK·εp-product-root (the c4-twist constants surface; coordinate
+  with T609's conventions).
+- **Sources**: TeX 2090–2110 (Lem 6.3); decomposition R6 P6.
+- **Sizing**: ~140 LOC (the §5-glue ticket).
+
+### [CLEANUP-66] /cleanup on ValuesAtOne.lean (cadence)
+- **Status**: open | **Depends on**: T612, T613, T614 | **Type**: cleanup
+
+### [T615] The constant pin: 𝓐(ρ_θ) = F̃_θ − φψF̃_θ
+- **Status**: open | **File**: ValuesAtOne.lean
+- **Depends on**: T613, T614, T607, T606 | **Type**: theorem
+- **Statement**: skeleton `mahlerK_rhoTheta_eq` (P6-p6).
+- **Proof sketch**: both sides ∂-agree (T613 + T614 + ψ∂-commutation b3
+  pushing ∂ through φψ: ∂(φψF̃) = p·φ(∂ψF̃) = φψ(∂F̃)); difference D has
+  (1+X)·derivative(D) = 0 ⟹ D = C(D₀) (b7); ψ(LHS) = 0 (T614-support +
+  b4-bridge + psiSeries_map), ψ(RHS) = 0 (ψφ = id, b2), ψC = C (b2) ⟹
+  D₀ = 0. The G-clearing scalar rides along via psiSeries_C_mul.
+- **Sources**: decomposition R6 replan 1 (the distribution-free Lem 6.3).
+- **Sizing**: ~80 LOC.
+
+### [T616] The evaluated trace of F̃_θ
+- **Status**: open | **File**: ValuesAtOne.lean
+- **Depends on**: T608, T603, T604, T612 | **Type**: theorem
+- **Statement**: skeleton `constantCoeff_psiSeries_Ftilde` (P6-p7).
+- **Proof sketch**: b6 (psiSeries_eval_zero) on F̃: need seriesEval F̃ at
+  ξ^i−1: per-c resummation Ftilde_eval (spawn as helper): seriesEval of
+  logSeriesAt(u) at z = extLog((1+z)u−1) via (1+z)u−1 = (u−1)(1+uz/(u−1)),
+  extLog_mul (T604), extLog-on-ball = padicLog + its series (T522/T604);
+  then Σ_i Σ_c θ⁻¹(c)extLog(ξ^i ε^c−1): μ_p-collapse
+  Σ_i extLog(ξ^iw−1) = extLog(w^p−1) (Π_i(ξ^iw−1) = w^p−1: Π over μ_p +
+  Πξ^i = 1 for p odd; extLog_mul; domains by T603 + p9-norm-ones);
+  c-bookkeeping: n = 0: c ↦ pc automorphism of (ℤ/D)ˣ pulls θ(p) out;
+  n ≥ 1: fibers of c ↦ pc are N/p-translates; inner sum
+  Σ_{j<p} θ⁻¹(c+jN/p) = 0 by primitivity (spawn small lemma
+  sum_shift_eq_zero_of_isPrimitive per replan 3); both sides 0 = θ(p)·…
+- **Sources**: TeX 2115–2155 (the two-case proof); decomposition R6
+  replans 2–3.
+- **Sizing**: ~150 LOC (the section's hardest ticket).
+
+### [CLEANUP-ALL-6] Pre-milestone /cleanup-all
+- **Status**: open | **Depends on**: T601–T616 | **Type**: cleanup-all
+
+### [T617] **MILESTONE: RJW Theorem 6.1(ii)** — L_p(θ,1) (Leopoldt)
+- **Status**: open | **File**: ValuesAtOne.lean
+- **Depends on**: T615, T616, T609, CLEANUP-ALL-6 | **Type**: theorem
+- **Statement**: skeleton `LpFunction_one` (P6-p8).
+- **Proof sketch**: LpFunction at s = 1 pairs ζ_η-cleared with χ̃·⟨x⟩⁰ = χ̃;
+  identify the pairing with the mass of ρ_θ (extendByZero/χ̃-through
+  lemma); mass = constantCoeff(𝓐_ρ) (apply_powCM 0); T615 + T616 give
+  (1−θ(p)p⁻¹)·F̃(0) up to G-clearing; F̃(0) = −Σθ⁻¹(c)extLog(ε^c−1) =
+  −Σθ⁻¹(c)extLog(1−ε^c) (extLog_neg, domains T603); un-clear through
+  T609 (G(θ⁻¹)-factorisation) to RJW's display.
+- **Sources**: TeX 1992–1995 + 2113–2155 (verbatim at R6).
+- **Blueprint**: §6 chapter — wire Thm 6.1(ii), Lem 6.2/6.3 nodes (with
+  replan prose notes), D = 1 + Coleman/Perrin-Riou rationale comments;
+  re-render.
+- **Sizing**: ~120 LOC.
+
+### [CLEANUP-67] Final per-file cleanups (§6 files)
+- **Status**: open | **Depends on**: T617 | **Type**: cleanup (ExtLog,
+  FormalPsi, ValuesAtOne[Complex] final; widen CLEANUP-FINAL scope to §6)
+
+## §6 dependency quick-view
+```
+W6a: T601 → T604 ;  T602 → T603         → CL61
+W6b: T605 → T606 → {T607, T608}         → CL63
+C6:  T609 ; T610 → T611                 → CL65
+P6:  T612 → T613 ; T614 → CL66 → T615(T607,T606)
+     T616(T608,T603,T604,T612) → CLALL6 → T617*(T615,T616,T609) → CL67
+```
+Gate note: decomposition R6 is at draft-1 — per-leaf attack-blocks in the
+binding format and the c2/c4-survey completions are folded into each
+ticket's execution preamble (the §5 T521-precedent); the route-level
+attacks that already fired are recorded in R6 (replans 1–5).
