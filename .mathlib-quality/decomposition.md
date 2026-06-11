@@ -2609,3 +2609,236 @@ is then a continuous character ℤ_p → 1+pℤ_p with value x at 1, hence agree
 Gate (E-cluster): all leaves discharged-or-sub-decomposed; quotes present
 (TeX 1892–1897 + Cassels/Washington cross-refs recorded); attacks logged with
 two real route-pins (E3 strictness, E4 composition route). PASSES.
+
+## R6: The values at s = 1 (RJW §6, TeX 1980–2180) — draft-1 (pre-skeleton)
+
+### Source statements (verbatim)
+- Thm 6.1 (`s=1 theorem`, TeX 1987–1995): "Let $\theta$ be a non-trivial
+  Dirichlet character of conductor $N$, and let $\varepsilon_N$ denote a
+  primitive $N$th root of unity. Then: (i) (Classical value at $s=1$). We have
+  $L(\theta,1) = -\frac{1}{G(\theta^{-1})} \sum_{c \in (\Z/N\Z)^\times}
+  \theta^{-1}(c) \log\big( 1-\varepsilon_N^c \big)$. (ii) ($p$-adic value at
+  $s=1$). We have $L_p(\theta,1) = -\big( 1 - \theta(p) p^{-1} \big)
+  \frac{1}{G(\theta^{-1})} \sum_{c \in (\Z/N\Z)^\times} \theta^{-1}(c)
+  \log_p\big(1-\varepsilon_N^c)$."
+- F̃ def (TeX ~2070): "$\widetilde{F}_\theta(T) = - \frac{1}{G(\theta^{-1})}
+  \sum_{c \in (\Z / N \Z)^\times} \theta^{-1}(c) \log \big( (1 + T)
+  \epsilon_N^c - 1 \big)$".
+- Lem 6.2 (`lem:bounded power series`, TeX 2074): "The power series
+  $\widetilde{F}_\theta(T)$ is an element of $\mathscr{R}^+$." (Proof TeX
+  2076–2085: the log-expansion $\log((1+T)\epsilon^c-1) =
+  \log_p(\epsilon^c-1) + \sum_{n\ge1} \frac{(-1)^{n-1}}{n}
+  \frac{\epsilon^{cn}}{(\epsilon^c-1)^n}T^n$.)
+- Lem 6.3 (`lem:mu theta'`, TeX 2090): "We have $x \widetilde{\mu}_\theta =
+  \mu_\theta$. In particular, $\mathrm{Res}_{\Zp^\times}(\widetilde{\mu}_\theta)
+  = x^{-1}\mathrm{Res}_{\zpe}(\mu_\theta)$." (Proof: $\partial\widetilde F =
+  F_\theta$ via $\partial\log((1+T)\epsilon^c-1) = 1 +
+  \frac{1}{(1+T)\epsilon^c-1}$ and $\sum_c\theta^{-1}(c) = 0$.)
+- eq:Lptheta 1,2 (TeX 2113): "$L_p(\theta,1) =
+  \big((1-\varphi\circ\psi)\widetilde F_\theta\big)(0)$".
+- Proof of (ii), case n≥1 (TeX 2120–2126): χ kills pℤ_p so
+  $\mathrm{Res}_{p\Zp}(\widetilde\mu_\theta)=0$; case n=0 (TeX 2128–2148):
+  Eqphipsi ξ-sum, $\sum_{\xi\in\mu_p}\log_p(\xi\varepsilon_N^c-1) =
+  \log_p(\varepsilon_N^{pc}-1)$, and the automorphism $c\mapsto pc$ giving
+  $\varphi\circ\psi(\widetilde F_\theta)(0) = \frac{\theta(p)}{p}
+  \widetilde F_\theta(0)$. Final step uses $\log_p(x)=\log_p(-x)$.
+
+### Recorded replans (rule 5; user-approved route 2026-06-11 "as planned")
+1. **Distribution-free route for (ii)** (plan.md §6 addendum): RJW's
+   ℛ⁺/locally-analytic layer (thm:mahler la) is replaced by the ψ-kernel
+   constant-pin at the formal-series level. Lem 6.2's ℛ⁺-membership is NOT
+   formalised (deferred with the §3.7 cluster); Lem 6.3's content enters as
+   the pair (∂F̃ = F_θ formal identity) + (𝓐_ρ = F̃ − φψF̃ by ∂-match,
+   ψ-kernel, ker ∂ = constants). Thm 6.1(ii)'s STATEMENT is unchanged.
+2. **ψ-evaluation instead of formal Eqphipsi.** ATTACK (succeeded, route
+   fixed): the planned "Eqphipsi as a formal-series identity
+   φψF = p⁻¹Σ_ξ F((1+T)ξ−1)" is ILL-FORMED in PowerSeries: the substitution
+   T ↦ (1+T)ξ−1 has non-nilpotent constant term ξ−1 ≠ 0 for ξ ≠ 1, so
+   `PowerSeries.subst` does not apply. Fix: the deferred Eqphipsi is
+   realised as the CONVERGENT-EVALUATION identity at T = 0 only:
+   `psiSeries_eval_zero : (ψF).eval 0 = p⁻¹ Σ_{ξ∈μ_p} F.eval (ξ−1)`
+   (eval := ∑' coeff_n • zⁿ, the T522 helper pattern), proved by evaluating
+   the digit decomposition F = Σ_{i<p}(1+T)^i·φ(F_i) at z = ξ−1 (where
+   (1+z)^p−1 = 0 collapses the φ-layer) + μ_p-orthogonality Σ_ξ ξ^i = p·[i=0].
+   This needs μ_p ⊂ K (the §5 hε-hypothesis pattern) and convergence only
+   for our explicit log-growth coefficients.
+3. **Case n ≥ 1 via primitive-fiber character sums.** RJW's support argument
+   (χ|_{pℤ_p} = 0 ⟹ Res_{pℤ_p}μ̃ = 0) is replaced by: in the evaluated
+   ξ-sum, Σ_{c∈(ℤ/N)ˣ} θ⁻¹(c)·extLog(ε_N^{pc}−1) regroups along the p-to-1
+   map c ↦ pc whose fibers are translates by N/p; the inner sum
+   Σ_{j mod p} θ⁻¹(c + jN/p) = 0 because θ is primitive of conductor N
+   (does not factor through N/p). Same conclusion ((φψF̃)(0) = 0 = θ(p)·…
+   since θ(p) = 0), uniform bookkeeping with case n = 0 (where c ↦ pc is an
+   automorphism and the sum collapses to θ(p)·F̃(0)).
+4. **Scope: D > 1.** Thm 6.1(ii) is stated for θ = χη with η primitive of
+   conductor D, 1 < D, p ∤ D (the §5.2 standing hypotheses, =
+   zetaEta/LpFunction stack). The pure-p-power case D = 1 (θ = χ ≠ 1) is
+   DEFERRED: RJW's own §5.2 μ_η-machinery assumes D > 1, and the D = 1
+   object is the χ-twist of the ζ_p pseudo-measure (a genuine measure, but
+   needing its own mini-cluster). Deferred-note to plan.md "Deferred" table;
+   blueprint node will carry a rationale sentence.
+5. **Clearing convention.** All series-level work is G-cleared as in §5
+   (muEtaCleared/T508 twist conventions). RJW's 1/G(θ⁻¹) display is
+   recovered through the coprime Gauss-sum factorisation leaf (c4 below);
+   the headline statement matches RJW's display in K after un-clearing by
+   the unit G-factors.
+
+### Cluster W6a — extended p-adic logarithm (new file PadicLFunctions/ExtLog.lean)
+Source: statement-level RJW TeX 1992–1995 (log_p at 1−ε^c) — RJW never
+construct log_p beyond Lem 5.14's ball; construction cross-ref Washington
+*Cyclotomic Fields* §5.1 (Iwasawa log, ~1.5pp). Ambient: the PadicExp
+variables (L complete ultrametric NormedField, NormedAlgebra ℚ_[p] L).
+- a1 (leaf) `mul_mem_expBall`: y,z ∈ 1+ball ⟹ yz ∈ 1+ball (ultrametric;
+  ‖yz−1‖ ≤ max(‖y−1‖‖z‖, ‖z−1‖)).
+- a2 (leaf) `padicLog_pow`: padicLog(y^n) = n • padicLog y (induction on
+  padicLog_mul + a1).
+- a3 (leaf) `norm_pow_p_sub_one_le`: ‖w−1‖ < 1 ⟹
+  ‖w^p−1‖ ≤ max(‖w−1‖^p, p⁻¹‖w−1‖) (binomial, p ∣ C(p,i) for 0<i<p).
+- a4 (leaf) `exists_pPow_pow_inExpBall`: ‖w−1‖ < 1 ⟹ ∃ j,
+  InExpBall p (w^(p^j) − 1) (iterate a3; ratio max(r^{p−1}, p⁻¹) < 1
+  geometric. ATTACK note: at the closed boundary r = p^{-1/(p−1)} a single
+  step does NOT contract (r^p = r/p exactly) but r < 1 still gives the
+  strict geometric factor max(r₀^{p−1},p⁻¹) < 1 — the iteration passes
+  THROUGH the boundary; verified by hand).
+- a5 (leaf) `exists_pow_sub_one_norm_le` (pigeonhole): z integral over ℤ,
+  ‖z‖ = 1 ⟹ ∃ m > 0, ‖z^m − 1‖ ≤ p⁻¹. Route: Algebra.adjoin ℤ {z} is
+  module-finite (IsIntegral), its mod-p quotient is finite, pigeonhole gives
+  z̄^i = z̄^{i+m}, i.e. z^i(z^m−1) ∈ p·(adjoin) ⊆ p·integerRing, and
+  ‖z^i‖ = 1 cancels WITHOUT needing z̄ invertible (norm multiplicativity).
+  ATTACK (succeeded, design fixed): the naive "z̄ unit in the finite ring"
+  claim is false in general (z⁻¹ need not be integral); the norm-cancel
+  formulation avoids it.
+- a6 (def) `extLog` (junk-total): dite on
+  ∃ m k y, 0 < m ∧ x^m = (p:L)^k * y ∧ InExpBall p (y−1), value
+  (m:ℚ_[p])⁻¹ • padicLog y (choice-extracted witness).
+- a7 (leaf) `extLog_eq_of_witness`: any witness computes extLog
+  (well-definedness: x^{mm'} two ways ⟹ p^{km'−k'm} = y'^m y^{−m'};
+  norms force km' = k'm since ‖p‖ < 1 and the y-side has norm 1;
+  cancel and apply a2).
+- a8 (leaf) `extLog_eq_padicLog`: InExpBall p (x−1) ⟹ extLog x = padicLog x
+  (witness (1,0,x)).
+- a9 (leaf) `extLog_mul`: both in domain ⟹ extLog(xy) = extLog x + extLog y
+  (combine witnesses, a1, padicLog_mul, a2).
+- a10 (leaf) `extLog_eq_zero_of_pow_eq_one` (roots of unity) +
+  `extLog_neg` (via (−1)² = 1 and a9; needs −x ∈ domain from x ∈ domain —
+  square the witness).
+- a11 (leaf) `extLogDomain_of_integral_norm_one`: z integral over ℤ, ‖z‖ = 1
+  ⟹ z in the extLog domain with k = 0 witness (a5 then a4; covers ALL the
+  theorem's arguments 1−ε_N^c for D > 1 — their norm-1-ness is p7's c-side
+  bookkeeping via the cyclotomic product Φ_D(1)).
+Sizing: Washington §5.1 ≈ 1.5pp → ~300 LOC.
+
+### Cluster W6b — formal ψ on power series + evaluation (new file PadicLFunctions/MeasureR/FormalPsi.lean)
+Source: the §3 deferral (plan.md "Deferred", Eqphipsi TeX ~1147–1160 region);
+realisation per replan 2 above. Digit decomposition mirrors the project's
+measure-level ψ (Measure/Toolbox digit shift).
+- b1 (leaf) digit decomposition: for R comm ring, every F ∈ R⟦T⟧ has unique
+  digits F = Σ_{i<p} (1+T)^i · φ(F_i) where φG := G.subst((1+T)^p−1)
+  (HasSubst ✓ constant term 0). Existence/uniqueness by triangular
+  coefficient recursion (the monomials (1+T)^i((1+T)^p−1)^j have leading
+  term T^{i+pj}, and i+pj ↔ ℕ is the base-p digit bijection). ~60 LOC,
+  the meaty formal leaf.
+- b2 (leaf) `psiSeries` def := F_0; ψφ = id; ψ(C a) = C a; R-linearity.
+- b3 (leaf) `psiSeries_derivative`: ψ∂ = p·∂ψ where ∂ = (1+T)d/dT
+  (differentiate the digit decomposition; ∂φ = p·φ∂ sub-lemma).
+- b4 (leaf) bridge `mahlerTransform_psi`:
+  𝓐_{ψμ} = psiSeries(𝓐_μ) over integerRing K (against the project's
+  measure-ψ; both are digit-0 extractions — expected near-definitional
+  through mahlerRingEquiv; verify at execution).
+- b5 (leaf) eval layer: `seriesEval F z := ∑' n, coeff n F • z^n`
+  (junk-total; EXTRACT/generalise the T522 helpers padicExp_eq_tsum_coeff
+  pattern), linearity, and `seriesEval_phi`: eval(φG) z = eval G ((1+z)^p−1)
+  under summability (subst-vs-eval compatibility — bounded case suffices? NO:
+  needed at log-growth coefficients; state with explicit summability hyps).
+- b6 (leaf) `psiSeries_eval_zero`: with hξ : IsPrimitiveRoot ξ p in K and
+  convergence hyps: seriesEval (psiSeries F) 0 = p⁻¹ • Σ_{i<p} seriesEval F
+  (ξ^i − 1) (evaluate b1's decomposition at ξ^i−1; (1+(ξ^i−1))^p−1 = 0
+  collapses φ; orthogonality Σ_{i<p} ξ^{ij} = p·[j=0 mod p] — mathlib
+  IsPrimitiveRoot orthogonality/geom_sum).
+  ATTACK note (replan 2): this REPLACES the ill-formed formal Eqphipsi.
+- b7 (leaf) `derivative_eq_zero_iff_constant` (ker ∂ = constants, char-0
+  field coefficients) — possibly in mathlib (verify); else 10 LOC.
+Sizing ~250 LOC.
+
+### Cluster C6 — the complex value (i) (new file PadicLFunctions/ValuesAtOneComplex.lean)
+Source: TeX 2007–2045 (≈ 39 lines, Washington Thm 4.9). Quarantined complex
+file per the §4 ZetaValuesComplex pattern. Mathlib-linking: state against
+`DirichletCharacter.LFunction`.
+- c1 (leaf) Fourier/Gauss expansion (eq:classical 6.1): for Re s > 1,
+  LSeries-of-θ rearranges to G(θ)/N · Σ_c θ⁻¹(c)·Σ_n ε^{-nc}/n^s; via
+  θ(a) = G(θ)/N·Σ_c θ⁻¹(c)ε^{ac}-Fourier (mathlib gaussSum_mulShift-family;
+  SURVEY at decompose-iteration: exact names) + tsum-Fubini (norm-summable,
+  Re s > 1 ✓ classical absolute convergence).
+- c2 (leaf) boundary value Σ_{n≥1} ε^{nc}/n = −log(1−ε^c) for ε^c ≠ 1 on
+  the unit circle. SURVEY-GATED: mathlib has the log-Taylor series on the
+  open disc; the boundary case needs Abel/Dirichlet-test convergence —
+  check `Mathlib/Analysis/...Abel` + `hasSum_taylorSeries_log`-family; if
+  the boundary statement is absent it is an API-gap sub-leaf (Abel's
+  limit theorem instance or Dirichlet test, ~60 LOC).
+- c3 (leaf) assembly: LFunction θ 1 = lim_{s→1⁺} of c1's closed form
+  (continuity of LFunction at 1 for θ ≠ 1: mathlib differentiableAt_LFunction
+  ✓) then c2. RJW's display follows after G(θ)·θ(−1)/N = 1/G(θ⁻¹)
+  (gaussSum product identity — project T501 has the level-N
+  G(θ)G(θ⁻¹) = θ(−1)·N ✓ REUSE).
+- c4 (leaf, shared with P6) `gaussSum_mul_coprime`: for coprime D, M and
+  θ = η⊗χ at level DM: G(θ) = χ(D)η(M)·G(η)G(χ)-shape (CRT reindex;
+  ~30 LOC; home Interpolation/Characters.lean gaussSum section).
+Sizing ~200 LOC + survey risk at c2.
+
+### Cluster P6 — the p-adic value (ii) (new file PadicLFunctions/ValuesAtOne.lean)
+Source: TeX 2055–2155 (≈ 100 lines). Statement scope per replan 4 (D > 1).
+Ambient: §5 K-stack + W6a (L := K) + W6b.
+- p1 (def) `logSeriesAt (u : K)` := PowerSeries.mk: coeff 0 = extLog(u−1),
+  coeff n = (−1)^{n−1}/n · (u/(u−1))^n-cleared-form (TeX 2076–2080
+  expansion; over K — denominators n live in ℚ_[p] ⊂ K); `Ftilde θ` :=
+  −Σ_{c∈(ℤ/N)ˣ} θ⁻¹(c) • logSeriesAt(ε_N^c) (G-cleared per replan 5).
+- p2 (leaf) `derivative_logSeriesAt`: ∂(logSeriesAt u) = 1 +
+  Ring.inverse((1+T)·C u − 1)-series for ‖u‖ = 1-units (formal geometric
+  series computation; matches the §5 denominator objects
+  isUnit_root_mul_one_add_X_sub_one).
+- p3 (leaf) `derivative_Ftilde`: ∂F̃_θ = F_θ-series (p2 summed; the
+  constant 1-terms cancel by Σ_c θ⁻¹(c) = 0 — nontrivial character sum,
+  mathlib DirichletCharacter.sum_eq_zero_of... verify name; F_θ-series :=
+  the T508 cleared twist transform display).
+- p4 (def) `rhoTheta` : MeasureR K ℤ_[p] := iota of the x⁻¹-weighted
+  unit-restriction of the χ-twisted μ̃_η (the §5 zetaEtaCleared pattern at
+  θ-level; reuse invUnitsCM/extendByZero).
+- p5 (leaf) `psi_rhoTheta = 0` (unit-supported, project
+  isSupportedOn_units_iff_psi_eq_zero) and `derivative_mahler_rhoTheta`:
+  ∂𝓐_ρ = (1−φψ)·F_θ-series (x·ρ = Res μ_θ via invCM-cancellation +
+  LemmaMultiplicationbyx = project mahlerTransform_cmul_X + res_units_eq).
+- p6 (leaf) the constant pin: 𝓐_ρ = F̃_θ − φ(ψF̃_θ) (∂ of both sides agree
+  by p3+p5+b3; difference is ∂-constant by b7; ψ of both sides is 0
+  (b2: ψφ = id; p5+b4); ψ(constant) = constant ⟹ C = 0).
+- p7 (leaf) evaluation: L_p-pairing = 𝓐_ρ(0) (mass = constantCoeff, project
+  apply_powCM at 0) = F̃(0) − (ψF̃)(0) ((φG)(0) = G(0)); then
+  (ψF̃)(0) by b6 + `Ftilde_eval`: seriesEval F̃ (ξ^i−1) =
+  −Σ_c θ⁻¹(c)·extLog((ξ^i ε^c)−1-shape) (resummation through extLog_mul:
+  (1+z)ε^c−1 = (ε^c−1)(1 + ε^c z/(ε^c−1)), a8–a11) + the μ_p-collapse
+  Σ_ξ extLog(ξw−1) = extLog(w^p−1) (∏_{ξ∈μ_p}(ξw−1) = w^p−1 since
+  ∏ξ = 1 for p odd; a9-additivity; domains by a11) + the c ↦ pc
+  bookkeeping: n = 0: automorphism of (ℤ/D)ˣ ⟹ θ(p)/p-factor;
+  n ≥ 1: fiber sums Σ_{j mod p}θ⁻¹(c+jN/p) = 0 by primitivity (small
+  character leaf `sum_shift_eq_zero_of_isPrimitive`, replan 3).
+- p8 (leaf) headline `LpFunction_one` (**RJW Thm 6.1(ii)**, D > 1):
+  LpFunction p K η hζ hD χ 1 = −(1−(θ'(p):K)·p⁻¹)·(G-factors)⁻¹·
+  Σ_c θ⁻¹(c)·extLog(1−ε_N^c) — exact display shape fixed at skeleton time
+  (uses extLog_neg for the 1−ε vs ε−1 swap, c4 for the G(θ⁻¹)-form).
+- p9 (leaf) `norm-1 of the arguments`: ‖1−ε_N^c‖ = 1 for c ∈ (ℤ/N)ˣ, D > 1
+  (the cyclotomic-product argument: Π_{c∈(ℤ/D)ˣ}(1−ε_D^c) = Φ_D(1) of norm
+  one, each factor ≤ 1 ⟹ each = 1; mixed roots reduce to the D-part —
+  verify the exact route at skeleton time; mathlib
+  eval_one_cyclotomic_prime/not_prime_pow family).
+Sizing ~400 LOC.
+
+### Prior-B2 consultation (Step 4.6)
+b2_log.jsonl: still empty (0 entries) — clean.
+
+### Gate status (Step 5) — DRAFT-1, NOT YET PASSED
+Outstanding before tickets: (α) Lean skeleton (Step 2.5) for all four
+files; (β) per-leaf attack blocks in the binding 3-attack format (the
+design-level attacks recorded above already killed two routes — formal
+Eqphipsi, pigeonhole-unit — and pinned the boundary-iteration subtlety);
+(γ) survey completion: c1/c2 mathlib names (area B), b7/b1 mathlib check
+(ker-∂, digit machinery), character-sum lemma names (p3, p7);
+(δ) skeleton `lake build` green. Tickets (1g) only after the gate.
