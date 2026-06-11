@@ -136,6 +136,45 @@ lemma isUnit_teichmullerFun (x : ℤ_[p]ˣ) :
   IsUnit.of_pow_eq_one (teichmullerFun_pow_card_sub_one p x)
     (Nat.sub_ne_zero_of_lt hp.1.one_lt)
 
+/-- `ω` is locally constant as a function `ℤ_p → ℤ_p` (it factors through
+the reduction mod `p`). -/
+lemma isLocallyConstant_teichmullerFun :
+    IsLocallyConstant (teichmullerFun p) := by
+  intro s
+  have hfib : ∀ a : ZMod p, IsOpen {x : ℤ_[p] | toZMod x = a} := by
+    intro a
+    rw [Metric.isOpen_iff]
+    intro x hx
+    refine ⟨(p : ℝ) ^ (-1 : ℤ), zpow_pos (by exact_mod_cast hp.out.pos) _,
+      fun y hy => ?_⟩
+    have hmem : y - x ∈ Ideal.span {((p : ℤ_[p])) ^ 1} := by
+      rw [← PadicInt.norm_le_pow_iff_mem_span_pow]
+      rw [Metric.mem_ball, dist_eq_norm] at hy
+      exact_mod_cast hy.le
+    rw [pow_one] at hmem
+    have h0 : toZMod (y - x) = 0 := by
+      rw [← RingHom.mem_ker, PadicInt.ker_toZMod,
+        PadicInt.maximalIdeal_eq_span_p]
+      exact hmem
+    rw [map_sub, sub_eq_zero] at h0
+    simpa only [Set.mem_setOf_eq, h0] using hx
+  have hpre : (teichmullerFun p) ⁻¹' s
+      = ⋃ a ∈ {a : ZMod p | teichmullerZMod p a ∈ s},
+          {x : ℤ_[p] | toZMod x = a} := by
+    ext x
+    constructor
+    · intro hx
+      exact Set.mem_biUnion
+        (show toZMod x ∈ {a : ZMod p | teichmullerZMod p a ∈ s} from hx) rfl
+    · intro hmem
+      obtain ⟨a, ha, hxa⟩ := Set.mem_iUnion₂.mp hmem
+      have hxa' : toZMod x = a := hxa
+      rw [Set.mem_preimage,
+        show teichmullerFun p x = teichmullerZMod p (toZMod x) from rfl, hxa']
+      exact ha
+  rw [hpre]
+  exact isOpen_biUnion fun a _ => hfib a
+
 /-- L5.3.1 (packaged): the Teichmüller character `ω : ℤ_[p]ˣ →* ℤ_[p]ˣ`. -/
 noncomputable def teichmuller : ℤ_[p]ˣ →* ℤ_[p]ˣ where
   toFun x := (isUnit_teichmullerFun p x).unit
@@ -234,6 +273,13 @@ lemma continuous_onePAdicPow (y : ℤ_[p]) (hy : y - 1 ∈ Ideal.span {(p : ℤ_
     Continuous (onePAdicPow p y hy) :=
   PadicInt.continuous_addChar_of_value_at_one _
 
+/-- Transport of `onePAdicPow` along an equality of bases. -/
+lemma onePAdicPow_congr {y z : ℤ_[p]} (h : y = z)
+    (hy : y - 1 ∈ Ideal.span {(p : ℤ_[p])}) (s : ℤ_[p]) :
+    onePAdicPow p y hy s = onePAdicPow p z (h ▸ hy) s := by
+  subst h
+  rfl
+
 lemma onePAdicPow_sub_one_mem (y : ℤ_[p]) (hy : y - 1 ∈ Ideal.span {(p : ℤ_[p])})
     (s : ℤ_[p]) :
     onePAdicPow p y hy s - 1 ∈ Ideal.span {(p : ℤ_[p])} := by
@@ -253,6 +299,40 @@ lemma onePAdicPow_sub_one_mem (y : ℤ_[p]) (hy : y - 1 ∈ Ideal.span {(p : ℤ
       sub_self]
   have huniv : Set.univ ⊆ {x : ℤ_[p] |
       onePAdicPow p y hy x - 1 ∈ Ideal.span {(p : ℤ_[p])}} := by
+    rw [← (PadicInt.denseRange_natCast (p := p)).closure_eq]
+    exact closure_minimal hnat hclosed
+  exact huniv (Set.mem_univ s)
+
+/-- The strengthened congruence: if `y ≡ 1 mod p^m` then `y^s ≡ 1 mod p^m`
+for every `s ∈ ℤ_p` (the same density/closure argument as
+`onePAdicPow_sub_one_mem`, run modulo `p^m`). -/
+lemma onePAdicPow_sub_one_mem_pow {y : ℤ_[p]}
+    (hy : y - 1 ∈ Ideal.span {(p : ℤ_[p])}) {m : ℕ}
+    (hym : y - 1 ∈ Ideal.span {((p : ℤ_[p])) ^ m}) (s : ℤ_[p]) :
+    onePAdicPow p y hy s - 1 ∈ Ideal.span {((p : ℤ_[p])) ^ m} := by
+  have hclosed : IsClosed {x : ℤ_[p] |
+      onePAdicPow p y hy x - 1 ∈ Ideal.span {((p : ℤ_[p])) ^ m}} := by
+    have hball : Ideal.span {((p : ℤ_[p])) ^ m}
+        = {z : ℤ_[p] | ‖z‖ ≤ (p : ℝ) ^ (-(m : ℤ))} := by
+      ext z
+      rw [Set.mem_setOf_eq, PadicInt.norm_le_pow_iff_mem_span_pow]
+      rfl
+    refine IsClosed.preimage
+      ((continuous_onePAdicPow p y hy).sub continuous_const) ?_
+    rw [hball]
+    exact isClosed_le continuous_norm continuous_const
+  have hnat : Set.range ((↑) : ℕ → ℤ_[p]) ⊆ {x : ℤ_[p] |
+      onePAdicPow p y hy x - 1 ∈ Ideal.span {((p : ℤ_[p])) ^ m}} := by
+    rintro _ ⟨k, rfl⟩
+    have hq : Ideal.Quotient.mk (Ideal.span {((p : ℤ_[p])) ^ m}) y = 1 := by
+      rw [← sub_eq_zero, ← map_one (Ideal.Quotient.mk _), ← map_sub,
+        Ideal.Quotient.eq_zero_iff_mem]
+      exact hym
+    simp only [Set.mem_setOf_eq, onePAdicPow_natCast]
+    rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_pow, map_one, hq,
+      one_pow, sub_self]
+  have huniv : Set.univ ⊆ {x : ℤ_[p] |
+      onePAdicPow p y hy x - 1 ∈ Ideal.span {((p : ℤ_[p])) ^ m}} := by
     rw [← (PadicInt.denseRange_natCast (p := p)).closure_eq]
     exact closure_minimal hnat hclosed
   exact huniv (Set.mem_univ s)
@@ -329,26 +409,147 @@ open PadicInt
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
+/-- The angle map is continuous as an `ℤ_p`-valued map on `ℤ_pˣ`
+(Teichmüller is locally constant and units-inversion is continuous). -/
+lemma continuous_angleUnit_val :
+    Continuous (fun x : ℤ_[p]ˣ => ((angleUnit p x : ℤ_[p]))) := by
+  have h1 : (fun x : ℤ_[p]ˣ => ((angleUnit p x : ℤ_[p])))
+      = fun x => teichmullerFun p (((x⁻¹ : ℤ_[p]ˣ)) : ℤ_[p]) * (x : ℤ_[p]) := by
+    funext x
+    rw [angleUnit, Units.val_mul, ← map_inv, teichmuller_coe]
+  rw [h1]
+  exact ((isLocallyConstant_teichmullerFun p).continuous.comp
+    (PadicMeasure.continuous_units_inv_val p)).mul Units.continuous_val
+
+/-- Base-continuity of the power map: `x ↦ ⟨x⟩^s` is continuous on `ℤ_pˣ`
+for each fixed `s ∈ ℤ_p` (via the strengthened congruence
+`onePAdicPow_sub_one_mem_pow` at the multiplicative decomposition
+`⟨x⟩ = ⟨x₀⟩·w`). -/
+lemma continuous_onePAdicPow_angleUnit (s : ℤ_[p]) :
+    Continuous (fun x : ℤ_[p]ˣ =>
+      onePAdicPow p (angleUnit p x : ℤ_[p]) (angleUnit_sub_one_mem p x) s) := by
+  rw [continuous_iff_continuousAt]
+  intro x₀
+  rw [ContinuousAt, Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨m₀, hm₀⟩ := PadicInt.exists_pow_neg_lt p hε
+  set m : ℕ := max m₀ 1
+  have hmm : (p : ℝ) ^ (-(m : ℤ)) ≤ (p : ℝ) ^ (-(m₀ : ℤ)) := by
+    have hp1 : (1 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp.out.one_lt.le
+    exact zpow_le_zpow_right₀ hp1
+      (neg_le_neg (by exact_mod_cast le_max_left m₀ 1))
+  have hev : ∀ᶠ x in nhds x₀,
+      dist ((angleUnit p x : ℤ_[p])) ((angleUnit p x₀ : ℤ_[p]))
+        < (p : ℝ) ^ (-(m : ℤ)) :=
+    Metric.tendsto_nhds.mp (continuous_angleUnit_val p).continuousAt _
+      (zpow_pos (by exact_mod_cast hp.out.pos) _)
+  refine hev.mono fun x hclose => ?_
+  -- the multiplicative increment `w = ⟨x⟩·⟨x₀⟩⁻¹`
+  set w : ℤ_[p] := (angleUnit p x : ℤ_[p])
+      * (((angleUnit p x₀)⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) with hw
+  have hdiff : (angleUnit p x : ℤ_[p]) - (angleUnit p x₀ : ℤ_[p])
+      ∈ Ideal.span {((p : ℤ_[p])) ^ m} := by
+    rw [← PadicInt.norm_le_pow_iff_mem_span_pow]
+    rw [dist_eq_norm] at hclose
+    exact hclose.le
+  have hw1 : w - 1 ∈ Ideal.span {((p : ℤ_[p])) ^ m} := by
+    have hkey : w - 1 = (((angleUnit p x₀)⁻¹ : ℤ_[p]ˣ) : ℤ_[p])
+        * ((angleUnit p x : ℤ_[p]) - (angleUnit p x₀ : ℤ_[p])) := by
+      rw [hw, mul_sub]
+      rw [show (((angleUnit p x₀)⁻¹ : ℤ_[p]ˣ) : ℤ_[p])
+          * (angleUnit p x₀ : ℤ_[p]) = 1 from by
+        rw [← Units.val_mul, inv_mul_cancel, Units.val_one]]
+      ring
+    rw [hkey]
+    exact Ideal.mul_mem_left _ _ hdiff
+  have hwp : w - 1 ∈ Ideal.span {(p : ℤ_[p])} := by
+    have hsub : Ideal.span {((p : ℤ_[p])) ^ m} ≤ Ideal.span {(p : ℤ_[p])} := by
+      rw [Ideal.span_singleton_le_span_singleton]
+      exact dvd_pow_self _ (by omega)
+    exact hsub hw1
+  have hxw : (angleUnit p x : ℤ_[p]) = (angleUnit p x₀ : ℤ_[p]) * w := by
+    rw [hw, mul_comm ((angleUnit p x : ℤ_[p]))]
+    exact (Units.mul_inv_cancel_left _ _).symm
+  rw [dist_eq_norm,
+    onePAdicPow_congr p hxw (angleUnit_sub_one_mem p x) s,
+    show (hxw ▸ angleUnit_sub_one_mem p x : (angleUnit p x₀ : ℤ_[p]) * w - 1
+        ∈ Ideal.span {(p : ℤ_[p])})
+      = mul_sub_one_mem p (angleUnit_sub_one_mem p x₀) hwp from rfl,
+    onePAdicPow_mul_base p _ _ (angleUnit_sub_one_mem p x₀) hwp s]
+  have hws := onePAdicPow_sub_one_mem_pow p hwp hw1 s
+  calc ‖onePAdicPow p (angleUnit p x₀ : ℤ_[p]) (angleUnit_sub_one_mem p x₀) s
+        * onePAdicPow p w hwp s
+      - onePAdicPow p (angleUnit p x₀ : ℤ_[p])
+          (angleUnit_sub_one_mem p x₀) s‖
+      = ‖onePAdicPow p (angleUnit p x₀ : ℤ_[p]) (angleUnit_sub_one_mem p x₀) s‖
+        * ‖onePAdicPow p w hwp s - 1‖ := by
+        rw [← norm_mul, mul_sub, mul_one]
+    _ ≤ 1 * ‖onePAdicPow p w hwp s - 1‖ :=
+        mul_le_mul_of_nonneg_right (PadicInt.norm_le_one _) (norm_nonneg _)
+    _ ≤ (p : ℝ) ^ (-(m : ℤ)) := by
+        rw [one_mul]
+        exact (PadicInt.norm_le_pow_iff_mem_span_pow _ m).mpr hws
+    _ < ε := lt_of_le_of_lt hmm hm₀
+
 /-- L5.3.4: the continuous character `x ↦ ω(x)^i·⟨x⟩^s` on `ℤ_[p]ˣ`, as a
 continuous map into `ℤ_[p]` (RJW TeX 1907–1910). -/
 noncomputable def branchChar (i : ℕ) (s : ℤ_[p]) : C(ℤ_[p]ˣ, ℤ_[p]) :=
   ⟨fun x => (teichmuller p x : ℤ_[p]) ^ i
       * onePAdicPow p (angleUnit p x : ℤ_[p]) (angleUnit_sub_one_mem p x) s,
-    by sorry⟩
+    by
+      refine Continuous.mul ?_ (continuous_onePAdicPow_angleUnit p s)
+      have h1 : (fun x : ℤ_[p]ˣ => ((teichmuller p x : ℤ_[p])) ^ i)
+          = fun x : ℤ_[p]ˣ => (teichmullerFun p (Units.val x)) ^ i := by
+        funext x
+        rw [teichmuller_coe]
+      rw [h1]
+      exact ((isLocallyConstant_teichmullerFun p).continuous.comp
+        Units.continuous_val).pow i⟩
+
+@[simp]
+lemma branchChar_apply (i : ℕ) (s : ℤ_[p]) (x : ℤ_[p]ˣ) :
+    branchChar p i s x = (teichmuller p x : ℤ_[p]) ^ i
+      * onePAdicPow p (angleUnit p x : ℤ_[p]) (angleUnit_sub_one_mem p x) s :=
+  rfl
 
 /-- On the congruence class `k ≡ i mod (p−1)`, the branch character at the
 integer `s = k` is `x^k` (RJW TeX 1919: "the character `x^k` can be written in
 the form `ω(x)^i⟨x⟩^k` if and only if `k ≡ i mod (p−1)`"; we need the "if").
 `PadicMeasure.unitsPowCM` is §4's `x^k`-on-units. -/
 lemma branchChar_natCast {i k : ℕ} (hik : (k : ZMod (p - 1)) = (i : ZMod (p - 1))) :
-    branchChar p i (k : ℤ_[p]) = PadicMeasure.unitsPowCM p k := by sorry
+    branchChar p i (k : ℤ_[p]) = PadicMeasure.unitsPowCM p k := by
+  ext x
+  rw [branchChar_apply, onePAdicPow_natCast,
+    show PadicMeasure.unitsPowCM p k x = ((x : ℤ_[p])) ^ k from rfl]
+  -- units-level: `ω(x)^i·(ω(x)⁻¹x)^k = x^k` since `ω(x)^i = ω(x)^k`
+  have hord : orderOf (teichmuller p x) ∣ p - 1 :=
+    orderOf_dvd_of_pow_eq_one (Units.ext (by
+      rw [Units.val_pow_eq_pow_val, teichmuller_coe,
+        teichmullerFun_pow_card_sub_one, Units.val_one]))
+  have hmodEq : k ≡ i [MOD p - 1] := (ZMod.natCast_eq_natCast_iff _ _ _).mp hik
+  have hpow : (teichmuller p x) ^ k = (teichmuller p x) ^ i :=
+    pow_eq_pow_iff_modEq.mpr (hmodEq.of_dvd hord)
+  have hunits : (teichmuller p x) ^ i * (angleUnit p x) ^ k = x ^ k := by
+    rw [angleUnit, mul_pow, inv_pow, ← mul_assoc, ← hpow, mul_inv_cancel,
+      one_mul]
+  have hval := congrArg Units.val hunits
+  rw [Units.val_mul, Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val,
+    Units.val_pow_eq_pow_val] at hval
+  exact hval
 
 /-- L5.3.5/L5.3.6: the `i`-th branch of the Kubota–Leopoldt `p`-adic
 L-function: `ζ_{p,i}(s) = ∫_{ℤ_p^×} ω(x)^i⟨x⟩^{1−s}·ζ_p`
 (RJW Def 5.16, TeX 1912–1918), realised through the pseudo-measure pairing at
-the §4 topological generator (junk value where the pairing degenerates, i.e.
-at the pole `(i,s) = (0,1)` — RJW's "meromorphic"). -/
-noncomputable def zetaPBranch (hp2 : p ≠ 2) (i : ℕ) (s : ℤ_[p]) : ℚ_[p] := sorry
+the §4 topological generator and its canonical witness `zetaNum` (junk value
+where the pairing degenerates, i.e. at the pole `(i,s) = (0,1)` — RJW's
+"meromorphic"). -/
+noncomputable def zetaPBranch (hp2 : p ≠ 2) (i : ℕ) (s : ℤ_[p]) : ℚ_[p] :=
+  (((branchChar p i (1 - s)
+        ((PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose)
+      : ℤ_[p]) : ℚ_[p]) - 1)⁻¹
+    * ((PadicMeasure.zetaNum p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose
+          (branchChar p i (1 - s)) : ℤ_[p]) : ℚ_[p])
 
 /-- **RJW Theorem 5.17** (`thm:kubota leopoldt analytic`, TeX 1921–1924):
 "For all `k ≥ 1` with `k ≡ i mod (p−1)`, we have
@@ -357,6 +558,37 @@ noncomputable def zetaPBranch (hp2 : p ≠ 2) (i : ℕ) (s : ℤ_[p]) : ℚ_[p] 
 theorem zetaPBranch_interpolation (hp2 : p ≠ 2) {i k : ℕ} (hk : 0 < k)
     (hik : (k : ZMod (p - 1)) = (i : ZMod (p - 1))) :
     zetaPBranch p hp2 i ((1 : ℤ_[p]) - (k : ℤ_[p]))
-      = (1 - (p : ℚ_[p]) ^ ((k : ℤ) - 1)) * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) := by sorry
+      = (1 - (p : ℚ_[p]) ^ ((k : ℤ) - 1)) * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) := by
+  classical
+  obtain ⟨hpm, huv, hgen⟩ :=
+    (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  set m := (PadicMeasure.exists_nat_topological_generator p hp2).choose
+  set u := (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose
+  have harg : (1 : ℤ_[p]) - ((1 : ℤ_[p]) - (k : ℤ_[p])) = (k : ℤ_[p]) := by ring
+  have hbr : branchChar p i ((1 : ℤ_[p]) - ((1 : ℤ_[p]) - (k : ℤ_[p])))
+      = PadicMeasure.unitsPowCM p k := by
+    rw [harg]
+    exact branchChar_natCast p hik
+  -- the canonical witness relation `([u]−1)·ζ_p = zetaNum m`
+  have hspec : algebraMap _ (PadicMeasure.QuotientField p)
+        (PadicMeasure.dirac p u - 1) * PadicMeasure.padicZeta p hp2
+      = algebraMap _ _ (PadicMeasure.zetaNum p m) := by
+    rw [PadicMeasure.padicZeta]
+    exact IsLocalization.mk'_spec' (PadicMeasure.QuotientField p) _ _
+  have hmom := PadicMeasure.padicZeta_moments p hp2 u hk
+    (PadicMeasure.zetaNum p m) hspec
+  rw [zetaPBranch, hbr]
+  rw [show PadicMeasure.unitsPowCM p k u = ((u : ℤ_[p])) ^ k from rfl, hmom]
+  have hne : (((u : ℤ_[p]) : ℚ_[p])) ^ k - 1 ≠ 0 := by
+    refine sub_ne_zero.2 fun h => PadicMeasure.topGen_pow_ne_one p hgen k hk ?_
+    have h2 : (((u : ℤ_[p]) ^ k : ℤ_[p]) : ℚ_[p]) = ((1 : ℤ_[p]) : ℚ_[p]) := by
+      push_cast
+      exact h
+    exact Subtype.coe_injective h2
+  rw [show ((((u : ℤ_[p])) ^ k : ℤ_[p]) : ℚ_[p])
+      = (((u : ℤ_[p]) : ℚ_[p])) ^ k from by push_cast; rfl]
+  field_simp
+  rw [show ((k : ℤ) - 1) = ((k - 1 : ℕ) : ℤ) from by omega, zpow_natCast]
+  ring
 
 end PadicLFunctions

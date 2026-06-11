@@ -2628,7 +2628,8 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sizing**: ~140 LOC.
 
 ### [T519] **MILESTONE: branches ζ_{p,i} and RJW Theorem 5.17**
-- **Status**: open | **File**: Branches.lean | **Depends on**: T518, CLEANUP-ALL-5
+- **Status**: done (finished 2026-06-11)
+- **File**: Branches.lean | **Depends on**: T518, CLEANUP-ALL-5
 - **Type**: def + theorem
 - **Statement**: skeleton `branchChar`, `branchChar_natCast`, `zetaPBranch`,
   `zetaPBranch_interpolation` (L5.3.4–6; pairing through the §4
@@ -2637,6 +2638,33 @@ CLEANUP-ALL-2 guards the milestone; CLEANUP-FINAL (§3 board) extended to §4 fi
 - **Sources**: TeX 1907–1924 (verbatim at R5.3).
 - **Blueprint**: wire the ζ_{p,i}/Thm 5.17 nodes; re-render.
 - **Sizing**: ~150 LOC.
+- **Progress**:
+  - 2026-06-10/11 (prior session, credit-out mid-build): full block staged —
+    `isLocallyConstant_teichmullerFun`, `onePAdicPow_congr`,
+    `onePAdicPow_sub_one_mem_pow` (p^m-strengthened closure argument),
+    `continuous_angleUnit_val`, `continuous_onePAdicPow_angleUnit`
+    (multiplicative-increment route ⟨x⟩ = ⟨x₀⟩·w), `branchChar`,
+    `branchChar_natCast` (orderOf-divides + pow_eq_pow_iff_modEq endgame),
+    `zetaPBranch` (zetaNum-witness pairing at the T037 generator),
+    `zetaPBranch_interpolation` (padicZeta_moments + field_simp endgame).
+  - 2026-06-11 (takeover session): fixed the 2 remaining build errors
+    (hxw closed via `Units.mul_inv_cancel_left` instead of the failing
+    mul_assoc chain; spurious `rfl` after goal-closing `rw` dropped).
+    Verification: lake build green, 0 sorry in Branches.lean,
+    `#print axioms` = [propext, Classical.choice, Quot.sound] on all 6 new
+    decls (branchChar, branchChar_natCast, zetaPBranch,
+    zetaPBranch_interpolation, continuous_angleUnit_val,
+    continuous_onePAdicPow_angleUnit).
+  - 2026-06-11: /cleanup degraded mode (no lean-lsp MCP this session):
+    linter-set build green, zero long lines; golfed 3 unused `set … with`
+    binders. A tooled session may revisit.
+  - 2026-06-11: blueprint wired — `interp-branches` →
+    branchChar + zetaPBranch (with ℚ_p-vs-ℂ_p and witness-pairing prose
+    note), `interp-branch-interpolation` → zetaPBranch_interpolation.
+    Node prose corrected to RJW's actual Thm 5.17 statement (odd-vanishing
+    moved to post-proof prose remark, as in the source TeX 1928);
+    `lake build PadicLFunctionsBlueprint` green.
+  - DONE — milestone: RJW Theorem 5.17 complete.
 
 ### [CLEANUP-ALL-5] Pre-milestone /cleanup-all
 - **Status**: done | **Depends on**: T510, T516, T518 | **Type**: cleanup-all (before T519/T520)

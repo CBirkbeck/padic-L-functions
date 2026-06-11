@@ -466,19 +466,27 @@ Because the $`p`-adic exponential converges on $`p\Zp`, the map $`x \mapsto
 $`s \mapsto [x \mapsto \omega(x)^i\ang{x}^s]` embeds $`\Zp` into the continuous
 characters of $`\Zpx`.
 
-:::definition "interp-branches"
+:::definition "interp-branches" (lean := "PadicLFunctions.branchChar, PadicLFunctions.zetaPBranch")
 For each $`i = 1, \dots, p-1` the *$`i`-th branch of the $`p`-adic zeta function*
 is
 $$`\zeta_{p,i} : \Zp \to \Cp, \qquad \zeta_{p,i}(s) =
 \int_{\Zpx}\omega(x)^i\,\ang{x}^{1-s}\cdot\zetap.`
 This uses {uses "kubota-leopoldt"}[] and {uses "teichmuller-character"}[].
+
+In the formalisation the character $`x \mapsto \omega(x)^i\ang{x}^{1-s}` is
+`branchChar` (with $`\ang{x}^s` the continuous-character realisation of the
+recorded replan L5.3.3), values are taken in $`\Qp` rather than $`\Cp` (the
+running $`\Zp`-coefficient convention), and the integral against the
+pseudo-measure $`\zetap` is realised through its canonical witness:
+`zetaPBranch` pairs `branchChar` with `zetaNum` at the fixed topological
+generator and divides by the unit pairing, with junk value at the pole
+$`(i,s) = (0,1)` (RJW's "meromorphic").
 :::
 
-:::theorem "interp-branch-interpolation"
+:::theorem "interp-branch-interpolation" (lean := "PadicLFunctions.zetaPBranch_interpolation")
 For all $`k \geq 1` with $`k \equiv i \pmod{p-1}`,
 $$`\zeta_{p,i}(1-k) = (1 - p^{k-1})\,\zeta(1-k).`
-In particular $`\zeta_{p,i} \equiv 0` for odd $`i`. This uses
-{uses "interp-branches"}[], {uses "kubota-leopoldt"}[] and
+This uses {uses "interp-branches"}[], {uses "kubota-leopoldt"}[] and
 {uses "special-values-zeta"}[].
 :::
 
@@ -490,11 +498,15 @@ definition of $`\zeta_{p,i}` therefore gives $`\zeta_{p,i}(1-k) =
 \int_{\Zpx}x^k\cdot\zetap`. The defining interpolation property of the
 Kubota–Leopoldt pseudo-measure {uses "kubota-leopoldt"}[] — the trivial-conductor
 case $`\int_{\Zpx}x^k\cdot\zetap = (1-p^{k-1})\zeta(1-k)` — then evaluates this to
-$`(1-p^{k-1})\zeta(1-k)`. Since $`\zeta(1-k) = 0` for odd $`k > 0` by
-{uses "special-values-zeta"}[], and the congruence $`k\equiv i \pmod{p-1}` forces
-$`k` to be odd exactly when $`i` is odd (as $`p-1` is even), the branch
-$`\zeta_{p,i}` vanishes identically whenever $`i` is odd.
+$`(1-p^{k-1})\zeta(1-k)`.
 :::
+
+Note that (as RJW record after the theorem) $`\zeta_{p,i}` is identically zero
+whenever $`i` is odd: $`\zeta(1-k)` vanishes for every odd $`k \geq 1`, and the
+congruence $`k \equiv i \pmod{p-1}` forces such $`k` to be odd exactly when
+$`i` is (as $`p-1` is even). Identical vanishing on all of $`\Zp` further uses
+the continuity of $`\zeta_{p,i}` in $`s`; the formalisation records the
+interpolation formula itself.
 
 We package the most general statement using the measure $`\zeta_\eta`.
 
