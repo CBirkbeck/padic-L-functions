@@ -3225,7 +3225,12 @@ reference declarations by name (the §5 T521-pattern).
   candidate (recorded).
 
 ### [T612] Norm-one arguments and the formal log-derivative
-- **Status**: in_progress (2026-06-11) | **File**: ValuesAtOne.lean | **Depends on**: none
+- **Status**: done (2026-06-11)
+- **Progress**: DONE (subagent): norm-1 via the project's existing
+  IsPrimitiveRoot.norm_pow_sub_one_eq_one (Coefficients.lean — the
+  cyclotomic-product argument was already formalised); log-derivative by
+  the geometric-inverse factorisation (1+T)Cu−1 = C(u−1)(1+C(u/(u−1))T).
+  Axioms standard.
 - **Parallel**: yes (chain P6 head) | **Type**: lemmas
 - **Statement**: skeleton `norm_one_sub_pow_eq_one`,
   `one_add_mul_derivative_logSeriesAt` (P6-p9/p2).
@@ -3242,7 +3247,10 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~100 LOC.
 
 ### [T613] ∂F̃_θ = F_θ
-- **Status**: open | **File**: ValuesAtOne.lean | **Depends on**: T612
+- **Status**: done (2026-06-11)
+- **Progress**: DONE (same pass): linearity + per-c P6-p2 + character-sum
+  cancellation (MulChar.sum_eq_zero_of_ne_one + range↔ZMod reindex).
+  Axioms standard.
 - **Type**: theorem
 - **Statement**: skeleton `one_add_mul_derivative_Ftilde` (P6-p3).
 - **Proof sketch**: sum p2 over c; the constant `1`-terms contribute
@@ -3253,7 +3261,12 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~50 LOC.
 
 ### [T614] ρ_θ: support, x-multiplication, and the twist display
-- **Status**: open | **File**: ValuesAtOne.lean | **Depends on**: none
+- **Status**: done (2026-06-11)
+- **Progress**: DONE (same pass): psi∘iota = 0 via mem_range_iota_iff;
+  x-multiplication via invUnitsCM-cancellation (extendByZero_comp_unitsVal)
+  + mahlerTransform_cmul_X (del K) + map-∂ commutation helpers. hGtwist
+  instantiation deferred to T617 assembly (hypothesis-form retained).
+  Axioms standard.
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `psi_rhoTheta`,
   `one_add_mul_derivative_mahlerK_rhoTheta` + NEW (spawn at execution):

@@ -56,23 +56,114 @@ noncomputable def Ftilde {N : ℕ} [NeZero N] (θ : DirichletCharacter K N)
 
 variable {p K}
 
+omit [CompleteSpace K] [CharZero K] in
 /-- P6-p9: the theorem's arguments are norm-one units: `‖1 − ε_N^c‖ = 1`
 for `c ∈ (ℤ/N)ˣ` when the tame part `D > 1` (cyclotomic-product argument
 `Π_c (1−ε_D^c) = Φ_D(1)` of norm one; each factor `≤ 1` forces each `= 1`).
 Stated for the tame root itself; the mixed-root variants are derived in the
 assembly. -/
-theorem norm_one_sub_pow_eq_one {D : ℕ} [NeZero D] (hD1 : 1 < D)
+theorem norm_one_sub_pow_eq_one {D : ℕ} [NeZero D] (_hD1 : 1 < D)
     (hD : ¬ (p : ℕ) ∣ D) {ε : K} (hε : IsPrimitiveRoot ε D) {c : ℕ}
-    (hc : ¬ D ∣ c) : ‖1 - ε ^ c‖ = 1 := by sorry
+    (hc : ¬ D ∣ c) : ‖1 - ε ^ c‖ = 1 := by
+  rw [← norm_neg, neg_sub]
+  exact hε.norm_pow_sub_one_eq_one (p := p) hD hc
 
+/-- A unit's `Ring.inverse` is the unique right inverse. -/
+private theorem ring_inverse_eq_of_mul_eq_one {M₀ : Type*} [MonoidWithZero M₀]
+    {a b : M₀} (ha : IsUnit a) (h : a * b = 1) : Ring.inverse a = b := by
+  calc Ring.inverse a = Ring.inverse a * (a * b) := by rw [h, mul_one]
+    _ = Ring.inverse a * a * b := by rw [mul_assoc]
+    _ = b := by rw [Ring.inverse_mul_cancel a ha, one_mul]
+
+/-- The geometric-series inverse `(1 + C b·T)⁻¹ = Σ_n (−b)ⁿ Tⁿ` over any
+commutative ring (telescoping coefficient identity, decomposition R6 P6-p2). -/
+private theorem one_add_C_mul_X_mul_geom {R : Type*} [CommRing R] (b : R) :
+    (1 + PowerSeries.C b * PowerSeries.X) * (PowerSeries.mk fun n => (-b) ^ n) = 1 := by
+  ext n
+  rw [add_mul, one_mul, map_add]
+  cases n with
+  | zero =>
+    rw [PowerSeries.coeff_mk, pow_zero, mul_comm (PowerSeries.C b) PowerSeries.X, mul_assoc,
+      PowerSeries.coeff_zero_X_mul, add_zero, PowerSeries.coeff_one, if_pos rfl]
+  | succ m =>
+    rw [PowerSeries.coeff_mk, mul_comm (PowerSeries.C b) PowerSeries.X, mul_assoc,
+      PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_C_mul, PowerSeries.coeff_mk,
+      PowerSeries.coeff_one, if_neg (Nat.succ_ne_zero m)]
+    ring
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- P6-p2: the formal logarithmic derivative
 `∂(logSeriesAt u) = 1 + ((1+T)·u − 1)⁻¹` for `u − 1` a unit
-(TeX 2102–2105). -/
+(TeX 2102–2105). Route (decomposition R6 P6-p2): factor
+`(1+T)·u − 1 = C(u−1)·(1 + C(u/(u−1))·T)`, invert the geometric factor, then
+match coefficients (`derivativeFun` raises the index and the `(1+T)`-multiply
+splits adjacent coefficients). -/
 theorem one_add_mul_derivative_logSeriesAt {u : K} (hu : IsUnit (u - 1)) :
     (1 + PowerSeries.X) * PowerSeries.derivativeFun (logSeriesAt p K u)
       = 1 + Ring.inverse ((1 + PowerSeries.X) * PowerSeries.C u - 1) := by
-  sorry
+  have hune : (u - 1) ≠ 0 := hu.ne_zero
+  set a : K := u / (u - 1) with ha
+  have hCmul : PowerSeries.C (u - 1) * PowerSeries.C a = PowerSeries.C u := by
+    rw [← map_mul]; congr 1; rw [ha]; field_simp
+  have hfactor : (1 + PowerSeries.X) * PowerSeries.C u - 1
+      = PowerSeries.C (u - 1) * (1 + PowerSeries.C a * PowerSeries.X) := by
+    have hexp : PowerSeries.C (u - 1) * (1 + PowerSeries.C a * PowerSeries.X)
+        = PowerSeries.C (u - 1)
+          + (PowerSeries.C (u - 1) * PowerSeries.C a) * PowerSeries.X := by ring
+    rw [hexp, hCmul, map_sub, map_one]; ring
+  have hCunit : IsUnit (PowerSeries.C (u - 1) : PowerSeries K) := by
+    rw [PowerSeries.isUnit_iff_constantCoeff, PowerSeries.constantCoeff_C]; exact hu
+  have hgeomunit : IsUnit (1 + PowerSeries.C a * PowerSeries.X : PowerSeries K) := by
+    rw [PowerSeries.isUnit_iff_constantCoeff, map_add, map_one,
+      map_mul, PowerSeries.constantCoeff_X, mul_zero, add_zero]; exact isUnit_one
+  have hinv : Ring.inverse ((1 + PowerSeries.X) * PowerSeries.C u - 1)
+      = PowerSeries.C (u - 1)⁻¹ * (PowerSeries.mk fun n => (-a) ^ n) := by
+    refine ring_inverse_eq_of_mul_eq_one (hfactor ▸ hCunit.mul hgeomunit) ?_
+    rw [hfactor]
+    calc PowerSeries.C (u - 1) * (1 + PowerSeries.C a * PowerSeries.X)
+          * (PowerSeries.C (u - 1)⁻¹ * (PowerSeries.mk fun n => (-a) ^ n))
+        = (PowerSeries.C (u - 1) * PowerSeries.C (u - 1)⁻¹)
+          * ((1 + PowerSeries.C a * PowerSeries.X)
+            * (PowerSeries.mk fun n => (-a) ^ n)) := by ring
+      _ = 1 := by
+        rw [← map_mul, mul_inv_cancel₀ hune, map_one, one_add_C_mul_X_mul_geom, mul_one]
+  rw [hinv]
+  ext n
+  rw [map_add, PowerSeries.coeff_one]
+  have hsplit : ((1 : PowerSeries K) + PowerSeries.X)
+        * PowerSeries.derivativeFun (logSeriesAt p K u)
+      = PowerSeries.derivativeFun (logSeriesAt p K u)
+        + PowerSeries.X * PowerSeries.derivativeFun (logSeriesAt p K u) := by ring
+  have h1a : (1 : K) - a = -(u - 1)⁻¹ := by
+    rw [ha, eq_neg_iff_add_eq_zero]; field_simp; ring
+  cases n with
+  | zero =>
+    rw [if_pos rfl, hsplit, map_add, PowerSeries.coeff_zero_X_mul, add_zero,
+      PowerSeries.coeff_derivativeFun, logSeriesAt, PowerSeries.coeff_mk,
+      if_neg (Nat.succ_ne_zero 0), PowerSeries.coeff_C_mul, PowerSeries.coeff_mk, ha]
+    simp only [pow_zero, pow_one, mul_one, Nat.cast_zero, zero_add, Nat.cast_one]
+    field_simp
+    ring
+  | succ m =>
+    rw [if_neg (Nat.succ_ne_zero m), zero_add, hsplit, map_add,
+      PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_derivativeFun,
+      PowerSeries.coeff_derivativeFun, logSeriesAt, PowerSeries.coeff_mk,
+      PowerSeries.coeff_mk, if_neg (Nat.succ_ne_zero (m + 1)), if_neg (Nat.succ_ne_zero m),
+      PowerSeries.coeff_C_mul, PowerSeries.coeff_mk]
+    simp only [Nat.add_sub_cancel]
+    have hm1 : ((m : K) + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero m
+    have hm2 : ((m : K) + 1 + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero (m + 1)
+    push_cast
+    rw [mul_assoc _ (((m : K) + 1 + 1)⁻¹) (a ^ (m + 1 + 1)),
+      mul_comm (((m : K) + 1 + 1)⁻¹) (a ^ (m + 1 + 1)), ← mul_assoc,
+      mul_assoc _ (((m : K) + 1 + 1)⁻¹), inv_mul_cancel₀ hm2, mul_one,
+      mul_assoc _ (((m : K) + 1)⁻¹) (a ^ (m + 1)),
+      mul_comm (((m : K) + 1)⁻¹) (a ^ (m + 1)), ← mul_assoc,
+      mul_assoc _ (((m : K) + 1)⁻¹), inv_mul_cancel₀ hm1, mul_one,
+      show (-a) ^ (m + 1) = (-1) ^ (m + 1) * a ^ (m + 1) by rw [← neg_one_mul, mul_pow]]
+    linear_combination ((-1 : K) ^ m * a ^ (m + 1)) * h1a
 
+omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- P6-p3: `∂F̃_θ = F_θ` — the constant terms cancel by
 `Σ_c θ⁻¹(c) = 0` for `θ ≠ 1` (TeX 2100–2110, Lem 6.3 first half in the
 formal route). -/
@@ -83,7 +174,61 @@ theorem one_add_mul_derivative_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
     (1 + PowerSeries.X) * PowerSeries.derivativeFun (Ftilde p K θ hε)
       = -∑ c ∈ Finset.range N, PowerSeries.C (θ⁻¹ ((c : ZMod N)))
           * Ring.inverse ((1 + PowerSeries.X) * PowerSeries.C (ε ^ c) - 1) := by
-  sorry
+  haveI : Fact (1 < N) := ⟨hN⟩
+  -- push `∂` through the negated sum (the `C`-coefficients pull out by linearity)
+  have hder : PowerSeries.derivativeFun (Ftilde p K θ hε)
+      = -∑ c ∈ Finset.range N, PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+          * PowerSeries.derivativeFun (logSeriesAt p K (ε ^ c)) := by
+    rw [Ftilde, show PowerSeries.derivativeFun (-∑ c ∈ Finset.range N,
+          PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c))
+        = d⁄dX K (-∑ c ∈ Finset.range N,
+          PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c)) from rfl,
+      map_neg, map_sum, neg_inj]
+    refine Finset.sum_congr rfl fun c _ => ?_
+    rw [show (d⁄dX K) (PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c))
+        = PowerSeries.derivativeFun (PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+            * logSeriesAt p K (ε ^ c)) from rfl,
+      show PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c)
+        = (θ⁻¹ ((c : ZMod N))) • logSeriesAt p K (ε ^ c) from
+      (PowerSeries.smul_eq_C_mul _ _).symm,
+      PowerSeries.derivativeFun_smul, PowerSeries.smul_eq_C_mul]
+  rw [hder, mul_neg, Finset.mul_sum]
+  -- per term: `c = 0` is killed by `θ⁻¹ 0 = 0`; for `c ≠ 0`, apply P6-p2
+  rw [show (∑ c ∈ Finset.range N, (1 + PowerSeries.X)
+        * (PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+          * PowerSeries.derivativeFun (logSeriesAt p K (ε ^ c))))
+      = ∑ c ∈ Finset.range N, (PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+          + PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+            * Ring.inverse ((1 + PowerSeries.X) * PowerSeries.C (ε ^ c) - 1)) from by
+    refine Finset.sum_congr rfl fun c hc => ?_
+    by_cases hdvd : N ∣ c
+    · have hc0 : c = 0 := Nat.eq_zero_of_dvd_of_lt hdvd (Finset.mem_range.mp hc)
+      have hθ0 : θ⁻¹ ((c : ZMod N)) = 0 := by
+        rw [hc0, Nat.cast_zero]
+        exact MulChar.map_nonunit _ (by rw [isUnit_zero_iff]; exact one_ne_zero ∘ Eq.symm)
+      rw [hθ0, map_zero, zero_mul, mul_zero, zero_add, zero_mul]
+    · have hu := hunit c hc hdvd
+      rw [show (1 + PowerSeries.X) * (PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+            * PowerSeries.derivativeFun (logSeriesAt p K (ε ^ c)))
+          = PowerSeries.C (θ⁻¹ ((c : ZMod N)))
+            * ((1 + PowerSeries.X) * PowerSeries.derivativeFun
+              (logSeriesAt p K (ε ^ c))) from by ring,
+        one_add_mul_derivative_logSeriesAt hu, mul_add, mul_one]]
+  -- the constant `1`-terms sum to `C(Σ_c θ⁻¹(c)) = C 0 = 0` (nontrivial character)
+  rw [Finset.sum_add_distrib]
+  have hsum0 : (∑ c ∈ Finset.range N, PowerSeries.C (θ⁻¹ ((c : ZMod N))))
+      = (0 : PowerSeries K) := by
+    rw [← map_sum]
+    have hreindex : ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N))
+        = ∑ x : ZMod N, θ⁻¹ x := by
+      refine Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod N)) (fun x => x.val) ?_ ?_ ?_ ?_ ?_
+      · intro c _; exact Finset.mem_univ _
+      · intro x _; exact Finset.mem_range.mpr (ZMod.val_lt x)
+      · intro c hc; exact ZMod.val_natCast_of_lt (Finset.mem_range.mp hc)
+      · intro x _; exact ZMod.natCast_zmod_val x
+      · intro c _; rfl
+    rw [hreindex, MulChar.sum_eq_zero_of_ne_one (inv_ne_one.mpr hθ1), map_zero]
+  rw [hsum0, zero_add]
 
 variable (p K)
 
@@ -102,27 +247,76 @@ noncomputable def rhoTheta {D : ℕ} [NeZero D]
 
 variable {p K}
 
+omit [CharZero K] in
 /-- P6-p5: `ρ_θ` is supported on the units, so `ψ(ρ_θ) = 0`. -/
 theorem psi_rhoTheta {D : ℕ} [NeZero D]
     {η : DirichletCharacter (integerRing K) D} {ζ : integerRing K}
     (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
     {n : ℕ} (χ : DirichletCharacter (integerRing K) (p ^ n)) :
-    MeasureR.psi p K (rhoTheta p K η hζ hD χ) = 0 := by sorry
+    MeasureR.psi p K (rhoTheta p K η hζ hD χ) = 0 :=
+  -- `ρ_θ` is in the image of `ι`, whose range is `ker ψ` (RJW Rem 3.33)
+  (mem_range_iota_iff (rhoTheta p K η hζ hD χ)).mp ⟨_, rfl⟩
 
+/-- `PowerSeries.map` commutes with `derivativeFun` (coefficient-wise: both
+raise the index and scale by `n+1`, which the ring hom preserves). -/
+private theorem map_derivativeFun {R S : Type*} [CommRing R] [CommRing S]
+    (f : R →+* S) (F : PowerSeries R) :
+    PowerSeries.map f (PowerSeries.derivativeFun F)
+      = PowerSeries.derivativeFun (PowerSeries.map f F) := by
+  ext n
+  rw [PowerSeries.coeff_map, PowerSeries.coeff_derivativeFun,
+    PowerSeries.coeff_derivativeFun, PowerSeries.coeff_map, map_mul, map_add,
+    map_natCast, map_one]
+
+/-- `PowerSeries.map` commutes with the operator `∂ = (1+T)d/dT`. -/
+private theorem map_one_add_mul_derivativeFun {R S : Type*} [CommRing R]
+    [CommRing S] (f : R →+* S) (F : PowerSeries R) :
+    PowerSeries.map f ((1 + PowerSeries.X) * PowerSeries.derivativeFun F)
+      = (1 + PowerSeries.X) * PowerSeries.derivativeFun (PowerSeries.map f F) := by
+  rw [map_mul, map_add, map_one, PowerSeries.map_X, map_derivativeFun]
+
+omit [CharZero K] in
 /-- P6-p5 (continued): `∂𝓐(ρ_θ) = (1−φψ)F_θ` over `K` — multiplication by
 `x` recovers `Res_{ℤ_p^×}(μ_θ)` and `Res = 1 − φ∘ψ`
 (Lem 6.3's second half in the formal route; the right-hand side is `p3`'s
 explicit series). -/
 theorem one_add_mul_derivative_mahlerK_rhoTheta {D : ℕ} [NeZero D]
-    (hD1 : 1 < D) {η : DirichletCharacter (integerRing K) D}
-    (hη : η.IsPrimitive) {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D)
+    (_hD1 : 1 < D) {η : DirichletCharacter (integerRing K) D}
+    (_hη : η.IsPrimitive) {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D)
     (hD : ¬ (p : ℕ) ∣ D) {n : ℕ}
     (χ : DirichletCharacter (integerRing K) (p ^ n)) :
     (1 + PowerSeries.X) * PowerSeries.derivativeFun
         (mahlerK p K (rhoTheta p K η hζ hD χ))
       = mahlerK p K (res p K (PadicMeasure.isClopen_units p)
           (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))) := by
-  sorry
+  -- the measure-level multiplication-by-`x` identity: `x·ρ_θ = Res_{ℤ_p^×}(μ_θ)`
+  -- (the `x⁻¹` in `ρ_θ` cancels against the `x`-monomial on the units)
+  have hmeas : cmul p K (mahlerCM p K 1) (rhoTheta p K η hζ hD χ)
+      = res p K (PadicMeasure.isClopen_units p)
+          (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)) := by
+    refine LinearMap.ext fun f => ?_
+    rw [cmul_apply, rhoTheta, iota, pushforward_apply]
+    change (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+        (extendByZero p K (invUnitsCM p K
+          * ((mahlerCM p K 1 * f).comp (PadicMeasure.unitsValCM p)))) = _
+    rw [show invUnitsCM p K * ((mahlerCM p K 1 * f).comp (PadicMeasure.unitsValCM p))
+        = f.comp (PadicMeasure.unitsValCM p) from ?_, extendByZero_comp_unitsVal]
+    · rfl
+    · refine ContinuousMap.ext fun u => ?_
+      simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply, invUnitsCM_apply,
+        mahlerCM_apply, PadicMeasure.unitsValCM, ContinuousMap.coe_mk]
+      rw [mahler_apply, Ring.choose_one_right, ← mul_assoc, ← map_mul]
+      rw [show PadicMeasure.invCM p u * (u : ℤ_[p]) = 1 from ?_, map_one, one_mul]
+      change ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (u : ℤ_[p]) = 1
+      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+  -- transport through `mahlerK` via `𝓐_{xμ} = ∂𝓐_μ` and `map`-commutation with `∂`
+  rw [← hmeas]
+  simp only [mahlerK]
+  rw [mahlerTransform_cmul_X,
+    show del K (mahlerTransform p K (rhoTheta p K η hζ hD χ))
+      = (1 + PowerSeries.X)
+        * PowerSeries.derivativeFun (mahlerTransform p K (rhoTheta p K η hζ hD χ)) from rfl,
+    map_one_add_mul_derivativeFun]
 
 /-- P6-p6' (the constant pin, c₀-design — replan R6.6; Lem 6.3 made
 distribution-free WITHOUT field-level `ψ`): the cleared mass identity
