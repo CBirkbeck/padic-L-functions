@@ -205,3 +205,116 @@ project, `BernoulliRegular/`, 0 sorries, axiom-clean) for portable Bernoulli res
 | `LValueAtOne/` (~1900 LOC, ℂ-valued, mod p) | `odd_LFunction_zero_eq_neg_BernoulliGen_one` (L(0,χ) = −B₁,χ, odd χ mod p — the k=1 odd case of our T505); `odd/even_LFunction_one_eq_*Rhs` (L(1,χ) formulas: iπτ(χ)/p-sum for odd, τ(χ)/p·Σχ⁻¹(a)log-style for even) | **Proof-precedent for T505 and §6 planning** (not ported — ℂ-routes via sinZeta/Hurwitz functional equation; our T505 wants the direct Hurwitz-at-negative-integers route at general level N, all k). The even L(1,χ) shape is the archimedean counterpart of RJW Thm 6.2's L_p(1,χ) — consult their Even.lean decomposition when planning §6. |
 | `GaussSumProduct/` (ℂ, mod p) | `(∏_{χ odd} τ(χ))² = (−p)^{|X⁻|}`, Legendre-sign, root-number pairing | Skip — h⁻-class-number-formula specific; our Gauss-sum needs (product formula at general level N) already proven in Characters.lean (T502). |
 | `Reflection.lean` + stack | Kummer-pairing/Spiegelungssatz/Stickelberger/class-group machinery | Skip — Kummer's criterion infrastructure, outside RJW §5–§15 scope. |
+
+---
+
+# §6 pre-plan addendum (2026-06-11, /develop resume-mode scoping pass)
+
+## Section map (read in full this session)
+§6 "The values at s = 1" = TeX 1980–2180. One headline result:
+**Theorem 6.1** (`s=1 theorem`, TeX 1987–1995), θ non-trivial of conductor N,
+ε_N a primitive N-th root of unity:
+- (i) classical: L(θ,1) = −(1/G(θ⁻¹))·Σ_{c∈(ℤ/N)ˣ} θ⁻¹(c)·log(1−ε_N^c)
+  — proof §6.1 (TeX 2007–2045), Washington Thm 4.9 route: Fourier/Gauss-sum
+  expansion (eq:classical 6.1) + Taylor series of −log(1−z) + convergence
+  at s = 1. Parity refinement remark (TeX 2046–2053) is prose.
+- (ii) p-adic (Leopoldt): L_p(θ,1) = −(1−θ(p)p⁻¹)(1/G(θ⁻¹))·Σ θ⁻¹(c)·log_p(1−ε_N^c)
+  — proof §6.2 (TeX 2055–2155) via F̃_θ (the log-antiderivative of F_θ),
+  Lemma 6.2 (`lem:bounded power series`: F̃_θ ∈ ℛ⁺), thm:mahler la
+  (locally analytic distributions), Lemma 6.3 (`lem:mu theta'`: x·μ̃_θ = μ_θ),
+  then (1−φ∘ψ)-evaluation at 0 with two cases (n ≥ 1: χ kills pℤ_p;
+  n = 0: Eqphipsi ξ-sum + c ↦ pc Frobenius trick).
+Closing remarks (Coleman polylogarithms Thm s=k, Perrin-Riou): PROSE-ONLY,
+out of scope (record as deferred, like the §5 Mellin nodes).
+
+## The three deferred clusters that come due (and what we actually need)
+
+1. **Extended p-adic logarithm (Iwasawa branch)** — REQUIRED for the
+   statement of (ii): the arguments 1−ε_N^c have ‖(1−ε_N^c)−1‖ = 1, outside
+   padicLog's ball. Not in mathlib (surveyed). Washington §5.1 construction.
+   Needed API (over the §5 ambient K): `extLog : K → K` (junk-total) with
+   (a) agreement with padicLog on the ball, (b) additivity on the relevant
+   multiplicative domain, (c) log of roots of unity = 0 (torsion),
+   (d) log_p(x) = log_p(−x), (e) the values at 1−ε^c needed by the proof.
+   Design note: for the theorem we can avoid a fully general Kˣ-log by
+   defining extLog via "x^m ∈ p^k·(ball) for some m, k" (rational-valuation
+   elements) with a well-definedness lemma — the arguments 1−ε_N^c qualify
+   (algebraic). Generality decision to be made at decompose time.
+
+2. **Eqphipsi / formal ψ on power series** — the deferred ξ-machinery
+   (plan.md "Deferred"). §6.2's case n = 0 uses
+   (φ∘ψ)F = p⁻¹·Σ_{ξ∈μ_p} F((1+T)ξ−1) literally. Two sub-pieces:
+   (a) a FORMAL ψ-operator on R⟦T⟧ (the digit decomposition
+   F = Σ_{i<p} (1+T)^i·φ(F_i), ψF := F_0 — ξ-free, mirrors the project's
+   measure-level digit-shift ψ), with ψ∘φ = id, ψ(constants) = constants,
+   compatibility with the measure-level ψ through mahlerRingEquiv;
+   (b) Eqphipsi itself as a lemma (needs μ_p ⊂ K hypothesis, the §5
+   hε-pattern; ∏_{ξ∈μ_p}(Yξ−1) = Y^p−1).
+
+3. **Locally analytic distributions (ℛ⁺, thm:mahler la)** — RJW's route
+   makes x⁻¹·μ_θ rigorous as a distribution. **WE CAN AVOID THIS ENTIRELY**
+   (recorded route-discovery, to be adversarially tested at decompose time):
+   - Our L_p(θ,1) is ALREADY a genuine measure pairing: LpFunction at s = 1
+     pairs ζ_η-cleared (= x⁻¹·Res μ̃_η by construction, the §5
+     zetaEtaCleared) against χ̃·⟨x⟩⁰ = χ̃. No distribution needed for the
+     statement.
+   - For the VALUE: let ρ := the (cleared, χ-twisted) x⁻¹Res(μ_θ)-measure
+     pushed to ℤ_p (iota). Then L_p(θ,1)·(clearing) = 𝓐_ρ(0) (mass).
+     ∂𝓐_ρ = 𝓐_{x·ρ} = 𝓐_{Res μ_θ} = (1−φψ)F_θ = ∂((1−φψ)F̃_θ) — wait, at the
+     FORMAL level: both 𝓐_ρ and G₀ := (1−φψ)F̃_θ are ∂-antiderivatives of
+     (1−φψ)F_θ, hence differ by a constant C (ker ∂ = constants).
+   - **C = 0 by the ψ-kernel argument**: ρ is supported on the units, so
+     ψ(𝓐_ρ) = 0 (project: isSupportedOn_units_iff_psi_eq_zero + the
+     formal-ψ bridge); ψ(G₀) = ψF̃ − ψφψF̃ = 0 (ψφ = id, formal); and
+     ψ(C) = C for constants. Subtract: C = 0. Hence 𝓐_ρ(0) = G₀(0) and the
+     two-case computation of (φψF̃)(0) (TeX 2115–2155) finishes exactly as
+     in the source — all at the level of FORMAL power series in K⟦T⟧
+     (F̃_θ has unbounded coefficients but lives in K⟦T⟧; no ℛ⁺ topology,
+     no distribution Mahler correspondence, no thm:mahler la).
+   - F̃_θ is then just an EXPLICIT power series (constant term
+     Σθ⁻¹(c)·extLog(ε^c−1)-shaped, higher coefficients the log-expansion of
+     TeX 2076–2080), with ∂F̃_θ = F_θ a finite per-c formal-derivative
+     computation + Σ_c θ⁻¹(c) = 0.
+   This replaces RJW's §3.7-dependent argument with a replan-note-eligible
+   Lean-friendlier route; the SOURCE's statements (Lem 6.2/6.3) become:
+   Lem 6.2 → the explicit coefficient formula for F̃_θ (its ℛ⁺-membership is
+   not needed and is recorded as deferred prose); Lem 6.3 → the ∂F̃ = F_θ
+   identity + the ψ-kernel constant-pin (the "x·μ̃ = μ" content at the level
+   we use it). Faithfulness: statement of Thm 6.1(ii) UNCHANGED; the route
+   is a recorded replan (rule 5 pattern, cf. T018/T026/L5.3.3).
+
+## Mathlib survey status (1c, partial — full survey at decompose time)
+- Complex Dirichlet L: mathlib has LSeries/Dirichlet + DirichletContinuation
+  (functional equation `IsPrimitive.completedLFunction_one_sub`),
+  HurwitzZetaValues, ZMod.LFunction. The exact log(1−ε^c)-formula at s = 1
+  is NOT obviously present — expect to build it from `LSeries` of the
+  twisted-coefficient function + Taylor/Abel summation; survey area B
+  (special values) must be COMPLETED at decompose time (it never ran).
+- Locally analytic distributions / Amice: absent (grep clean) — moot if the
+  distribution-free route survives the adversarial pass.
+- Extended/Iwasawa log: absent.
+- μ_p-products (∏(Yξ−1) = Y^p−1 etc.): standard `X_pow_sub_one_eq_prod`
+  machinery present (RootsOfUnity).
+
+## Proposed cluster structure (sizing vs TeX line counts; ticket-grade
+decomposition to be produced by the Phase-1e pass)
+- W6a extLog cluster (~5–7 leaves; Washington §5.1 ~1 page) — independent.
+- W6b formal-ψ/digit + Eqphipsi cluster (~4–6 leaves; the §3 deferral) —
+  independent.
+- C6 complex value (i) (~4–6 leaves; TeX 2007–2045 ≈ 39 lines + mathlib
+  LSeries glue) — independent of W6a/W6b.
+- P6 p-adic value (ii) (~6–9 leaves; TeX 2055–2155 ≈ 100 lines): F̃_θ def +
+  ∂F̃ = F_θ + ψ-kernel pin + the two-case (φψF̃)(0) + assembly into
+  LpFunction-at-1. Depends on W6a, W6b, §5 stack.
+- Blueprint: new §6 chapter nodes (Thm 6.1 (i)/(ii), Lem 6.2/6.3 with the
+  replan prose notes, Coleman/PR remarks as unwired prose).
+
+## Open scope questions for the user (pre-decompose)
+1. Approve the distribution-free route for (ii) (recorded replan; ℛ⁺/§3.7
+   stays deferred until the notes force it — likely §8 Eisenstein family /
+   later Coleman-map sections)?
+2. extLog generality: pragmatic rational-valuation domain (enough for
+   Thm 6.1) vs full Iwasawa log on Kˣ (more work, PR-shaped)?
+3. Complex side (i): formalise against mathlib's LFunction (preferred,
+   mathlib-linking directive) — accept that the bridge LSeries↔our LvalNeg
+   conventions may add a leaf or two?
