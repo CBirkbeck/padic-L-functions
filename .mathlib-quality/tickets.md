@@ -3063,7 +3063,11 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~80 LOC.
 
 ### [T607] φ–∂ commutation, antiderivative, ker ∂ (REALIGNED R6.6)
-- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
+- **Status**: done (2026-06-11)
+- **Progress**: DONE (subagent): chain rule via derivative_subst +
+  Derivation.leibniz_pow (MuA idiom); exists_antideriv by (1+X)-unit +
+  coefficient division (CharZero); ker-∂ by unit-cancellation + coeff
+  induction. Axioms standard ×3. | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
 - **Type**: lemmas
 - **Statement** (realigned to the c₀-design — field-ψ is junk):
   `one_add_mul_derivative_phiSeries` (∂φ = p·φ∂, R-generic),
@@ -3081,7 +3085,16 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~70 LOC.
 
 ### [T608] The ψ-bridge, evaluation layer, and evaluated Eqphipsi
-- **Status**: open | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
+- **Status**: done (2026-06-11) — with a SECOND B2 statement-fix (logged)
+- **Progress**: DONE (subagent): mahlerTransform_psi by measure-digit
+  transport; sum_seriesEval_mahlerK (the realised integral Eqphipsi) via
+  φ-collapse at ξ^j−1 + geom_sum orthogonality + the cyclotomic norm
+  ‖ξ^j−1‖ < 1 (Coefficients.IsPrimitiveRoot.norm_sub_one_lt). B2:
+  `seriesEval_phi` as skeletonised was FALSE (RHS-summability too weak —
+  junk-totalised LHS diverges; b2_log.jsonl appended); EXCISED — the sound
+  variants `seriesEval_phi_of_summable_prod` (ℕ×ℕ product Fubini) and
+  `seriesEval_phi_at_root` (bounded coefficients) are proven and are what
+  downstream consumes. FormalPsi.lean is sorry-free. Axioms standard ×5. | **File**: MeasureR/FormalPsi.lean | **Depends on**: T605, T606
 - **Type**: lemmas
 - **Statement** (b6 realigned to the INTEGRAL level, replan R6.6):
   `mahlerTransform_psi`, `seriesEval_zero_arg`, `seriesEval_phi`,
@@ -3106,10 +3119,14 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~120 LOC (largest W6b ticket).
 
 ### [CLEANUP-63] /cleanup on MeasureR/FormalPsi.lean
-- **Status**: open | **Depends on**: T605, T606, T607, T608 | **Type**: cleanup
+- **Status**: done (degraded mode, 2026-06-11) | **Depends on**: T605, T606, T607, T608
+- **Type**: cleanup
+- **Progress**: degraded pass: linter green, zero warnings beyond none,
+  file sorry-free, lines ≤ 100; per-ticket golf during T605–T608. Tooled
+  CLEANUP-FINAL may revisit (one maxHeartbeats site if any — none found).
 
 ### [T609] Gauss sums over coprime levels
-- **Status**: open | **File**: ValuesAtOneComplex.lean | **Depends on**: none
+- **Status**: in_progress (2026-06-11) | **File**: ValuesAtOneComplex.lean | **Depends on**: none
 - **Parallel**: yes (chain C6 head) | **Type**: theorem
 - **Statement**: skeleton `gaussSum_mul_coprime` (C6-c4).
 - **Proof sketch**: CRT reindex (ZMod.chineseRemainder): a ↦ (a mod D,
