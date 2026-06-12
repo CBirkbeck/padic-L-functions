@@ -5085,7 +5085,7 @@ criterion is p-general.
 
 ### [T1102] The ±-decomposition: involution splitting + the c-action + the
 odd-moment criterion (RJW lem:decompose plus minus + the TeX 3019 lemma)
-- **Status**: open | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1101 (done)
+- **Status**: done (2026-06-13; agent: all 11 decl-groups filled — general involution splitting via invOf_smul_smul disjointness + explicit ⅟2-codisjointness; SMulCommClass/IsScalarTower instances real (the §8 gap closed); cAct via mulLeft; criterion via eq_zero_of_forall_unitsPowCM + add_self_eq_zero. Helpers reordered above isCompl, no statement changes. lake build exit 0; #print axioms on ALL 11 decls = {propext, Classical.choice, Quot.sound}, no sorryAx. Degraded-mode cleanup deferred to CLEANUP-111.) | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1101 (done)
 - **Parallel**: yes (vs T1105, T1108 — different files) | **Type**: lemmas + instances
 #### Statement (skeleton canonical)
 General: `mem_invariants_iff`, `mem_antiInvariants_iff`,
@@ -5119,7 +5119,7 @@ Criterion: `cAct_apply_unitsPowCM`, `mem_plusPart_iff_forall_odd_moment`.
 - **Sizing**: ~150 LOC.
 
 ### [T1103] 𝒢⁺ and the projection ring hom π_*
-- **Status**: open | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102 (file order)
+- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102 (file order)
 - **Parallel**: no (same file as T1102) | **Type**: def-fields + lemmas
 #### Statement
 `projPlus` RingHom fields (toFun = `pushforward p (quotientMk p)` — fixed),
@@ -5142,7 +5142,7 @@ Criterion: `cAct_apply_unitsPowCM`, `mem_plusPart_iff_forall_odd_moment`.
 - **Sizing**: ~80 LOC.
 
 ### [T1104] The even-part section and Λ(𝒢)⁺ ≅ Λ(𝒢⁺) (RJW TeX 3006–3015)
-- **Status**: open | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102, T1103
+- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102, T1103
 - **Parallel**: no (same file) | **Type**: defs + lemmas (replan R11.2)
 #### Statement
 `negTranslate` continuity field, `evenPart_even`, `descendEven` (soundness +
@@ -5196,7 +5196,8 @@ continuity fields), `descendEven_mk`, `plusSection` (4 linearity fields),
   PlusPart chain (degraded mode if no lean-lsp MCP — record it).
 
 ### [T1105] Odd moments of ζ_p vanish + c-invariance (erratum #13 realised)
-- **Status**: open | **File**: Iwasawa/ZetaGalois.lean | **Depends on**: T1101 (done)
+- **Status**: done (2026-06-13; axiom check at join: all 4 decls = {propext, Classical.choice, Quot.sound}. Degraded-mode cleanup deferred to CLEANUP-112.) | **File**: Iwasawa/ZetaGalois.lean | **Depends on**: T1101 (done)
+- **Progress**: 2026-06-13: agent filled all 4 sorries (odd_moment_factor_eq_zero via eq_or_lt case split + bernoulli_eq_zero_of_odd; moments via padicZeta_moments + Subtype.coe_injective descent; c-invariance via the b=−1 witness + eq_zero_of_forall_unitsPowCM; witness_neg via units_dirac_mul_dirac + mul_neg_one + IsFractionRing.injective). Statements unchanged. Degraded mode (no lean-lsp MCP). File compiles, 11 sorries remain = T1106/T1107's. AXIOM CHECK PENDING the wave-1 join (needs PlusPart olean rebuild).
 - **Parallel**: yes (vs T1102-chain — different file; uses only proven §3/§4 API)
 - **Type**: lemmas
 #### Statement
@@ -5290,7 +5291,8 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Status**: open | **Depends on**: T1105–T1107.
 
 ### [T1108] The local unit groups 𝒰_n, 𝒰_{n,1} and the ⁺-variants
-- **Status**: open | **File**: Iwasawa/LocalUnits.lean | **Depends on**: none new
+- **Status**: done (2026-06-13; axiom check at join: localUnits/norm_eq_one/localUnitsOne/KPlus_le_K/localUnitsPlus all standard-axioms, no sorryAx. Degraded-mode cleanup deferred to CLEANUP-113.) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: none new
+- **Progress**: 2026-06-13: agent filled all 10 sorries / 7 decls (localUnits via Units.val_mul/mul_inv_rev/inv_inv; norm_eq_one via Subring.mem_inf + Units.mul_inv + nlinarith; localUnitsOne via norm_add_le_max + field_simp + norm_sub_rev; KPlus_le_K via adjoin_simple_le_iff; localUnitsPlus via val_inv_eq_inv_val + inv_mem). Statements unchanged, no helpers, degraded mode. 12 sorries remain = T1109/T1110's. AXIOM CHECK PENDING wave-1 join.
 - **Parallel**: yes (vs T1102-chain and T1105 — different file)
 - **Type**: def-fields + lemmas
 #### Statement
@@ -5311,7 +5313,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~120 LOC.
 
 ### [T1109] The ℤ_p-power structure on principal units (RJW TeX 2494–2496)
-- **Status**: open | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
+- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
 - **Parallel**: no (same file) | **Type**: def + lemmas + instance
 #### Statement
 `zpPow` (the sorried def body — to be filled with the
@@ -5349,7 +5351,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~170 LOC (instance-pack risk priced in; fallback route documented).
 
 ### [T1110] 𝒰_∞ as a group; the towers 𝒰_{∞,1} and 𝒰⁺_{∞,1}
-- **Status**: open | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
+- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
 - **Parallel**: no (same file; can start before T1109 finishes if convenient —
   no dependence on zpPow)
 - **Type**: instance + def-fields
@@ -5373,7 +5375,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Status**: open | **Depends on**: T1108–T1110.
 
 ### [T1111] The global tower: F_n, F_n⁺, 𝒱_n and 𝒱_n ≤ 𝒰_n
-- **Status**: open | **File**: Iwasawa/CyclotomicUnits.lean | **Depends on**: T1108
+- **Status**: done (2026-06-13; agent: all targets + the T1112 bonus pair. norm_le_one_of_isIntegral_int via eval₂_eq_sum_range + Finset.sum_range_succ top-term isolation + IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty + norm_intCast_le_one + pow strict-monotonicity (mirrors Coefficients.lean's IsPrimitiveRoot.norm_sub_one_lt); new helper Fglobal_le_K via adjoin_induction + eq_ratCast + SubfieldClass.ratCast_mem (the base-field crossing ℚ→ℚ_[p]). globalUnits via IsIntegral.mul/mul_inv_rev; bonus cycloUnitsPlus + cycloUnits_le_globalUnits (inf_le_right). Statements unchanged. AXIOM CHECK PENDING join. Cleanup deferred to CLEANUP-114.) | **File**: Iwasawa/CyclotomicUnits.lean | **Depends on**: T1108
 - **Parallel**: yes vs T1109/T1110 (different file)
 - **Type**: lemmas + def-fields
 #### Statement

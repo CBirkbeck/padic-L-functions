@@ -641,6 +641,28 @@ deferred prose (the notes themselves do not prove it).
 - thm:cyclo-units-class-number (TeX 3072): permanently deferred prose
   (Washington Thm 8.2 — the notes don't prove it; blueprint node stays
   unwired).
+  **flt-regular-bernoulli survey (user directive 2026-06-13)**: the user's
+  repo (`~/Documents/GitHub/flt-regular-bernoulli`,
+  `BernoulliRegular/CyclotomicUnits/` + `FLT37/…/Sinnott/` +
+  `TotallyRealSubfield/`) has a substantial cyclotomic-unit index
+  development since the §5 survey: `realCyclotomicUnit` in `(𝓞 K⁺)ˣ`
+  (mathlib `NumberField.maximalRealSubfield`, `IsCMField`),
+  `hPlus K := card (ClassGroup (𝓞 K⁺))`, `cyclotomicUnitIndexSubgroup`,
+  and the p-primary index theorems
+  `cyclotomicUnitIndex_primeConductor_pPrimary_of_{sinnottIndexFormula,
+  kummerDirichletDeterminant}` : `p ∣ index ↔ p ∣ h⁺`. LIMITS: prime
+  conductor only (K = ℚ(ζ_p), not the tower ℚ(μ_{p^n})); p-primary
+  divisibility only (not the exact index h_n⁺ = [𝒱_n : 𝒟_n]);
+  CONDITIONAL on named unproven analytic cores
+  (`FLT37.Sinnott.SinnottIndexFormula` is a Prop-valued hypothesis with
+  no provider theorem in the repo; some files carry sorries); abstract
+  NumberField setting vs our inside-ℂ_p towers. VERDICT: not a discharge
+  of RJW Q9 (which stays deferred prose), but the p-primary
+  `p ∤ index ↔ p ∤ h⁺` form is EXACTLY the Vandiver-shaped input of
+  §13's Main-Conjecture-for-Vandiver-primes proof (TeX 3753) — record as
+  a candidate external dependency for the §13 pass (the LeanModularForms
+  precedent), to be re-assessed (incl. whether its analytic core is
+  discharged by then) when §13 is planned.
 - thm:iwasawa statement + proof: §12 board.
 - Rem 3.7/3.8 clopen-additive-functions equivalence: still unused;
   keep deferred.

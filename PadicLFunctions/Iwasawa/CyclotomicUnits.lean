@@ -48,36 +48,126 @@ noncomputable def FglobalPlus (n : ℕ) : IntermediateField ℚ ℂ_[p] :=
   ℚ⟮zetaSys p n + (zetaSys p n)⁻¹⟯
 
 lemma FglobalPlus_le_Fglobal (n : ℕ) : FglobalPlus p n ≤ Fglobal p n := by
-  sorry
+  rw [FglobalPlus, IntermediateField.adjoin_simple_le_iff]
+  exact add_mem (IntermediateField.mem_adjoin_simple_self ℚ _)
+    ((Fglobal p n).inv_mem (IntermediateField.mem_adjoin_simple_self ℚ _))
 
 /-- Elements integral over `ℤ` have norm at most `1` in `ℂ_[p]` (the ultrametric
 estimate on a monic integral relation; replan R11.7 — the direct route, no spectral
 theory). -/
 theorem norm_le_one_of_isIntegral_int {x : ℂ_[p]} (hx : IsIntegral ℤ x) :
     ‖x‖ ≤ 1 := by
-  sorry
+  obtain ⟨P, hPmonic, hPx⟩ := hx
+  by_contra h1
+  push Not at h1
+  set N : ℕ := P.natDegree with hNdef
+  -- the integral relation, written as `x^N = −Σ_{i<N} aᵢ x^i`
+  have hsum : ∑ i ∈ Finset.range (N + 1),
+      (algebraMap ℤ ℂ_[p]) (P.coeff i) * x ^ i = 0 := by
+    rw [← Polynomial.eval₂_eq_sum_range]; exact hPx
+  have htop : x ^ N
+      = -∑ i ∈ Finset.range N, (algebraMap ℤ ℂ_[p]) (P.coeff i) * x ^ i := by
+    rw [Finset.sum_range_succ] at hsum
+    have hlead : (algebraMap ℤ ℂ_[p]) (P.coeff N) * x ^ N = x ^ N := by
+      rw [hNdef, hPmonic.coeff_natDegree, map_one, one_mul]
+    rw [hlead, add_comm, ← eq_neg_iff_add_eq_zero] at hsum
+    exact hsum
+  -- each lower term has norm `≤ ‖x‖^(N−1) < ‖x‖^N` (integer coefficients, smaller power)
+  have hxpos : (0 : ℝ) < ‖x‖ := lt_trans one_pos h1
+  rcases Nat.eq_zero_or_pos N with hN0 | hNpos
+  · -- `N = 0`: the relation reads `1 = 0`
+    rw [hN0, Finset.range_zero, Finset.sum_empty, neg_zero, pow_zero] at htop
+    exact absurd htop one_ne_zero
+  -- `N ≥ 1`: the ultrametric bound dominates the sum by one of its terms `< ‖x‖^N`
+  obtain ⟨i, hi, hile⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty
+    (t := Finset.range N) ⟨0, Finset.mem_range.2 hNpos⟩
+    (fun i => (algebraMap ℤ ℂ_[p]) (P.coeff i) * x ^ i)
+  have hilt : i < N := Finset.mem_range.1 hi
+  have hcoeff : ‖(algebraMap ℤ ℂ_[p]) (P.coeff i)‖ ≤ 1 := by
+    rw [show (algebraMap ℤ ℂ_[p]) (P.coeff i) = ((P.coeff i : ℤ) : ℂ_[p]) by
+      simp [algebraMap_int_eq]]
+    exact IsUltrametricDist.norm_intCast_le_one ℂ_[p] _
+  have hterm : ‖(algebraMap ℤ ℂ_[p]) (P.coeff i) * x ^ i‖ ≤ ‖x‖ ^ (N - 1) := by
+    rw [norm_mul, norm_pow]
+    calc ‖(algebraMap ℤ ℂ_[p]) (P.coeff i)‖ * ‖x‖ ^ i
+        ≤ 1 * ‖x‖ ^ i := by
+          exact mul_le_mul_of_nonneg_right hcoeff (by positivity)
+      _ = ‖x‖ ^ i := one_mul _
+      _ ≤ ‖x‖ ^ (N - 1) := pow_le_pow_right₀ h1.le (by omega)
+  have hxNbound : ‖x‖ ^ N ≤ ‖x‖ ^ (N - 1) := by
+    calc ‖x‖ ^ N = ‖x ^ N‖ := (norm_pow x N).symm
+      _ = ‖∑ i ∈ Finset.range N, (algebraMap ℤ ℂ_[p]) (P.coeff i) * x ^ i‖ := by
+          rw [htop, norm_neg]
+      _ ≤ ‖(algebraMap ℤ ℂ_[p]) (P.coeff i) * x ^ i‖ := hile
+      _ ≤ ‖x‖ ^ (N - 1) := hterm
+  have hlt : ‖x‖ ^ (N - 1) < ‖x‖ ^ N :=
+    pow_lt_pow_right₀ h1 (by omega)
+  exact absurd (lt_of_le_of_lt hxNbound hlt) (lt_irrefl _)
 
 /-- `𝒱_n = 𝒪_{F_n}^×`: the global units — units of `ℂ_[p]` lying in `F_n`,
 integral over `ℤ` together with their inverses (RJW TeX 2472). -/
 noncomputable def globalUnits (n : ℕ) : Subgroup ℂ_[p]ˣ where
   carrier := {u | (u : ℂ_[p]) ∈ Fglobal p n ∧ IsIntegral ℤ (u : ℂ_[p])
     ∧ IsIntegral ℤ ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p])}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' {u v} hu hv := by
+    refine ⟨?_, ?_, ?_⟩
+    · rw [Units.val_mul]; exact mul_mem hu.1 hv.1
+    · rw [Units.val_mul]; exact hu.2.1.mul hv.2.1
+    · rw [mul_inv_rev, Units.val_mul]; exact hv.2.2.mul hu.2.2
+  one_mem' := by
+    refine ⟨?_, ?_, ?_⟩
+    · rw [Units.val_one]; exact one_mem _
+    · rw [Units.val_one]; exact isIntegral_one
+    · rw [inv_one, Units.val_one]; exact isIntegral_one
+  inv_mem' {u} hu := by
+    refine ⟨?_, hu.2.2, ?_⟩
+    · rw [Units.val_inv_eq_inv_val]; exact (Fglobal p n).inv_mem hu.1
+    · rw [inv_inv]; exact hu.2.1
 
 /-- `𝒱_n⁺ = 𝒪_{F_n⁺}^×` (RJW TeX 2472). -/
 noncomputable def globalUnitsPlus (n : ℕ) : Subgroup ℂ_[p]ˣ where
   carrier := {u | u ∈ globalUnits p n ∧ (u : ℂ_[p]) ∈ FglobalPlus p n}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' {u v} hu hv := by
+    refine ⟨mul_mem hu.1 hv.1, ?_⟩
+    rw [Units.val_mul]
+    exact mul_mem hu.2 hv.2
+  one_mem' := by
+    refine ⟨one_mem _, ?_⟩
+    rw [Units.val_one]
+    exact one_mem _
+  inv_mem' {u} hu := by
+    refine ⟨(globalUnits p n).inv_mem hu.1, ?_⟩
+    rw [Units.val_inv_eq_inv_val]
+    exact (FglobalPlus p n).inv_mem hu.2
+
+/-- `F_n = ℚ(ξ_{p^n}) ⊆ K_n = ℚ_p(ξ_{p^n})` at the level of `ℂ_[p]`-subsets: every
+element of the rational cyclotomic field lies in the local cyclotomic field
+(both are adjoined the same generator `ξ_{p^n}`, and `K_n` contains `ℚ_p ⊇ ℚ`). -/
+lemma Fglobal_le_K {n : ℕ} {x : ℂ_[p]} (hx : x ∈ Fglobal p n) : x ∈ K p n := by
+  rw [Fglobal] at hx
+  induction hx using IntermediateField.adjoin_induction with
+  | mem y hy => obtain rfl := hy; exact zetaSys_mem_K p n
+  | algebraMap q =>
+      rw [eq_ratCast (algebraMap ℚ ℂ_[p]) q]
+      exact SubfieldClass.ratCast_mem (K p n) q
+  | add y z _ _ hy hz => exact add_mem hy hz
+  | inv y _ hy => exact (K p n).inv_mem hy
+  | mul y z _ _ hy hz => exact mul_mem hy hz
 
 /-- Global units are local units: `𝒱_n ≤ 𝒰_n` (`ℤ`-integral elements land in the
 unit ball, so a global unit and its inverse lie in `O_n`). The "image inside the
 space of local units" of RJW TeX 3084. -/
 theorem globalUnits_le_localUnits (n : ℕ) : globalUnits p n ≤ localUnits p n := by
-  sorry
+  intro u hu
+  rw [mem_localUnits_iff]
+  obtain ⟨hF, hint, hintinv⟩ := hu
+  refine ⟨?_, ?_⟩
+  · rw [O, Subring.mem_inf]
+    exact ⟨Fglobal_le_K p hF, norm_le_one_of_isIntegral_int p hint⟩
+  · rw [O, Subring.mem_inf]
+    refine ⟨Fglobal_le_K p ?_, norm_le_one_of_isIntegral_int p hintinv⟩
+    rw [Units.val_inv_eq_inv_val]
+    exact (Fglobal p n).inv_mem hF
 
 /-! ## The cyclotomic units 𝒟_n (RJW Definition, TeX 3065–3067) -/
 
@@ -98,12 +188,21 @@ noncomputable def cycloUnits (n : ℕ) : Subgroup ℂ_[p]ˣ :=
 /-- `𝒟_n⁺ = 𝒟_n ∩ F_n⁺` (RJW TeX 3066). -/
 noncomputable def cycloUnitsPlus (n : ℕ) : Subgroup ℂ_[p]ˣ where
   carrier := {u | u ∈ cycloUnits p n ∧ (u : ℂ_[p]) ∈ FglobalPlus p n}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' {u v} hu hv := by
+    refine ⟨mul_mem hu.1 hv.1, ?_⟩
+    rw [Units.val_mul]
+    exact mul_mem hu.2 hv.2
+  one_mem' := by
+    refine ⟨one_mem _, ?_⟩
+    rw [Units.val_one]
+    exact one_mem _
+  inv_mem' {u} hu := by
+    refine ⟨(cycloUnits p n).inv_mem hu.1, ?_⟩
+    rw [Units.val_inv_eq_inv_val]
+    exact (FglobalPlus p n).inv_mem hu.2
 
-lemma cycloUnits_le_globalUnits (n : ℕ) : cycloUnits p n ≤ globalUnits p n := by
-  sorry
+lemma cycloUnits_le_globalUnits (n : ℕ) : cycloUnits p n ≤ globalUnits p n :=
+  inf_le_right
 
 /-! ## The local closures 𝒞 (RJW Definition, TeX 3090–3094) -/
 

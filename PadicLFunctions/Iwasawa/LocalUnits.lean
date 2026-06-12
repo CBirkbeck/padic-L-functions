@@ -38,31 +38,66 @@ variable (p : ℕ) [hp : Fact p.Prime]
 `ℂ_[p]ˣ` (a unit together with its inverse lies in `O_n`). RJW TeX 2474. -/
 def localUnits (n : ℕ) : Subgroup ℂ_[p]ˣ where
   carrier := {u | (u : ℂ_[p]) ∈ O p n ∧ ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) ∈ O p n}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' {u v} hu hv := by
+    refine ⟨?_, ?_⟩
+    · rw [Units.val_mul]
+      exact mul_mem hu.1 hv.1
+    · rw [mul_inv_rev, Units.val_mul]
+      exact mul_mem hv.2 hu.2
+  one_mem' := by
+    refine ⟨?_, ?_⟩
+    · rw [Units.val_one]; exact one_mem _
+    · rw [inv_one, Units.val_one]; exact one_mem _
+  inv_mem' {u} hu := by
+    refine ⟨hu.2, ?_⟩
+    rw [inv_inv]; exact hu.1
 
 lemma mem_localUnits_iff {n : ℕ} {u : ℂ_[p]ˣ} :
     u ∈ localUnits p n
-      ↔ (u : ℂ_[p]) ∈ O p n ∧ ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) ∈ O p n := by
-  sorry
+      ↔ (u : ℂ_[p]) ∈ O p n ∧ ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) ∈ O p n :=
+  Iff.rfl
 
 /-- Units of `O_n` have norm exactly `1` (and conversely for elements of `K_n`). -/
 lemma norm_eq_one_of_mem_localUnits {n : ℕ} {u : ℂ_[p]ˣ} (hu : u ∈ localUnits p n) :
     ‖(u : ℂ_[p])‖ = 1 := by
-  sorry
+  have hu1 : ‖(u : ℂ_[p])‖ ≤ 1 := (Subring.mem_inf.1 hu.1).2
+  have hu2 : ‖((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p])‖ ≤ 1 := (Subring.mem_inf.1 hu.2).2
+  have hprod : ‖(u : ℂ_[p])‖ * ‖((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p])‖ = 1 := by
+    rw [← norm_mul, Units.mul_inv, norm_one]
+  nlinarith [norm_nonneg (u : ℂ_[p]), norm_nonneg ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p])]
 
 /-- `𝒰_{n,1} = {u ∈ 𝒰_n : u ≡ 1 (mod 𝔭_n)}`: the principal units, with the
 congruence rendered as `‖u − 1‖ < 1` (replan R11.6). RJW Eq. (`eq:U1`), TeX 2494. -/
 def localUnitsOne (n : ℕ) : Subgroup ℂ_[p]ˣ where
   carrier := {u | u ∈ localUnits p n ∧ ‖(u : ℂ_[p]) - 1‖ < 1}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' {u v} hu hv := by
+    refine ⟨mul_mem hu.1 hv.1, ?_⟩
+    -- `uv − 1 = u·(v − 1) + (u − 1)`, dominated by the max of the two norms `< 1`
+    have hkey : (↑(u * v) : ℂ_[p]) - 1 = (u : ℂ_[p]) * ((v : ℂ_[p]) - 1) + ((u : ℂ_[p]) - 1) := by
+      rw [Units.val_mul]; ring
+    rw [hkey]
+    refine lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt ?_ hu.2)
+    rw [norm_mul, norm_eq_one_of_mem_localUnits p hu.1, one_mul]
+    exact hv.2
+  one_mem' := by
+    refine ⟨one_mem _, ?_⟩
+    rw [Units.val_one, sub_self, norm_zero]
+    exact one_pos
+  inv_mem' {u} hu := by
+    refine ⟨(localUnits p n).inv_mem hu.1, ?_⟩
+    -- `u⁻¹ − 1 = u⁻¹·(1 − u)`, and `‖u⁻¹‖ = 1`, so the norm equals `‖u − 1‖ < 1`
+    have hu0 : (u : ℂ_[p]) ≠ 0 := u.ne_zero
+    have hkey : ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) - 1
+        = ((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) * (1 - (u : ℂ_[p])) := by
+      rw [Units.val_inv_eq_inv_val]
+      field_simp
+    rw [hkey, norm_mul,
+      norm_eq_one_of_mem_localUnits p ((localUnits p n).inv_mem hu.1), one_mul, norm_sub_rev]
+    exact hu.2
 
 lemma mem_localUnitsOne_iff {n : ℕ} {u : ℂ_[p]ˣ} :
-    u ∈ localUnitsOne p n ↔ u ∈ localUnits p n ∧ ‖(u : ℂ_[p]) - 1‖ < 1 := by
-  sorry
+    u ∈ localUnitsOne p n ↔ u ∈ localUnits p n ∧ ‖(u : ℂ_[p]) - 1‖ < 1 :=
+  Iff.rfl
 
 /-! ## The maximal totally real subfield K_n⁺ and the ⁺-variants (RJW TeX 2473–2475) -/
 
@@ -73,16 +108,26 @@ noncomputable def KPlus (n : ℕ) : IntermediateField ℚ_[p] ℂ_[p] :=
   ℚ_[p]⟮zetaSys p n + (zetaSys p n)⁻¹⟯
 
 lemma KPlus_le_K (n : ℕ) : KPlus p n ≤ K p n := by
-  sorry
+  rw [KPlus, IntermediateField.adjoin_simple_le_iff]
+  exact add_mem (zetaSys_mem_K p n) ((K p n).inv_mem (zetaSys_mem_K p n))
 
 /-- `𝒰_n⁺ = 𝒪_{K_n⁺}^×`, realised as the `K_n⁺`-valued local units (a unit of `O_n`
 lying in `K_n⁺` is a unit of `𝒪_{K_n⁺}`). RJW TeX 2474 with the X⁺-convention of
 TeX 2498. -/
 noncomputable def localUnitsPlus (n : ℕ) : Subgroup ℂ_[p]ˣ where
   carrier := {u | u ∈ localUnits p n ∧ (u : ℂ_[p]) ∈ KPlus p n}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' {u v} hu hv := by
+    refine ⟨mul_mem hu.1 hv.1, ?_⟩
+    rw [Units.val_mul]
+    exact mul_mem hu.2 hv.2
+  one_mem' := by
+    refine ⟨one_mem _, ?_⟩
+    rw [Units.val_one]
+    exact one_mem _
+  inv_mem' {u} hu := by
+    refine ⟨(localUnits p n).inv_mem hu.1, ?_⟩
+    rw [Units.val_inv_eq_inv_val]
+    exact (KPlus p n).inv_mem hu.2
 
 /-- `𝒰⁺_{n,1} = 𝒰_{n,1} ∩ 𝒰_n⁺` (RJW TeX 2494). -/
 noncomputable def localUnitsOnePlus (n : ℕ) : Subgroup ℂ_[p]ˣ :=

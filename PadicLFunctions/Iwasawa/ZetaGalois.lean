@@ -35,7 +35,14 @@ at `k = 1` the Euler factor is `1 − p⁰ = 0` (ζ(0) = −1/2 itself does NOT 
 erratum #13); at odd `k ≥ 3`, `ζ(1−k) = −B_k/k = 0` (`bernoulli_eq_zero_of_odd`). -/
 theorem odd_moment_factor_eq_zero {k : ℕ} (hk : Odd k) :
     (1 - (p : ℚ_[p]) ^ (k - 1)) * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) = 0 := by
-  sorry
+  obtain rfl | hk1 := eq_or_lt_of_le (Nat.one_le_iff_ne_zero.2 hk.pos.ne')
+  · -- `k = 1`: the Euler factor `1 − p⁰ = 0`
+    simp
+  · -- odd `k ≥ 3`: `ζ(1−k) = −B_k/k = 0` since `B_k = 0`
+    have hzero : zetaNeg (k - 1) = 0 := by
+      rw [zetaNeg, Nat.sub_add_cancel hk.pos, bernoulli_eq_zero_of_odd hk hk1, mul_zero,
+        zero_div]
+    rw [hzero, Rat.cast_zero, mul_zero]
 
 /-- The odd moments of every witness `([b]−[1])·ζ_p` vanish: this is the precise
 content of TeX 2992 "ζ_p vanishes at the characters χ^k for odd k" — including
@@ -45,7 +52,14 @@ theorem padicZeta_odd_moment_eq_zero (hp2 : p ≠ 2) (b : ℤ_[p]ˣ) {k : ℕ} (
     (hν : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) (dirac p b - 1) * padicZeta p hp2
       = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν) :
     ν (unitsPowCM p k) = 0 := by
-  sorry
+  -- The moment is `(b^k − 1) · [(1 − p^{k−1}) · ζ(1−k)]`, and the bracket vanishes.
+  have hm := padicZeta_moments p hp2 b hk.pos ν hν
+  rw [mul_assoc, odd_moment_factor_eq_zero p hk, mul_zero] at hm
+  -- Descend the ℚ_p-equation back to ℤ_p (the coercion is injective).
+  refine Subtype.coe_injective ?_
+  change ((ν (unitsPowCM p k) : ℤ_[p]) : ℚ_[p]) = ((0 : ℤ_[p]) : ℚ_[p])
+  rw [hm]
+  norm_num
 
 /-! ## c-invariance of ζ_p -/
 
@@ -56,7 +70,24 @@ theorem dirac_neg_one_sub_one_mul_padicZeta (hp2 : p ≠ 2) :
     algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) (dirac p (-1 : ℤ_[p]ˣ) - 1)
         * padicZeta p hp2
       = 0 := by
-  sorry
+  -- The `b = −1` witness has *all* moments zero, hence is the zero measure.
+  obtain ⟨ν, hν⟩ := padicZeta_isPseudoMeasure p hp2 (-1)
+  have hzero : ν = 0 := by
+    refine eq_zero_of_forall_unitsPowCM_eq_zero p ν fun k hk => ?_
+    have hm := padicZeta_moments p hp2 (-1) hk ν hν
+    have hb : ((-1 : ℤ_[p]ˣ) : ℚ_[p]) = -1 := by push_cast; ring
+    rw [hb] at hm
+    refine Subtype.coe_injective ?_
+    change ((ν (unitsPowCM p k) : ℤ_[p]) : ℚ_[p]) = ((0 : ℤ_[p]) : ℚ_[p])
+    rcases Nat.even_or_odd k with he | ho
+    · -- even moments: `(−1)^k − 1 = 0`
+      rw [he.neg_one_pow, sub_self, zero_mul, zero_mul] at hm
+      rw [hm]; norm_num
+    · -- odd moments: the interpolation factor vanishes
+      rw [mul_assoc, odd_moment_factor_eq_zero p ho, mul_zero] at hm
+      rw [hm]; norm_num
+  rw [hzero, map_zero] at hν
+  exact hν
 
 /-- Witness symmetry: the witnesses of `([g]−[1])·ζ_p` and `([−g]−[1])·ζ_p`
 coincide — the well-definedness of pushing witnesses to `𝒢⁺`. -/
@@ -68,7 +99,26 @@ theorem padicZeta_witness_neg (hp2 : p ≠ 2) (g : ℤ_[p]ˣ)
         * padicZeta p hp2
       = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν') :
     ν = ν' := by
-  sorry
+  -- `([−g]−[g])·ζ_p = [g]·(([−1]−[1])·ζ_p) = 0`, so the two witnesses agree.
+  have hfac : (dirac p (-g) - dirac p g : PadicMeasure p ℤ_[p]ˣ)
+      = dirac p g * (dirac p (-1 : ℤ_[p]ˣ) - 1) := by
+    rw [mul_sub, units_dirac_mul_dirac, mul_one, mul_neg_one]
+  have hkey : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν'
+      = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν := by
+    have hsub : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν'
+        - algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν = 0 := by
+      rw [← hν', ← hν, ← sub_mul]
+      have : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) (dirac p (-g) - 1)
+          - algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) (dirac p g - 1)
+          = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+              (dirac p g) * algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+                (dirac p (-1 : ℤ_[p]ˣ) - 1) := by
+        rw [← map_mul, ← hfac, ← map_sub]
+        ring_nf
+      rw [this, mul_assoc, dirac_neg_one_sub_one_mul_padicZeta p hp2, mul_zero]
+    rw [sub_eq_zero] at hsub
+    exact hsub
+  exact (IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) hkey).symm
 
 /-! ## ζ_p as a pseudo-measure on 𝒢⁺ (RJW corollary, TeX 3033–3039) -/
 

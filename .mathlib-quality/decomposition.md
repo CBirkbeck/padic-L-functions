@@ -3502,7 +3502,11 @@ global F_n/𝒱_n and the ⁺-subfields.
 > units 𝒱_n (resp. 𝒱_n⁺) … h_n⁺ = [𝒱_n : 𝒟_n] = [𝒱_n⁺ : 𝒟_n⁺]."
 > Proof: "We will not prove this here; see [Washington, Theorem 8.2]."
 > → not formalised (the notes don't prove it); blueprint node stays
-> prose; deferred-table entry in plan.md.
+> prose; deferred-table entry in plan.md. Survey addendum (2026-06-13,
+> user directive): flt-regular-bernoulli's CyclotomicUnits/Sinnott stack
+> has a prime-conductor, p-primary, conditional (named unproven analytic
+> core) form `p ∣ [𝒱⁺:𝒟⁺] ↔ p ∣ h⁺` — not a Q9 discharge; recorded in
+> plan.md as a candidate §13 external dependency (Vandiver shape).
 
 **Q10 (local closures, TeX 3084 + 3090–3094):**
 > "The cyclotomic units c_n(a), introduced in §10.2, are naturally

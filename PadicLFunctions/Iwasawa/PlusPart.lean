@@ -47,11 +47,26 @@ def antiInvariants (σ : M →ₗ[R] M) : Submodule R M :=
   LinearMap.ker (σ + LinearMap.id)
 
 lemma mem_invariants_iff {σ : M →ₗ[R] M} {x : M} : x ∈ invariants σ ↔ σ x = x := by
-  sorry
+  rw [invariants, LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.id_apply, sub_eq_zero]
 
 lemma mem_antiInvariants_iff {σ : M →ₗ[R] M} {x : M} :
     x ∈ antiInvariants σ ↔ σ x = -x := by
-  sorry
+  rw [antiInvariants, LinearMap.mem_ker, LinearMap.add_apply, LinearMap.id_apply,
+    add_eq_zero_iff_eq_neg]
+
+/-- The plus-projection formula: `(x + σx)/2` lands in the invariants. -/
+theorem smul_add_apply_mem_invariants [Invertible (2 : R)] (σ : M →ₗ[R] M)
+    (hσ : σ ∘ₗ σ = LinearMap.id) (x : M) :
+    (⅟(2 : R)) • (x + σ x) ∈ invariants σ := by
+  have hσσ : σ (σ x) = x := LinearMap.ext_iff.1 hσ x
+  rw [mem_invariants_iff, map_smul, map_add, hσσ, add_comm]
+
+/-- The minus-projection formula: `(x − σx)/2` lands in the anti-invariants. -/
+theorem smul_sub_apply_mem_antiInvariants [Invertible (2 : R)] (σ : M →ₗ[R] M)
+    (hσ : σ ∘ₗ σ = LinearMap.id) (x : M) :
+    (⅟(2 : R)) • (x - σ x) ∈ antiInvariants σ := by
+  have hσσ : σ (σ x) = x := LinearMap.ext_iff.1 hσ x
+  rw [mem_antiInvariants_iff, map_smul, map_sub, hσσ, ← smul_neg, neg_sub]
 
 /-- **RJW Lem. `lem:decompose plus minus` (TeX 2994–3002)**: for an involution `σ` of an
 `R`-module `M` with `2` invertible in `R`, the module decomposes as the internal direct
@@ -61,19 +76,24 @@ an involution.) Not in mathlib (verified absent); PR candidate. -/
 theorem isCompl_invariants_antiInvariants [Invertible (2 : R)] (σ : M →ₗ[R] M)
     (hσ : σ ∘ₗ σ = LinearMap.id) :
     IsCompl (invariants σ) (antiInvariants σ) := by
-  sorry
-
-/-- The plus-projection formula: `(x + σx)/2` lands in the invariants. -/
-theorem smul_add_apply_mem_invariants [Invertible (2 : R)] (σ : M →ₗ[R] M)
-    (hσ : σ ∘ₗ σ = LinearMap.id) (x : M) :
-    (⅟(2 : R)) • (x + σ x) ∈ invariants σ := by
-  sorry
-
-/-- The minus-projection formula: `(x − σx)/2` lands in the anti-invariants. -/
-theorem smul_sub_apply_mem_antiInvariants [Invertible (2 : R)] (σ : M →ₗ[R] M)
-    (hσ : σ ∘ₗ σ = LinearMap.id) (x : M) :
-    (⅟(2 : R)) • (x - σ x) ∈ antiInvariants σ := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · -- Disjointness: `σx = x` and `σx = −x` force `x = −x`, hence `2•x = 0`, hence `x = 0`.
+    rw [Submodule.disjoint_def]
+    intro x hx hx'
+    rw [mem_invariants_iff] at hx
+    rw [mem_antiInvariants_iff] at hx'
+    have hxx : x = -x := hx.symm.trans hx'
+    have h2 : (2 : R) • x = 0 := by rw [two_smul]; exact add_eq_zero_iff_eq_neg.2 hxx
+    have := invOf_smul_smul (2 : R) x
+    rwa [h2, smul_zero, eq_comm] at this
+  · -- Codisjointness: `x = ⅟2•(x+σx) + ⅟2•(x−σx)` with parts in the two eigenspaces.
+    rw [codisjoint_iff_le_sup]
+    intro x _
+    rw [Submodule.mem_sup]
+    refine ⟨(⅟(2 : R)) • (x + σ x), smul_add_apply_mem_invariants σ hσ x,
+      (⅟(2 : R)) • (x - σ x), smul_sub_apply_mem_antiInvariants σ hσ x, ?_⟩
+    rw [← smul_add, show x + σ x + (x - σ x) = (2 : R) • x by rw [two_smul]; abel,
+      invOf_smul_smul]
 
 end involution
 
@@ -85,10 +105,21 @@ The `SMulCommClass`/`IsScalarTower` instances making `Λ(ℤ_p^×)` an honest
 ℤ_[p]-algebra-like object (the gap noted at the §8 pass). -/
 
 instance : SMulCommClass ℤ_[p] (PadicMeasure p ℤ_[p]ˣ) (PadicMeasure p ℤ_[p]ˣ) := by
-  sorry
+  refine ⟨fun c μ ν => LinearMap.ext fun f => ?_⟩
+  -- `c • (μ * ν) = μ * (c • ν)`: pull the scalar through the inner integral
+  change (c • (μ * ν)) f = (μ * (c • ν)) f
+  rw [LinearMap.smul_apply, conv_mul_apply, conv_mul_apply]
+  have hinner : innerInt p (c • ν) (f.comp (mulCM₂ ℤ_[p]ˣ))
+      = c • innerInt p ν (f.comp (mulCM₂ ℤ_[p]ˣ)) := by
+    ext x
+    rw [innerInt_apply, ContinuousMap.smul_apply, innerInt_apply, LinearMap.smul_apply]
+  rw [hinner, map_smul]
 
 instance : IsScalarTower ℤ_[p] (PadicMeasure p ℤ_[p]ˣ) (PadicMeasure p ℤ_[p]ˣ) := by
-  sorry
+  refine ⟨fun c μ ν => LinearMap.ext fun f => ?_⟩
+  -- `(c • μ) * ν = c • (μ * ν)`: the outer measure carries the scalar pointwise
+  change ((c • μ) * ν) f = (c • (μ * ν)) f
+  rw [LinearMap.smul_apply, conv_mul_apply, conv_mul_apply, LinearMap.smul_apply]
 
 /-! ## The c-action on Λ(𝒢) (c = complex conjugation = −1 ∈ ℤ_p^× under χ) -/
 
@@ -99,12 +130,15 @@ def cAct : PadicMeasure p ℤ_[p]ˣ →ₗ[ℤ_[p]] PadicMeasure p ℤ_[p]ˣ :=
 
 @[simp]
 lemma cAct_apply (μ : PadicMeasure p ℤ_[p]ˣ) :
-    cAct p μ = dirac p (-1 : ℤ_[p]ˣ) * μ := by
-  sorry
+    cAct p μ = dirac p (-1 : ℤ_[p]ˣ) * μ :=
+  LinearMap.mulLeft_apply ℤ_[p] _ _
 
 /-- `c` is an involution: `[−1]·[−1] = [1]`. -/
 theorem cAct_involutive : cAct p ∘ₗ cAct p = LinearMap.id := by
-  sorry
+  refine LinearMap.ext fun μ => ?_
+  rw [LinearMap.comp_apply, cAct_apply, cAct_apply, LinearMap.id_apply, ← mul_assoc,
+    units_dirac_mul_dirac, show (-1 : ℤ_[p]ˣ) * (-1) = 1 by rw [neg_mul_neg, one_mul],
+    ← units_one_def, one_mul]
 
 /-- `Λ(𝒢)⁺`: the c-invariant measures (the image of the idempotent `(1+c)/2`).
 Under the identification of RJW TeX 3017 this *is* `Λ(𝒢⁺)` viewed inside `Λ(𝒢)`. -/
@@ -117,23 +151,25 @@ def minusPart : Submodule ℤ_[p] (PadicMeasure p ℤ_[p]ˣ) :=
 
 lemma mem_plusPart_iff {μ : PadicMeasure p ℤ_[p]ˣ} :
     μ ∈ plusPart p ↔ dirac p (-1 : ℤ_[p]ˣ) * μ = μ := by
-  sorry
+  rw [plusPart, mem_invariants_iff, cAct_apply]
 
 lemma mem_minusPart_iff {μ : PadicMeasure p ℤ_[p]ˣ} :
     μ ∈ minusPart p ↔ dirac p (-1 : ℤ_[p]ˣ) * μ = -μ := by
-  sorry
+  rw [minusPart, mem_antiInvariants_iff, cAct_apply]
 
 /-- `plusPart` is closed under multiplication by arbitrary measures (it is the ideal
 `e⁺Λ(𝒢)`). -/
 theorem mul_mem_plusPart {μ ν : PadicMeasure p ℤ_[p]ˣ} (hμ : μ ∈ plusPart p) :
     ν * μ ∈ plusPart p := by
-  sorry
+  rw [mem_plusPart_iff] at hμ ⊢
+  rw [mul_left_comm, hμ]
 
 /-- **RJW Lem. `lem:decompose plus minus` for Λ(𝒢)** (TeX 3004: "We are assuming that
 `p` is odd, so Λ(𝒢) ≅ Λ(𝒢)⁺ ⊕ Λ(𝒢)⁻"). -/
 theorem isCompl_plusPart_minusPart (hp2 : p ≠ 2) :
     IsCompl (plusPart p) (minusPart p) := by
-  sorry
+  haveI : Invertible (2 : ℤ_[p]) := (PadicLFunctions.isUnit_two_padicInt p hp2).invertible
+  exact isCompl_invariants_antiInvariants (cAct p) (cAct_involutive p)
 
 /-! ## The odd-moment criterion (RJW TeX 3019–3029) -/
 
@@ -141,7 +177,11 @@ theorem isCompl_plusPart_minusPart (hp2 : p ≠ 2) :
 (the computation `χ(c) = −1` of the source's proof, TeX 3026–3028). -/
 theorem cAct_apply_unitsPowCM (μ : PadicMeasure p ℤ_[p]ˣ) (k : ℕ) :
     (dirac p (-1 : ℤ_[p]ˣ) * μ) (unitsPowCM p k) = (-1) ^ k * μ (unitsPowCM p k) := by
-  sorry
+  have hdirac : (dirac p (-1 : ℤ_[p]ˣ)) (unitsPowCM p k) = (-1) ^ k := by
+    rw [dirac_apply]
+    show ((-1 : ℤ_[p]ˣ) : ℤ_[p]) ^ k = (-1) ^ k
+    rw [Units.val_neg, Units.val_one]
+  rw [units_mul_apply_unitsPowCM, hdirac]
 
 /-- **RJW §11.1, third lemma (TeX 3019–3029)**: `μ ∈ Λ(𝒢⁺)` (= c-invariance, by the
 TeX 3017 identification) if and only if all odd moments `∫_𝒢 χ(x)^k·μ`, `k ≥ 1` odd,
@@ -149,7 +189,22 @@ vanish. This direction-pair is p-general (`ℤ_[p]` has characteristic zero); th
 *decomposition* interpretation needs `p ≠ 2`. -/
 theorem mem_plusPart_iff_forall_odd_moment {μ : PadicMeasure p ℤ_[p]ˣ} :
     μ ∈ plusPart p ↔ ∀ k : ℕ, Odd k → μ (unitsPowCM p k) = 0 := by
-  sorry
+  rw [mem_plusPart_iff]
+  constructor
+  · -- c-invariance: for odd `k`, the moment equals its own negative, hence vanishes.
+    intro h k hk
+    have heval := LinearMap.congr_fun h (unitsPowCM p k)
+    rw [cAct_apply_unitsPowCM, hk.neg_one_pow, neg_one_mul] at heval
+    exact add_self_eq_zero.1 (add_eq_zero_iff_eq_neg.2 heval.symm)
+  · -- all odd moments vanish: the difference `[−1]·μ − μ` is killed on every `x^k`.
+    intro h
+    have hzero : (dirac p (-1 : ℤ_[p]ˣ) * μ - μ) = 0 := by
+      refine eq_zero_of_forall_unitsPowCM_eq_zero p _ fun k _ => ?_
+      rw [LinearMap.sub_apply, cAct_apply_unitsPowCM]
+      rcases Nat.even_or_odd k with hk | hk
+      · rw [hk.neg_one_pow, one_mul, sub_self]
+      · rw [h k hk, mul_zero, sub_zero]
+    exact sub_eq_zero.1 hzero
 
 /-! ## The quotient group 𝒢⁺ = ℤ_p^×/{±1} and Λ(𝒢⁺) -/
 
