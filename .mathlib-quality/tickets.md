@@ -4841,7 +4841,9 @@ series + thm:coleman map 2)
 - **Sources**: TeX 1987–2010 + 2040–2179 re-read; errata #6.
 
 ### [CLEANUP-92] /cleanup after T904–T906 (cadence, Theorem+NormOperator)
-- **Status**: open | **Depends on**: T904, T905, T906 | **Type**: cleanup
+- **Status**: in_progress (2026-06-12) — Theorem.lean half DONE (degraded:
+  359 lines, zero warnings, zero long lines, publics docstringed);
+  NormOperator.lean half pending T908's in-flight agent | **Depends on**: T904, T905, T906 | **Type**: cleanup
 
 ### [CLEANUP-93] Final per-file cleanup (Coleman/*) + close-out
 - **Status**: open | **Depends on**: T912 | **Type**: cleanup
