@@ -3932,7 +3932,7 @@ to the twisted pseudo-measure form.
   CLEANUP-FINAL.
 
 ### [T804] No measure interpolates k ↦ p^k
-- **Status**: open | **File**: EisensteinFamily.lean | **Depends on**: none
+- **Status**: in_progress (2026-06-12, parallel with T805) | **File**: EisensteinFamily.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: theorem
 - **Statement**: skeleton `noMeasure_interpolates_pPow` (R8 L8.4). p = 2
   allowed.
@@ -3961,7 +3961,13 @@ to the twisted pseudo-measure form.
 - **Sizing**: source 5 lines; ~80 LOC.
 
 ### [T805] σ^p arithmetic and the scaled upper-half-plane point
-- **Status**: open | **File**: EisensteinComplex.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: EisensteinComplex.lean | **Depends on**: none
+- **Progress**: 2026-06-12: all three proven (subagent, parallel with T804),
+  statements verbatim. Divisor split via `Finset.sum_nbij'` (d/p ↔ p·e) +
+  `Finset.sum_filter_not_add_sum_filter`; pScale by `Complex.mul_im`.
+  mathlib's `UpperHalfPlane.posRealAction` noted but the frozen raw-mul def
+  kept. Verified: build green, axioms standard 3. Cleanup: degraded mode,
+  defer to CLEANUP-82.
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `sigmaP_eq_of_not_dvd`,
   `sigmaP_add_pow_mul_sigma_div`, `pScale`'s membership proof (R8 L8.5a).
