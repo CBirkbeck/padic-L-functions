@@ -5119,7 +5119,7 @@ Criterion: `cAct_apply_unitsPowCM`, `mem_plusPart_iff_forall_odd_moment`.
 - **Sizing**: ~150 LOC.
 
 ### [T1103] 𝒢⁺ and the projection ring hom π_*
-- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102 (file order)
+- **Status**: done (2026-06-13; agent wave 2: projPlus RingHom fields via congr-on-curried-inner-functions (mk's hom property definitional on the quotient), projPlus_apply/dirac, deg_projPlus. Axioms standard at join. | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102 (file order)
 - **Parallel**: no (same file as T1102) | **Type**: def-fields + lemmas
 #### Statement
 `projPlus` RingHom fields (toFun = `pushforward p (quotientMk p)` — fixed),
@@ -5142,7 +5142,7 @@ Criterion: `cAct_apply_unitsPowCM`, `mem_plusPart_iff_forall_odd_moment`.
 - **Sizing**: ~80 LOC.
 
 ### [T1104] The even-part section and Λ(𝒢)⁺ ≅ Λ(𝒢⁺) (RJW TeX 3006–3015)
-- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102, T1103
+- **Status**: done (2026-06-13; agent wave 2: all section/iso/kernel decls; 10 private helpers incl. dirac_neg_one_mul_apply (convolution-by-[−1] = argument negation), descendEven/evenPart calculus, Submodule.existsUnique_add_of_isCompl decomposition; ker_projPlus via Ideal.mem_span_singleton. Statements unchanged. Axioms standard at join: projPlus/plusEquiv/plusSection_projPlus/projPlus_surjective/ker_projPlus all clean. lake build exit 0. Cleanup deferred to CLEANUP-111 (note: one linter.style.show warning to fix). | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102, T1103
 - **Parallel**: no (same file) | **Type**: defs + lemmas (replan R11.2)
 #### Statement
 `negTranslate` continuity field, `evenPart_even`, `descendEven` (soundness +
@@ -5226,7 +5226,7 @@ continuity fields), `descendEven_mk`, `plusSection` (4 linearity fields),
 - **Sizing**: ~110 LOC.
 
 ### [T1106] ζ_p as a pseudo-measure on 𝒢⁺ (the corollary, RJW TeX 3033)
-- **Status**: open | **File**: Iwasawa/ZetaGalois.lean
+- **Status**: in_progress (2026-06-13, beastmode wave 3) | **File**: Iwasawa/ZetaGalois.lean
 - **Depends on**: T1102, T1104, T1105 | **Parallel**: no
 - **Type**: def-fields + lemmas
 #### Statement
@@ -5259,7 +5259,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~140 LOC.
 
 ### [T1107] The ideals I(𝒢)ζ_p and I(𝒢⁺)ζ_p (RJW Proposition, TeX 3052)
-- **Status**: open | **File**: Iwasawa/ZetaGalois.lean
+- **Status**: in_progress (2026-06-13, beastmode wave 3) | **File**: Iwasawa/ZetaGalois.lean
 - **Depends on**: T1105, T1106 | **Parallel**: no (same file)
 - **Type**: def-fields + lemmas (replan R11.4)
 #### Statement
@@ -5313,7 +5313,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~120 LOC.
 
 ### [T1109] The ℤ_p-power structure on principal units (RJW TeX 2494–2496)
-- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
+- **Status**: done (2026-06-13; agent wave 2: zpPow via PadicInt.addChar_of_value_at_one — the addChar route. INSTANCE-PACK DESIGN WIN: Algebra ℤ_[p] ℂ_[p] built diamond-FREE by supplying UniformContinuousConstSMul ℤ_[p] (PadicAlgCl p) and letting Completion machinery construct Module/Algebra over the pre-existing orphan SMul (a naive (toCp).toAlgebra would have hit a SMul diamond); + IsBoundedSMul via norm_toCp. New global instances flagged for promotion review at CLEANUP-113. Character laws via DenseRange.equalizer over denseRange_natCast; K_n closedness via finrank_K + Submodule.closed_of_finiteDimensional; zpPow_mem_of_closed density-transfer reused 3x. Module on Additive(localUnitsOne) complete. Axioms standard at join; build green; 2 longLine lints wrapped by orchestrator. | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
 - **Parallel**: no (same file) | **Type**: def + lemmas + instance
 #### Statement
 `zpPow` (the sorried def body — to be filled with the
@@ -5351,7 +5351,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~170 LOC (instance-pack risk priced in; fallback route documented).
 
 ### [T1110] 𝒰_∞ as a group; the towers 𝒰_{∞,1} and 𝒰⁺_{∞,1}
-- **Status**: in_progress (2026-06-13, beastmode wave 2) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
+- **Status**: done (2026-06-13; agent wave 2: NormCompatUnits.inv (levelNorm_inv' re-derived from public levelNorm_mul/levelNorm_one), CommGroup via NormCompatUnits.ext + pointwise laws, unitsTower1(Plus) + le-lemma. Axioms standard at join.) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
 - **Parallel**: no (same file; can start before T1109 finishes if convenient —
   no dependence on zpPow)
 - **Type**: instance + def-fields
@@ -5403,7 +5403,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~140 LOC.
 
 ### [T1112] The cyclotomic units 𝒟_n and the closures 𝒞 (definitional layer)
-- **Status**: open | **File**: Iwasawa/CyclotomicUnits.lean
+- **Status**: in_progress (2026-06-13, towers remainder; cycloUnitsPlus + le-lemma already done by T1111's agent) | **File**: Iwasawa/CyclotomicUnits.lean
 - **Depends on**: T1110, T1111 | **Parallel**: no (same file as T1111)
 - **Type**: def-fields + lemmas
 #### Statement
@@ -5425,7 +5425,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
   ticket per the cadence rule.
 
 ### [T1113] **MILESTONE: c(a) ∈ 𝒟_n and cyclo ∈ 𝒞_{∞,1}** (RJW TeX 3084)
-- **Status**: open | **File**: Iwasawa/CyclotomicUnits.lean
+- **Status**: in_progress (2026-06-13, beastmode wave 3 — dispatched with T1112 remainder; note CLEANUP-ALL-6 gate runs before its verification is accepted) | **File**: Iwasawa/CyclotomicUnits.lean
 - **Depends on**: T1112 (+ CLEANUP-ALL-6 gate) | **Type**: lemmas
 #### Statement
 `isIntegral_cycloUnit`, `isIntegral_inv_cycloUnit`,

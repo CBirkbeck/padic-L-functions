@@ -179,7 +179,7 @@ theorem cAct_apply_unitsPowCM (μ : PadicMeasure p ℤ_[p]ˣ) (k : ℕ) :
     (dirac p (-1 : ℤ_[p]ˣ) * μ) (unitsPowCM p k) = (-1) ^ k * μ (unitsPowCM p k) := by
   have hdirac : (dirac p (-1 : ℤ_[p]ˣ)) (unitsPowCM p k) = (-1) ^ k := by
     rw [dirac_apply]
-    show ((-1 : ℤ_[p]ˣ) : ℤ_[p]) ^ k = (-1) ^ k
+    change ((-1 : ℤ_[p]ˣ) : ℤ_[p]) ^ k = (-1) ^ k
     rw [Units.val_neg, Units.val_one]
   rw [units_mul_apply_unitsPowCM, hdirac]
 
@@ -224,32 +224,50 @@ def quotientMk : C(ℤ_[p]ˣ, GPlus p) :=
 incarnation. Ring-hom because `mk` is a (continuous) monoid hom. -/
 def projPlus : PadicMeasure p ℤ_[p]ˣ →+* PadicMeasure p (GPlus p) where
   toFun := pushforward p (quotientMk p)
-  map_one' := by sorry
-  map_mul' := by sorry
-  map_zero' := by sorry
-  map_add' := by sorry
+  map_one' := by
+    -- `π_* δ_1 = δ_{mk 1} = δ_1`
+    rw [conv_one_def, pushforward_dirac, conv_one_def]; congr 1
+  map_mul' μ ν := by
+    -- the two inner integrals agree pointwise via `mk (x*y) = mk x * mk y`
+    refine LinearMap.ext fun f => ?_
+    rw [pushforward_apply, conv_mul_apply, conv_mul_apply, pushforward_apply]
+    congr 1
+  map_zero' := rfl
+  map_add' _ _ := rfl
 
 @[simp]
 lemma projPlus_apply (μ : PadicMeasure p ℤ_[p]ˣ) (f : C(GPlus p, ℤ_[p])) :
-    projPlus p μ f = μ (f.comp (quotientMk p)) := by
-  sorry
+    projPlus p μ f = μ (f.comp (quotientMk p)) := rfl
 
 @[simp]
 lemma projPlus_dirac (u : ℤ_[p]ˣ) :
-    projPlus p (dirac p u) = dirac p (QuotientGroup.mk u : GPlus p) := by
-  sorry
+    projPlus p (dirac p u) = dirac p (QuotientGroup.mk u : GPlus p) := rfl
 
 /-- The augmentation commutes with the projection: `deg⁺ ∘ π_* = deg`. -/
 theorem deg_projPlus (μ : PadicMeasure p ℤ_[p]ˣ) :
     deg p (projPlus p μ) = deg p μ := by
-  sorry
+  change (projPlus p μ) 1 = μ 1
+  rw [projPlus_apply]; congr 1
 
 /-! ## The even-part section and the isomorphism Λ(𝒢)⁺ ≅ Λ(𝒢⁺) -/
 
 /-- Translation by `−1` on `ℤ_[p]ˣ`, as a continuous map (the `c`-translation of
 function arguments). -/
 def negTranslate : C(ℤ_[p]ˣ, ℤ_[p]ˣ) :=
-  ⟨fun u => -u, by sorry⟩
+  ⟨fun u => -u, by
+    have hfun : (fun u : ℤ_[p]ˣ => -u) = (fun u : ℤ_[p]ˣ => (-1 : ℤ_[p]ˣ) * u) := by
+      funext u; rw [neg_one_mul]
+    rw [hfun]; exact continuous_const.mul continuous_id⟩
+
+/-- **Key computation**: convolution by `dirac (−1)` is argument-translation by `−1`.
+`(dirac (−1) ⋆ μ) f = ∫ f(−u) dμ(u)`. Used throughout the ±-section results below. -/
+private lemma dirac_neg_one_mul_apply (μ : PadicMeasure p ℤ_[p]ˣ) (f : C(ℤ_[p]ˣ, ℤ_[p])) :
+    (dirac p (-1 : ℤ_[p]ˣ) * μ) f = μ (f.comp (negTranslate p)) := by
+  rw [conv_mul_apply, dirac_apply, innerInt_apply]
+  congr 1
+  exact ContinuousMap.ext fun u => by
+    change f ((-1 : ℤ_[p]ˣ) * u) = f (-u)
+    rw [neg_one_mul]
 
 /-- The even part of a continuous function on `𝒢`: `f ↦ (f + f∘c)/2` (`p ≠ 2`). -/
 def evenPart (hp2 : p ≠ 2) (f : C(ℤ_[p]ˣ, ℤ_[p])) : C(ℤ_[p]ˣ, ℤ_[p]) :=
@@ -260,17 +278,63 @@ def evenPart (hp2 : p ≠ 2) (f : C(ℤ_[p]ˣ, ℤ_[p])) : C(ℤ_[p]ˣ, ℤ_[p])
 (soundness: the `{±1}`-cosets are `{u, −u}`; continuity: `mk` is a quotient map). -/
 def descendEven (g : C(ℤ_[p]ˣ, ℤ_[p])) (hg : ∀ u : ℤ_[p]ˣ, g (-u) = g u) :
     C(GPlus p, ℤ_[p]) :=
-  ⟨fun x => Quotient.liftOn' x g (by sorry), by sorry⟩
+  ⟨fun x => Quotient.liftOn' x g (by
+    -- soundness: the `{±1}`-coset of `x` is `{x, −x}`, on which `g` is constant
+    intro x y hxy
+    rw [QuotientGroup.leftRel_apply, Subgroup.mem_zpowers_iff] at hxy
+    obtain ⟨k, hk⟩ := hxy
+    rcases Int.even_or_odd k with hke | hko
+    · rw [hke.neg_one_zpow] at hk
+      have hyx : y = x := by
+        have h := hk.symm; rw [inv_mul_eq_one] at h; exact h.symm
+      rw [hyx]
+    · rw [hko.neg_one_zpow] at hk
+      have hy : y = -x := by
+        have h := hk.symm; rw [inv_mul_eq_iff_eq_mul] at h; rw [h, mul_neg_one]
+      rw [hy, hg]), by
+    -- continuity: `mk` is a quotient map, and the lift composed with `mk` is `g`
+    have hmk := QuotientGroup.isQuotientMap_mk (Subgroup.zpowers (-1 : ℤ_[p]ˣ))
+    rw [hmk.continuous_iff]
+    exact g.continuous⟩
 
 @[simp]
 lemma descendEven_mk (g : C(ℤ_[p]ˣ, ℤ_[p])) (hg : ∀ u : ℤ_[p]ˣ, g (-u) = g u)
     (u : ℤ_[p]ˣ) :
-    descendEven p g hg (QuotientGroup.mk u) = g u := by
-  sorry
+    descendEven p g hg (QuotientGroup.mk u) = g u := rfl
+
+/-- `descendEven` depends only on the underlying function (its coherence proof is
+irrelevant), so equal functions descend to the same measure-function. -/
+private lemma descendEven_congr {g₁ g₂ : C(ℤ_[p]ˣ, ℤ_[p])} (h : g₁ = g₂)
+    (h₁ : ∀ u : ℤ_[p]ˣ, g₁ (-u) = g₁ u) (h₂ : ∀ u : ℤ_[p]ˣ, g₂ (-u) = g₂ u) :
+    descendEven p g₁ h₁ = descendEven p g₂ h₂ := by subst h; rfl
 
 lemma evenPart_even (hp2 : p ≠ 2) (f : C(ℤ_[p]ˣ, ℤ_[p])) (u : ℤ_[p]ˣ) :
     evenPart p hp2 f (-u) = evenPart p hp2 f u := by
-  sorry
+  simp only [evenPart, ContinuousMap.smul_apply, ContinuousMap.add_apply,
+    ContinuousMap.comp_apply]
+  change _ • (f (-u) + f (-(-u))) = _ • (f u + f (-u))
+  rw [neg_neg, add_comm]
+
+/-- The even part of an already-even function is the function itself (here the scalar
+`(2)⁻¹·(f + f) = (2)⁻¹·2·f = f`). -/
+private lemma evenPart_of_even (hp2 : p ≠ 2) (f : C(ℤ_[p]ˣ, ℤ_[p]))
+    (hf : ∀ u : ℤ_[p]ˣ, f (-u) = f u) : evenPart p hp2 f = f := by
+  ext u
+  simp only [evenPart, ContinuousMap.smul_apply, ContinuousMap.add_apply,
+    ContinuousMap.comp_apply, smul_eq_mul]
+  change _ * (f u + f (-u)) = f u
+  rw [hf u, ← two_mul, ← mul_assoc,
+    (PadicLFunctions.isUnit_two_padicInt p hp2).val_inv_mul, one_mul]
+
+/-- The even part is invariant under precomposition with the `c`-translation
+(`(f∘c)+((f∘c)∘c) = f + f∘c` since `c²=id`). -/
+private lemma evenPart_comp_negTranslate (hp2 : p ≠ 2) (f : C(ℤ_[p]ˣ, ℤ_[p])) :
+    evenPart p hp2 (f.comp (negTranslate p)) = evenPart p hp2 f := by
+  ext u
+  simp only [evenPart, ContinuousMap.smul_apply, ContinuousMap.add_apply,
+    ContinuousMap.comp_apply]
+  change _ • (f (-u) + f (-(-u))) = _ • (f u + f (-u))
+  rw [neg_neg, add_comm]
 
 /-- The even-part section `σ : Λ(𝒢⁺) → Λ(𝒢)`: `(σν)(f) := ν(descend((f + f∘c)/2))`.
 This is the functional-analytic replacement (replan R11.2) for the source's
@@ -279,31 +343,105 @@ def plusSection (hp2 : p ≠ 2) :
     PadicMeasure p (GPlus p) →ₗ[ℤ_[p]] PadicMeasure p ℤ_[p]ˣ where
   toFun ν :=
     { toFun := fun f => ν (descendEven p (evenPart p hp2 f) (evenPart_even p hp2 f))
-      map_add' := by sorry
-      map_smul' := by sorry }
-  map_add' := by sorry
-  map_smul' := by sorry
+      map_add' := fun f g => by
+        -- linearity of `ν` reduces to additivity of `evenPart` (pointwise after `mk`)
+        rw [← map_add]
+        congr 1
+        ext x
+        induction x using QuotientGroup.induction_on with
+        | _ u =>
+          rw [ContinuousMap.add_apply, descendEven_mk, descendEven_mk, descendEven_mk]
+          simp only [evenPart, ContinuousMap.smul_apply, ContinuousMap.add_apply,
+            ContinuousMap.comp_apply, smul_eq_mul]
+          change _ * (f u + g u + (f (-u) + g (-u)))
+            = _ * (f u + f (-u)) + _ * (g u + g (-u))
+          ring
+      map_smul' := fun c f => by
+        rw [RingHom.id_apply, ← map_smul]
+        congr 1
+        ext x
+        induction x using QuotientGroup.induction_on with
+        | _ u =>
+          rw [ContinuousMap.smul_apply, descendEven_mk, descendEven_mk]
+          simp only [evenPart, ContinuousMap.smul_apply, ContinuousMap.add_apply,
+            ContinuousMap.comp_apply, smul_eq_mul]
+          change _ * (c • f u + c • f (-u)) = c • (_ * (f u + f (-u)))
+          simp only [smul_eq_mul]; ring }
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
 
 /-- The section lands in the plus part. -/
 theorem plusSection_mem_plusPart (hp2 : p ≠ 2) (ν : PadicMeasure p (GPlus p)) :
     plusSection p hp2 ν ∈ plusPart p := by
-  sorry
+  rw [mem_plusPart_iff]
+  refine LinearMap.ext fun f => ?_
+  -- `c`-invariance: `(σν)(f∘c) = (σν)(f)` because `evenPart (f∘c) = evenPart f`
+  rw [dirac_neg_one_mul_apply]
+  change ν (descendEven p (evenPart p hp2 (f.comp (negTranslate p))) _)
+    = ν (descendEven p (evenPart p hp2 f) _)
+  congr 1
+  exact descendEven_congr p (evenPart_comp_negTranslate p hp2 f) _ _
+
+/-- `mk (−u) = mk u` in `𝒢⁺` (the defining `{±1}`-collapse). -/
+private lemma quotientMk_neg (u : ℤ_[p]ˣ) :
+    (QuotientGroup.mk (-u) : GPlus p) = QuotientGroup.mk u := by
+  rw [QuotientGroup.eq, Subgroup.mem_zpowers_iff]
+  exact ⟨1, by rw [zpow_one, inv_neg, neg_mul, inv_mul_cancel]⟩
+
+/-- Any pullback `g ∘ mk` from `𝒢⁺` is an even function on `𝒢`. -/
+private lemma comp_quotientMk_even (g : C(GPlus p, ℤ_[p])) (u : ℤ_[p]ˣ) :
+    (g.comp (quotientMk p)) (-u) = (g.comp (quotientMk p)) u := by
+  change g (QuotientGroup.mk (-u)) = g (QuotientGroup.mk u)
+  rw [quotientMk_neg]
+
+/-- `descendEven (g ∘ mk) = g`: descending a pullback recovers the original. -/
+private lemma descendEven_comp_quotientMk (g : C(GPlus p, ℤ_[p]))
+    (hg : ∀ u : ℤ_[p]ˣ, (g.comp (quotientMk p)) (-u) = (g.comp (quotientMk p)) u) :
+    descendEven p (g.comp (quotientMk p)) hg = g := by
+  ext x
+  induction x using QuotientGroup.induction_on with
+  | _ u => rw [descendEven_mk]; rfl
 
 /-- `π_* ∘ σ = id`: the section is a right inverse (hence `π_*` is surjective). -/
 theorem projPlus_plusSection (hp2 : p ≠ 2) (ν : PadicMeasure p (GPlus p)) :
     projPlus p (plusSection p hp2 ν) = ν := by
-  sorry
+  refine LinearMap.ext fun g => ?_
+  rw [projPlus_apply]
+  change ν (descendEven p (evenPart p hp2 (g.comp (quotientMk p))) _) = ν g
+  congr 1
+  -- `evenPart (g∘mk) = g∘mk` (even), and `descendEven (g∘mk) = g`
+  rw [descendEven_congr p (evenPart_of_even p hp2 _ (comp_quotientMk_even p g)) _
+    (comp_quotientMk_even p g)]
+  exact descendEven_comp_quotientMk p g (comp_quotientMk_even p g)
+
+/-- Descending an even function and pulling it back recovers it: `descend g ∘ mk = g`
+(here `g = evenPart f`). -/
+private lemma descendEven_comp (g : C(ℤ_[p]ˣ, ℤ_[p])) (hg : ∀ u : ℤ_[p]ˣ, g (-u) = g u) :
+    (descendEven p g hg).comp (quotientMk p) = g := by
+  ext u; change descendEven p g hg (QuotientGroup.mk u) = g u; rw [descendEven_mk]
+
+/-- For a `c`-invariant `μ`, the even part integrates to the same value: `μ (evenPart f) = μ f`. -/
+private lemma apply_evenPart_of_mem_plusPart (hp2 : p ≠ 2) {μ : PadicMeasure p ℤ_[p]ˣ}
+    (hμ : μ ∈ plusPart p) (f : C(ℤ_[p]ˣ, ℤ_[p])) :
+    μ (evenPart p hp2 f) = μ f := by
+  -- `μ (f∘c) = μ f` since `dirac(−1)·μ = μ`
+  have hcomp : μ (f.comp (negTranslate p)) = μ f := by
+    rw [← dirac_neg_one_mul_apply, (mem_plusPart_iff p).1 hμ]
+  rw [evenPart, map_smul, map_add, hcomp, smul_eq_mul, ← two_mul, ← mul_assoc,
+    (PadicLFunctions.isUnit_two_padicInt p hp2).val_inv_mul, one_mul]
 
 /-- `σ ∘ π_* = id` on the plus part: a c-invariant measure is determined by its
 pushforward (the injectivity half of RJW TeX 3006–3015). -/
 theorem plusSection_projPlus (hp2 : p ≠ 2) {μ : PadicMeasure p ℤ_[p]ˣ}
     (hμ : μ ∈ plusPart p) :
     plusSection p hp2 (projPlus p μ) = μ := by
-  sorry
+  refine LinearMap.ext fun f => ?_
+  change (projPlus p μ) (descendEven p (evenPart p hp2 f) (evenPart_even p hp2 f)) = μ f
+  rw [projPlus_apply, descendEven_comp, apply_evenPart_of_mem_plusPart p hp2 hμ]
 
 theorem projPlus_surjective (hp2 : p ≠ 2) :
-    Function.Surjective (projPlus p) := by
-  sorry
+    Function.Surjective (projPlus p) :=
+  fun ν => ⟨plusSection p hp2 ν, projPlus_plusSection p hp2 ν⟩
 
 /-- **RJW §11.1, second lemma (TeX 3006–3015)**: the natural isomorphism
 `Λ(𝒢)⁺ ≅ Λ(𝒢⁺)`, realised by `π_*` restricted to the plus part, with inverse the
@@ -313,13 +451,53 @@ def plusEquiv (hp2 : p ≠ 2) :
   LinearEquiv.ofLinear
     (pushforward p (quotientMk p) ∘ₗ (plusPart p).subtype)
     ((plusSection p hp2).codRestrict (plusPart p) (plusSection_mem_plusPart p hp2))
-    (by sorry)
-    (by sorry)
+    (by
+      -- `π_* ∘ σ = id` (note `pushforward (quotientMk) = projPlus` definitionally)
+      refine LinearMap.ext fun ν => ?_
+      exact projPlus_plusSection p hp2 ν)
+    (by
+      -- `σ ∘ π_* = id` on the plus part, via `Subtype.ext`
+      refine LinearMap.ext fun μ => ?_
+      exact Subtype.ext (plusSection_projPlus p hp2 μ.2))
+
+/-- The projection kills the minus part: an even pullback `g∘mk` is integrated to `0`
+by a `c`-anti-invariant measure (it equals its own negative). -/
+private lemma projPlus_eq_zero_of_mem_minusPart {ρ : PadicMeasure p ℤ_[p]ˣ}
+    (hρ : ρ ∈ minusPart p) : projPlus p ρ = 0 := by
+  refine LinearMap.ext fun g => ?_
+  rw [projPlus_apply, LinearMap.zero_apply]
+  -- the pullback `g ∘ mk` is even, hence fixed by the `c`-translation
+  have heven : (g.comp (quotientMk p)).comp (negTranslate p) = g.comp (quotientMk p) :=
+    ContinuousMap.ext fun u => by
+      change (g.comp (quotientMk p)) (-u) = (g.comp (quotientMk p)) u
+      exact comp_quotientMk_even p g u
+  -- but on a `c`-anti-invariant measure this value equals its negative
+  have hneg : ρ (g.comp (quotientMk p)) = -ρ (g.comp (quotientMk p)) := by
+    have h := dirac_neg_one_mul_apply p ρ (g.comp (quotientMk p))
+    rw [heven, (mem_minusPart_iff p).1 hρ, LinearMap.neg_apply] at h
+    exact h.symm
+  exact add_self_eq_zero.1 (add_eq_zero_iff_eq_neg.2 hneg)
 
 /-- The kernel of `π_*` is the minus part… -/
 theorem projPlus_eq_zero_iff (hp2 : p ≠ 2) {μ : PadicMeasure p ℤ_[p]ˣ} :
     projPlus p μ = 0 ↔ μ ∈ minusPart p := by
-  sorry
+  constructor
+  · intro h
+    -- decompose `μ = μ⁺ + μ⁻`; then `projPlus μ = projPlus μ⁺`, so `μ⁺ = σ 0 = 0`
+    obtain ⟨a, b, hab, -⟩ :=
+      Submodule.existsUnique_add_of_isCompl (isCompl_plusPart_minusPart p hp2) μ
+    have hpa : projPlus p (a : PadicMeasure p ℤ_[p]ˣ) = 0 := by
+      have : projPlus p μ = projPlus p (a : PadicMeasure p ℤ_[p]ˣ) := by
+        rw [← hab, map_add, projPlus_eq_zero_of_mem_minusPart p b.2, add_zero]
+      rw [← this, h]
+    have haz : (a : PadicMeasure p ℤ_[p]ˣ) = 0 := by
+      have := plusSection_projPlus p hp2 a.2
+      rw [hpa, map_zero] at this
+      exact this.symm
+    rw [← hab, haz, zero_add]
+    exact b.2
+  · intro h
+    exact projPlus_eq_zero_of_mem_minusPart p h
 
 /-- …equivalently the principal ideal `([−1] − [1])·Λ(𝒢)` (so
 `Λ(𝒢⁺) ≅ Λ(𝒢)/([−1]−[1])` — the ring-quotient picture used for transporting the
@@ -327,6 +505,22 @@ augmentation-ideal results). -/
 theorem ker_projPlus (hp2 : p ≠ 2) :
     RingHom.ker (projPlus p)
       = Ideal.span {(dirac p (-1 : ℤ_[p]ˣ) - 1 : PadicMeasure p ℤ_[p]ˣ)} := by
-  sorry
+  refine Ideal.ext fun x => ?_
+  rw [RingHom.mem_ker, projPlus_eq_zero_iff p hp2, mem_minusPart_iff,
+    Ideal.mem_span_singleton]
+  constructor
+  · -- `dirac(−1)·x = −x` ⟹ `x = ([−1]−1)·((−½)·x)`, so `([−1]−1) ∣ x`
+    intro hx
+    refine ⟨(-(((PadicLFunctions.isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p])) • x, ?_⟩
+    rw [mul_smul_comm, sub_mul, hx, one_mul,
+      show (-x - x : PadicMeasure p ℤ_[p]ˣ) = -((2 : ℤ_[p]) • x) from by rw [two_smul]; abel,
+      smul_neg, neg_smul, neg_neg, smul_smul,
+      (PadicLFunctions.isUnit_two_padicInt p hp2).val_inv_mul, one_smul]
+  · -- conversely `([−1]−1)·c` is `c`-anti-invariant (`[−1]·([−1]−1) = 1−[−1] = −([−1]−1)`)
+    rintro ⟨c, rfl⟩
+    rw [← mul_assoc, mul_sub, units_dirac_mul_dirac, neg_mul_neg, one_mul, mul_one,
+      ← units_one_def,
+      show (1 : PadicMeasure p ℤ_[p]ˣ) - dirac p (-1 : ℤ_[p]ˣ) = -(dirac p (-1) - 1) from by abel]
+    exact neg_mul _ _
 
 end PadicMeasure
