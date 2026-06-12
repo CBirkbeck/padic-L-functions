@@ -17,11 +17,11 @@ rev = "master"
 # Level-raising operator (ι_d : M_k(Γ₁(M)) → M_k(Γ₁(dM))) for the §8
 # Γ₀(p)-modularity of the p-stabilised Eisenstein series — from the
 # strong-multiplicity-one project. Pinned to compat/padic-mathlib-431
-# (= hecke-ring @ 720d950 + four mechanical mathlib-skew fixes).
+# (= hecke-ring @ 720d950 + four mechanical mathlib-skew fixes + tidy).
 [[require]]
 name = "LeanModularForms"
 git = "https://github.com/CBirkbeck/LeanModularForms.git"
-rev = "84b03fb1f3971f2b05ebc9959108d4db07d5d9e5"
+rev = "512911ce1a936ac9054415c5c72701fbd5cd5ae5"
 
 [[require]]
 name = "VersoBlueprint"
