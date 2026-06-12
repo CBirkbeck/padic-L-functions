@@ -1,0 +1,65 @@
+diff --git a/LeanModularForms/HeckeRIngs/AbstractHeckeRing/Basic.lean b/LeanModularForms/HeckeRIngs/AbstractHeckeRing/Basic.lean
+index cd64b18a..a423a9f3 100644
+--- a/LeanModularForms/HeckeRIngs/AbstractHeckeRing/Basic.lean
++++ b/LeanModularForms/HeckeRIngs/AbstractHeckeRing/Basic.lean
+@@ -117,7 +117,8 @@ lemma eq_iff (g h : P.Δ) : (⟦g⟧ : HeckeCoset P) = ⟦h⟧ ↔
+ lemma toSet_eq_rep (D : HeckeCoset P) :
+     HeckeCoset.toSet D = DoubleCoset.doubleCoset (HeckeCoset.rep D : G) P.H P.H := by
+   refine Quotient.inductionOn D fun g ↦ ?_
+-  simpa only [toSet_mk] using (Quotient.exact (Quotient.out_eq (⟦g⟧ : HeckeCoset P))).symm
++  simpa only [toSet_mk, HeckeCoset.rep]
++    using (Quotient.exact (Quotient.out_eq (⟦g⟧ : HeckeCoset P))).symm
+ 
+ /-- The representative lies in its double coset. -/
+ lemma rep_mem (D : HeckeCoset P) : (HeckeCoset.rep D : G) ∈ HeckeCoset.toSet D :=
+diff --git a/LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean b/LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean
+index 83ecfd11..79cc246e 100644
+--- a/LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean
++++ b/LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean
+@@ -271,12 +271,14 @@ theorem Gamma0MapUnits_surjective [NeZero N] :
+   obtain ⟨g, hg⟩ := SL2Reduction.SL2_reduction_surjective N target
+   have hg0 : g ∈ Gamma0 N := by
+     rw [Gamma0_mem]
+-    simpa using congr_fun (congr_fun (congr_arg Subtype.val hg) 1) 0
++    have h := congr_fun (congr_fun (congr_arg Subtype.val hg) 1) 0
++    simpa using h.trans (by simp [target])
+   refine ⟨⟨g, hg0⟩, ?_⟩
+   ext
+   show Gamma0Map N ⟨g, hg0⟩ = ↑d
+   simp only [Gamma0Map, MonoidHom.coe_mk, OneHom.coe_mk]
+-  simpa using congr_fun (congr_fun (congr_arg Subtype.val hg) 1) 1
++  have h := congr_fun (congr_fun (congr_arg Subtype.val hg) 1) 1
++  simpa using h.trans (by simp [target])
+ 
+ /-- The diamond operator `⟨d⟩` on modular forms for `Gamma1(N)`, indexed by
+ `d : (ZMod N)ˣ`. -/
+diff --git a/LeanModularForms/HeckeRIngs/GL2/LevelRaise.lean b/LeanModularForms/HeckeRIngs/GL2/LevelRaise.lean
+index e778b86f..099ea3bf 100644
+--- a/LeanModularForms/HeckeRIngs/GL2/LevelRaise.lean
++++ b/LeanModularForms/HeckeRIngs/GL2/LevelRaise.lean
+@@ -154,9 +154,11 @@ lemma levelRaiseConj_mem_Gamma1 (d M : ℕ) [NeZero d] (γ : SL(2, ℤ))
+     (hγ : γ ∈ Gamma1 (d * M)) :
+     levelRaiseConj d M γ hγ ∈ Gamma1 M := by
+   obtain ⟨ha, he, hc⟩ := (Gamma1_mem _ _).mp hγ
++  have h00 : (levelRaiseConj d M γ hγ).val 0 0 = γ.val 0 0 := rfl
++  have h11 : (levelRaiseConj d M γ hγ).val 1 1 = γ.val 1 1 := rfl
+   refine (Gamma1_mem _ _).mpr
+-    ⟨by simpa using congr_arg (ZMod.castHom (Nat.dvd_mul_left M d) (ZMod M)) ha,
+-     by simpa using congr_arg (ZMod.castHom (Nat.dvd_mul_left M d) (ZMod M)) he,
++    ⟨by rw [h00]; simpa using congr_arg (ZMod.castHom (Nat.dvd_mul_left M d) (ZMod M)) ha,
++     by rw [h11]; simpa using congr_arg (ZMod.castHom (Nat.dvd_mul_left M d) (ZMod M)) he,
+      ?_⟩
+   rw [ZMod.intCast_zmod_eq_zero_iff_dvd]
+   exact natCast_dvd_ediv_of_mul_dvd ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp hc)
+diff --git a/LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean b/LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean
+index 89177b89..733ee530 100644
+--- a/LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean
++++ b/LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean
+@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
+ -/
+ import Mathlib.Data.ZMod.Basic
+ import Mathlib.Data.ZMod.Coprime
++import Mathlib.Data.ZMod.Units
+ import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+ import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+ import Mathlib.RingTheory.Int.Basic

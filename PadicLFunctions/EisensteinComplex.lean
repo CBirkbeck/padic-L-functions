@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
+import LeanModularForms.HeckeRIngs.GL2.LevelRaise
 import PadicLFunctions.EisensteinFamily
 import PadicLFunctions.KubotaLeopoldt.ZetaValuesComplex
 
@@ -19,9 +20,13 @@ RJW TeX 2367–2394: the normalised Eisenstein series
 constant-term-1 normalisation; RJW's `E_k` is `(ζ(1−k)/2)·E` via
 `riemannZeta_neg_nat_eq_bernoulli`/`zetaNeg_eq_riemannZeta`.
 
-Deferred (plan.md §8): the Γ₀(p)-modularity of `E_k^{(p)}` (a remark in the
-source, TeX 2394, no proof given) — mathlib has no level-raising/`V_p`
-operator.
+The Γ₀(p)-modularity of `E_k^{(p)}` (RJW TeX 2394: "Note `E_k^{(p)}` is a
+modular form of weight `k` and level `Γ₀(p)`") is realised here via the
+`LeanModularForms` level-raising operator `modularFormLevelRaise`
+(Miyake §4.6 Lemma 4.6.1): see `stabilisedEisenstein`, the genuine
+`ModularForm ((Gamma0 p).map (mapGL ℝ)) k` whose pointwise value is
+`E_k(z) − p^{k−1}E_k(pz)` (`stabilisedEisenstein_apply`), and
+`stabilisedEisenstein_smul_apply` for the bridge to `rjwEisenstein`.
 -/
 
 open Complex EisensteinSeries
@@ -275,5 +280,131 @@ theorem hasSum_stabilisedEisenstein {k : ℕ} (hk : 4 ≤ k) (hk2 : Even k)
   exact hD
 
 end stabilisation
+
+section gammaZeroModularity
+
+open HeckeRing.GL2 Matrix Matrix.SpecialLinearGroup CongruenceSubgroup
+
+open scoped ModularForm
+
+/-- Every element of `(Gamma1 N).map (mapGL ℝ)` lies in the range of `mapGL ℝ`
+(i.e. in `𝒮ℒ`): the image of a congruence subgroup sits inside the full image of
+`SL(2, ℤ)`. -/
+private lemma Gamma1_map_le_range (N : ℕ) :
+    (Gamma1 N).map (mapGL ℝ) ≤ (mapGL ℝ : SL(2, ℤ) →* GL (Fin 2) ℝ).range := by
+  rintro x ⟨γ, -, rfl⟩
+  exact ⟨γ, rfl⟩
+
+omit hp in
+/-- `ModularForm.E hk` is invariant under the weight-`k` slash action of `mapGL ℝ γ`
+for every `γ : SL(2, ℤ)`, since `mapGL ℝ γ ∈ 𝒮ℒ = MonoidHom.range (mapGL ℝ)`. -/
+private lemma E_slash_mapGL {k : ℕ} (hk : 3 ≤ k) (γ : SL(2, ℤ)) :
+    (⇑(ModularForm.E hk) : ℍ → ℂ) ∣[(k : ℤ)] (mapGL ℝ γ : GL (Fin 2) ℝ)
+      = ⇑(ModularForm.E hk) :=
+  (ModularForm.E hk).slash_action_eq' (mapGL ℝ γ) ⟨γ, rfl⟩
+
+/-- The level-`Γ₁(p·1)` Eisenstein difference `E_k − p^{k−1}·ι_p(E_k)` underlying the
+`Γ₀(p)`-modular `E_k^{(p)}`: `E` restricted to `Γ₁(p·1)` minus `p^{k−1}` times the
+level-raise (Miyake §4.6 Lem 4.6.1) of `E` restricted to `Γ₁(1)`. -/
+private noncomputable def stabilisedDiff {k : ℕ} (hk : 3 ≤ k) :
+    ModularForm ((Gamma1 (p * 1)).map (mapGL ℝ)) (k : ℤ) :=
+  haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+  haveI : NeZero (p * 1) := ⟨by have := hp.out.pos; omega⟩
+  (ModularForm.E hk).restrictSubgroup (Gamma1_map_le_range (p * 1))
+    - ((p : ℂ) ^ (k - 1)) •
+      modularFormLevelRaise 1 p (k : ℤ)
+        ((ModularForm.E hk).restrictSubgroup (Gamma1_map_le_range 1))
+
+/-- The underlying function of `stabilisedDiff` is `E_k − p^{k−1}·levelRaiseFun p k E_k`. -/
+private lemma coe_stabilisedDiff {k : ℕ} (hk : 3 ≤ k) :
+    haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+    (⇑(stabilisedDiff p hk) : ℍ → ℂ)
+      = ⇑(ModularForm.E hk)
+        - ((p : ℂ) ^ (k - 1)) • levelRaiseFun p (k : ℤ) ⇑(ModularForm.E hk) := by
+  haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+  haveI : NeZero (p * 1) := ⟨by have := hp.out.pos; omega⟩
+  rfl
+
+/-- **The heart of `Γ₀(p)`-modularity.** The function `E_k − p^{k−1}·ι_p(E_k)` is
+invariant under the weight-`k` slash action of `mapGL ℝ γ` for every `γ ∈ Γ₀(p)`.
+
+`E` is `𝒮ℒ`-invariant, so its part is fixed. For `ι_p(E) = levelRaiseFun p k E`,
+the down-conjugation bridge `slash_mapGL_levelRaiseFun` rewrites the slash by
+`mapGL ℝ γ` as the level-raise of the slash by `mapGL ℝ γ̃`, where
+`γ̃ = levelRaiseConjOfDvd p γ … ∈ Γ₀(1) ⊆ SL(2, ℤ)`
+(`levelRaiseConjOfDvd_mem_Gamma0`); the latter slash also fixes `E`. -/
+private lemma stabilisedDiff_slash_mapGL {k : ℕ} (hk : 3 ≤ k)
+    (γ : SL(2, ℤ)) (hγ : γ ∈ Gamma0 p) :
+    haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+    ((⇑(ModularForm.E hk) : ℍ → ℂ)
+        - ((p : ℂ) ^ (k - 1)) • levelRaiseFun p (k : ℤ) ⇑(ModularForm.E hk))
+        ∣[(k : ℤ)] (mapGL ℝ γ : GL (Fin 2) ℝ)
+      = ⇑(ModularForm.E hk)
+        - ((p : ℂ) ^ (k - 1)) • levelRaiseFun p (k : ℤ) ⇑(ModularForm.E hk) := by
+  haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+  have hσγ : UpperHalfPlane.σ (mapGL ℝ γ : GL (Fin 2) ℝ)
+      = ContinuousAlgEquiv.refl ℝ ℂ := by
+    unfold UpperHalfPlane.σ
+    rw [if_pos (show (0 : ℝ) < (Matrix.GeneralLinearGroup.det (mapGL ℝ γ)).val by
+      rw [Matrix.SpecialLinearGroup.det_mapGL]; norm_num)]
+  have hγp1 : γ ∈ Gamma0 (p * 1) := by rwa [mul_one]
+  set hdvd := Gamma0_dmul_lower_left_dvd p 1 γ hγp1 with hdvd_def
+  rw [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash,
+    ModularForm.smul_slash, hσγ, ContinuousAlgEquiv.refl_apply,
+    E_slash_mapGL hk γ, slash_mapGL_levelRaiseFun p (k : ℤ) γ hdvd ⇑(ModularForm.E hk),
+    E_slash_mapGL hk (levelRaiseConjOfDvd p γ hdvd), ← sub_eq_add_neg]
+
+/-- The `p`-stabilised Eisenstein series `E_k^{(p)}(z) = E_k(z) − p^{k−1}E_k(pz)` as a
+genuine modular form of weight `k` and level `Γ₀(p)` (RJW TeX 2394; Miyake §4.6
+Lemma 4.6.1 for the underlying level-raising operator).
+
+Built from `stabilisedDiff` (the same difference at level `Γ₁(p·1)`) by promoting the
+slash-invariance from `Γ₁(p·1)` to the larger group `Γ₀(p)` via
+`stabilisedDiff_slash_mapGL`; holomorphy is inherited and boundedness at the cusps of
+`Γ₀(p)` transfers from `Γ₁(p·1)` because both groups are arithmetic, hence share the
+`SL(2, ℤ)`-cusps (`Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z`). The convention
+matches `rjwEisenstein` only up to the `ζ(1−k)/2` factor — see
+`stabilisedEisenstein_smul_apply`. -/
+noncomputable def stabilisedEisenstein {k : ℕ} (hk : 3 ≤ k) :
+    ModularForm ((Gamma0 p).map (mapGL ℝ)) (k : ℤ) :=
+  haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+  { toFun := ⇑(stabilisedDiff p hk)
+    slash_action_eq' := by
+      rintro _ ⟨γ, hγ, rfl⟩
+      rw [coe_stabilisedDiff p hk]
+      exact stabilisedDiff_slash_mapGL p hk γ hγ
+    holo' := (stabilisedDiff p hk).holo'
+    bdd_at_cusps' := fun {c} hc => by
+      have hc1 : IsCusp c ((Gamma1 (p * 1)).map (mapGL ℝ)) := by
+        rw [Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z] at hc ⊢
+        exact hc
+      exact (stabilisedDiff p hk).bdd_at_cusps' hc1 }
+
+/-- **RJW TeX 2394** (pointwise formula): the `Γ₀(p)`-modular form `stabilisedEisenstein`
+is the `p`-stabilisation `E_k(z) − p^{k−1}E_k(pz)`, where `E_k` is mathlib's normalised
+`ModularForm.E` and `pz = pScale p z`. -/
+theorem stabilisedEisenstein_apply {k : ℕ} (hk : 3 ≤ k) (z : ℍ) :
+    stabilisedEisenstein p hk z
+      = ModularForm.E hk z - (p : ℂ) ^ (k - 1) * ModularForm.E hk (pScale p z) := by
+  haveI : NeZero p := ⟨hp.out.pos.ne'⟩
+  have hpt : (levelRaiseMatrix p • z : ℍ) = pScale p z := by
+    apply UpperHalfPlane.ext
+    rw [coe_levelRaiseMatrix_smul]; rfl
+  change (⇑(stabilisedDiff p hk) : ℍ → ℂ) z = _
+  rw [coe_stabilisedDiff p hk]
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+  rw [levelRaiseFun_apply, hpt]
+
+/-- The bridge between `stabilisedEisenstein` and `rjwEisenstein` (RJW's `ζ(1−k)/2`
+normalisation): scaling the modular form by `ζ(1−k)/2` reproduces the `p`-stabilised
+combination of `rjwEisenstein` whose `q`-expansion is `hasSum_stabilisedEisenstein`. -/
+theorem stabilisedEisenstein_smul_apply {k : ℕ} (hk : 4 ≤ k) (z : ℍ) :
+    (((zetaNeg (k - 1) : ℚ) : ℂ) / 2) * stabilisedEisenstein p (k := k) (by omega) z
+      = rjwEisenstein (k := k) (by omega) z
+        - (p : ℂ) ^ (k - 1) * rjwEisenstein (k := k) (by omega) (pScale p z) := by
+  rw [stabilisedEisenstein_apply, rjwEisenstein, rjwEisenstein]
+  ring
+
+end gammaZeroModularity
 
 end PadicLFunctions

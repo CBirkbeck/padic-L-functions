@@ -4091,7 +4091,20 @@ to the twisted pseudo-measure form.
 - **Sizing**: ~60 LOC + blueprint pass.
 
 ### [T808] Γ₀(p)-modularity of the p-stabilisation (un-deferred 2026-06-12)
-- **Status**: open | **File**: EisensteinComplex.lean | **Depends on**: T805
+- **Status**: done (2026-06-12) | **File**: EisensteinComplex.lean | **Depends on**: T805
+- **Progress**: 2026-06-12: all three decls proven (subagent):
+  `stabilisedEisenstein : ModularForm ((Gamma0 p).map (mapGL ℝ)) k` (at the
+  more general 3 ≤ k), `_apply` (pointwise E − p^{k−1}E(p·)), `_smul_apply`
+  (the rjwEisenstein bridge matching hasSum_stabilisedEisenstein's RHS).
+  Γ₀-invariance by hand-promotion of the Γ₁(p·1)-difference (the central
+  helper `stabilisedDiff_slash_mapGL`: `slash_mapGL_levelRaiseFun` +
+  `levelRaiseConjOfDvd_mem_Gamma0` + E's 𝒮ℒ-invariance); cusp-boundedness
+  via `Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z`. DEP-COMPAT GREW: 2
+  more skew fixes in the dep checkout (Gamma1Pair.lean
+  `Gamma0MapUnits_surjective` simpa-reductions; LevelRaise.lean
+  `levelRaiseConj_mem_Gamma1` rfl-bridges) — now 4 files total to
+  upstream+repin at CLEANUP-82. Verified: build green (3809 jobs), axioms
+  standard 3 on all three. Cleanup: degraded mode, defer to CLEANUP-ALL-8.
 - **Parallel**: yes (after T805) | **Type**: def + theorem
 - **Context**: user directive 2026-06-12: the strong-multiplicity-one
   project (CBirkbeck/LeanModularForms, branch hecke-ring) has the
