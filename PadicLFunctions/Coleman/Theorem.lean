@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
 import PadicLFunctions.Coleman.Tower
+import PadicLFunctions.Coleman.NormOperator
 import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
 
 /-!
@@ -353,6 +354,184 @@ theorem evalPi_injective {f g : PowerSeries ℤ_[p]}
       (congrArg norm hab)
     omega
   · intro n; exact hrooteval (n + 1) (by omega)
+
+/-! ## The evaluation/norm commuting square (T907, RJW lem:norm power series vs units)
+
+RJW TeX 2673–2692: the diagram
+```
+ℤ_p⟦T⟧^×  --f ↦ f(π_{n+1})-->  𝒰_{n+1}
+   |𝒩                              |N_{n+1,n}
+   v                               v
+ℤ_p⟦T⟧^×  --f ↦ f(π_n)------->  𝒰_n
+```
+commutes: `evalPi (𝒩 f) n = N_{n+1,n}(evalPi f (n+1))`. The source proves this via
+the `μ_p`-product formula (not a formal identity over `ℤ_p`, replan R10.4); we take
+the **determinant route** of R10.4 instead, with no Galois theory: applying the ring
+hom `f ↦ f(π_{n+1})` to the *formal* digit identity
+`f·(1+T)^j = Σ_i φ(M_ij)·(1+T)^i` (where `M = digitMatrix f`) and using the
+`φ`-equivariance `(φ g)(π_{n+1}) = g(π_n)` (`evalPi_phi`) shows the matrix
+`(evalPi (M_ij) n)_{ij}` is the matrix of multiplication-by-`y` (`y := evalPi f (n+1)`)
+in the integral basis `(ξ_{n+1}^i)_{i<p}` of `𝒪_{n+1}/𝒪_n` (T903b). Hence
+`N_{n+1,n}(y) = det = evalPi (det (digitMatrix f)) n = evalPi (𝒩 f) n`. No `p` odd
+hypothesis is needed (the sign-bearing `levelNorm_zetaSys_pow_sub_one` is bypassed). -/
+
+variable {p}
+
+/-- The evaluation `f ↦ f(π_n)` bundled as a ring homomorphism `ℤ_p⟦T⟧ →+* ℂ_p`
+for `n ≥ 1` (fields from the `evalPi_add`/`evalPi_mul`/`evalPi_one` pack). Bundling
+is what lets `RingHom.map_det` and `map_sum` transport `det`/`Σ` through evaluation. -/
+noncomputable def evalPiHom {n : ℕ} (hn : 1 ≤ n) : PowerSeries ℤ_[p] →+* ℂ_[p] where
+  toFun f := evalPi p f n
+  map_one' := evalPi_one p n
+  map_mul' f g := evalPi_mul p f g hn
+  map_zero' := by rw [evalPi, map_zero]; simp [seriesEval]
+  map_add' f g := evalPi_add p f g hn
+
+@[simp]
+theorem evalPiHom_apply {n : ℕ} (hn : 1 ≤ n) (f : PowerSeries ℤ_[p]) :
+    evalPiHom hn f = evalPi p f n := rfl
+
+/-- `(1+T)^i` evaluates to `(1+π_n)^i = ξ_n^i` at `π_n` for `n ≥ 1`. -/
+theorem evalPi_one_add_X_pow (i : ℕ) {n : ℕ} (hn : 1 ≤ n) :
+    evalPi p ((1 + PowerSeries.X) ^ i : PowerSeries ℤ_[p]) n = zetaSys p n ^ i := by
+  rw [evalPi_pow p _ i hn, evalPi_add p _ _ hn, evalPi_one, evalPi_X,
+    show (1 : ℂ_[p]) + pi p n = zetaSys p n from by rw [pi]; ring]
+
+/-- **The evaluated digit identity** (T907 crux): applying `f ↦ f(π_{n+1})` to the
+formal column identity `digitMatrix_col_isDigitDecomp` and using `φ`-equivariance
+`(φ g)(π_{n+1}) = g(π_n)` (`evalPi_phi`) gives, with `y := evalPi f (n+1)`,
+`y · ξ_{n+1}^j = Σ_i (evalPi (M_ij) n)·ξ_{n+1}^i`. This says the matrix
+`(evalPi (M_ij) n)_{ij}` is the matrix of multiplication-by-`y` in the
+`ξ_{n+1}`-power basis of `K_{n+1}/K_n`. -/
+theorem evalPi_digitMatrix_col (f : PowerSeries ℤ_[p]) (j : Fin p) {n : ℕ} (hn : 1 ≤ n) :
+    evalPi p f (n + 1) * zetaSys p (n + 1) ^ (j : ℕ)
+      = ∑ i : Fin p, evalPi p ((digitMatrix f) i j) n * zetaSys p (n + 1) ^ (i : ℕ) := by
+  have hsucc : 1 ≤ n + 1 := Nat.le_succ_of_le hn
+  have hkey := congrArg (evalPiHom (p := p) hsucc) (digitMatrix_col_isDigitDecomp f j)
+  rw [map_mul, map_sum, evalPiHom_apply, evalPiHom_apply,
+    evalPi_one_add_X_pow (j : ℕ) hsucc] at hkey
+  rw [hkey]
+  refine Finset.sum_congr rfl (fun i _ => ?_)
+  rw [map_mul, evalPiHom_apply, evalPiHom_apply, evalPi_one_add_X_pow (i : ℕ) hsucc,
+    evalPi_phi p _ hn, mul_comm]
+
+/-! ### The `ξ_{n+1}`-power basis of `K_{n+1}/K_n` and `levelNorm` as a determinant
+
+The uniformiser/root powers `(ξ_{n+1}^i)_{i<p}` are `K_n`-linearly independent
+(`O_succ_digits_unique`, T903b) and there are `p = [K_{n+1}:K_n]` of them
+(`finrank_K_succ`), so they form a `K_n`-basis of `K_{n+1}`
+(`basisOfLinearIndependentOfCardEqFinrank`). Against this basis `levelNorm`
+(`= Algebra.norm`) is the determinant of the multiplication matrix, whose entries
+(by the evaluated digit identity `evalPi_digitMatrix_col` + `O_succ_digits_unique`)
+are exactly the `evalPi`-images of `digitMatrix`. -/
+
+/-- The `ξ_{n+1}^i ∈ extendScalars (K_n ≤ K_{n+1})` (`i < p`), as the basis vectors. -/
+private noncomputable def zetaPow {n : ℕ} (i : Fin p) :
+    IntermediateField.extendScalars (K_le_succ p n) :=
+  ⟨zetaSys p (n + 1) ^ (i : ℕ),
+    (IntermediateField.mem_extendScalars (K_le_succ p n)).2
+      (pow_mem (zetaSys_mem_K p (n + 1)) _)⟩
+
+@[simp]
+private theorem zetaPow_coe {n : ℕ} (i : Fin p) :
+    ((zetaPow (p := p) (n := n) i : IntermediateField.extendScalars (K_le_succ p n)) : ℂ_[p])
+      = zetaSys p (n + 1) ^ (i : ℕ) := rfl
+
+/-- `K_n`-linear independence of the `ξ_{n+1}`-powers (the uniqueness half of T903b,
+`O_succ_digits_unique`, repackaged as `LinearIndependent`). -/
+private theorem linearIndependent_zetaPow {n : ℕ} (hn : 1 ≤ n) :
+    LinearIndependent (K p n) (zetaPow (p := p) (n := n)) := by
+  rw [Fintype.linearIndependent_iff]
+  intro e he i
+  -- the `ℂ_p`-projection of the relation, with `K_n`-coefficients
+  have hproj : ∑ k : Fin p, ((e k : K p n) : ℂ_[p]) * zetaSys p (n + 1) ^ (k : ℕ) = 0 := by
+    have := congrArg (Subtype.val) he
+    rw [IntermediateField.coe_sum, ZeroMemClass.coe_zero] at this
+    rw [← this]
+    refine Finset.sum_congr rfl (fun k _ => ?_)
+    rw [IntermediateField.coe_smul, zetaPow_coe]; rfl
+  have hzero := O_succ_digits_unique p hn (c := fun k => ((e k : K p n) : ℂ_[p]))
+    (c' := fun _ => 0) (fun k => (e k).2) (fun _ => zero_mem _)
+    (by simpa using hproj)
+  have := congrFun hzero i
+  simpa using Subtype.ext this
+
+set_option synthInstance.maxHeartbeats 1000000 in
+-- the module/basis synthesis through the nested `IntermediateField (K p n) (extendScalars …)`
+-- layer (a second `IntermediateField` over `K p n`) exceeds the default budget
+/-- The `ξ_{n+1}`-power `K_n`-basis of `K_{n+1}` (a `LinearIndependent` family of the
+right cardinality `p = [K_{n+1}:K_n]`, `finrank_K_succ`). -/
+private noncomputable def zetaBasis {n : ℕ} (hn : 1 ≤ n) :
+    Module.Basis (Fin p) (K p n) (IntermediateField.extendScalars (K_le_succ p n)) :=
+  have : Nonempty (Fin p) := ⟨⟨0, hp.out.pos⟩⟩
+  basisOfLinearIndependentOfCardEqFinrank (linearIndependent_zetaPow (p := p) hn)
+    (by rw [Fintype.card_fin, finrank_K_succ p hn])
+
+set_option synthInstance.maxHeartbeats 1000000 in
+-- nested `IntermediateField (K p n) (extendScalars …)` instance synthesis (see `zetaBasis`)
+@[simp]
+private theorem zetaBasis_apply {n : ℕ} (hn : 1 ≤ n) (i : Fin p) :
+    zetaBasis (p := p) hn i = zetaPow (p := p) (n := n) i := by
+  rw [zetaBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
+
+/-- `evalPi f (n+1) ∈ K_{n+1}`, packaged as an element of `extendScalars`. -/
+private noncomputable def evalPiES (f : PowerSeries ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
+    IntermediateField.extendScalars (K_le_succ p n) :=
+  ⟨evalPi p f (n + 1), (IntermediateField.mem_extendScalars (K_le_succ p n)).2
+    (Subring.mem_inf.1 (evalPi_mem_O p f (Nat.le_succ_of_le hn))).1⟩
+
+set_option synthInstance.maxHeartbeats 1000000 in
+-- nested `IntermediateField (K p n) (extendScalars …)` instance synthesis (see `zetaBasis`)
+/-- The matrix-entry identification (T907 crux): the multiplication-by-`evalPi f (n+1)`
+matrix in the `ξ_{n+1}`-power basis has entries (coerced to `ℂ_p`) exactly the
+`evalPi`-images `evalPi ((digitMatrix f)_{ij}) n`. This is the evaluated digit
+identity (`evalPi_digitMatrix_col`) read through `Basis.repr_sum_self` and
+`O_succ_digits_unique` (the `K_n`-coordinates are unique). -/
+private theorem leftMulMatrix_zetaBasis_coe (f : PowerSeries ℤ_[p]) {n : ℕ} (hn : 1 ≤ n)
+    (i j : Fin p) :
+    ((Algebra.leftMulMatrix (zetaBasis (p := p) hn) (evalPiES f hn) i j : K p n) : ℂ_[p])
+      = evalPi p ((digitMatrix f) i j) n := by
+  -- the `K_n`-element `a_ij := evalPi (M_ij) n` (integral, hence in `K_n`)
+  set a : Fin p → K p n := fun i => ⟨evalPi p ((digitMatrix f) i j) n,
+    (Subring.mem_inf.1 (evalPi_mem_O p _ hn)).1⟩ with ha
+  -- `yes · b_j = Σ_i a_i • b_i` in extendScalars (project to ℂ_p and use the eval identity)
+  have hmul : evalPiES f hn * zetaBasis (p := p) hn j
+      = ∑ i : Fin p, a i • zetaBasis (p := p) hn i := by
+    apply Subtype.ext
+    rw [IntermediateField.coe_sum, IntermediateField.coe_mul, zetaBasis_apply, zetaPow_coe]
+    change evalPi p f (n + 1) * zetaSys p (n + 1) ^ (j : ℕ) = _
+    rw [evalPi_digitMatrix_col f j hn]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [IntermediateField.coe_smul, zetaBasis_apply, zetaPow_coe, ha]; rfl
+  rw [Algebra.leftMulMatrix_eq_repr_mul, hmul, (zetaBasis (p := p) hn).repr_sum_self]
+
+set_option synthInstance.maxHeartbeats 1000000 in
+-- nested `IntermediateField (K p n) (extendScalars …)` instance synthesis (see `zetaBasis`)
+/-- **The evaluation/norm commuting square** (T907, RJW lem:norm power series vs units,
+TeX 2673–2692): for `n ≥ 1`,
+`evalPi (𝒩 f) n = N_{n+1,n}(evalPi f (n+1))` — i.e. evaluating the norm operator at
+`π_n` equals the level-norm of the value at `π_{n+1}`. The determinant route (R10.4):
+`evalPi (𝒩 f) n = evalPi (det (digitMatrix f)) n = det ((evalPiHom).mapMatrix M)`
+(`RingHom.map_det`); the mapped matrix is (entrywise, by `leftMulMatrix_zetaBasis_coe`)
+the `K_n ↪ ℂ_p`-image of the multiplication-by-`evalPi f (n+1)` matrix in the
+`ξ_{n+1}`-power basis, whose determinant is `Algebra.norm (= levelNorm)`. No `p`-odd
+hypothesis is needed. -/
+theorem evalPi_normOp (f : PowerSeries ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
+    evalPi p (normOp f) n = levelNorm p n (evalPi p f (n + 1)) := by
+  have hmem : evalPi p f (n + 1) ∈ K p (n + 1) :=
+    (Subring.mem_inf.1 (evalPi_mem_O p f (Nat.le_succ_of_le hn))).1
+  -- the mapped matrices agree entrywise
+  have hmat : (evalPiHom (p := p) hn).mapMatrix (digitMatrix f)
+      = ((K p n).val.toRingHom).mapMatrix
+          (Algebra.leftMulMatrix (zetaBasis (p := p) hn) (evalPiES f hn)) := by
+    ext i j
+    rw [RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, Matrix.map_apply, Matrix.map_apply,
+      evalPiHom_apply]
+    exact (leftMulMatrix_zetaBasis_coe f hn i j).symm
+  rw [normOp_eq_det, ← evalPiHom_apply hn, RingHom.map_det, hmat, ← RingHom.map_det,
+    ← Algebra.norm_eq_matrix_det (zetaBasis (p := p) hn) (evalPiES f hn)]
+  rw [levelNorm_apply p n hmem]
+  rfl
 
 end Coleman
 

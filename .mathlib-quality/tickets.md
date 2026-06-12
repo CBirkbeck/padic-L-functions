@@ -4636,7 +4636,10 @@ Coleman/NormOperator.lean)
 - **Sizing**: ~160 LOC.
 
 ### [T907] The evaluation/norm commuting square
-- **Status**: open | **File**: Coleman/Theorem.lean
+- **Status**: done (2026-06-12) — det route (evalPiHom + RingHom.map_det +
+  Algebra.norm_eq_matrix_det on the ξ-power K_n-basis via
+  basisOfLinearIndependentOfCardEqFinrank + O_succ_digits_unique); NO p ≠ 2
+  needed; axioms standard 3 | **File**: Coleman/Theorem.lean
 - **Depends on**: T903, T904, T906 | **Type**: theorem
 - **Statement** (authored): `evalPi_normOp (f) {n} (hn : 1 ≤ n) :
   evalPi p (normOp p f) n = levelNorm p n (evalPi p f (n+1))`
@@ -4661,7 +4664,11 @@ Coleman/NormOperator.lean)
 - **Sizing**: ~150 LOC.
 
 ### [T908] The mod-p^k continuity of 𝒩
-- **Status**: open | **File**: Coleman/NormOperator.lean
+- **Status**: done (2026-06-12) — (i)+ModEqPow+ψ-layer (first dispatch);
+  (ii) det-over-𝔽_p/Frobenius route (M̄^p = diagonal f̄ + frobenius_inj —
+  replan vs the twisted-circulant), (iii) `Matrix.det_one_add_smul` + the
+  trace identity tr(digitMatrix h) = p·ψ(h) (TeX 2670!), (iv) the division
+  iterate. All axiom-clean.
 - **Depends on**: T906 | **Type**: lemmas
 - **Statement** (authored; Q5): `phi_injective_mod` ((i): φf ≡ 1 mod p^k
   → f ≡ 1 mod p^k — coefficientwise: φ's coefficient matrix is
@@ -4772,7 +4779,10 @@ series + thm:coleman map 2)
 
 ### [T911] Cyclotomic units and the logarithmic-derivative bridge
 (authors Coleman/Map.lean)
-- **Status**: open | **File**: Coleman/Map.lean | **Depends on**: T903
+- **Status**: done (2026-06-12) — Map.lean authored (365 lines): cycloUnit
+  (+mem/norm/ne_zero pack), cyclo : NormCompatUnits (engine + levelNorm_div),
+  ∂log f_{c(a)} = (a−1) − F_a (T704 template), the residue bridge
+  Res((a−1)−Fa-measure) = −Res(μ_a). All 8 publics axiom-clean. | **File**: Coleman/Map.lean | **Depends on**: T903
 - **Parallel**: yes (after T903; independent of T905–T910)
 - **Type**: def+lemmas
 - **Statement** (authored; Q7): `cycloUnit (a) (n) : ℂ_[p]` :=

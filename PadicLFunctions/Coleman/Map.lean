@@ -143,7 +143,8 @@ numerator and denominator swapped (norm `1`, in `K_n`). -/
 theorem inv_cycloUnit_mem_O {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {n : ℕ} (hn : 1 ≤ n) :
     (cycloUnit p a n)⁻¹ ∈ O p n := by
   rw [O, Subring.mem_inf]
-  refine ⟨(K p n).inv_mem (cycloUnit_mem_K p a hn), show ‖(cycloUnit p a n)⁻¹‖ ≤ 1 from ?_⟩
+  refine ⟨(K p n).inv_mem (cycloUnit_mem_K p a hn),
+    show ‖(cycloUnit p a n)⁻¹‖ ≤ 1 from ?_⟩
   rw [norm_inv, norm_cycloUnit p ha hn, inv_one]
 
 /-! ## The packaged cyclotomic-unit tower `c(a)` (RJW TeX 2577) -/
@@ -204,9 +205,161 @@ noncomputable def cyclo {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2) :
         show ((Units.mk0 (cycloUnit p a n) (cycloUnit_ne_zero p ha hn))⁻¹ : ℂ_[p])
           = (cycloUnit p a n)⁻¹ from rfl]
       exact inv_cycloUnit_mem_O p ha hn
-    · rw [dif_neg hn, show (((1 : ℂ_[p]ˣ) : ℂ_[p]))⁻¹ = 1 from by rw [Units.val_one, inv_one]]
+    · rw [dif_neg hn,
+        show (((1 : ℂ_[p]ˣ) : ℂ_[p]))⁻¹ = 1 from by rw [Units.val_one, inv_one]]
       exact one_mem _
   compat n hn := by
     have hn1 : 1 ≤ n + 1 := by omega
     rw [dif_pos hn1, dif_pos hn, Units.val_mk0, Units.val_mk0]
     exact levelNorm_cycloUnit p ha hp2 hn
+
+/-! ## The logarithmic derivative of `f_{c(a)} = geomSum a` (RJW TeX 2595–2608)
+
+The Coleman power series of `c(a)` is `f_{c(a)} = geomSum a = ((1+T)^a−1)/T` (RJW
+prop:coleman zetap). Its logarithmic derivative `∂log f := (1+T)·f′/f` equals
+`(a−1) − F_a`; cleared of the `f`-denominator (and of the `Ring.inverse` junk in
+`F_a`) this is `(1+T)·(geomSum a)′ = ((a−1) − F_a)·geomSum a`. -/
+
+/-- `(1+T)·∂((1+T)^a) = a·(1+T)^a` over any commutative ring — the Leibniz rule by
+induction on `a` (`∂(1+T) = 1`). Used as the `hQ`-step of the cleared logarithmic
+derivative identity (mirrors the §8 T704 calculation). -/
+private theorem one_add_X_mul_derivativeFun_one_add_X_pow (a : ℕ) :
+    (1 + X) * derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a)
+      = (a : PowerSeries ℤ_[p]) * (1 + X) ^ a := by
+  have hDoneX : derivativeFun (1 + X : PowerSeries ℤ_[p]) = 1 := by
+    rw [derivativeFun_add, derivativeFun_one, zero_add]; exact derivative_X
+  induction a with
+  | zero => simp [derivativeFun_one]
+  | succ a ih =>
+    rw [pow_succ, derivativeFun_mul, hDoneX, smul_eq_mul, smul_eq_mul, mul_one]
+    have : (1 + X) * ((1 + X) ^ a + (1 + X) * derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a))
+        = (1 + X) ^ (a + 1) + (1 + X) * ((1 + X) * derivativeFun ((1 + X) ^ a)) := by
+      rw [pow_succ]; ring
+    rw [this, mul_left_comm (1 + X) (1 + X) (derivativeFun _), ih]
+    push_cast
+    ring
+
+/-- **RJW prop:coleman zetap (TeX 2595–2608)**, cleared form: the logarithmic
+derivative of `f_{c(a)} = geomSum a` is `(a−1) − F_a`, i.e.
+`(1+T)·(geomSum a)′ = ((a−1) − F_a)·geomSum a`.
+
+Proof (the §8 T704 template): differentiate `geomSum a · T = (1+T)^a − 1` to get
+`(geomSum a)′·T + geomSum a = ∂((1+T)^a)`; multiply by `(1+T)` and use
+`(1+T)·∂((1+T)^a) = a·(1+T)^a`; the target multiplied by `T` reduces, via
+`((1+T)^a−1)·F_a = geomSum a − a` and `geomSum a · T = (1+T)^a − 1`, to the same
+expression. Cancel the regular element `T`. -/
+theorem one_add_mul_derivative_log_geomSum {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (_ha0 : a ≠ 0) :
+    (1 + X) * derivativeFun (PadicMeasure.geomSum p a)
+      = (((a : PowerSeries ℤ_[p]) - 1) - PadicMeasure.Fa p a)
+          * PadicMeasure.geomSum p a := by
+  set G := PadicMeasure.geomSum p a with hG
+  -- `G·X = (1+X)^a − 1`
+  have hGX : G * X = (1 + X) ^ a - 1 := PadicMeasure.geomSum_mul_X p a
+  -- differentiate it: `(G)′·X + G = ∂((1+X)^a)`
+  have hDX : derivativeFun (X : PowerSeries ℤ_[p]) = 1 := derivative_X
+  have hdiff : derivativeFun G * X + G = derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a) := by
+    have h := congrArg derivativeFun hGX
+    rw [derivativeFun_mul, hDX, smul_eq_mul, smul_eq_mul, mul_one,
+      show derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a - 1)
+        = derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a) by
+        rw [show ((1 + X : PowerSeries ℤ_[p]) ^ a - 1)
+            = (1 + X) ^ a + (-1 : PowerSeries ℤ_[p]) by ring, derivativeFun_add,
+          show (-1 : PowerSeries ℤ_[p]) = PowerSeries.C (-1 : ℤ_[p]) by simp,
+          derivativeFun_C, add_zero]] at h
+    rw [← h]; ring
+  -- `(1+X)·∂((1+X)^a) = a·(1+X)^a`
+  have hQ : (1 + X) * derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a)
+      = (a : PowerSeries ℤ_[p]) * (1 + X) ^ a :=
+    one_add_X_mul_derivativeFun_one_add_X_pow p a
+  -- the characterising identity
+  have hFa : ((1 + X) ^ a - 1) * PadicMeasure.Fa p a = G - (a : PowerSeries ℤ_[p]) :=
+    PadicMeasure.one_add_X_pow_sub_one_mul_Fa p ha
+  -- cancel the regular element `X`; reduce both sides multiplied by `X`
+  refine mul_right_cancel₀ (X_ne_zero (R := ℤ_[p])) ?_
+  -- LHS·X = (1+X)·(G′·X) = (1+X)·(∂((1+X)^a) − G) = a(1+X)^a − (1+X)·G
+  have hL : (1 + X) * derivativeFun G * X
+      = (a : PowerSeries ℤ_[p]) * (1 + X) ^ a - (1 + X) * G := by
+    have : (1 + X) * derivativeFun G * X
+        = (1 + X) * (derivativeFun ((1 + X : PowerSeries ℤ_[p]) ^ a) - G) := by
+      rw [← hdiff]; ring
+    rw [this, mul_sub, hQ]
+  -- RHS·X = ((a−1) − Fa)·(G·X) = (a−1)((1+X)^a − 1) − (G − a)
+  have hR : (((a : PowerSeries ℤ_[p]) - 1) - PadicMeasure.Fa p a) * G * X
+      = ((a : PowerSeries ℤ_[p]) - 1) * ((1 + X) ^ a - 1) - (G - (a : PowerSeries ℤ_[p])) := by
+    rw [mul_assoc, hGX, sub_mul, mul_comm (PadicMeasure.Fa p a) _, hFa]
+  rw [hL, hR]
+  -- both sides are now polynomials in `G, X, ↑a`; `(1+X)^a = G·X + 1`
+  have h1pX : (1 + X : PowerSeries ℤ_[p]) ^ a = G * X + 1 := by rw [hGX]; ring
+  rw [h1pX]
+  ring
+
+/-! ## The residue relation `Res(μ_{∂log f}) = −Res(μ_a)` (RJW TeX 2611–2624)
+
+RJW lem:relate cyclo to mua: the residue at `ℤ_p^×` of the measure attached to
+the cleared logarithmic derivative `(a−1) − F_a` equals `−Res_{ℤ_p^×}(μ_a)`. The
+constant series `a−1` contributes nothing: it is the Mahler transform of
+`(a−1)·δ_0` (`δ_0 = 1` has Mahler transform `(1+T)^0 = 1`), and `0 ∉ ℤ_p^×`, so
+its restriction to `ℤ_p^×` vanishes. -/
+
+/-- `Res_U` is additive (`res = cmul`, evaluated pointwise via `LinearMap.sub_apply`). -/
+private theorem res_sub {U : Set ℤ_[p]} (hU : IsClopen U) (μ ν : PadicMeasure p ℤ_[p]) :
+    PadicMeasure.res p hU (μ - ν) = PadicMeasure.res p hU μ - PadicMeasure.res p hU ν := by
+  refine LinearMap.ext fun f => ?_
+  rw [LinearMap.sub_apply, PadicMeasure.res, PadicMeasure.res, PadicMeasure.res,
+    PadicMeasure.cmul_apply, PadicMeasure.cmul_apply, PadicMeasure.cmul_apply,
+    LinearMap.sub_apply]
+
+/-- `Res_U` commutes with scalars. -/
+private theorem res_smul {U : Set ℤ_[p]} (hU : IsClopen U) (c : ℤ_[p])
+    (μ : PadicMeasure p ℤ_[p]) :
+    PadicMeasure.res p hU (c • μ) = c • PadicMeasure.res p hU μ := by
+  refine LinearMap.ext fun f => ?_
+  rw [LinearMap.smul_apply, PadicMeasure.res, PadicMeasure.res, PadicMeasure.cmul_apply,
+    PadicMeasure.cmul_apply, LinearMap.smul_apply]
+
+/-- The restriction of `δ_0` to `ℤ_p^×` is `0`: `(Res δ_0)(f) = 𝟙_{ℤ_p^×}(0)·f(0) = 0`
+because `0` is not a unit. -/
+private theorem res_units_dirac_zero :
+    PadicMeasure.res p (PadicMeasure.isClopen_units p)
+        (PadicMeasure.dirac p (0 : ℤ_[p])) = 0 := by
+  refine LinearMap.ext fun f => ?_
+  rw [PadicMeasure.res, PadicMeasure.cmul_apply, PadicMeasure.dirac_apply]
+  have h0 : ((LocallyConstant.charFn ℤ_[p] (PadicMeasure.isClopen_units p) :
+      C(ℤ_[p], ℤ_[p])) * f) (0 : ℤ_[p]) = 0 := by
+    rw [ContinuousMap.mul_apply,
+      show ((LocallyConstant.charFn ℤ_[p] (PadicMeasure.isClopen_units p) :
+          C(ℤ_[p], ℤ_[p])) (0 : ℤ_[p]) : ℤ_[p])
+        = Set.indicator {x : ℤ_[p] | IsUnit x} 1 (0 : ℤ_[p]) from rfl,
+      Set.indicator_of_notMem (by simp) 1, zero_mul]
+  rw [h0]; rfl
+
+/-- The measure attached to the constant series `c` is `c·δ_0`, whose residue at
+`ℤ_p^×` vanishes: `Res_{ℤ_p^×}(𝓐⁻¹(C c)) = 0`. -/
+private theorem res_units_symm_C (c : ℤ_[p]) :
+    PadicMeasure.res p (PadicMeasure.isClopen_units p)
+        ((PadicMeasure.mahlerLinearEquiv p).symm (PowerSeries.C (R := ℤ_[p]) c)) = 0 := by
+  have hsymm : (PadicMeasure.mahlerLinearEquiv p).symm (PowerSeries.C (R := ℤ_[p]) c)
+      = c • PadicMeasure.dirac p (0 : ℤ_[p]) := by
+    rw [show PowerSeries.C (R := ℤ_[p]) c = c • (1 : PowerSeries ℤ_[p]) by
+        rw [PowerSeries.smul_eq_C_mul, mul_one], map_smul]
+    congr 1
+    apply (PadicMeasure.mahlerLinearEquiv p).injective
+    rw [LinearEquiv.apply_symm_apply, PadicMeasure.mahlerLinearEquiv_apply,
+      PadicMeasure.mahlerTransform_dirac, binomialSeries_zero]
+  rw [hsymm, res_smul, res_units_dirac_zero, smul_zero]
+
+/-- **RJW lem:relate cyclo to mua (TeX 2611–2624)**, series/measure-level form:
+`Res_{ℤ_p^×}(μ_{(a−1)−F_a}) = −Res_{ℤ_p^×}(μ_a)`, where `μ_{(a−1)−F_a}` is the
+measure with Mahler transform `(a−1) − F_a`. Linearity of `𝓐⁻¹` and of `Res`
+splits off the constant part `a−1`, whose residue vanishes (`res_units_symm_C`);
+the remaining `−𝓐⁻¹(F_a) = −μ_a`. -/
+theorem res_derivative_log_geomSum {a : ℕ} (_ha : ¬ (p : ℕ) ∣ a) (_ha0 : a ≠ 0) :
+    PadicMeasure.res p (PadicMeasure.isClopen_units p)
+        ((PadicMeasure.mahlerLinearEquiv p).symm
+          (((a : PowerSeries ℤ_[p]) - 1) - PadicMeasure.Fa p a))
+      = - PadicMeasure.res p (PadicMeasure.isClopen_units p) (PadicMeasure.muA p a) := by
+  -- the constant series `(a : ℤ_p⟦T⟧) − 1 = C ((a : ℤ_p) − 1)`
+  have hconst : ((a : PowerSeries ℤ_[p]) - 1)
+      = PowerSeries.C (R := ℤ_[p]) ((a : ℤ_[p]) - 1) := by
+    rw [map_sub, map_one, ← map_natCast (PowerSeries.C (R := ℤ_[p])) a]
+  rw [hconst, map_sub, PadicMeasure.muA, res_sub, res_units_symm_C, zero_sub]

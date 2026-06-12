@@ -39,6 +39,7 @@ import PadicLFunctions.EisensteinComplex
 import PadicLFunctions.Coleman.Tower
 import PadicLFunctions.Coleman.NormOperator
 import PadicLFunctions.Coleman.Theorem
+import PadicLFunctions.Coleman.Map
 
 /-!
 # p-adic L-functions
