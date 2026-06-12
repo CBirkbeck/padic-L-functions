@@ -2862,3 +2862,136 @@ sum_seriesEval_Ftilde : Σ_i F̃(ξ^i−1) = θ(p)·F̃(0) (cases per TeX
 2115–2155). Restated skeleton: FormalPsi b3' (∂φ-commutation),
 exists_antideriv, b6' (integral Eqphipsi), mahlerK moved here;
 ValuesAtOne p6' (mass identity), p7' (trace).
+
+## R7: The residue of ζ_p at s = 1 (RJW §7, TeX 2181–2360) — draft
+
+### Source statements (verbatim)
+- Thm 7.1 (`thm:residue`, TeX 2187–2194): "Let $i \in \{1, 2, \ldots, p-1\}$.
+  The following assertions hold: (i) If $i \neq p-1$, then $\zeta_{p,i}$ is
+  analytic at $s=1$. (ii) The function $\zeta_{p,p-1}$ has a simple pole at
+  $s=1$ with residue $(1 - p^{-1})$."
+- Eqtmp2 (TeX 2210–2215): "$\zeta_{p,i}(s) = \frac{\int_{\Z_p^\times}
+  \omega(x)^{i}\langle x\rangle^{1-s} x^{-1}\cdot\mu_a}{\omega(a)^{i}
+  \langle a\rangle^{1-s} - 1}$" — definitional for `zetaPBranch` (T519).
+- Lem 7.2 (`lem:g p-1`, TeX 2218–2226): "(i) If $i \neq p-1$, then
+  $g_{a,i}(1) \neq 0$. … (ii) We have $g_{a,p-1}(1) = 0$, and
+  $\lim_{s\to1}(s-1)^{-1}g_{a,p-1}(s) = -\log_p(a)$."
+- F̃_a (TeX 2268): "$\widetilde{F}_a(T) \defeq \log\left(\frac{T}{1+T}\cdot
+  \frac{(1+T)^a}{(1+T)^a-1}\right)$"; Lem 7.3 (TeX 2271): "Formally, we
+  have $\partial \widetilde{F}_a(T) = F_a(T)$."
+- Lem 7.4 (TeX 2285): "We have $\widetilde{F}_a(T) \in \mathscr{R}^+$."
+  [SKIPPED — distribution-free route, as Lem 6.2; rationale in blueprint.]
+- Lem 7.5 (`lem:numerator`, TeX 2320): "We have
+  $\big((1-\varphi\circ\psi)\widetilde{F}_{a}\big)(0) = -(1-p^{-1})\log_p(a)$."
+  Proof TeX 2323–2352: F̃_a(0) = −log_p(a) (the aT-factorisation
+  (1+T)^a−1 = aT(1+Tg(T)), eq:poly expansion); the Eqphipsi ξ-sum with
+  $\{\xi^a : \xi\in\mu_p\} = \mu_p$ (a generator) and
+  $\prod_{\xi\in\mu_p}(X\xi-1) = X^p-1$, $\prod\xi^{a-1} = 1$, collapsing
+  to $-p^{-1}\log_p(a)$.
+
+### Recorded replans
+1. Distribution-free route again (R6.6 verbatim): Lem 7.4 (ℛ⁺) not
+   formalised; the mass ∫x⁻¹μ_a is the constant coefficient of 𝓐(ρ_a) for
+   the GENUINE measure ρ_a (= the §4 `zetaNum` base-changed), pinned by
+   the c₀-design and evaluated by sum_seriesEval_mahlerK.
+2. "Analytic/simple pole" realised as topological statements: (i) =
+   ContinuousAt (zetaPBranch p hp2 i) 1 (for 0 < i < p−1); (ii) =
+   Tendsto ((s−1)·ζ_{p,p−1}(s)) (𝓝[≠]1) (𝓝 (1−p⁻¹)). RJW's
+   rigid-analytic framing (Rem 4.x weight-space) stays prose.
+3. The Lem 7.2 limit via the exp/log bridge (T523) instead of RJW's
+   binomial-series manipulation (TeX 2236–2248): ⟨a⟩^{1−s} =
+   exp((1−s)log⟨a⟩), so (s−1)⁻¹(⟨a⟩^{1−s}−1) → −log⟨a⟩ follows from the
+   exp-derivative-at-0; equivalent by T523's uniqueness (the binomial
+   route IS available but the exp-route reuses proven API; replan note).
+4. ξ-field: statements needing μ_p ⊂ K quantify over K (the §5/§6
+   pattern); the ℚ_p-level conclusions descend by algebraMap-injectivity.
+   K instantiated with ℂ_[p] (mathlib PadicComplex) — survey-gated.
+
+### Leaves (PadicLFunctions/ResidueZeta.lean unless noted)
+- **R7.1** (T701): exp-tail + character-Lipschitz.
+  `norm_padicExp_sub_one_sub_self_le : InExpBall p w →
+  ‖padicExp p w − 1 − w‖ ≤ p·‖w‖²` (terms n ≥ 2 at the (p−1)-power level:
+  (‖(n!)⁻¹‖‖w‖^{n−2})^{p−1} ≤ p^{n−1}·p^{−(n−2)} = p);
+  `norm_onePAdicPow_sub_one (hp2) : ‖y^t − 1‖ = ‖t‖·‖y−1‖` for
+  y ∈ 1+pℤ_p (via T523: y^t = pZpExp(t·pZpLog y), norm_padicExp_sub_one,
+  norm_padicLog; equality, not just ≤).
+- **R7.2** (T702): the denominator. `teichmuller_isPrimitiveRoot_of_topGen`:
+  ω(u) has order exactly p−1 for the §4 generator u (from the generator
+  property: u mod p generates (ZMod p)ˣ — extract from T037);
+  `branch_denom_ne_zero (0 < i < p−1)`: ω(u)^i⟨u⟩^{1−s}−1 ≠ 0 at s = 1
+  (⟨u⟩⁰ = 1; ω(u)^i ≠ 1 by primitivity) and for all s (|ω^i−1-part| = 1 vs
+  |⟨u⟩^{1−s}−1| < 1 ultrametric isoceles — gives nonvanishing on ALL of
+  ℤ_p, stronger than RJW's s = 1); `tendsto_denom_div`:
+  (s−1)⁻¹·(⟨u⟩^{1−s}−1) → −log⟨u⟩-coe over 𝓝[≠]1 (R7.1 + the exp-bridge).
+- **R7.3** (T703): continuity. `continuous_zetaPBranch_num`:
+  s ↦ zetaNum-pairing(branchChar i (1−s)) is Lipschitz (R7.1's character
+  bound, uniform in x; measure-pairing norm-bound — the §3 PadicMeasure
+  norm machinery `norm_apply_le`); `continuousAt_zetaPBranch` (Thm (i),
+  0 < i < p−1): numerator continuous, denominator continuous and ≠ 0.
+- **R7.4** (T704): F̃_a-series. Over K: `FtildeA (a : ℕ) : PowerSeries K` :=
+  C(−extLog p (a:K)) + (the log(1+T·h_a)-series) + (a−1) • formalLog,
+  with h_a from the §4 factorisation (PropFaT-analogue — survey MuA.lean
+  for the existing (1+T)^a−1 = aT(1+Tg)-machinery; else define h_a by the
+  explicit geometric composite as in TeX 2296–2305);
+  `one_add_mul_derivative_FtildeA = F_a-series-K` (∂-computation per
+  Lem 7.3: ∂log(T/(1+T)) = 1/T-part and ∂log((1+T)^a−1/(1+T)^a) =
+  a/((1+T)^a−1) — formal, the T612-p2-pattern with the geometric
+  inverses); F_a-series := K-image of the §4 Mahler transform of μ_a
+  (MuA.lean's Fa — survey the exact decl).
+- **R7.5** (T705): the measure. `rhoA := baseChange p K (iota-of
+  (zetaNum p a))` (the §4 Measure-level units-embedding — survey
+  Measure/UnitsZp for the ℤ_p-iota; zetaNum p a : PadicMeasure p ℤ_[p]ˣ);
+  `psi_rhoA = 0` (unit-supported through baseChange — baseChange/psi
+  compatibility: survey BaseChange.lean for psi-naturality (the TW6 notes
+  deferred naturality lemmas to consumers — may need a new lemma
+  `psi_baseChange : psi(baseChange μ) = baseChange(psi μ)`-shape, ~30 LOC
+  via mahlerTransform_baseChange + the digit/transform characterisations));
+  `one_add_mul_derivative_mahlerK_rhoA = (1−φψ)F_a-series` (the
+  T614-pattern: x·ρ_a = baseChange(Res μ_a-units-version) — the §4 zetaNum
+  is x⁻¹Res(μ_a) BY CONSTRUCTION (ZetaP.lean) so x·zetaNum = Res μ_a at
+  the §4 level (survey the §4 lemma; T037-era should have it), transform
+  + res_units_eq).
+- **R7.6** (T706): the mass. c₀-pin (T615-pattern verbatim):
+  `p_mul_constantCoeff_mahlerK_rhoA : (p:K)·𝓐ρ_a(0) = (p:K)·F̃_a(0) −
+  Σ_{i<p} F̃_a(ξ^i−1)`; trace `sum_seriesEval_FtildeA :
+  Σ_{i<p} seriesEval F̃_a (ξ^i−1) = (p:K)·(−p⁻¹·extLog(a)-form)` — wait,
+  per Lem 7.5: φψF̃_a(0) = −p⁻¹log_p(a) ⟺ Σ_i F̃_a(ξ^i−1) = p·(φψF̃_a)(0)
+  = −log_p(a): the per-point evaluation F̃_a(ξ^i−1) =
+  extLog-of-((ξ^i−1)-substituted arguments) (the T616-pattern:
+  seriesEval-of-logSeriesAt-style resummations) and the μ_p-collapse with
+  {ξ^a} = μ_p (gcd(a,p) = 1 from the generator — `generator_coprime`
+  sub-leaf) + ∏(Xξ−1) = X^p−1 + ∏ξ^{a−1} = 1 (p odd: ∏ξ = 1; p = 2
+  excluded by hp2 ambient anyway). Combined:
+  `constantCoeff_mahlerK_rhoA = −(1−p⁻¹-K)·extLog(a)-form`.
+- **R7.7** (T707): descent + numerator identification.
+  `exists_padicComplex_pack` (survey-gated): the instance-pack + a
+  primitive p-th root for K := ℂ_[p]; `zetaNum_one_eq`: the ℚ_p-level
+  ∫x⁻¹μ_a = ((zetaNum p a) 1-pairing : ℚ_[p]) = −(1−p⁻¹)·extLog p (a:ℚ_[p])
+  (inject into K, rewrite via R7.6 + baseChange-compatibility of the
+  mass + algebraMap-injectivity; extLog commutes with the embedding —
+  small lemma `algebraMap_extLog`-shape via the witness-form).
+- **R7.8** (T708, MILESTONE): Thm 7.1. (i) from R7.3; (ii):
+  `tendsto_sub_one_mul_zetaPBranch (hp2) : Tendsto
+  (fun s : ℤ_[p] => ((s:ℚ_[p])−1) · zetaPBranch p hp2 (p−1) s)
+  (𝓝[≠] 1) (𝓝 (1 − (p:ℚ_[p])⁻¹))` — assemble: zetaPBranch-def =
+  numerator(s)/denominator(s); (s−1)·ζ = [(s−1)/g(s)]·numerator(s);
+  (s−1)/g(s) → −1/log⟨u⟩-coe (R7.2; division-limit: g ≠ 0 near 1 off 1 —
+  from the limit being ≠ 0); numerator(s) → numerator(1) =
+  zetaNum-mass-pairing (R7.3-continuity; branchChar (p−1) 0 = ω^{p−1}-only
+  = 1-on-units: the pairing at s = 1 IS the mass: ω(x)^{p−1} = 1 ✓
+  teichmullerFun_pow_card_sub_one) = −(1−p⁻¹)extLog(u-as-a) (R7.7);
+  extLog(a) = log⟨u⟩-coe-relation (`extLog_eq_padicLog_angle`: a = ω⟨a⟩,
+  extLog kills ω — extLog_mul + torsion + extLog_eq_padicLog-ball);
+  product of limits: (−1/L)·(−(1−p⁻¹)L) = 1−p⁻¹ ✓ (L ≠ 0:
+  log⟨u⟩ ≠ 0 ⟸ ⟨u⟩ ≠ 1 ⟸ u generator (torsion-free part nontrivial —
+  topGen_pow_ne_one-machinery) + norm_padicLog).
+- Blueprint: §7 chapter (Chapters/ — check existing stub name): wire
+  Thm 7.1 (the Tendsto-pair), Lem 7.2, 7.3, 7.5 nodes; Lem 7.4
+  rationale-comment (ℛ⁺ deferred); prose notes for replans 2–3.
+
+### Prior-B2 consultation: 7 entries in b2_log.jsonl — none match the R7
+names/shapes (checked by name; the digit/eval-phi/HasSum patterns are
+already designed around).
+
+### Gate status: draft — skeleton + per-leaf attacks at execution
+(the §6-established per-ticket pattern); survey-gated items marked.
