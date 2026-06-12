@@ -3683,7 +3683,24 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~200 LOC (the section's largest).
 
 ### [T707] Descent: the ℚ_p-level mass
-- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: T706
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean | **Depends on**: T706
+- **Progress**:
+  - 2026-06-12: `zetaNum_one` proven (subagent), statement verbatim. K := ℂ_[p]
+    via new imports Mathlib.NumberTheory.Padics.Complex +
+    RootsOfUnity.AlgebraicallyClosed; ξ from
+    `HasEnoughRootsOfUnity.exists_primitiveRoot` (IsSepClosed instance).
+    Mass identification `constantCoeff_mahlerK_rhoA_eq_algebraMap`
+    (coeff_mahlerTransform + baseChange_algCM + mahler 0 = 1 + iota at 1);
+    extLog transport `map_extLog_natCast` via `map_padicLog`
+    (IsClosedEmbedding.map_tsum along the isometric embedding) + the Fermat
+    witness at both levels; descent by field-hom injectivity. Verified:
+    build green, axioms standard 3. Cleanup: degraded mode, defer to
+    CLEANUP-ALL-7.
+- **Survey gate (orchestrator, PASSED)**: mathlib PadicComplex pack complete —
+  NormedField ℂ_[p] (Complex.lean:184), NormedAlgebra ℚ_[p] ℂ_[p] (used by
+  :199), IsUltrametricDist (:199), CharZero (:242), IsAlgClosed (:246),
+  CompleteSpace via UniformSpace.Completion; norm_extends' (:195) for the
+  isometry. ξ from IsAlgClosed/HasEnoughRootsOfUnity. No fallback needed.
 - **Type**: theorem
 - **Statement**: skeleton `zetaNum_one` (R7.7).
 - **Proof sketch**: instantiate K := ℂ_[p] (mathlib PadicComplex:

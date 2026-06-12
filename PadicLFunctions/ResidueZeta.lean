@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
 import Mathlib.NumberTheory.Basic
+import Mathlib.NumberTheory.Padics.Complex
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import PadicLFunctions.Interpolation.Branches
 import PadicLFunctions.ValuesAtOne
 
@@ -1612,6 +1614,68 @@ theorem constantCoeff_mahlerK_rhoA (hp2 : p ≠ 2) {a : ℕ}
   field_simp
   linear_combination hp_mul
 
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- R7.7a (descent infrastructure): `padicLog` commutes with the structure map
+`algebraMap ℚ_[p] K`. The map is an isometry (hence a closed embedding, `ℚ_[p]`
+complete), so it pushes through the defining `tsum`; the `ℚ_[p]`-scalar `(n+1)⁻¹`
+and the ring operations transport termwise. -/
+private theorem map_padicLog (y : ℚ_[p]) :
+    algebraMap ℚ_[p] K (padicLog p y) = padicLog p (algebraMap ℚ_[p] K y) := by
+  rw [padicLog, padicLog,
+    Topology.IsClosedEmbedding.map_tsum _ (algebraMap_isometry ℚ_[p] K).isClosedEmbedding]
+  refine tsum_congr fun n => ?_
+  rw [map_mul, map_pow, map_neg, map_one, Algebra.smul_def, Algebra.smul_def, map_mul, map_pow,
+    map_sub, map_one, map_inv₀, map_add, map_natCast, map_one]
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- The structure map `algebraMap ℚ_[p] K` is `ℚ_[p]`-linear: it pulls a `ℚ_[p]`-scalar
+through the `•`-action (`c • x = algebraMap c · x` on both sides). -/
+private lemma map_smul_padic (c x : ℚ_[p]) :
+    algebraMap ℚ_[p] K (c • x) = c • (algebraMap ℚ_[p] K x) := by
+  simp [Algebra.smul_def]
+
+/-- R7.7b (descent infrastructure): for `p ∤ a` the extended logarithm of `(a : K)`
+is the structure-map image of `extLog p (a : ℚ_[p])`. Both sides use the same Fermat
+witness `(a)^{p−1} = p^0·(a)^{p−1}` (`inExpBall_natCast_pow_sub_one`), so the identity
+reduces to `map_padicLog` on `(a)^{p−1}` and the `ℚ_[p]`-scalar pull-through. -/
+private theorem map_extLog_natCast (hp2 : p ≠ 2) {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) :
+    extLog p ((a : K)) = algebraMap ℚ_[p] K (extLog p ((a : ℚ_[p]))) := by
+  have hp3 : 3 ≤ p := by
+    have h2 := hp.out.two_le
+    rcases hp.out.eq_two_or_odd with he | ho
+    · exact absurd he hp2
+    · omega
+  rw [extLog_eq_of_witness p (m := p - 1) (k := 0) (by omega) (by rw [zpow_zero, one_mul])
+      (inExpBall_natCast_pow_sub_one (p := p) K hp2 ha),
+    extLog_eq_of_witness p (m := p - 1) (k := 0) (by omega) (by rw [zpow_zero, one_mul])
+      (inExpBall_natCast_pow_sub_one (p := p) ℚ_[p] hp2 ha),
+    map_smul_padic (p := p) K, map_padicLog (p := p) K, map_pow, map_natCast]
+
+omit [CharZero K] in
+/-- R7.7c (descent infrastructure, the mass identification): the `K`-mass
+`𝓐(ρ_a)(0)` is the structure-map image of the `ℚ_[p]`-coercion of the `ℤ_p`-mass
+`zetaNum p a 1`. Unfolds `mahlerK = map subtype ∘ 𝓐`, peels the constant
+coefficient to `ρ_a(mahlerCM 0)`, and identifies through `baseChange_algCM`
+(`mahler 0 = 1`) and `iota = pushforward unitsValCM` (`1 ∘ unitsValCM = 1`); the
+`subtype ∘ algebraMap ℤ_[p]` composite is `algebraMap ℚ_[p] K ∘ (↑·)` definitionally. -/
+private theorem constantCoeff_mahlerK_rhoA_eq_algebraMap (a : ℕ) :
+    PowerSeries.constantCoeff (mahlerK p K (rhoA p K a))
+      = algebraMap ℚ_[p] K
+          (((PadicMeasure.zetaNum p a (1 : C(ℤ_[p]ˣ, ℤ_[p]))) : ℤ_[p]) : ℚ_[p]) := by
+  rw [mahlerK, ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
+    MeasureR.coeff_mahlerTransform, rhoA,
+    show MeasureR.mahlerCM p K 0 = MeasureR.algCM K (mahler 0) from
+      (MeasureR.algCM_mahler _ _).symm,
+    MeasureR.baseChange_algCM]
+  change algebraMap ℚ_[p] K
+      ((PadicMeasure.iota p (PadicMeasure.zetaNum p a) (mahler 0) : ℤ_[p]) : ℚ_[p]) = _
+  congr 2
+  rw [PadicMeasure.iota, PadicMeasure.pushforward_apply]
+  congr 1
+  ext u
+  rw [ContinuousMap.comp_apply, mahler_apply, Ring.choose_zero_right]
+  rfl
+
 end mass
 
 section descent
@@ -1623,7 +1687,18 @@ back along the injective structure map). -/
 theorem zetaNum_one (hp2 : p ≠ 2) {a : ℕ} (ha : ¬ (p : ℕ) ∣ a)
     (ha0 : a ≠ 0) :
     (((PadicMeasure.zetaNum p a (1 : C(ℤ_[p]ˣ, ℤ_[p]))) : ℤ_[p]) : ℚ_[p])
-      = -(1 - (p : ℚ_[p])⁻¹) * extLog p (((a : ℕ) : ℚ_[p])) := by sorry
+      = -(1 - (p : ℚ_[p])⁻¹) * extLog p (((a : ℕ) : ℚ_[p])) := by
+  -- `ℂ_[p]` contains a primitive `p`-th root of unity (alg. closed + char `0`)
+  haveI : NeZero (p : ℂ_[p]) :=
+    ⟨(Nat.cast_ne_zero (R := ℂ_[p])).mpr hp.out.ne_zero⟩
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot ℂ_[p] p
+  -- descend by injectivity of the structure map `ℚ_p ↪ ℂ_p`
+  refine (algebraMap ℚ_[p] ℂ_[p]).injective ?_
+  -- the `ℂ_p`-mass identifies with the image of the `ℤ_p`-mass; compute it in `ℂ_p`
+  rw [← constantCoeff_mahlerK_rhoA_eq_algebraMap (p := p) ℂ_[p] a,
+    constantCoeff_mahlerK_rhoA (p := p) ℂ_[p] hp2 ha ha0 hξ,
+    map_mul, map_neg, map_sub, map_one, map_inv₀, map_natCast,
+    map_extLog_natCast (p := p) ℂ_[p] hp2 ha]
 
 /-- **RJW Theorem 7.1(ii)** (`thm:residue`, TeX 2191–2192): "The function
 `ζ_{p,p−1}` has a simple pole at `s = 1` with residue `1 − p⁻¹`" — as the
