@@ -4523,34 +4523,64 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
   convergence; the monogenicity input is T903b's deliverable).
 
 ### [T905] Uniqueness via Weierstrass preparation
-- **Status**: open | **File**: Coleman/Theorem.lean | **Depends on**: T904
+- **Status**: DONE (2026-06-12) | **File**: Coleman/Theorem.lean | **Depends on**: T904
 - **Type**: lemma
-- **Statement** (authored): `evalPi_injective_of_forall {f g : PowerSeries
-  ℤ_[p]} (h : ∀ n, 1 ≤ n → evalPi p f n = evalPi p g n) : f = g`
-  (lem:unique coleman, TeX 2635–2642).
-- **Proof sketch**: h := f − g; if h ≠ 0: mathlib Weierstrass
-  factorization (`PowerSeries.exists_isWeierstrassFactorization`,
-  WeierstrassPreparation.lean — ℤ_[p] is adic-complete local DVR ✓
-  instances): h = p^m·(unit)·(distinguished poly r) — CHECK the mathlib
-  statement shape (it may be h = f·h-unit with f distinguished; the
-  p^m-power comes from h ≠ 0 mod p^∞: extract the p-adic content first:
-  h = p^m·h' with h' ≢ 0 mod p — `PowerSeries.exists_eq_pow_mul`-shaped
-  or order-of-p-divisibility — small helper). Evaluate at π_n: unit
-  factor evaluates to a unit (evalPi_unit), p^m ≠ 0, so r(π_n) = 0 for
-  all n ≥ 1. r is a POLYNOMIAL with finitely many roots in ℂ_[p]
-  (`Polynomial.finite_setOf_root`-shape); the π_n are pairwise distinct
-  (‖π_n‖ strictly increasing: from T902's norm formula —
-  p^{−1/φ(p^n)} strictly increases in n: totient strictly increases —
-  rpow-free comparison: ‖π_n‖^{φ(p^n)} = p⁻¹ = ‖π_{n+1}‖^{φ(p^{n+1})}
-  and φ(p^{n+1}) > φ(p^n) ⟹ ‖π_{n+1}‖ > ‖π_n‖ by pow-monotonicity
-  juggling) ⟹ infinitely many roots, contradiction; so h = 0.
+- **Statement** (authored, final): `evalPi_injective {f g : PowerSeries ℤ_[p]}
+  (h : ∀ n, 1 ≤ n → evalPi p f n = evalPi p g n) : f = g`
+  (lem:unique-coleman, TeX 2635–2642). [Name simplified from the sketched
+  `evalPi_injective_of_forall` — it is an injectivity statement.]
+- **Progress (2026-06-12)**: sorry-free, axiom-clean (standard 3 on all 5 new
+  decls), `lake build PadicLFunctions` green (3818 jobs), lint-clean (≤100 cols,
+  no unused-var warnings). Added `import Mathlib.RingTheory.PowerSeries.
+  WeierstrassPreparation` to Theorem.lean.
+  - **Weierstrass API actually used**: `PowerSeries.exists_isWeierstrassFactorization`
+    (hypothesis `g.map (IsLocalRing.residue ℤ_[p]) ≠ 0`); the structure
+    `PowerSeries.IsWeierstrassFactorization d' r u` with fields `.eq_mul`
+    (`d' = ↑r * u`), `.isUnit`, `.isDistinguishedAt.monic`. Confirmed mathlib's
+    form is `g = f·h` with NO p-power factor (f distinguished/monic, h unit),
+    so the p-content extraction IS needed as a preprocessor (the sketch's
+    alternative). Instances `IsLocalRing ℤ_[p]` and
+    `IsAdicComplete (maximalIdeal ℤ_[p]) ℤ_[p]` both already in mathlib
+    (PadicIntegers.lean:499, :532) — no instance derivation needed.
+  - **Helpers added (5 decls total)**: `evalPi_C` (@[simp], public);
+    `evalPi_coe_polynomial` (private — the tsum→`Polynomial.eval` bridge,
+    convergence-free finite sum, no n≥1 needed); `pi_norm_injective` (private —
+    distinct norms via `norm_pi_pow_totient` + `pow_lt_pow_right_of_lt_one₀` +
+    totient strict-mono); `exists_C_pow_mul` (private — the p-content extraction,
+    REPLAN: no mathlib `exists_eq_pow_mul`/order-over-(p) lemma found in a
+    five-method search, so hand-built ~25 lines: m := sInf of coeff valuations,
+    coeff-wise division via `Classical.choice` of dvd-witnesses + `PowerSeries.mk`,
+    minimality from `PadicInt.mem_span_pow_iff_le_valuation`).
+  - Final assembly: `Polynomial.eq_zero_of_infinite_isRoot` +
+    `Set.infinite_of_injective_forall_mem` (map `n ↦ pi p (n+1)`); residue-nonzero
+    via `IsLocalRing.residue_eq_zero_iff` + `PadicInt.maximalIdeal_eq_span_p`.
 - **Sources**: TeX 2635–2642 (verbatim Weierstrass argument).
-- **Sizing**: ~110 LOC.
+- **Sizing**: ~135 LOC (incl. 4 helpers + docstrings).
 
 ### [T906] The norm operator 𝒩 via the digit basis (authors
 Coleman/NormOperator.lean)
-- **Status**: open | **File**: Coleman/NormOperator.lean
+- **Status**: DONE (2026-06-12) | **File**: Coleman/NormOperator.lean
 - **Depends on**: none (pure ℤ_p⟦T⟧-algebra; parallel with the tower)
+- **Progress (2026-06-12)**: `Coleman/NormOperator.lean` authored, sorry-free,
+  axiom-clean (standard 3 on all public decls), `lake build PadicLFunctions`
+  green (3815 jobs), lint-clean. Realisation: **Algebra.norm route** landed (NOT
+  the direct-det fallback). Decls (all in `PadicLFunctions.Coleman`):
+  `padicIntEquivIntegerRing : ℤ_[p] ≃+* integerRing ℚ_[p]` (the bridge, via
+  `RingEquiv.ofBijective` on `Coefficients.lean`'s algebraMap — both are the
+  ℚ_[p] norm-ball subtype); `existsUnique_digits_padicInt` (transports
+  FormalPsi's `existsUnique_digits` along `PowerSeries.map`); `phiHom`/
+  `phiHom_apply` (FormalPsi's `phiSeries` as a `RingHom` via `substAlgHom`);
+  `PhiAlg` type-synonym carrying LOCAL `Algebra (PowerSeries ℤ_[p]) (PhiAlg p)`
+  (= `RingHom.toAlgebra phiHom`; does NOT leak onto bare `PowerSeries ℤ_[p]`)
+  + `PhiAlg.toPS` (≃+* repackaging) + `toPS_algebraMap`/`smul_def`;
+  `digitBasis : Module.Basis (Fin p) (PowerSeries ℤ_[p]) (PhiAlg p)` (via
+  `Module.Basis.mk`: li = uniqueness half, span = existence half of the digit
+  decomp) + `Module.Free`/`Module.Finite` instances; `normOp (f) := Algebra.norm`
+  + `normOp_mul` (MonoidHom `map_mul`), `normOp_one`, `normOp_isUnit`
+  (`IsUnit.map`); `digitMatrix`/`normOp_eq_det` (det characterisation via
+  `Algebra.norm_eq_matrix_det digitBasis` — the form T907 transports through
+  `RingHom.map_det`). `phi_normOp_eq_prod` NOT stated (μ_p-product not formal,
+  replan R10.4 — recorded in module docstring).
 - **Parallel**: yes | **Type**: def+lemmas
 - **Statement** (authored): the φ-algebra `phiAlg : Algebra
   (PowerSeries ℤ_[p]) (PowerSeries ℤ_[p])` := RingHom.toAlgebra
@@ -4636,7 +4666,27 @@ Coleman/NormOperator.lean)
   the O₁⟦T⟧-substitution API if the fallback route is needed).
 
 ### [T909] Compactness of ℤ_p⟦T⟧^× and sequential extraction
-- **Status**: in_progress (2026-06-12, 3-way parallel) | **File**: Coleman/NormOperator.lean
+- **Status**: DONE (2026-06-12) | **File**: Coleman/NormOperator.lean
+- **Progress (2026-06-12)**: authored in `Coleman/NormOperator.lean` (Compactness
+  section, `open scoped PowerSeries.WithPiTopology`), sorry-free, axiom-clean,
+  full build green. KEY: the Pi topology IS `inferInstanceAs` of the function-type
+  Pi instance (`MvPowerSeries.WithPiTopology` def), so on the UNFOLDED type
+  `(Unit →₀ ℕ) → ℤ_[p]` the standard Pi instances fire: `instCompactSpace`
+  (`Pi.compactSpace` + `CompactSpace ℤ_[p]`) and `instSeqCompactSpace` (index
+  `Unit →₀ ℕ` countable via `Data.Finsupp.Encodable` ⟹ Pi uniformity countably
+  generated ⟹ metrizable ⟹ first-countable ⟹ `SeqCompactSpace` from compact),
+  both via `inferInstanceAs`. NOTE: `metrizableSpace_pi` needs `[Finite ι]` (won't
+  fire — index is countably infinite); the working route is the
+  uniformity/`iInf.isCountablyGenerated` path, automatic here. Also:
+  `exists_subseq_tendsto` (= `SeqCompactSpace.tendsto_subseq`), `tendsto_coeff`
+  (projection continuity, `WithPiTopology.continuous_coeff`), `isClosed_isUnit`
+  (units = preimage of `{1} ⊆ ℝ` under `‖constantCoeff ·‖`, via
+  `isUnit_iff_constantCoeff` + `PadicInt.isUnit_iff` + `continuous_constantCoeff`).
+  Stopped at (iii) per ticket — evalPi-continuity is T910's own (Theorem.lean).
+  Imports added: `LinearAlgebra.Basis.Basic`, `RingTheory.Norm.Basic`,
+  `RingTheory.PowerSeries.PiTopology`, `Topology.Metrizable.Uniformity`,
+  `Data.Finsupp.Encodable`. PadicLFunctions.lean wired (after Coleman.Tower).
+- **Note (orig)**: in_progress (2026-06-12, 3-way parallel) | **File**: Coleman/NormOperator.lean
 - **Depends on**: none | **Parallel**: yes | **Type**: lemmas
 - **Statement** (authored): with the Pi topology (open scoped
   WithPiTopology): `instance : CompactSpace (PowerSeries ℤ_[p])`

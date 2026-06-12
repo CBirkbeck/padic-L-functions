@@ -37,6 +37,7 @@ import PadicLFunctions.ResidueZeta
 import PadicLFunctions.EisensteinFamily
 import PadicLFunctions.EisensteinComplex
 import PadicLFunctions.Coleman.Tower
+import PadicLFunctions.Coleman.NormOperator
 import PadicLFunctions.Coleman.Theorem
 
 /-!
