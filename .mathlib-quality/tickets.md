@@ -3587,7 +3587,18 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~120 LOC.
 
 ### [T705] The measure ρ_a: support and x-multiplication
-- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean | **Depends on**: none
+- **Progress**:
+  - 2026-06-12: both decls proven (subagent), statements verbatim. psi_rhoA in
+    2 lines (`isSupportedOn_units_iff_psi_eq_zero` + `baseChange_res` +
+    `res_iota`) — the planned ψ∘baseChange naturality lemma was NOT needed
+    (support-route cleaner than transform-route). x-mult via new private
+    `cmul_mahler_one_iota_zetaNum` (ℤ_p-level x·ι(zetaNum) = Res μ_a, T614's
+    invCM-cancellation pattern) + `baseChange_cmul`/`algCM_mahler`/
+    `baseChange_res` + the T614 transform transport (locally re-proven private
+    `map_derivativeFun'`/`map_one_add_mul_derivativeFun'`). Orchestrator fixed
+    4 long-line lints in T704 code post-hoc. Verified: build green, axioms
+    standard 3. Cleanup: degraded mode, defer to CLEANUP-ALL-7.
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `psi_rhoA`, `one_add_mul_derivative_mahlerK_rhoA`
   (R7.5b/c; def rhoA in skeleton).

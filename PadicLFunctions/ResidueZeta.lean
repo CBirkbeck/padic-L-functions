@@ -580,7 +580,8 @@ theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 
         PowerSeries.derivativeFun_C, add_zero]
     rw [← hlhs, hαuAX, hrhs]
   -- `(1+X)·∂((1+X)^a) = α·(1+X)^a`
-  have hQ : (1 + PowerSeries.X) * PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a : PowerSeries K)
+  have hQ : (1 + PowerSeries.X)
+        * PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a : PowerSeries K)
       = ((a : ℕ) : PowerSeries K) * (1 + PowerSeries.X) ^ a := by
     rw [hDpow, PowerSeries.derivativeFun_add, PowerSeries.derivativeFun_one, hDX, zero_add, mul_one]
     rcases Nat.exists_eq_succ_of_ne_zero ha0 with ⟨b, rfl⟩
@@ -600,7 +601,8 @@ theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 
   have hLHSexp : (1 + PowerSeries.X) * PowerSeries.derivativeFun (FtildeA p K a)
       = -((1 + PowerSeries.X) * P * DuA) + (((a : ℕ) : PowerSeries K) - 1) := by
     have hsubF : ∀ x y : PowerSeries K,
-        PowerSeries.derivativeFun (x - y) = PowerSeries.derivativeFun x - PowerSeries.derivativeFun y :=
+        PowerSeries.derivativeFun (x - y)
+          = PowerSeries.derivativeFun x - PowerSeries.derivativeFun y :=
       fun x y => map_sub (PowerSeries.derivative K) x y
     have hnsmul : ∀ (n : ℕ) (f : PowerSeries K),
         PowerSeries.derivativeFun (n • f) = n • PowerSeries.derivativeFun f :=
@@ -611,7 +613,8 @@ theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 
           = (PowerSeries.derivativeFun (formalLog (K := K))).subst (uA K a - 1)
             * PowerSeries.derivativeFun (uA K a - 1) :=
         PowerSeries.derivative_subst (A := K) (hasSubst_uA_sub_one K ha0)
-      have hsub : PowerSeries.derivativeFun ((formalLog (K := K)).subst (uA K a - 1)) = P * DuA := by
+      have hsub : PowerSeries.derivativeFun ((formalLog (K := K)).subst (uA K a - 1))
+          = P * DuA := by
         rw [dsubst, hP, hDuA, hsubF, PowerSeries.derivativeFun_one, sub_zero]
       rw [FtildeA, PowerSeries.derivativeFun_add, hsubF, PowerSeries.derivativeFun_C, hsub,
         hnsmul, zero_sub]
@@ -621,7 +624,8 @@ theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 
   -- RHS·G computation
   have hRHSG : M (PadicMeasure.Fa p a) * ((1 + PowerSeries.X) ^ a - 1)
       = S - ((a : ℕ) : PowerSeries K) := by
-    have hMG : M ((1 + PowerSeries.X) ^ a - 1 : PowerSeries ℤ_[p]) = (1 + PowerSeries.X) ^ a - 1 := by
+    have hMG : M ((1 + PowerSeries.X) ^ a - 1 : PowerSeries ℤ_[p])
+        = (1 + PowerSeries.X) ^ a - 1 := by
       rw [map_sub, map_pow, map_add, map_one, PowerSeries.map_X]
     calc M (PadicMeasure.Fa p a) * ((1 + PowerSeries.X) ^ a - 1)
         = M (PadicMeasure.Fa p a) * M ((1 + PowerSeries.X) ^ a - 1 : PowerSeries ℤ_[p]) := by
@@ -649,9 +653,53 @@ theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 
 noncomputable def rhoA (a : ℕ) : MeasureR K ℤ_[p] :=
   MeasureR.baseChange p K (PadicMeasure.iota p (PadicMeasure.zetaNum p a))
 
-/-- R7.5b: `ρ_a` is supported on the units. -/
-theorem psi_rhoA (a : ℕ) : MeasureR.psi p K (rhoA p K a) = 0 := by sorry
+/-- `PowerSeries.map` commutes with `derivativeFun` (re-proved locally; the
+ValuesAtOne version is private). -/
+private theorem map_derivativeFun' {R S : Type*} [CommRing R] [CommRing S]
+    (f : R →+* S) (F : PowerSeries R) :
+    PowerSeries.map f (PowerSeries.derivativeFun F)
+      = PowerSeries.derivativeFun (PowerSeries.map f F) := by
+  ext n
+  rw [PowerSeries.coeff_map, PowerSeries.coeff_derivativeFun,
+    PowerSeries.coeff_derivativeFun, PowerSeries.coeff_map, map_mul, map_add,
+    map_natCast, map_one]
 
+/-- `PowerSeries.map` commutes with `∂ = (1+T)d/dT` (re-proved locally). -/
+private theorem map_one_add_mul_derivativeFun' {R S : Type*} [CommRing R]
+    [CommRing S] (f : R →+* S) (F : PowerSeries R) :
+    PowerSeries.map f ((1 + PowerSeries.X) * PowerSeries.derivativeFun F)
+      = (1 + PowerSeries.X) * PowerSeries.derivativeFun (PowerSeries.map f F) := by
+  rw [map_mul, map_add, map_one, PowerSeries.map_X, map_derivativeFun']
+
+/-- The `ℤ_p`-level multiplication-by-`x` identity: the `x⁻¹` in `zetaNum`
+cancels against the `x`-monomial on the units, so
+`x·ι(zetaNum a) = Res_{ℤ_p^×}(μ_a)`. The analogue of the template's `hmeas`
+(T614), here at the `ℤ_p`-iota level (later base-changed). -/
+private lemma cmul_mahler_one_iota_zetaNum (a : ℕ) :
+    PadicMeasure.cmul p (mahler 1) (PadicMeasure.iota p (PadicMeasure.zetaNum p a))
+      = PadicMeasure.res p (PadicMeasure.isClopen_units p) (PadicMeasure.muA p a) := by
+  refine LinearMap.ext fun f => ?_
+  rw [PadicMeasure.cmul_apply, PadicMeasure.iota, PadicMeasure.pushforward_apply,
+    PadicMeasure.zetaNum, PadicMeasure.unitsCmul_apply]
+  have hfun : PadicMeasure.invCM p * ((mahler 1 * f).comp (PadicMeasure.unitsValCM p))
+      = f.comp (PadicMeasure.unitsValCM p) := by
+    refine ContinuousMap.ext fun u => ?_
+    simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply,
+      PadicMeasure.unitsValCM, ContinuousMap.coe_mk]
+    rw [mahler_apply, Ring.choose_one_right, ← mul_assoc]
+    rw [show PadicMeasure.invCM p u * (u : ℤ_[p]) = 1 from ?_, one_mul]
+    change ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (u : ℤ_[p]) = 1
+    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+  rw [hfun, ← PadicMeasure.pushforward_apply, ← PadicMeasure.iota,
+    PadicMeasure.iota_muAUnits]
+
+omit [CharZero K] in
+/-- R7.5b: `ρ_a` is supported on the units. -/
+theorem psi_rhoA (a : ℕ) : MeasureR.psi p K (rhoA p K a) = 0 := by
+  rw [← MeasureR.isSupportedOn_units_iff_psi_eq_zero, MeasureR.IsSupportedOn, rhoA,
+    ← MeasureR.baseChange_res, PadicMeasure.res_iota]
+
+omit [CharZero K] in
 /-- R7.5c: multiplication by `x` recovers `Res_{ℤ_p^×}(μ_a)` —
 `∂𝓐(ρ_a) = 𝓐(Res_{units}(μ_a))` over `K` (Lemma 6.3's pattern, T614). -/
 theorem one_add_mul_derivative_mahlerK_rhoA (a : ℕ) :
@@ -659,7 +707,22 @@ theorem one_add_mul_derivative_mahlerK_rhoA (a : ℕ) :
         (mahlerK p K (rhoA p K a))
       = mahlerK p K (MeasureR.res p K
           (PadicMeasure.isClopen_units p)
-          (MeasureR.baseChange p K (PadicMeasure.muA p a))) := by sorry
+          (MeasureR.baseChange p K (PadicMeasure.muA p a))) := by
+  -- base-change the `ℤ_p`-level multiplication-by-`x` identity to `K`
+  have hbase : MeasureR.cmul p K (MeasureR.mahlerCM p K 1) (rhoA p K a)
+      = MeasureR.res p K (PadicMeasure.isClopen_units p)
+          (MeasureR.baseChange p K (PadicMeasure.muA p a)) := by
+    have h := congrArg (MeasureR.baseChange p K) (cmul_mahler_one_iota_zetaNum p a)
+    rw [MeasureR.baseChange_cmul, MeasureR.algCM_mahler, MeasureR.baseChange_res] at h
+    exact h
+  -- transport through `mahlerK` via `𝓐_{xμ} = ∂𝓐_μ` and `map`-commutation with `∂`
+  rw [← hbase]
+  simp only [mahlerK]
+  rw [MeasureR.mahlerTransform_cmul_X,
+    show MeasureR.del K (MeasureR.mahlerTransform p K (rhoA p K a))
+      = (1 + PowerSeries.X)
+        * PowerSeries.derivativeFun (MeasureR.mahlerTransform p K (rhoA p K a)) from rfl,
+    map_one_add_mul_derivativeFun']
 
 /-- R7.6a (the c₀-pin, T615-pattern — no Gauss clearing this time):
 `p·𝓐(ρ_a)(0) = p·F̃_a(0) − Σ_{i<p} F̃_a(ξ^i − 1)`. -/
