@@ -446,3 +446,19 @@ TeX 2379–2383), one Theorem (TeX 2399–2416): the Λ-adic family
 `QuotientField p` exactly as the source's Q(ℤ_p^×)⟦q⟧. p = 2 excluded
 where ζ_p enters (hp2 standing); the Dirac/divisor-measure layer and the
 impossibility lemma are p-general.
+
+## §8 COMPLETE (2026-06-12, /beastmode) — PART I COMPLETE
+All of T801–T808 + 3 cleanups done in one session; project-wide ZERO
+sorries, axioms standard, blueprint Eisenstein chapter wired + site
+rendered. The Λ-adic family theorem (`eisensteinFamily_interpolation`) is
+the milestone; the erratum-#11-corrected A₀-claims
+(`twistedZetaHalf_isTwistedPseudoMeasure`/`_moments`) carry the notes'
+"(a)"; the q-expansion (`hasSum_stabilisedEisenstein`) and the
+Γ₀(p)-modularity (`stabilisedEisenstein`, via the un-deferral) carry the
+complex side. New external dependency: CBirkbeck/LeanModularForms at
+branch compat/padic-mathlib-431 (= hecke-ring 720d950 + 4 mechanical
+mathlib-skew fixes, pushed upstream 84b03fb) supplying the level-raising
+operator. With §§3–8 done, Part I of RJW is fully formalised. Next:
+Part II (§§9–11: the Coleman map, Iwasawa's theorem, the Main
+Conjecture — blueprint chapters exist) or the deferred D = 1 case of
+Thm 6.1(ii), or CLEANUP-FINAL in a tooled session.

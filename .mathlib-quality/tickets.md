@@ -8,8 +8,8 @@ Skeleton: all statements already exist as `:= by sorry` in `PadicLFunctions/Meas
 but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
-- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708) + cleanups
-- Open: 1 (CLEANUP-FINAL — BLOCKED on a lean-lsp-MCP-tooled session; 2026-06-12 sessions ran degraded) | everything else done — **§§3–7 ALL PROOF TICKETS DISCHARGED, project sorry-free, axioms standard (2026-06-12, §7 milestone `tendsto_sub_one_mul_zetaPBranch`)**
+- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808) + cleanups
+- Open: 1 (CLEANUP-FINAL — BLOCKED on a lean-lsp-MCP-tooled session; 2026-06-12 sessions ran degraded) | everything else done — **§§3–8 ALL PROOF TICKETS DISCHARGED (Part I COMPLETE), project sorry-free, axioms standard (2026-06-12, §8 milestone `eisensteinFamily_interpolation`; new dep LeanModularForms@compat/padic-mathlib-431 for the Γ₀(p)-modularity)**
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -943,6 +943,14 @@ description, ξ-formulas, locally analytic — per plan.md Deferred).
   FormalPsi.lean-placement-candidate; map_padicLog/map_extLog_natCast are
   ExtLog.lean-candidates; map_derivativeFun'/map_one_add_mul_derivativeFun'
   duplicate ValuesAtOne privates — de-private and merge).
+  Widened 2026-06-12 (CL82 fold-in): + §8 EisensteinFamily.lean /
+  EisensteinComplex.lean (golf the 2⁻¹-unit coercion chains; the
+  IsScalarTower ℤ_[p] Λ Λ instance gap (T803's manual smul_one_mul');
+  unitsTwist could generalise to twist-by-any-continuous-character;
+  the reproduced-private duplicates (summable_sigma_cexp vs mathlib's
+  private, norm_natCast_inv_le vs ValuesAtOne's) — consider mathlib PRs
+  de-privatising; LeanModularForms dep: the compat branch's 3 benign
+  warnings (2 change-does-nothing + 1 deprecation) for upstream tidying).
 - Then `/pre-submit` when the user wants a checkpointed milestone.
 
 ---
@@ -4182,9 +4190,19 @@ to the twisted pseudo-measure form.
 
 ### [CLEANUP-82] Final per-file cleanup (EisensteinFamily.lean +
 EisensteinComplex.lean)
-- **Status**: open | **Depends on**: T807, T808 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T807, T808 | **Type**: cleanup
   (+ widen CLEANUP-FINAL to §8; + upstream the LeanModularForms compat
   fixes to a pushed branch and repin lakefile/manifest)
+- **Progress**: 2026-06-12: (i) UPSTREAMED: compat branch
+  `compat/padic-mathlib-431` pushed to CBirkbeck/LeanModularForms
+  (= pin-base 720d950 + the 4 mechanical skew fixes, commit 84b03fb);
+  lakefile.toml + manifest repinned to 84b03fb; dep checkout refetched
+  clean (superseded local edits stashed in the checkout, patch snapshot
+  removed from the repo); full build green at the new pin — remote CI can
+  now fetch+build. (ii) Degraded per-file pass: both files zero non-sorry…
+  zero warnings outright (project sorry-free); 3 awk >100-byte lines are
+  unicode-only comments; publics docstringed. Tooled golf folded into
+  CLEANUP-FINAL (§8 widening below).
 
 ## §8 dependency quick-view
 ```
