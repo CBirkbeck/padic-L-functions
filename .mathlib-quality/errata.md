@@ -36,6 +36,24 @@ formalisation had to make explicit).
    of the unit set (and an automorphism of the additive group), but not a
    group automorphism of (ℤ/Nℤ)ˣ. Only bijectivity is used.
 
+12. **TeX 2839 (§10.3, Thm coleman to kl) vs TeX 2614 (Lem relate cyclo to
+    mua) + TeX 1568 (Def DefZetap)** — dropped sign. Thm coleman to kl is
+    stated `ζ_p = Col(c(a))/θ_a` (no sign). But the construction gives the
+    opposite sign: by Def coleman map (TeX 2829) `Col(c(a)) = x⁻¹·Res_{ℤ_p^×}
+    (𝒜⁻¹(∂log f_{c(a)}))`, and `∂log f_{c(a)} = (a−1) − F_a` (prop:coleman
+    zetap, TeX 2595–2608) so by the notes' *own* Lem relate cyclo to mua (TeX
+    2611–2624) `Res_{ℤ_p^×}(μ_{∂log f_{c(a)}}) = −Res_{ℤ_p^×}(μ_a)`, whence
+    `Col(c(a)) = −x⁻¹Res(μ_a)`. Def DefZetap (TeX 1565–1568) sets `ζ_p =
+    (x⁻¹Res μ_a)/θ_a` with `θ_a = [a]−[1]` (TeX 1551). Composing: the display
+    at TeX 2839 would give `ζ_p = −(x⁻¹Res μ_a)/θ_a`, contradicting DefZetap.
+    The correct identity carries a minus: **`ζ_p = −Col(c(a))/θ_a`**,
+    equivalently `([a]−[1])·ζ_p = −Col(c(a))`. (The minus is exactly the
+    minus the notes already record in Lem relate cyclo to mua; it is simply
+    not carried into the Thm coleman to kl display. `θ_a` is *not*
+    sign-flipped — TeX 1551 fixes it as `[a]−[1]`, matching our denominator.)
+    Formalised in the honest-sign form (`coleman_to_kl`, Coleman/Map.lean;
+    the core `Col(c(a)) = −zetaNum a` is `Col_cyclo`).
+
 ## Gaps
 
 6. **Thm 6.1(ii) at tame conductor D = 1 (TeX 1987–1995 vs §5.2 standing

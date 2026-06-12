@@ -3,8 +3,8 @@ Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
-import PadicLFunctions.Coleman.Tower
-import PadicLFunctions.KubotaLeopoldt.MuA
+import PadicLFunctions.Coleman.Theorem
+import PadicLFunctions.KubotaLeopoldt.ZetaP
 
 /-!
 # The cyclotomic units and the Coleman map input layer (RJW §10.2, TeX 2572–2628)
@@ -363,6 +363,195 @@ theorem res_derivative_log_geomSum {a : ℕ} (_ha : ¬ (p : ℕ) ∣ a) (_ha0 : 
       = PowerSeries.C (R := ℤ_[p]) ((a : ℤ_[p]) - 1) := by
     rw [map_sub, map_one, ← map_natCast (PowerSeries.C (R := ℤ_[p])) a]
   rw [hconst, map_sub, PadicMeasure.muA, res_sub, res_units_symm_C, zero_sub]
+
+/-! ## The Coleman series of `c(a)` is `geomSum a` (RJW TeX 2589–2592)
+
+RJW prop:coleman zetap (TeX 2589–2592): the Coleman power series of the cyclotomic
+tower `c(a)` is `f_{c(a)} = ((1+T)^a − 1)/T = geomSum a` — "and is even a polynomial".
+We prove `colemanSeries (cyclo a) = geomSum a` from the uniqueness of the Coleman
+series (`coleman_existsUnique`): `geomSum a` is a unit (`isUnit_geomSum`), is
+`𝒩`-invariant (it interpolates the norm-compatible `cycloUnit`-tower, so `evalPi_normOp`
+collapses to `levelNorm_cycloUnit` and `evalPi_injective` forces `𝒩`-fixedness), and
+interpolates `c(a)` (`evalPi_geomSum`). -/
+
+/-- **RJW TeX 2589–2592**: the geometric sum `geomSum a` evaluates at the uniformiser
+`π_m` (for `m ≥ 1`) to the cyclotomic unit `c_m(a) = cycloUnit p a m`. From
+`geomSum a · T = (1+T)^a − 1` (`geomSum_mul_X`), evaluating at `π_m` gives
+`(geomSum a)(π_m)·π_m = (1+π_m)^a − 1 = ξ_m^a − 1` (`evalPi_one_add_X_pow`), so
+`(geomSum a)(π_m) = (ξ_m^a − 1)/(ξ_m − 1) = c_m(a)` (`π_m = ξ_m − 1 ≠ 0`). -/
+theorem evalPi_geomSum (a : ℕ) {m : ℕ} (hm : 1 ≤ m) :
+    evalPi p (PadicMeasure.geomSum p a) m = cycloUnit p a m := by
+  have hpi : pi p m ≠ 0 := pi_ne_zero p hm
+  -- evaluate `geomSum a · X = (1+X)^a − 1` at `π_m`
+  have hkey : evalPi p (PadicMeasure.geomSum p a) m * pi p m = zetaSys p m ^ a - 1 := by
+    rw [← evalPi_X p m, ← evalPi_mul p _ _ hm, PadicMeasure.geomSum_mul_X,
+      evalPi_sub p _ _ hm, evalPi_one_add_X_pow a hm, evalPi_one]
+  -- divide by `π_m = ξ_m − 1`
+  rw [cycloUnit, show zetaSys p m - 1 = pi p m from rfl, eq_div_iff hpi, hkey]
+
+/-- **RJW prop:coleman zetap (TeX 2589–2592)**: the Coleman power series of the
+cyclotomic-unit tower `c(a)` is `f_{c(a)} = geomSum a = ((1+T)^a − 1)/T`. (The source
+notes it "is even a polynomial".)
+
+Proof via the uniqueness of the Coleman series (`coleman_existsUnique`): `geomSum a`
+satisfies all three defining clauses of `colemanSeries (cyclo a)`:
+* `IsUnit (geomSum a)` (`isUnit_geomSum`, `a` coprime to `p`);
+* `𝒩`-invariance `normOp (geomSum a) = geomSum a`: both sides interpolate the
+  norm-compatible tower `c(a)` (`evalPi_normOp` rewrites `(𝒩 geomSum)(π_n)` as
+  `N_{n+1,n}(geomSum(π_{n+1})) = N_{n+1,n}(c_{n+1}(a)) = c_n(a) = geomSum(π_n)` via
+  `evalPi_geomSum` + `levelNorm_cycloUnit`), so `evalPi_injective` gives equality;
+* interpolation `(geomSum a)(π_n) = c_n(a) = (cyclo a).elems n` for `n ≥ 1`
+  (`evalPi_geomSum`; `(cyclo a).elems n = cycloUnit p a n` at `n ≥ 1`). -/
+theorem colemanSeries_cyclo {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2) :
+    colemanSeries p (cyclo p ha hp2) = PadicMeasure.geomSum p a := by
+  -- the interpolation clause: `(geomSum a)(π_n) = (cyclo a).elems n` for `n ≥ 1`
+  have heval : ∀ n, 1 ≤ n →
+      evalPi p (PadicMeasure.geomSum p a) n = ((cyclo p ha hp2).elems n : ℂ_[p]) := by
+    intro n hn
+    rw [evalPi_geomSum p a hn]
+    change cycloUnit p a n = ((if hn : 1 ≤ n then Units.mk0 (cycloUnit p a n)
+      (cycloUnit_ne_zero p ha hn) else 1 : ℂ_[p]ˣ) : ℂ_[p])
+    rw [dif_pos hn, Units.val_mk0]
+  -- the `𝒩`-invariance clause, via `evalPi_injective`
+  have hnorm : normOp (PadicMeasure.geomSum p a) = PadicMeasure.geomSum p a := by
+    refine evalPi_injective p (fun n hn => ?_)
+    rw [evalPi_normOp _ hn, evalPi_geomSum p a (by omega : 1 ≤ n + 1), evalPi_geomSum p a hn,
+      levelNorm_cycloUnit p ha hp2 hn]
+  exact (coleman_existsUnique p (cyclo p ha hp2)).unique
+    (coleman_existsUnique p (cyclo p ha hp2)).choose_spec.1
+    ⟨PadicMeasure.isUnit_geomSum p ha, hnorm, heval⟩
+
+/-! ## The Coleman map `Col` (RJW Def:coleman map, TeX 2813–2832)
+
+RJW's Coleman map (Def:coleman map, TeX 2826–2832) is the composite
+```
+𝒰_∞ --u ↦ f_u--> (ℤ_p⟦T⟧^×)^{𝒩=id} --∂log--> ℤ_p⟦T⟧ --1−φψ--> ℤ_p⟦T⟧^{ψ=0}
+       --∂⁻¹--> ℤ_p⟦T⟧^{ψ=0} --𝒜⁻¹--> Λ(ℤ_p^×),
+```
+where (TeX 2825) on the measure side step `(1−φψ)` is *restriction to* `ℤ_p^×` and
+step `∂⁻¹` is *multiplication by* `x⁻¹`. We realise the composite measure-side,
+avoiding the `∂⁻¹`-indeterminacy: `Col u` is the units-measure
+`x⁻¹ · Res_{ℤ_p^×}(𝒜⁻¹(∂log f_u))`, built (exactly as the §4 `zetaNum`/`muAUnits`
+pattern) by precomposing the `ℤ_p`-measure `𝒜⁻¹(∂log f_u)` with `extendByZero` (the
+units-section realising restriction-to-`ℤ_p^×`, `iota_comp_extendByZero`) and then
+multiplying by `invCM = x⁻¹` (`unitsCmul`). -/
+
+/-- The logarithmic derivative `∂log f = (1+T)·f′·f⁻¹` of a power series (RJW §10.2,
+the second arrow of Def:coleman map, TeX 2829). For a *unit* `f` (the case of interest,
+`colemanSeries_isUnit`) `Ring.inverse f = f⁻¹` is honest; off the units it is the
+`Ring.inverse`-junk `0`, which is harmless (`Col` is only ever applied to Coleman
+series, which are units). -/
+noncomputable def dlog (f : PowerSeries ℤ_[p]) : PowerSeries ℤ_[p] :=
+  (1 + PowerSeries.X) * PowerSeries.derivativeFun f * Ring.inverse f
+
+/-- `ι(μ.comp extendByZero) = Res_{ℤ_p^×}(μ)`: precomposing a `ℤ_p`-measure with the
+units-section `extendByZero` and re-embedding by `ι` recovers the restriction to
+`ℤ_p^×`. (The general form of `iota_muAUnits`; `ι` injective then pins the
+units-measure `μ.comp extendByZero` down by its restriction.) -/
+theorem iota_comp_extendByZero (μ : PadicMeasure p ℤ_[p]) :
+    PadicMeasure.iota p (μ.comp (PadicMeasure.extendByZero p))
+      = PadicMeasure.res p (PadicMeasure.isClopen_units p) μ := by
+  refine LinearMap.ext fun f => ?_
+  change μ (PadicMeasure.extendByZero p (f.comp (PadicMeasure.unitsValCM p)))
+      = μ ((LocallyConstant.charFn ℤ_[p] (PadicMeasure.isClopen_units p) : C(ℤ_[p], ℤ_[p])) * f)
+  rw [PadicMeasure.extendByZero_comp_unitsVal]
+
+/-- **RJW Def:coleman map (TeX 2826–2832)**: the Coleman map `Col : 𝒰_∞ → Λ(ℤ_p^×)`,
+realised measure-side as `x⁻¹ · Res_{ℤ_p^×}(𝒜⁻¹(∂log f_u))`. Concretely (the §4
+`zetaNum` pattern, `unitsCmul (invCM) ((·).comp (extendByZero))`): take the
+`ℤ_p`-measure `𝒜⁻¹(∂log f_u)` with Mahler transform `∂log f_u = (1+T)·f_u′·f_u⁻¹`,
+precompose with `extendByZero` to land on `ℤ_p^×` (restriction, the `(1−φψ)` arrow,
+`iota_comp_extendByZero`), and multiply by `invCM = x⁻¹` (the `∂⁻¹` arrow). -/
+noncomputable def Col (u : NormCompatUnits p) : PadicMeasure p ℤ_[p]ˣ :=
+  PadicMeasure.unitsCmul p (PadicMeasure.invCM p)
+    (((PadicMeasure.mahlerLinearEquiv p).symm (dlog p (colemanSeries p u))).comp
+      (PadicMeasure.extendByZero p))
+
+/-! ## `ζ_p = Col(c(a))/θ_a` (RJW thm:coleman to kl, TeX 2836–2841)
+
+The final identity. The board-flagged **sign** is resolved here from the source: RJW's
+`θ_a` is `[a] − [1]` (TeX 1551), and `ζ_p := (x⁻¹Res μ_a)/θ_a` (DefZetap, TeX 1565–1568)
+— exactly the project's `padicZeta = mk'(zetaNum, [a]−1)` with `θ_a = dirac u − 1`, no
+sign twist. But `∂log f_{c(a)} = (a−1) − F_a` gives (RJW lem:relate cyclo to mua, TeX
+2614 — *the notes' own minus*) `Res_{ℤ_p^×}(μ_{∂log f}) = −Res_{ℤ_p^×}(μ_a)`, whence
+`Col(c(a)) = x⁻¹·Res(μ_{∂log f}) = −x⁻¹Res(μ_a) = −zetaNum a`. Thm:coleman to kl (TeX
+2839) states `ζ_p = Col(c(a))/θ_a` with *no* sign; combined with TeX 2614's minus this
+would give `ζ_p = −(x⁻¹Res μ_a)/θ_a`, contradicting DefZetap (TeX 1568). The display at
+TeX 2839 therefore drops a minus sign relative to its own lem:relate cyclo to mua
+(errata #12). The honest identity is `ζ_p = −Col(c(a))/θ_a`, i.e.
+`([a]−1)·ζ_p = −Col(c(a))`. -/
+
+/-- `∂log (geomSum a) = (a−1) − F_a` (RJW prop:coleman zetap, TeX 2595–2608): the
+cleared identity `(1+T)·(geomSum a)′ = ((a−1)−F_a)·geomSum a`
+(`one_add_mul_derivative_log_geomSum`) becomes, on multiplying by `geomSum a⁻¹`
+(`Ring.mul_inverse_cancel`, `geomSum a` a unit), `∂log (geomSum a) = (a−1) − F_a`. -/
+theorem dlog_geomSum {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) :
+    dlog p (PadicMeasure.geomSum p a)
+      = ((a : PowerSeries ℤ_[p]) - 1) - PadicMeasure.Fa p a := by
+  have ha0 : a ≠ 0 := fun h => ha (h ▸ dvd_zero p)
+  rw [dlog, one_add_mul_derivative_log_geomSum p ha ha0, mul_assoc,
+    Ring.mul_inverse_cancel _ (PadicMeasure.isUnit_geomSum p ha), mul_one]
+
+/-- `x⁻¹` multiplication is additive in the measure: `unitsCmul g (−μ) = −unitsCmul g μ`
+(precomposition `μ ↦ μ.comp L` is `ℤ_p`-linear). -/
+private theorem unitsCmul_neg (g : C(ℤ_[p]ˣ, ℤ_[p])) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    PadicMeasure.unitsCmul p g (-μ) = -PadicMeasure.unitsCmul p g μ :=
+  LinearMap.ext fun _ => rfl
+
+/-- **The provable core of RJW thm:coleman to kl**: `Col(c(a)) = −zetaNum a`, where
+`zetaNum a = x⁻¹·Res_{ℤ_p^×}(μ_a)` is the numerator of `ζ_p`. The Mahler-inverse of
+`∂log f_{c(a)} = (a−1) − F_a` (`colemanSeries_cyclo`, `dlog_geomSum`) has units-measure
+`(𝒜⁻¹((a−1)−F_a)).comp extendByZero = −muAUnits a` (its `ι`-image is
+`Res(𝒜⁻¹((a−1)−F_a)) = −Res(μ_a) = ι(−muAUnits a)` by `iota_comp_extendByZero` +
+`res_derivative_log_geomSum` + `iota_muAUnits`, and `ι` is injective); then `unitsCmul`
+linearity (`unitsCmul_neg`) gives `Col(c(a)) = unitsCmul invCM (−muAUnits a) = −zetaNum a`.
+The minus is RJW lem:relate cyclo to mua (TeX 2614). -/
+theorem Col_cyclo {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2) :
+    Col p (cyclo p ha hp2) = -PadicMeasure.zetaNum p a := by
+  have ha0 : a ≠ 0 := fun h => ha (h ▸ dvd_zero p)
+  -- the units-measure of `∂log f_{c(a)}` equals `−muAUnits a` (pin down via `ι` injective)
+  have hmeasure :
+      ((PadicMeasure.mahlerLinearEquiv p).symm
+            (dlog p (colemanSeries p (cyclo p ha hp2)))).comp (PadicMeasure.extendByZero p)
+        = -PadicMeasure.muAUnits p a := by
+    apply PadicMeasure.iota_injective p
+    rw [iota_comp_extendByZero, colemanSeries_cyclo p ha hp2, dlog_geomSum p ha,
+      res_derivative_log_geomSum p ha ha0, map_neg, PadicMeasure.iota_muAUnits]
+  rw [Col, hmeasure, unitsCmul_neg, PadicMeasure.zetaNum]
+
+/-- **RJW thm:coleman to kl (TeX 2836–2841)**, honest-sign form (see the module note and
+errata #12): for the chosen integer topological generator `a` of `ℤ_p^×`, the
+Kubota–Leopoldt `p`-adic `ζ`-function satisfies `ζ_p = −Col(c(a))/θ_a`, i.e.
+`([a] − [1]) · ζ_p = −Col(c(a))` in `Q(ℤ_p^×)`, where `θ_a = [a] − [1]`.
+
+The display at TeX 2839 reads `ζ_p = Col(c(a))/θ_a` (no sign); combined with the notes'
+own lem:relate cyclo to mua (TeX 2614, `Res(μ_{∂log f}) = −Res(μ_a)`) and DefZetap (TeX
+1568, `ζ_p = (x⁻¹Res μ_a)/θ_a`) this forces the corrected sign — the source drops a
+minus (errata #12).
+
+Proof: the defining relation of `ζ_p = mk'(zetaNum a, [a]−1)` is
+`([a]−1)·ζ_p = zetaNum a` (`IsLocalization.mk'_spec'`), and `Col(c(a)) = −zetaNum a`
+(`Col_cyclo`). -/
+theorem coleman_to_kl (hp2 : p ≠ 2) :
+    algebraMap _ (PadicMeasure.QuotientField p)
+        (PadicMeasure.dirac p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose - 1)
+        * PadicMeasure.padicZeta p hp2
+      = -algebraMap _ _ (Col p (cyclo p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec.1
+          hp2)) := by
+  obtain ⟨hpm, _huv, _hgen⟩ :=
+    (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  -- the localisation relation `([u]−1)·ζ_p = zetaNum m`
+  have hspec : algebraMap _ (PadicMeasure.QuotientField p)
+        (PadicMeasure.dirac p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose - 1)
+        * PadicMeasure.padicZeta p hp2
+      = algebraMap _ _ (PadicMeasure.zetaNum p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose) := by
+    rw [PadicMeasure.padicZeta]
+    exact IsLocalization.mk'_spec' (PadicMeasure.QuotientField p) _ _
+  rw [hspec, Col_cyclo p hpm hp2, map_neg, neg_neg]
 
 end Coleman
 

@@ -4888,8 +4888,45 @@ series + thm:coleman map 2)
 - **Sizing**: ~190 LOC.
 
 ### [T912] **MILESTONE: the Coleman map and ζ_p = Col(c(a))/θ_a**
-- **Status**: open | **File**: Coleman/Map.lean
+- **Status**: DONE (2026-06-12; degraded mode — no lean-lsp MCP, validated via
+  `lake env lean` + `#print axioms` temp-file). Lean code sorry-free,
+  axiom-clean (`propext, Classical.choice, Quot.sound` only on all 8 new
+  publics), `lake build PadicLFunctions` green, zero linter warnings,
+  zero >100-char lines. **Blueprint pass deferred to orchestrator** (per
+  dispatch: do NOT wire). | **File**: Coleman/Map.lean
 - **Depends on**: T910, T911 | **Type**: def+theorem
+- **Progress (2026-06-12, T912 execution)**: delivered in Coleman/Map.lean
+  (imports widened to `Coleman.Theorem` + `KubotaLeopoldt.ZetaP`):
+  1. `evalPi_geomSum (a) {m} (hm : 1 ≤ m) : evalPi (geomSum a) m = cycloUnit a m`
+     — geomSum·X = (1+X)^a−1 evaluated at π_m, ÷ π_m.
+  2. `colemanSeries_cyclo {a} (ha : ¬p∣a) (hp2) : colemanSeries (cyclo a) =
+     geomSum a` (RJW TeX 2589–2592) — via `coleman_existsUnique.unique`: the
+     three clauses (IsUnit `isUnit_geomSum`; 𝒩-fix via `evalPi_injective` +
+     `evalPi_normOp` + `levelNorm_cycloUnit`; interpolation `evalPi_geomSum`).
+  3. `dlog (f) := (1+X)·f′·Ring.inverse f`; helper `iota_comp_extendByZero`
+     (`ι(μ.comp extendByZero) = Res μ`, general form of `iota_muAUnits`).
+  4. `Col (u : NormCompatUnits p) : PadicMeasure p ℤ_[p]ˣ` (RJW Def:coleman
+     map, TeX 2826–2832) := `unitsCmul invCM ((𝒜⁻¹(dlog f_u)).comp
+     extendByZero)` — the §4 zetaNum/muAUnits pattern (comp-extendByZero =
+     units-section restriction, no Classical-choice section).
+  5. `dlog_geomSum {a} (ha) : dlog (geomSum a) = (a−1) − Fa` (cleared
+     `one_add_mul_derivative_log_geomSum` ÷ geomSum via `Ring.mul_inverse_cancel`).
+  6. `Col_cyclo {a} (ha) (hp2) : Col (cyclo a) = −zetaNum a` — the
+     provable core; `(𝒜⁻¹((a−1)−Fa)).comp extendByZero = −muAUnits a` pinned
+     by `iota_injective` (`iota_comp_extendByZero` + `res_derivative_log_geomSum`
+     + `iota_muAUnits`), then `unitsCmul_neg`.
+  7. `coleman_to_kl (hp2) : algebraMap (dirac u − 1) · padicZeta =
+     −algebraMap (Col (cyclo m))` (RJW thm:coleman to kl, TeX 2836–2841,
+     **honest sign**) — `IsLocalization.mk'_spec'` (([u]−1)·ζ_p = zetaNum m)
+     + `Col_cyclo` + `neg_neg`.
+- **SIGN RESOLUTION (scenario α — ERRATUM #12 written)**: TeX 1551 θ_a =
+  [a]−[1] (= our `dirac u − 1`, NO twist); TeX 1568 DefZetap ζ_p =
+  (x⁻¹Res μ_a)/θ_a (= our `mk'(zetaNum, [a]−1)`). TeX 2614 lem:relate cyclo
+  has the minus: Res(μ_{∂log f}) = −Res(μ_a). So Col(c(a)) = −zetaNum a. But
+  TeX 2839 thm:coleman-to-kl states ζ_p = Col(c(a))/θ_a with NO sign;
+  combined with 2614 + 1568 that is contradictory → the notes drop a minus
+  at 2839 (errata #12). Honest theorem stated with the minus: ζ_p =
+  −Col(c(a))/θ_a, i.e. ([a]−1)·ζ_p = −Col(c(a)). errata.md #12 appended.
 - **Statement** (authored; Q8): `Col (u : NormCompatUnits p) :
   PadicMeasure p ℤ_[p]ˣ` := the §3/§4 composition: 𝓐⁻¹ of the
   ψ=0-series x⁻¹-divided… realised measure-side: the measure ν with
