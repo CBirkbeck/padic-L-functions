@@ -3510,7 +3510,18 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~130 LOC.
 
 ### [T703] Continuity of the numerator and Theorem 7.1(i)
-- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: T702
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean | **Depends on**: T702
+- **Progress**:
+  - 2026-06-12: both decls proven (subagent). Congruence route exactly per
+    sketch, p = 2 allowed: helpers `onePAdicPow_sub_one_mem_span_pow`
+    (exponent congruence via `AddChar.map_nsmul_eq_pow` +
+    `dvd_sub_pow_of_dvd_sub`) and `norm_onePAdicPow_sub_one_le`
+    (p=2-valid `‖y^t−1‖ ≤ ‖t‖`); pairing is `LipschitzWith 1` via
+    `PadicMeasure.norm_apply_le`. Thm 7.1(i) = `ContinuousAt.inv₀` +
+    `branch_denom_ne_zero` + pairing continuity. New import:
+    Mathlib.NumberTheory.Basic. Verified: build green, axioms standard 3.
+    Cleanup: degraded mode (no MCP), unused bindings removed; defer golf to
+    CLEANUP-71.
 - **Type**: lemmas
 - **Statement**: skeleton `continuous_zetaNum_branch_pairing`,
   `continuousAt_zetaPBranch` (R7.3a + Thm (i)).
