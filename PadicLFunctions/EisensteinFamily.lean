@@ -41,7 +41,14 @@ variable (p : ℕ) [hp : Fact p.Prime]
 section diracDivisors
 
 /-- `2` is a unit of `ℤ_p` for odd `p` (its valuation is `0`). -/
-theorem isUnit_two_padicInt (hp2 : p ≠ 2) : IsUnit (2 : ℤ_[p]) := by sorry
+theorem isUnit_two_padicInt (hp2 : p ≠ 2) : IsUnit (2 : ℤ_[p]) := by
+  have hnd : ¬ (p : ℕ) ∣ 2 := by
+    intro hd
+    have : p ≤ 2 := Nat.le_of_dvd (by norm_num) hd
+    have h2 : 2 ≤ p := hp.out.two_le
+    omega
+  have h := PadicInt.isUnit_natCast_of_not_dvd (p := p) hnd
+  rwa [Nat.cast_ofNat] at h
 
 open Classical in
 /-- The unit of `ℤ_p^×` attached to a natural number `d` coprime to `p`
@@ -51,7 +58,9 @@ noncomputable def unitOfNat (d : ℕ) : ℤ_[p]ˣ :=
   if h : IsUnit ((d : ℕ) : ℤ_[p]) then h.unit else 1
 
 theorem unitOfNat_coe {d : ℕ} (hd : ¬ (p : ℕ) ∣ d) :
-    ((unitOfNat p d : ℤ_[p]ˣ) : ℤ_[p]) = (d : ℤ_[p]) := by sorry
+    ((unitOfNat p d : ℤ_[p]ˣ) : ℤ_[p]) = (d : ℤ_[p]) := by
+  have hu : IsUnit ((d : ℕ) : ℤ_[p]) := PadicInt.isUnit_natCast_of_not_dvd hd
+  rw [unitOfNat, dif_pos hu, IsUnit.unit_spec]
 
 /-- R8: the prime-to-`p` divisor power sum
 `σ^p_k(n) = Σ_{0<d∣n, p∤d} d^k` (RJW TeX 2393). -/
@@ -69,11 +78,45 @@ noncomputable def divisorMeasure (n : ℕ) : PadicMeasure p ℤ_[p]ˣ :=
 evaluate, `∫ x^k δ_d = d^k`. -/
 theorem divisorMeasure_moment (n k : ℕ) :
     divisorMeasure p n (PadicMeasure.unitsPowCM p k)
-      = ((sigmaP p k n : ℕ) : ℤ_[p]) := by sorry
+      = ((sigmaP p k n : ℕ) : ℤ_[p]) := by
+  rw [divisorMeasure, LinearMap.coe_sum, Finset.sum_apply, sigmaP, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun d hd => ?_
+  have hnd : ¬ (p : ℕ) ∣ d := (Finset.mem_filter.1 hd).2
+  rw [PadicMeasure.dirac_apply]
+  change ((unitOfNat p d : ℤ_[p]ˣ) : ℤ_[p]) ^ k = ((d ^ k : ℕ) : ℤ_[p])
+  rw [unitOfNat_coe p hnd, Nat.cast_pow]
 
 end diracDivisors
 
 section twist
+
+/-- The pointwise product of `x` and `x^k` is `x^{k+1}` on `ℤ_p^×`. -/
+private lemma unitsPowCM_one_mul_unitsPowCM (k : ℕ) :
+    PadicMeasure.unitsPowCM p 1 * PadicMeasure.unitsPowCM p k
+      = PadicMeasure.unitsPowCM p (k + 1) := by
+  refine ContinuousMap.ext fun u => ?_
+  simp only [ContinuousMap.mul_apply, PadicMeasure.unitsPowCM, ContinuousMap.coe_mk, pow_one]
+  rw [pow_succ']
+
+/-- The pointwise product of `x⁻¹` and `x` is `1` on `ℤ_p^×`. -/
+private lemma invCM_mul_unitsPowCM_one :
+    PadicMeasure.invCM p * PadicMeasure.unitsPowCM p 1 = 1 := by
+  refine ContinuousMap.ext fun u => ?_
+  simp only [ContinuousMap.mul_apply, PadicMeasure.invCM, PadicMeasure.unitsPowCM,
+    ContinuousMap.coe_mk, pow_one, ContinuousMap.one_apply]
+  rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+
+/-- The pointwise product of `x` and `x⁻¹` is `1` on `ℤ_p^×`. -/
+private lemma unitsPowCM_one_mul_invCM :
+    PadicMeasure.unitsPowCM p 1 * PadicMeasure.invCM p = 1 := by
+  rw [mul_comm, invCM_mul_unitsPowCM_one]
+
+/-- The twist by `x` shifts the `k`-th moment up by one: a standalone helper used
+in `unitsTwist`'s `map_mul'` field (and exposed as `unitsTwist_moment`). -/
+private lemma unitsCmul_powCM_one_moment (μ : PadicMeasure p ℤ_[p]ˣ) (k : ℕ) :
+    PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1) μ (PadicMeasure.unitsPowCM p k)
+      = μ (PadicMeasure.unitsPowCM p (k + 1)) := by
+  rw [PadicMeasure.unitsCmul_apply, unitsPowCM_one_mul_unitsPowCM]
 
 /-- R8 (replan R8.2): the x-twist `τ : Λ(ℤ_p^×) → Λ(ℤ_p^×)`,
 `(τμ)(f) = μ(x·f)` — on Diracs `[g] ↦ g·[g]` — as a ring automorphism of
@@ -83,27 +126,75 @@ twist by `x⁻¹`. -/
 noncomputable def unitsTwist : PadicMeasure p ℤ_[p]ˣ ≃+* PadicMeasure p ℤ_[p]ˣ where
   toFun := PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1)
   invFun := PadicMeasure.unitsCmul p (PadicMeasure.invCM p)
-  left_inv := by sorry
-  right_inv := by sorry
-  map_mul' := by sorry
-  map_add' := by sorry
+  left_inv μ := by
+    refine LinearMap.ext fun f => ?_
+    rw [PadicMeasure.unitsCmul_apply, PadicMeasure.unitsCmul_apply, ← mul_assoc,
+      unitsPowCM_one_mul_invCM, one_mul]
+  right_inv μ := by
+    refine LinearMap.ext fun f => ?_
+    rw [PadicMeasure.unitsCmul_apply, PadicMeasure.unitsCmul_apply, ← mul_assoc,
+      invCM_mul_unitsPowCM_one, one_mul]
+  map_mul' μ ν := by
+    have hzd : PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1) (μ * ν)
+        - PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1) μ
+          * PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1) ν = 0 := by
+      refine PadicMeasure.eq_zero_of_forall_unitsPowCM_eq_zero p _ fun k _ => ?_
+      rw [LinearMap.sub_apply, PadicMeasure.units_mul_apply_unitsPowCM,
+        unitsCmul_powCM_one_moment, unitsCmul_powCM_one_moment, unitsCmul_powCM_one_moment,
+        PadicMeasure.units_mul_apply_unitsPowCM, sub_self]
+    rw [sub_eq_zero] at hzd
+    exact hzd
+  map_add' μ ν := by
+    refine LinearMap.ext fun f => ?_
+    rw [PadicMeasure.unitsCmul_apply, LinearMap.add_apply, LinearMap.add_apply,
+      PadicMeasure.unitsCmul_apply, PadicMeasure.unitsCmul_apply]
 
 /-- The twist shifts moments by one: `∫x^k·(τμ) = ∫x^{k+1}·μ`. -/
 theorem unitsTwist_moment (μ : PadicMeasure p ℤ_[p]ˣ) (k : ℕ) :
     unitsTwist p μ (PadicMeasure.unitsPowCM p k)
-      = μ (PadicMeasure.unitsPowCM p (k + 1)) := by sorry
+      = μ (PadicMeasure.unitsPowCM p (k + 1)) :=
+  unitsCmul_powCM_one_moment p μ k
 
 /-- The twist sends Diracs to scaled Diracs: `τ(δ_g) = g·δ_g`. -/
 theorem unitsTwist_dirac (g : ℤ_[p]ˣ) :
     unitsTwist p (PadicMeasure.dirac p g)
-      = (g : ℤ_[p]) • PadicMeasure.dirac p g := by sorry
+      = (g : ℤ_[p]) • PadicMeasure.dirac p g := by
+  refine LinearMap.ext fun f => ?_
+  change PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1) (PadicMeasure.dirac p g) f
+    = ((g : ℤ_[p]) • PadicMeasure.dirac p g) f
+  rw [PadicMeasure.unitsCmul_apply, PadicMeasure.dirac_apply, LinearMap.smul_apply,
+    PadicMeasure.dirac_apply, ContinuousMap.mul_apply, smul_eq_mul]
+  congr 1
+  simp only [PadicMeasure.unitsPowCM, ContinuousMap.coe_mk, pow_one]
 
 /-- A ring automorphism maps the non-zero-divisors onto the
 non-zero-divisors. -/
 theorem map_nonZeroDivisors_unitsTwist :
     (nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ)).map
         (unitsTwist p).toMonoidHom
-      = nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) := by sorry
+      = nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) := by
+  -- A ring equiv of a commutative ring preserves the non-zero-divisors in both
+  -- directions; we state the preservation for an arbitrary ring equiv `e` so it can
+  -- be reused for `unitsTwist p` and its inverse.
+  have key : ∀ (e : PadicMeasure p ℤ_[p]ˣ ≃+* PadicMeasure p ℤ_[p]ˣ)
+      (z : PadicMeasure p ℤ_[p]ˣ), z ∈ nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) →
+      e z ∈ nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ) := by
+    intro e z hz
+    rw [mem_nonZeroDivisors_iff] at hz ⊢
+    have hmul : ∀ w, w * e z = 0 → w = 0 := by
+      intro w hw
+      have hez : e (e.symm w * z) = 0 := by rw [map_mul, RingEquiv.apply_symm_apply, hw]
+      have hzero : e.symm w * z = 0 := by rwa [map_eq_zero_iff _ e.injective] at hez
+      have hsymm : e.symm w = 0 := hz.2 _ hzero
+      have := congrArg e hsymm
+      rwa [RingEquiv.apply_symm_apply, map_zero] at this
+    exact ⟨fun w hw => hmul w (by rwa [mul_comm] at hw), hmul⟩
+  refine Submonoid.ext fun x => ⟨?_, ?_⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact key (unitsTwist p) y hy
+  · intro hx
+    exact ⟨(unitsTwist p).symm x, key (unitsTwist p).symm x hx,
+      RingEquiv.apply_symm_apply _ _⟩
 
 /-- R8: the x-twist extended to the total fraction ring `Q(ℤ_p^×)`. -/
 noncomputable def quotientTwist :
@@ -115,7 +206,8 @@ noncomputable def quotientTwist :
 /-- The extended twist restricts to the measure-twist on `Λ(ℤ_p^×)`. -/
 theorem quotientTwist_algebraMap (μ : PadicMeasure p ℤ_[p]ˣ) :
     quotientTwist p (algebraMap _ (PadicMeasure.QuotientField p) μ)
-      = algebraMap _ _ (unitsTwist p μ) := by sorry
+      = algebraMap _ _ (unitsTwist p μ) :=
+  IsLocalization.ringEquivOfRingEquiv_eq _ μ
 
 end twist
 

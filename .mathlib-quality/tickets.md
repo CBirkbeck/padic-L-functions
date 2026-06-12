@@ -3809,7 +3809,12 @@ protocol applies. Erratum #11 recorded (errata.md): TeX 2403(a) corrected
 to the twisted pseudo-measure form.
 
 ### [T801] Dirac measures at prime-to-p naturals and the divisor measure
-- **Status**: open | **File**: EisensteinFamily.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: EisensteinFamily.lean | **Depends on**: none
+- **Progress**: 2026-06-12: all three decls proven (subagent, batched with
+  T802), statements verbatim. `PadicInt.isUnit_natCast_of_not_dvd` +
+  `Nat.cast_ofNat` for the 2-unit; `LinearMap.coe_sum`/`Finset.sum_apply`
+  for the measure-sum application. Verified: build green, axioms standard
+  3. Cleanup: degraded mode (no MCP), defer to CLEANUP-81.
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `isUnit_two_padicInt`, `unitOfNat_coe`,
   `divisorMeasure_moment` (R8 L8.1a/b/c/d).
@@ -3831,7 +3836,16 @@ to the twisted pseudo-measure form.
 - **Sizing**: source 3 lines; ~60 LOC.
 
 ### [T802] The x-twist ring automorphism and its fraction-ring extension
-- **Status**: open | **File**: EisensteinFamily.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: EisensteinFamily.lean | **Depends on**: none
+- **Progress**: 2026-06-12: unitsTwist (all 4 fields) + the 4 lemmas proven
+  (subagent, batched with T801), statements verbatim. map_mul' exactly per
+  the moments-route (R8.2): `units_mul_apply_unitsPowCM` + moment-shift +
+  `eq_zero_of_forall_unitsPowCM_eq_zero`. map_nonZeroDivisors manual
+  (mathlib's equiv-nzd lemmas need NoZeroDivisors — N/A for Λ(ℤ_p^×));
+  `IsLocalization.ringEquivOfRingEquiv_eq` for the algebraMap-compat.
+  4 private helpers. Verified: build green (with the LevelRaise dep slice
+  now built, 2980 jobs), axioms standard 3. Cleanup: degraded mode, defer
+  to CLEANUP-81.
 - **Parallel**: yes | **Type**: def-lemmas
 - **Statement**: skeleton `unitsTwist` (4 sorried fields),
   `unitsTwist_moment`, `unitsTwist_dirac`, `map_nonZeroDivisors_unitsTwist`,
@@ -4034,13 +4048,71 @@ to the twisted pseudo-measure form.
 - **Sources**: TeX 2399–2416 (Q4 verbatim at R8).
 - **Sizing**: ~60 LOC + blueprint pass.
 
+### [T808] Γ₀(p)-modularity of the p-stabilisation (un-deferred 2026-06-12)
+- **Status**: open | **File**: EisensteinComplex.lean | **Depends on**: T805
+- **Parallel**: yes (after T805) | **Type**: def + theorem
+- **Context**: user directive 2026-06-12: the strong-multiplicity-one
+  project (CBirkbeck/LeanModularForms, branch hecke-ring) has the
+  level-raising operator; this repo now REQUIRES it (lakefile.toml pin
+  720d950b + two mathlib-skew compat fixes, log below). Un-defers the
+  plan.md §8 deferred item "Γ₀(p)-modularity of E_k^{(p)}".
+- **Statement** (add to EisensteinComplex.lean; exact Lean form fixed at
+  execution against the dep's API):
+  `noncomputable def stabilisedEisenstein {k : ℕ} (hk : 3 ≤ k) :
+    ModularForm ((Gamma0 p).map (mapGL ℝ)) k` realising
+  `E_k − p^{k−1}·ι_p E_k` (RJW TeX 2394 "Note E_k^{(p)} is a modular form
+  of weight k and level Γ₀(p)"), plus
+  `stabilisedEisenstein_apply : stabilisedEisenstein p hk z
+    = ModularForm.E hk z − (p:ℂ)^(k−1) * ModularForm.E hk (pScale p z)`
+  (ℤ/ℕ-weight cast bookkeeping at execution) and the
+  rjwEisenstein-scaled corollary matching hasSum_stabilisedEisenstein.
+- **Proof sketch**: from the dep
+  (LeanModularForms.HeckeRIngs.GL2.LevelRaise):
+  1. `modularFormLevelRaise (M := 1) (d := p) k` +
+     `modularFormLevelRaise_apply` (pointwise f(α_d • τ)) +
+     `coe_levelRaiseMatrix_smul` ((α_l•τ : ℂ) = l·τ — identifies
+     α_p•τ = pScale p τ via UpperHalfPlane.ext).
+  2. Feed mathlib's `ModularForm.E hk : ModularForm 𝒮ℒ k` restricted
+     along (Gamma1 1).map ≤ 𝒮ℒ (Γ₁(1) = ⊤-side; the dep's
+     restrictSubgroup at LevelRaise.lean:174; mind ℤ-weight vs ℕ).
+  3. F := E|_{Γ₁(p)} − p^{k−1}·ι_p(E) lives at Γ₁(p); upgrade to Γ₀(p)
+     directly (ModularForm.mk-shape): slash-invariance for
+     γ ∈ Γ₀(p)-mapped from E's full 𝒮ℒ-invariance + the
+     down-conjugation bridge `slash_mapGL_levelRaiseFun` with
+     `levelRaiseConjOfDvd_mem_Gamma0` (LevelRaise.lean:121; at M = 1,
+     Γ₀(1) = SL2 so E∣γ̃ = E ⟹ (ι_pE)∣γ = ι_pE); holomorphy/
+     boundedness inherited from the Γ₁(p)-level object (subgroup-
+     agnostic predicates). FIRST grep the dep for an existing
+     Γ₀-bundled operator or invariance-upgrade helper.
+  4. apply-lemma from modularFormLevelRaise_apply +
+     coe_levelRaiseMatrix_smul + UpperHalfPlane.ext against pScale.
+- **Mathlib/dep lemmas**: modularFormLevelRaise(_apply),
+  coe_levelRaiseMatrix_smul, slash_mapGL_levelRaiseFun,
+  levelRaiseConjOfDvd_mem_Gamma0, Gamma0_dmul_lower_left_dvd,
+  restrictSubgroup (dep); ModularForm.translate, Gamma0/Gamma1
+  inclusions (mathlib).
+- **Sources**: TeX 2394 (the "Note" in Q3); Miyake §4.6 Lem 4.6.1 /
+  DS (5.16) (the dep's own citations).
+- **Sizing**: dep supplies the operator; Γ₀-upgrade + apply ~150 LOC.
+- **Dep-compat log (orchestrator, 2026-06-12)**: two mathlib-skew fixes
+  applied in .lake/packages/LeanModularForms (MUST be upstreamed to a
+  pushed branch of CBirkbeck/LeanModularForms and repinned before this
+  board closes — tracked in CLEANUP-82; remote CI cannot see
+  .lake-local edits): (i) SL2Surjection.lean: add
+  `import Mathlib.Data.ZMod.Units` (ZMod.coe_int_isUnit_iff_isCoprime
+  no longer transitively imported); (ii) AbstractHeckeRing/Basic.lean:
+  `toSet_eq_rep`'s simpa needs `HeckeCoset.rep` in the simp set
+  (Quotient.out reducibility change).
+
 ### [CLEANUP-82] Final per-file cleanup (EisensteinFamily.lean +
 EisensteinComplex.lean)
-- **Status**: open | **Depends on**: T807 | **Type**: cleanup
-  (+ widen CLEANUP-FINAL to §8)
+- **Status**: open | **Depends on**: T807, T808 | **Type**: cleanup
+  (+ widen CLEANUP-FINAL to §8; + upstream the LeanModularForms compat
+  fixes to a pushed branch and repin lakefile/manifest)
 
 ## §8 dependency quick-view
 ```
 T801 ; T802 → T803 → CL81 ; T804 ; T805 → T806
   → CLALL8 → T807*(T801,T803,T806) → CL82
+T805 → T808 (dep: LeanModularForms levelRaise) → CL82
 ```

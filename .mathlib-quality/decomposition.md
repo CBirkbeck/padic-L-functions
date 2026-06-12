@@ -3184,3 +3184,16 @@ mathlib anchors: EisensteinSeries.E + E_qExpansion_coeff +
 q_expansion_bernoulli; IsLocalization.ringEquivOfRingEquiv;
 riemannZeta_neg_nat_eq_bernoulli; ArithmeticFunction.sigma. No
 REVIEW-PENDING leaves. Deferred: Γ₀(p)-modularity of E^{(p)} (R8.3).
+
+### R8 addendum (2026-06-12, user directive): L8.7 — Γ₀(p)-modularity un-deferred
+- **L8.7** `stabilisedEisenstein : ModularForm ((Gamma0 p).map (mapGL ℝ)) k`
+  + apply-lemma — replan R8.3's deferral REVOKED: the
+  strong-multiplicity-one project (CBirkbeck/LeanModularForms@hecke-ring,
+  now a lake require pinned 720d950b) supplies `modularFormLevelRaise`
+  (ι_d : M_k(Γ₁(M)) → M_k(Γ₁(dM)), Miyake §4.6 Lem 4.6.1) with pointwise
+  `modularFormLevelRaise_apply`/`coe_levelRaiseMatrix_smul`, the
+  down-conjugation bridge `slash_mapGL_levelRaiseFun`, and Γ₀-conjugation
+  lemmas (`levelRaiseConjOfDvd_mem_Gamma0`). Source: TeX 2394 (Q3's
+  "Note"). Ticket T808. Two mathlib-skew compat fixes applied to the dep
+  checkout (ZMod.Units import; HeckeCoset.rep simp-unfold) — upstream at
+  CLEANUP-82.

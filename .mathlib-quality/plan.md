@@ -431,10 +431,12 @@ TeX 2379–2383), one Theorem (TeX 2399–2416): the Λ-adic family
   imports kept out of the p-adic file). σ^p arithmetic + stabilised HasSum.
 
 ## Deferred (§8)
-- **Γ₀(p)-modularity of E_k^{(p)}** (TeX 2394 "Note … is a modular form of
-  weight k and level Γ₀(p)") — mathlib has no level-raising/V_p operator;
-  remark-level in the source (no proof given). Blueprint node gets a prose
-  note; revisit if mathlib gains oldform machinery.
+- ~~**Γ₀(p)-modularity of E_k^{(p)}**~~ — **UN-DEFERRED 2026-06-12** (user
+  directive): the strong-multiplicity-one project
+  (CBirkbeck/LeanModularForms, branch hecke-ring) supplies the
+  level-raising operator `modularFormLevelRaise` (Miyake §4.6 Lem 4.6.1);
+  the repo now requires it (lakefile.toml pin 720d950b + two
+  mathlib-skew compat fixes, to be upstreamed at CLEANUP-82). Ticket T808.
 - Remarks 1–3 (TeX 2431–2446: Λ-adic forms colloquium, weight space 𝒲,
   Hida/Coleman families) — prose only, no mathematical content to
   formalise; blueprint prose covers them.
