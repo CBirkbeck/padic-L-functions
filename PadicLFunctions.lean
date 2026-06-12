@@ -33,6 +33,7 @@ import PadicLFunctions.ExtLog
 import PadicLFunctions.MeasureR.FormalPsi
 import PadicLFunctions.ValuesAtOneComplex
 import PadicLFunctions.ValuesAtOne
+import PadicLFunctions.ResidueZeta
 
 /-!
 # p-adic L-functions

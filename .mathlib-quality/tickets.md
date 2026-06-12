@@ -3434,3 +3434,217 @@ attacks that already fired are recorded in R6 (replans 1–5).
 - **Generality**: K-coefficients (the ambient); padicLog-statements over
   the PadicExp L when free.
 - **Sizing**: ~80–120 LOC (toolkit exists).
+
+---
+
+# §7 board (The residue of ζ_p at s = 1; TeX 2181–2360) — created 2026-06-12
+
+Skeleton: PadicLFunctions/ResidueZeta.lean (13 sorries), build green.
+Decomposition: decomposition.md R7 (verbatim quotes + replans 1–4).
+Statements live in the skeleton; the §6 statement-fix protocol applies.
+
+### [T701] Exponential tail and the character isometry
+- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: lemmas
+- **Statement**: skeleton `norm_padicExp_sub_one_sub_self_le`,
+  `norm_onePAdicPow_sub_one` (R7.1a/b).
+- **Proof sketch**: tail: peel n ∈ {0,1} of the exp series
+  (tsum_eq_zero_add ×2, the T521 patterns), bound the n ≥ 2 terms at the
+  (p−1)-power level ((‖(n!)⁻¹‖·‖w‖^{n−2})^{p−1} ≤ p^{n−1}·p^{−(n−2)} = p,
+  then a^{p−1} ≤ p ⟹ a ≤ p since p ≥ p^{1/(p−1)}: cleanest rpow-free:
+  a^{p−1} ≤ p ≤ p^{p−1} ⟹ a ≤ p by pow-mono) + ultrametric tail-max
+  (norm_tsum_le_of_forall_le). Isometry: onePAdicPow y t =
+  pZpExp(t·pZpLog y) (T523 padicExp_smul_padicLog_eq_onePAdicPow at s := t
+  — mind the argument order: pZpExp p (t * pZpLog p y)), then coe-norms +
+  norm_padicExp_sub_one (ball: ‖t·log y‖ ≤ ‖y−1‖ ≤ p⁻¹, p odd strict) +
+  norm_padicLog through pZpLog_coe; multiplicativity of the padic norm.
+- **Sources**: TeX 2236–2248 (the binomial route it replaces — replan R7.3);
+  Washington §5.1.
+- **Sizing**: ~90 LOC.
+
+### [T702] The branch denominator: primitivity, nonvanishing, derivative
+- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: T701
+- **Type**: lemmas
+- **Statement**: skeleton `teichmuller_isPrimitiveRoot`,
+  `branch_denom_ne_zero`, `tendsto_branch_denom_div` (R7.2a/b/c).
+- **Proof sketch**: a: hgen at n = 1 gives u mod p generates (ZMod p)ˣ
+  (order p−1); ω(u)'s order = order of the reduction (toZMod_teichmullerZMod
+  section + injectivity of teichmullerZMod on its image — the
+  exists_primitiveRoot_card_sub_one proof in Branches is the template).
+  b: branchChar i s u − 1 = ω(u)^i⟨u⟩^s − 1 = (ω^i − 1) + ω^i(⟨u⟩^s − 1);
+  ‖ω^i − 1‖ = 1 (i < p−1, primitivity: the reduction ω̄^i = ū^i ≠ 1 in
+  ZMod p ⟹ norm-1 via the residue argument), ‖⟨u⟩^s − 1‖ ≤ p⁻¹ < 1
+  (onePAdicPow_sub_one_mem) ⟹ isoceles norm = 1 ≠ 0; coe to ℚ_[p].
+  c: ω(u)^{p−1} = 1 (teichmullerFun_pow_card_sub_one) so the denominator
+  is ⟨u⟩^{1−s} − 1 = pZpExp((1−s)·L) − 1 with L := pZpLog⟨u⟩ (T523);
+  write (s−1)⁻¹(exp(w)−1) with w := (1−s)L = −(s−1)L:
+  = −L·[w⁻¹(exp w − 1)] and w⁻¹(exp w −1) → 1 by T701a (ε-δ: ‖w⁻¹(exp w − 1)
+  − 1‖ = ‖w‖⁻¹‖exp w − 1 − w‖ ≤ p‖w‖ → 0 as s → 1; w ≠ 0 iff s ≠ 1 and
+  L ≠ 0 — case L = 0: ⟨u⟩ = 1 forces the limit statement trivially?? NO:
+  if L = 0 then denominator ≡ 0 and the limit claim says → 0 ✓ both sides
+  0 — handle the L = 0 case separately (limit of 0-function = −0 ✓);
+  coe-bookkeeping ℤ_[p] → ℚ_[p] (continuous ring hom).
+- **Sources**: TeX 2218–2256 verbatim at R7; replan R7.3.
+- **Sizing**: ~130 LOC.
+
+### [T703] Continuity of the numerator and Theorem 7.1(i)
+- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: T702
+- **Type**: lemmas
+- **Statement**: skeleton `continuous_zetaNum_branch_pairing`,
+  `continuousAt_zetaPBranch` (R7.3a + Thm (i)).
+- **Proof sketch**: pairing: Metric/ε-route: for s ≡ s' mod p^m the
+  integrands agree mod p^m uniformly: branchChar i (1−s) x −
+  branchChar i (1−s') x = ω^i⟨x⟩^{1−s'}(⟨x⟩^{s'−s} − 1) with
+  ⟨x⟩^{s'−s} − 1 ∈ span{p^m} (onePAdicPow_sub_one_mem_pow at the
+  difference, T519) ⟹ ‖f_s − f_{s'}‖_sup ≤ p^{−m}; the §3 measure norm
+  bound (PadicMeasure.norm_apply_le — verify exact name; the §3 board
+  had it) gives ‖pairing(s) − pairing(s')‖ ≤ ‖zetaNum‖·p^{−m}; coe
+  continuous. Thm (i): zetaPBranch is the quotient; numerator continuous
+  (pairing-lemma at the §4 generator m), denominator continuous
+  (same congruence bound on s ↦ branchChar-at-u) and ≠ 0 everywhere near 1
+  (T702b) ⟹ ContinuousAt of the product/inverse (the dite-free def:
+  zetaPBranch = (denom)⁻¹·num: Continuous.inv₀-route at s = 1).
+- **Sources**: TeX 2228–2231 ("This already implies Theorem 7.1(i)").
+- **Sizing**: ~100 LOC.
+
+### [CLEANUP-71] /cleanup on ResidueZeta.lean (cadence)
+- **Status**: open | **Depends on**: T701, T702, T703 | **Type**: cleanup
+
+### [T704] The antiderivative F̃_a and ∂F̃_a = F_a
+- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: none
+- **Parallel**: yes (mass-chain head) | **Type**: def-lemmas
+- **Statement**: skeleton `constantCoeff_FtildeA`,
+  `one_add_mul_derivative_FtildeA` (R7.4c/d; defs uA/FtildeA in skeleton).
+- **Proof sketch**: constant: coeff-0 extraction (subst at constant-0
+  argument has constantCoeff = formalLog(0) = 0: constantCoeff_subst-route
+  or coeff_subst' at 0; smul-part 0). Derivative: ∂ is additive;
+  ∂(C) = 0; ∂(formalLog∘(uA−1)) via derivative_subst (chain rule) +
+  one_add_mul_derivative_formalLog-shape: (1+X)·D(L∘G) where ∂L = 1:
+  compute (1+X)D(L.subst G) = (DL).subst G · (1+X)DG = [(1+(uA−1))⁻¹-free?
+  — careful: ∂L = 1 means (1+X)·DL = 1 i.e. DL = (1+X)⁻¹: (DL).subst G =
+  Ring.inverse(1 + G-shifted)... work it: (1+X)·D(L∘(uA−1)) =
+  Ring.inverse(uA)·(1+X)·D(uA) (the log-derivative); ∂((a−1)•L) = (a−1)•1.
+  Target Fa: verify PadicMeasure.Fa's exact closed form (MuA.lean: Fa :=
+  FaNum-based — READ; RJW: F_a = 1/T − a/((1+T)^a−1); with
+  (1+T)^a − 1 = aT·uA: a/((1+T)^a−1) = T⁻¹·uA⁻¹: F_a =
+  T⁻¹(1 − uA⁻¹) — honest series ✓); the identity reduces to
+  uA-algebra: (1+X)·D(F̃) = (a−1) − inverse(uA)·(1+X)·D(uA) ≟ map(Fa):
+  per RJW's Lemma 7.3 computation; expect ~80 LOC of series algebra
+  (geometric-inverse helpers from T612 reusable).
+- **Sources**: TeX 2266–2279 + 2296–2305 verbatim at R7.
+- **Sizing**: ~120 LOC.
+
+### [T705] The measure ρ_a: support and x-multiplication
+- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: lemmas
+- **Statement**: skeleton `psi_rhoA`, `one_add_mul_derivative_mahlerK_rhoA`
+  (R7.5b/c; def rhoA in skeleton).
+- **Proof sketch**: support: iota-image is unit-supported at the §4 level
+  (Measure/UnitsZp's res_iota/mem-range machinery — the ℤ_[p]-precursors
+  of the MeasureR ones); transport through baseChange: need
+  ψ∘baseChange = baseChange∘ψ (NEW small naturality lemma — the TW6 notes
+  deferred it; prove via mahlerTransform_baseChange + mahlerTransform_psi
+  + injectivity of the Mahler transform (mahlerRingEquiv), ~30 LOC) — or
+  directly: ψ(baseChange(iota ν)) = 0 via the transform-route. x-mult:
+  x·zetaNum = muAUnits at the §4 level (zetaNum := unitsCmul invCM
+  muAUnits: x·(x⁻¹·μ) = μ — the unitsCmul-algebra, the T614 pattern at
+  ℤ_[p]-level); iota∘(units-measure) vs res∘(ℤ_p-measure):
+  iota(muAUnits) = res units (muA) (the §4 relation — survey ZetaP/MuA
+  for it; muAUnits := res-to-units of muA presumably definitional);
+  baseChange is a ring hom commuting with the transform
+  (mahlerTransform_baseChange); del/derivative transport as in T614
+  (map_derivativeFun helpers exist in ValuesAtOne — may need export or
+  re-prove locally).
+- **Sources**: TeX 2258–2264; ZetaP.lean (zetaNum def).
+- **Sizing**: ~110 LOC.
+
+### [T706] The mass identity (c₀-pin + trace)
+- **Status**: open | **File**: ResidueZeta.lean
+- **Depends on**: T704, T705 | **Type**: theorems
+- **Statement**: skeleton `p_mul_constantCoeff_mahlerK_rhoA`,
+  `sum_seriesEval_FtildeA`, `constantCoeff_mahlerK_rhoA` (R7.6a/b/c).
+- **Proof sketch**: pin: T615's proof VERBATIM minus the G-clearing
+  (W := F̃_a − 𝓐ρ_a; ∂W = φψ-part via T704+T705 and res_units_eq;
+  antiderivative + ker-∂ + ξ-point evaluation + sum_seriesEval_mahlerK +
+  psi_rhoA; summability of seriesEval F̃_a from the log-growth coefficient
+  helpers (T615/T616's summable-machinery — uA-coefficients are integral
+  (a⁻¹C(a,n+1) ∈ ℤ_p for p∤a: a unit in ℤ_p... over K: bounded by
+  ‖a⁻¹‖ = 1) + formalLog's 1/n). Trace: per-point seriesEval F̃_a (ξ^i−1)
+  = −extLog(a) − extLog(uA-eval at ξ^i−1)-resummation + (a−1)·padicLog(ξ^i)
+  -part: CAREFUL — formalLog∘(uA−1) evaluated at ξ^i−1: the subst-eval
+  bridge (seriesEval_phi_of_summable_prod-pattern but for the uA-subst:
+  general subst-eval — survey what T616 built: seriesEval_logSeriesAt-
+  machinery; may need a small general lemma seriesEval-of-subst at
+  convergence, the T618 toolkit shapes); then the algebra: F̃_a(ξ^i−1) =
+  log of [(ξ^i−1)/(ξ^i·... the RJW per-ξ rearrangement TeX 2330–2340:
+  F̃_a((1+T)ξ−1)|_{T=0} = log((ξ−1)/(ξ^a−1)·ξ^{a−1})-values via extLog
+  (domains: ξ^j−1 norm-known (FormalPsi's norm_sub_one_lt-machinery) +
+  roots-of-unity integrality — the T616-pattern helpers); Σ_i: collapse
+  Σ_i extLog(ξ^i−1) − Σ_i extLog(ξ^{ai}−1) + (a−1)Σ_i extLog(ξ^i):
+  third sum = 0 (torsion); first two cancel by the {ξ^a} = μ_p reindex
+  (i ↦ ai mod p bijection, p∤a) EXCEPT the i = 0 terms — careful:
+  i = 0: F̃_a(0) = −extLog(a) ✓ included in the Fin p-sum: total =
+  −extLog(a) + [Σ_{i≠0}(extLog(ξ^i−1) − extLog(ξ^{ai}−1)) = 0 by
+  reindex] + 0 = −extLog(a) ✓ matches R7.6b. Combine: c₀-identity +
+  trace + constantCoeff_FtildeA ⟹ R7.6c (field algebra, (p:K) ≠ 0).
+- **Sources**: TeX 2320–2352 verbatim at R7.
+- **Sizing**: ~200 LOC (the section's largest).
+
+### [T707] Descent: the ℚ_p-level mass
+- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: T706
+- **Type**: theorem
+- **Statement**: skeleton `zetaNum_one` (R7.7).
+- **Proof sketch**: instantiate K := ℂ_[p] (mathlib PadicComplex:
+  SURVEY-GATED — verify NormedField/NormedAlgebra ℚ_[p]/IsUltrametricDist/
+  CompleteSpace/CharZero instances + obtain ξ from PadicAlgCl's
+  algebraically-closed primitive root mapped along the embedding with
+  IsPrimitiveRoot.map; FALLBACK if any instance is missing: state the
+  K-pack as hypotheses on a wrapper lemma and instantiate in a later
+  ticket — record). Identify: the K-coe of the ℚ_p-mass =
+  constantCoeff(mahlerK ρ_a) (mass = apply at powCM 0 = the §4 pairing
+  at 1 via baseChange_algCM-characterisation/iota-unfold + apply_powCM);
+  R7.6c gives the K-value −(1−p⁻¹)·extLog((a:K)); extLog commutes with
+  the embedding ℚ_[p] → K on the rational-valuation domain
+  (`algebraMap_extLog` helper: the witness transports; ~30 LOC);
+  algebraMap-injectivity (field hom) concludes.
+- **Sources**: TeX 2258–2264; replan R7.4.
+- **Sizing**: ~90 LOC + survey risk.
+
+### [CLEANUP-ALL-7] Pre-milestone /cleanup-all
+- **Status**: open | **Depends on**: T701–T707 | **Type**: cleanup-all
+
+### [T708] **MILESTONE: RJW Theorem 7.1** — the residue of ζ_p
+- **Status**: open | **File**: ResidueZeta.lean
+- **Depends on**: T703, T702, T707, CLEANUP-ALL-7 | **Type**: theorem
+- **Statement**: skeleton `tendsto_sub_one_mul_zetaPBranch` (Thm (ii);
+  Thm (i) = `continuousAt_zetaPBranch`, T703).
+- **Proof sketch**: unfold zetaPBranch at the §4 generator (m, u);
+  (s−1)·ζ(s) = [(s−1)·g(s)⁻¹]·num(s) = [(s−1)⁻¹g(s)]⁻¹·num(s)
+  (g ≠ 0 for s ≠ 1 near 1 — from the T702c limit ≠ 0: L := pZpLog⟨u⟩ ≠ 0
+  since ⟨u⟩ ≠ 1 (generator: u has infinite order; ω(u)-part finite order
+  ⟹ ⟨u⟩ ≠ 1 — extract from topGen_pow_ne_one/T037) + norm_padicLog;
+  eventual-nonvanishing from the limit); Tendsto-algebra:
+  (s−1)⁻¹g(s) → −L-coe ≠ 0 (T702c) and num(s) → num(1) (T703-pairing
+  continuity); num(1) = zetaNum-mass: branchChar (p−1) 0 = 1-on-units
+  (ω^{p−1} = 1, ⟨·⟩⁰ = 1: teichmullerFun_pow_card_sub_one +
+  AddChar-at-0 ⟹ the pairing at s = 1 is zetaNum p m 1) =
+  −(1−p⁻¹)·extLog(m) (T707; p∤m from the generator pack hpm);
+  extLog((m:ℚ_[p])) = L-coe (`extLog_natCast_eq_pZpLog_angle` helper:
+  m-as-unit u (huv : (u:ℤ_[p]) = m), u = ω(u)·⟨u⟩, extLog-additivity +
+  torsion-kill + extLog_eq_padicLog-on-ball + pZpLog_coe; ~40 LOC);
+  Tendsto.mul: (−L)⁻¹·(−(1−p⁻¹)L) = 1−p⁻¹ ✓ (L ≠ 0).
+- **Sources**: TeX 2187–2194 + 2258–2360 (verbatim at R7).
+- **Blueprint**: Chapters/Residue.lean — wire Thm 7.1 (both decls),
+  Lem 7.2 (T702 pair), Lem 7.3 (T704), Lem 7.5 (T706c); Lem 7.4
+  rationale-comment (ℛ⁺ deferred, replan R7.1); re-render.
+- **Sizing**: ~130 LOC.
+
+### [CLEANUP-72] Final per-file cleanup (ResidueZeta.lean)
+- **Status**: open | **Depends on**: T708 | **Type**: cleanup
+  (+ widen CLEANUP-FINAL to §7)
+
+## §7 dependency quick-view
+```
+T701 → T702 → T703 → CL71 ;  T704 ; T705 → T706(T704) → T707 → CLALL7
+  → T708*(T703,T702,T707) → CL72
+```
