@@ -2,3 +2,4 @@
 /.claude
 /.mathlib-quality/beastmode_active
 _out/
+/.mathlib-quality/.beastmode_stop_state
