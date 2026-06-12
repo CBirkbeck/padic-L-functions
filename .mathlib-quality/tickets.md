@@ -4389,7 +4389,9 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
 - **Sizing**: ~200 LOC + survey risk (monogenicity).
 
 ### [T903b] O-basis monogenicity of the tower step (split from T903 item 8)
-- **Status**: in_progress (2026-06-12, 3-way parallel) | **File**: Coleman/Tower.lean | **Parent**: T903
+- **Status**: done (2026-06-12 — Route 2' orthogonality/value-group joint
+  induction; O_succ_exists_digits + O_succ_digits_unique, hp2 dropped as
+  unused; spectral-norm bridge; axioms standard 3) | **File**: Coleman/Tower.lean | **Parent**: T903
 - **Depends on**: T903 (done) | **Parallel**: yes | **Type**: theorem
 - **Task**: author + prove `O_succ_exists_digits {n} (hn : 1 ≤ n) (hp2 : p ≠ 2)`:
   `∀ x ∈ O p (n+1), ∃ c : Fin p → ℂ_[p], (∀ i, c i ∈ O p n) ∧
@@ -4973,7 +4975,10 @@ series + thm:coleman map 2)
 - **Sizing**: ~170 LOC + blueprint pass + the sign-resolution.
 
 ### [T-D61] Deferred-debt planning ticket: Thm 6.1(ii) at D = 1
-- **Status**: open | **File**: (planning) | **Depends on**: none
+- **Status**: done (2026-06-12 — decompose pass complete: Explore survey
+  (muEtaCleared junk at D = 1 confirmed; hD1 table; Route A selected),
+  decomposition.md D61 section, gated sub-board D611–D613 appended; NOT
+  dispatched: awaits its own 1i review per charter) | **File**: (planning) | **Depends on**: none
 - **Parallel**: yes | **Type**: develop-pass
 - **Task**: run the Phase-1e decompose pass for the pure p-power-conductor
   case of RJW Thm 6.1(ii) (the notes' own gap — errata.md #6): θ = χ of
