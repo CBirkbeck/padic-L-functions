@@ -100,6 +100,68 @@ theorem existsUnique_digits_padicInt (F : PowerSeries ℤ_[p]) :
     funext i
     rw [show H i = me' (me (H i)) from (hround (H i)).symm, ← congrFun this i]
 
+/-! ### The formal `ψ` over `ℤ_[p]`
+
+`FormalPsi.psiSeries` (the `0`-th digit) is junk-totalised over a general
+`CommRing`, computing honestly exactly where the digit decomposition is unique.
+Over `ℤ_[p]` that locus is everything (`existsUnique_digits_padicInt`), so the
+`ψ`-linearity facts (`psiSeries_phi`, `psiSeries_add`, `psiSeries_C_mul`) — proven
+over `integerRing K` in FormalPsi — transport verbatim. These let `ψ` cancel the
+`p^k` in `phi_injective_mod` (part (i)). -/
+
+variable {p}
+
+/-- Over `ℤ_[p]`, `ψ` is the `0`-th digit of any digit decomposition. -/
+theorem psiSeries_eq_of_isDigitDecomp_padicInt {F : PowerSeries ℤ_[p]}
+    {G : Fin p → PowerSeries ℤ_[p]} (hG : IsDigitDecomp p F G) :
+    psiSeries p F = G 0 :=
+  psiSeries_eq_of_unique p (existsUnique_digits_padicInt p F) hG
+
+/-- `ψ ∘ φ = id` over `ℤ_[p]`: the digit family of `φ(G)` is `(G, 0, …, 0)`,
+so its `0`-th digit is `G`. (FormalPsi `psiSeries_phi`, transported.) -/
+theorem psiSeries_phi_padicInt (G : PowerSeries ℤ_[p]) :
+    psiSeries p (phiSeries p G) = G := by
+  refine psiSeries_eq_of_isDigitDecomp_padicInt (G := fun i => if i = 0 then G else 0) ?_
+  change phiSeries p G = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ)
+      * phiSeries p (if i = 0 then G else 0)
+  rw [Finset.sum_eq_single (0 : Fin p)]
+  · simp
+  · intro i _ hi0
+    rw [if_neg hi0, phiSeries_zero, mul_zero]
+  · intro h; exact absurd (Finset.mem_univ (0 : Fin p)) h
+
+/-- `ψ` is additive over `ℤ_[p]`. (FormalPsi `psiSeries_add`, transported.) -/
+theorem psiSeries_add_padicInt (F G : PowerSeries ℤ_[p]) :
+    psiSeries p (F + G) = psiSeries p F + psiSeries p G := by
+  obtain ⟨GF, hGF, -⟩ := existsUnique_digits_padicInt p F
+  obtain ⟨GG, hGG, -⟩ := existsUnique_digits_padicInt p G
+  rw [psiSeries_eq_of_isDigitDecomp_padicInt hGF, psiSeries_eq_of_isDigitDecomp_padicInt hGG]
+  refine psiSeries_eq_of_isDigitDecomp_padicInt (G := fun i => GF i + GG i) ?_
+  change F + G = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (GF i + GG i)
+  rw [hGF, hGG, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [phiSeries, phiSeries, phiSeries,
+    PowerSeries.subst_add (hasSubst_one_add_X_pow_sub_one p), mul_add]
+
+/-- `ψ(C a · F) = C a · ψ(F)` over `ℤ_[p]`. (FormalPsi `psiSeries_C_mul`,
+transported — the form `phi_injective_mod` uses to pull `C(p^k)` through `ψ`.) -/
+theorem psiSeries_C_mul_padicInt (a : ℤ_[p]) (F : PowerSeries ℤ_[p]) :
+    psiSeries p (PowerSeries.C a * F) = PowerSeries.C a * psiSeries p F := by
+  obtain ⟨GF, hGF, -⟩ := existsUnique_digits_padicInt p F
+  rw [psiSeries_eq_of_isDigitDecomp_padicInt hGF]
+  refine psiSeries_eq_of_isDigitDecomp_padicInt (G := fun i => PowerSeries.C a * GF i) ?_
+  change PowerSeries.C a * F = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ)
+      * phiSeries p (PowerSeries.C a * GF i)
+  rw [hGF, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [phiSeries, phiSeries,
+    PowerSeries.subst_mul (hasSubst_one_add_X_pow_sub_one p),
+    show ((PowerSeries.C a).subst ((1 + PowerSeries.X) ^ p - 1)
+        : PowerSeries ℤ_[p]) = PowerSeries.C a from PowerSeries.subst_C a]
+  ring
+
+variable (p)
+
 /-! ## The φ-algebra and the digit basis
 
 The norm operator is `Algebra.norm` for the φ-algebra structure on `ℤ_p⟦T⟧`:
@@ -264,6 +326,104 @@ theorem normOp_eq_det (f : PowerSeries ℤ_[p]) :
     normOp f = Matrix.det (digitMatrix f) := by
   unfold normOp digitMatrix
   rw [Algebra.norm_eq_matrix_det (digitBasis p)]
+
+/-! ## Congruence mod `p^k` of power series (T908)
+
+RJW's continuity lemmas (TeX 2726–2756; cf. CS06 Lem 2.3.1) are stated as
+congruences `f ≡ g mod p^k` of power series in `ℤ_p⟦T⟧`. We make the idiom
+precise as coefficientwise `p^k`-divisibility (`ModEqPow`), give it the basic
+equivalence-relation + ring-compatible API, and record the equivalent
+`C`-factor form `f − g = C(p^k)·h` (the form that lets `ψ` cancel `p^k` in
+part (i)). Replan R10.5. -/
+
+variable (p)
+
+/-- T908: `f ≡ g mod p^k` for power series over `ℤ_[p]` — every coefficient of
+`f − g` is divisible by `p^k`. (RJW writes `f ≡ g (mod p^k)`, TeX 2729–2736.) -/
+def ModEqPow (k : ℕ) (f g : PowerSeries ℤ_[p]) : Prop :=
+  ∀ m, (p : ℤ_[p]) ^ k ∣ PowerSeries.coeff m (f - g)
+
+variable {p}
+
+@[refl]
+theorem ModEqPow.refl (k : ℕ) (f : PowerSeries ℤ_[p]) : ModEqPow p k f f := fun m => by
+  rw [sub_self, map_zero]; exact dvd_zero _
+
+theorem ModEqPow.symm {k : ℕ} {f g : PowerSeries ℤ_[p]} (h : ModEqPow p k f g) :
+    ModEqPow p k g f := fun m => by
+  rw [show g - f = -(f - g) from (neg_sub f g).symm, map_neg]; exact (h m).neg_right
+
+theorem ModEqPow.trans {k : ℕ} {f g h : PowerSeries ℤ_[p]} (hfg : ModEqPow p k f g)
+    (hgh : ModEqPow p k g h) : ModEqPow p k f h := fun m => by
+  rw [show f - h = (f - g) + (g - h) from by ring, map_add]
+  exact dvd_add (hfg m) (hgh m)
+
+/-- The `C`-factor form: `f ≡ g mod p^k` iff `f − g = C(p^k)·h` for some `h`.
+This is the form RJW's `mod p^k` congruence takes when `ψ`-linearity must
+cancel the `p^k` (part (i)). -/
+theorem modEqPow_iff_exists_C_mul {k : ℕ} {f g : PowerSeries ℤ_[p]} :
+    ModEqPow p k f g ↔ ∃ h, f - g = PowerSeries.C ((p : ℤ_[p]) ^ k) * h := by
+  constructor
+  · intro hfg
+    -- build the quotient series coefficientwise
+    choose c hc using hfg
+    refine ⟨PowerSeries.mk c, PowerSeries.ext fun m => ?_⟩
+    rw [PowerSeries.coeff_C_mul, PowerSeries.coeff_mk, hc m]
+  · rintro ⟨h, hh⟩ m
+    rw [hh, PowerSeries.coeff_C_mul]
+    exact Dvd.intro _ rfl
+
+/-- `ModEqPow` is preserved under multiplication on the right by a common
+factor (the multiplicative compatibility, half of the congruence ring API). -/
+theorem ModEqPow.mul_right {k : ℕ} {f g : PowerSeries ℤ_[p]} (h : ModEqPow p k f g)
+    (c : PowerSeries ℤ_[p]) : ModEqPow p k (f * c) (g * c) := by
+  obtain ⟨q, hq⟩ := modEqPow_iff_exists_C_mul.1 h
+  exact modEqPow_iff_exists_C_mul.2 ⟨q * c, by rw [← sub_mul, hq, mul_assoc]⟩
+
+/-- Multiplicative compatibility: `f₁ ≡ g₁` and `f₂ ≡ g₂` give `f₁f₂ ≡ g₁g₂`. -/
+theorem ModEqPow.mul {k : ℕ} {f₁ g₁ f₂ g₂ : PowerSeries ℤ_[p]}
+    (h₁ : ModEqPow p k f₁ g₁) (h₂ : ModEqPow p k f₂ g₂) :
+    ModEqPow p k (f₁ * f₂) (g₁ * g₂) := by
+  refine (h₁.mul_right f₂).trans ?_
+  rw [mul_comm g₁ f₂, mul_comm g₁ g₂]
+  exact h₂.mul_right g₁
+
+/-- Powers respect `ModEqPow`: `f ≡ g mod p^k` gives `f^n ≡ g^n mod p^k`. -/
+theorem ModEqPow.pow {k : ℕ} {f g : PowerSeries ℤ_[p]} (h : ModEqPow p k f g) :
+    ∀ n, ModEqPow p k (f ^ n) (g ^ n)
+  | 0 => by simpa using ModEqPow.refl k (1 : PowerSeries ℤ_[p])
+  | n + 1 => by rw [pow_succ, pow_succ]; exact (h.pow n).mul h
+
+/-! ## The continuity lemmas (T908, RJW TeX 2726–2756)
+
+RJW's `lem:norm continuity`. Parts (i)/(ii) are "left as an exercise
+(cf. CS06 Lem 2.3.1)"; we expand them per the source-gap rule (replan R10.5).
+Part (i) uses that `ψ ∘ φ = id` and `ψ` is `ℤ_[p]`-linear: a congruence
+`φf ≡ 1 mod p^k` is `φ(f − 1) = C(p^k)·h`, and applying `ψ` cancels — `ψ` carries
+`C(p^k)` straight through (`psiSeries_C_mul_padicInt`) and undoes `φ`. -/
+
+/-- `phiSeries` is a ring hom over `ℤ_[p]` (it is `phiHom`), so it fixes `1` and
+respects subtraction. -/
+theorem phiSeries_sub (f g : PowerSeries ℤ_[p]) :
+    phiSeries p (f - g) = phiSeries p f - phiSeries p g := by
+  rw [← phiHom_apply, ← phiHom_apply, ← phiHom_apply, map_sub]
+
+theorem phiSeries_one_padicInt : phiSeries p (1 : PowerSeries ℤ_[p]) = 1 := by
+  rw [← phiHom_apply, map_one]
+
+/-- T908 (i), RJW TeX 2729: if `φ(f) ≡ 1 mod p^k` then `f ≡ 1 mod p^k`. The
+Frobenius `φ` is coefficientwise-injective mod `p^k`. Route: the retraction
+`ψ ∘ φ = id` is `ℤ_[p]`-linear, so it cancels the `C(p^k)` factor
+(`psiSeries_phi_padicInt` + `psiSeries_C_mul_padicInt`; CS06 Lem 2.3.1). -/
+theorem phi_injective_mod {k : ℕ} {f : PowerSeries ℤ_[p]}
+    (h : ModEqPow p k (phiSeries p f) 1) : ModEqPow p k f 1 := by
+  obtain ⟨q, hq⟩ := modEqPow_iff_exists_C_mul.1 h
+  -- `φ(f − 1) = φf − 1 = C(p^k)·q`; apply `ψ`
+  have hφ : phiSeries p (f - 1) = PowerSeries.C ((p : ℤ_[p]) ^ k) * q := by
+    rw [phiSeries_sub, phiSeries_one_padicInt, hq]
+  refine modEqPow_iff_exists_C_mul.2 ⟨psiSeries p q, ?_⟩
+  have := congrArg (psiSeries p) hφ
+  rwa [psiSeries_phi_padicInt, psiSeries_C_mul_padicInt] at this
 
 /-! ## Compactness of `ℤ_p⟦T⟧` and sequential extraction (T909)
 

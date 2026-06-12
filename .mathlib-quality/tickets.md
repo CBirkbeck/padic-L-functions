@@ -4420,6 +4420,33 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
   `pi_mem_O`, `finrank_K_succ`, `zetaSys_pow_p`, the Eisenstein witness pattern.
 - **Sources**: TeX 2685 (min poly / monogenicity); 2474 (`O_n` = integral
   closure). Consumer: T907 (commuting square).
+- **Status update (2026-06-12)**: DONE, sorry-free, axiom-clean (the standard 3 on
+  both publics; `lake env lean` + `lake build PadicLFunctions.Coleman.Tower` green,
+  linter on). Landed via **Route 2'** (the orthogonality/value-group joint route from
+  the brief), NOT the discriminant/monogenicity Route 2 — the value-group fact (so the
+  ramification orthogonality) is cheaper than the absolute integral-closure machinery.
+  - Publics: `O_succ_exists_digits {n} (hn : 1 ≤ n) {x} (hx : x ∈ O p (n+1)) :`
+    `∃ c : Fin p → ℂ_[p], (∀ i, c i ∈ O p n) ∧ x = ∑ i, c i * zetaSys p (n+1)^(i:ℕ)`
+    and `O_succ_digits_unique {n} (hn : 1 ≤ n) {c c'} (hc : ∀ i, c i ∈ K p n)`
+    `(hc' : ∀ i, c' i ∈ K p n) (heq : … = …) : c = c'` (K_n-coeffs suffice for
+    uniqueness, as the ticket allowed). NB `hp2 : p ≠ 2` turned out UNNEEDED — the
+    expansion/uniqueness hold for `p = 2` too (the odd-`p` constraint was only in the
+    norm-collapse sign computation, not here), so it is dropped from both signatures.
+  - Key route facts: (i) spectral-norm bridge `‖x‖ = spectralNorm ℚ_[p] (K p n) x` for
+    `x ∈ K_n` (`spectralNorm_unique_field_norm_ext`, ℚ_p complete) ⟹ the value-group
+    fact `‖c‖^{φ(p^n)} ∈ p^ℤ` (`norm_pow_totient_mem_zpow`) via
+    `spectralNorm_eq_norm_coeff_zero_rpow`; (ii) ultrametric orthogonality
+    `IsUltrametricDist.norm_sum_eq_sup'_of_pairwise_ne` collapses
+    `‖∑ d_k π_{n+1}^k‖ ≤ 1` to all `d_k ∈ O_n`
+    (`forall_norm_le_one_of_norm_sum_pi_pow_le_one`); (iii) `K_n`-coordinate expansion
+    via `adjoin.powerBasis` (`extendScalars_exists_repr`) gives the π-expansion
+    (`exists_pi_repr`) and the linear independence for uniqueness
+    (`linearIndependent_pow`, `zetaSys_pow_sum_eq_zero_imp`); (iv) integral change of
+    basis `π_{n+1}^k ∈ O_n`-span of `ξ`-powers by `add_pow` (`pi_pow_mem_span`). No new
+    imports (SpectralNorm transitively via `Padics.Complex`). 8 private helpers added.
+  - Consumer note for T907: the deliverable is the `ξ_{n+1}^i` basis (not the `π^i`
+    basis the proof goes through internally); both existence and uniqueness are in the
+    `ξ`-power form T907's det-transport wants.
 
 ### [CLEANUP-91] /cleanup on Coleman/Tower.lean (cadence)
 - **Status**: done (2026-06-12, degraded mode) | **Depends on**: T901, T902, T903 | **Type**: cleanup

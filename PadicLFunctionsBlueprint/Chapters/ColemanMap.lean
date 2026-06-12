@@ -44,7 +44,7 @@ an isomorphism of profinite groups, where $`F_\infty := \Q(\mu_{p^\infty})`. It
 induces $`\GCal^+ := \Gal(F_\infty^+/\Q) \cong \Zpx/\{\pm 1\}`.
 :::
 
-:::definition "col-units-tower"
+:::definition "col-units-tower" (lean := "PadicLFunctions.Coleman.zetaSys, PadicLFunctions.Coleman.K, PadicLFunctions.Coleman.pi, PadicLFunctions.Coleman.O, PadicLFunctions.Coleman.levelNorm, PadicLFunctions.Coleman.NormCompatUnits")
 We fix once and for all a *compatible system of roots of unity*
 $`(\xi_{p^n})_{n \in \N}`: each $`\xi_{p^n}` is a primitive $`p^n`th root of unity
 with $`\xi_{p^{n+1}}^p = \xi_{p^n}`. Put $`\pi_n := \xi_{p^n} - 1`, a uniformiser of
@@ -57,6 +57,17 @@ $`\sU_{n,1} = \{u \in \sU_n : u \equiv 1 \pmod{\mathfrak p_n}\}`) it is a compac
 $`\Zp`-module carrying a continuous action of $`\GCal`, hence of the Iwasawa algebra
 $`\Lam(\GCal)`. This {uses "col-cyclotomic-character"}[] $`\GCal`-action is the main
 reason for passing to infinite level.
+
+In the formalisation the tower lives *inside* `ℂ_[p]` (matching the
+`B(0,1)`-framing below): the compatible system is `zetaSys` (built by
+recursion from algebraic closedness), `K n` is the intermediate field
+`ℚ_p(ξ_{p^n})` with `[K n : ℚ_p] = φ(p^n)` proved by an Eisenstein
+argument, `O n` its norm-unit-ball, `levelNorm` the relative norm
+`N_{n+1,n}` (with the collapse `N(ξ^b_{p^{n+1}} − 1) = ξ^b_{p^n} − 1`),
+and `𝒰_∞` is the structure `NormCompatUnits` of norm-compatible unit
+families. The `𝒢`-action and `𝒰_{∞,1}` are deferred to the §11 pass
+(plan.md); the cyclotomic-character node above stays prose for the same
+reason.
 :::
 
 The norm-1 units $`\sU_{n,1}` are genuine $`\Zp`-modules: for $`u \in \sU_{n,1}` and
