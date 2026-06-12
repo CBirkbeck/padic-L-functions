@@ -3622,8 +3622,22 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~110 LOC.
 
 ### [T706] The mass identity (c₀-pin + trace)
-- **Status**: open | **File**: ResidueZeta.lean
+- **Status**: in_progress (2026-06-12) | **File**: ResidueZeta.lean
 - **Depends on**: T704, T705 | **Type**: theorems
+- **Orchestrator replan (route refinement for R7.6b)**: the trace avoids
+  ExtLogDomain(ξ^i−1) and the i↦ai reindex: per-point
+  F̃_a(ξ^i−1) = −extLog a − padicLog(u_i) (torsion kills the (a−1)·log ξ^i
+  term), u_i := seriesEval (uA) (ξ^i−1) with a·(ξ^i−1)·u_i = ξ^{ai}−1
+  (evaluated Step A); then Π_{i≠0} u_i = a^{−(p−1)} (the two μ_p-products
+  cancel as multisets via i↦ai), padicLog-of-product splits
+  (`padicLog_mul_of_norm_lt_one`), and Fermat a^{p−1} ≡ 1 mod p +
+  `extLog_eq_of_witness` (m = p−1, k = 0) give Σ_{i≠0} padicLog u_i =
+  −(p−1)·extLog a; total −p·extLog a + (p−1)·extLog a = −extLog a ✓.
+  New infrastructure: seriesEval∘subst bridge for formalLog∘G (G integral
+  coeffs, c₀ = 0): seriesEval ((formalLog).subst G) z =
+  padicLog(1 + seriesEval G z) — Fubini swap, master_bridge's pattern
+  (PadicExp.lean:690) at K-level. Split into two dispatches (A: c₀-pin;
+  B: bridge + trace + combination).
 - **Statement**: skeleton `p_mul_constantCoeff_mahlerK_rhoA`,
   `sum_seriesEval_FtildeA`, `constantCoeff_mahlerK_rhoA` (R7.6a/b/c).
 - **Proof sketch**: pin: T615's proof VERBATIM minus the G-clearing

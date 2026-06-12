@@ -654,7 +654,7 @@ include hp in
 antiderivative `C` (from the coefficient-wise division) has linearly-bounded
 coefficients `‖coeff m C‖ ≤ p·(m+1)` — the `(p(m+1))⁻¹`-factor has polynomial
 norm. Feeds the convergence of `seriesEval (φ C₁)` in the constant pin. -/
-private theorem exists_antideriv_bounded (B : PowerSeries K)
+theorem exists_antideriv_bounded (B : PowerSeries K)
     (hB : ∀ n, ‖PowerSeries.coeff n B‖ ≤ 1) :
     ∃ C : PowerSeries K, PowerSeries.constantCoeff C = 0
       ∧ (p : K) • ((1 + PowerSeries.X) * PowerSeries.derivativeFun C) = B
