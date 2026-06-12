@@ -68,6 +68,62 @@ theorem norm_one_sub_pow_eq_one {D : ℕ} [NeZero D] (_hD1 : 1 < D)
   rw [← norm_neg, neg_sub]
   exact hε.norm_pow_sub_one_eq_one (p := p) hD hc
 
+omit [CompleteSpace K] [CharZero K] in
+/-- P6-p9 helper: from `‖x^m − 1‖ = 1` and `‖x‖ ≤ 1` conclude `‖x − 1‖ = 1`.
+The divisibility `x^m − 1 = (∑_{i<m} x^i)·(x − 1)` gives
+`‖x^m − 1‖ ≤ ‖x − 1‖` (the geometric factor has norm `≤ 1`), so `‖x − 1‖ ≥ 1`;
+the ultrametric bound `‖x − 1‖ ≤ max ‖x‖ 1 = 1` closes it. Used to lift the
+tame norm-one fact to the mixed root `ε^c` (`N = D·p^n`). -/
+theorem norm_sub_one_eq_one_of_pow {x : K} {m : ℕ} (hpow : ‖x ^ m - 1‖ = 1)
+    (hx : ‖x‖ ≤ 1) : ‖x - 1‖ = 1 := by
+  -- `‖x − 1‖ ≤ 1`
+  have hle : ‖x - 1‖ ≤ 1 := by
+    calc ‖x - 1‖ = ‖x + (-1)‖ := by rw [sub_eq_add_neg]
+      _ ≤ max ‖x‖ ‖(-1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ 1 := by rw [norm_neg, norm_one]; exact max_le hx le_rfl
+  -- `‖x − 1‖ ≥ ‖x^m − 1‖ = 1` via `x^m − 1 = (∑_{i<m} x^i)·(x − 1)`
+  have hge : (1 : ℝ) ≤ ‖x - 1‖ := by
+    have hgeom : ‖∑ i ∈ Finset.range m, x ^ i‖ ≤ 1 :=
+      IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ => by
+        rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hx
+    have hsplit : ‖x ^ m - 1‖ ≤ ‖x - 1‖ := by
+      rw [← geom_sum_mul x m, norm_mul]
+      exact le_trans (mul_le_of_le_one_left (norm_nonneg _) hgeom) le_rfl
+    rw [hpow] at hsplit; exact hsplit
+  exact le_antisymm hle hge
+
+omit [CompleteSpace K] [CharZero K] in
+include hp in
+/-- P6-p9 (the discharge for `LpFunction_one`): for `N = D·p^n` with `D > 1`
+prime to `p`, `ε` a primitive `N`-th root and `c` coprime to `N`,
+`‖ε^c − 1‖ = 1`. The `p^n`-power `ε^{p^n}` is a primitive `D`-th root, `D ∤ c`
+(coprimality), so `‖(ε^c)^{p^n} − 1‖ = ‖(ε^{p^n})^c − 1‖ = 1`
+(`norm_one_sub_pow_eq_one`); lifting along `norm_sub_one_eq_one_of_pow` gives
+`‖ε^c − 1‖ = 1`. -/
+theorem norm_pow_sub_one_eq_one_of_unit {D : ℕ} [NeZero D] (hD1 : 1 < D)
+    (hD : ¬ (p : ℕ) ∣ D) {n : ℕ} {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n))
+    {c : ℕ} (hcu : IsUnit ((c : ZMod (D * p ^ n)))) : ‖ε ^ c - 1‖ = 1 := by
+  haveI : NeZero (D * p ^ n) := ⟨Nat.mul_ne_zero (NeZero.ne D) (pow_ne_zero _ hp.out.ne_zero)⟩
+  -- `c` is coprime to `N = D·p^n`, hence coprime to `D`, hence `¬D∣c`
+  have hcop : Nat.Coprime c (D * p ^ n) := (ZMod.isUnit_iff_coprime c (D * p ^ n)).1 hcu
+  have hcopD : Nat.Coprime c D := hcop.coprime_dvd_right (Dvd.intro _ rfl)
+  have hDc : ¬ D ∣ c := fun h => by
+    have hdg : D ∣ Nat.gcd c D := Nat.dvd_gcd h dvd_rfl
+    rw [hcopD] at hdg
+    exact absurd (Nat.le_of_dvd one_pos hdg) (by omega)
+  -- `ε^{p^n}` is a primitive `D`-th root: `(D·p^n)/p^n = D`
+  have hεD : IsPrimitiveRoot (ε ^ p ^ n) D := by
+    have h := hε.pow_of_dvd (pow_ne_zero _ hp.out.ne_zero) (Dvd.intro_left D rfl)
+    rwa [Nat.mul_div_cancel _ (pow_pos hp.out.pos n)] at h
+  -- `‖ε^c‖ = 1` and `‖(ε^c)^{p^n} − 1‖ = 1`
+  have hεc : ‖ε ^ c‖ = 1 :=
+    norm_eq_one_of_pow_eq_one (L := K) (m := D * p ^ n)
+      (by rw [← pow_mul, mul_comm, pow_mul, hε.pow_eq_one, one_pow]) (NeZero.ne _)
+  have hpow1 : ‖(ε ^ c) ^ p ^ n - 1‖ = 1 := by
+    rw [← pow_mul, mul_comm c (p ^ n), pow_mul]
+    exact hεD.norm_pow_sub_one_eq_one (p := p) hD hDc
+  exact norm_sub_one_eq_one_of_pow hpow1 hεc.le
+
 /-- A unit's `Ring.inverse` is the unique right inverse. -/
 private theorem ring_inverse_eq_of_mul_eq_one {M₀ : Type*} [MonoidWithZero M₀]
     {a b : M₀} (ha : IsUnit a) (h : a * b = 1) : Ring.inverse a = b := by
@@ -317,6 +373,60 @@ theorem one_add_mul_derivative_mahlerK_rhoTheta {D : ℕ} [NeZero D]
       = (1 + PowerSeries.X)
         * PowerSeries.derivativeFun (mahlerTransform p K (rhoTheta p K η hζ hD χ)) from rfl,
     map_one_add_mul_derivativeFun]
+
+omit [CompleteSpace K] [CharZero K] in
+/-- `anglePowCM p K 0 = 1` (the `0`-th power is the constant `1`): `onePAdicPow
+y hy 0 = y^0 = 1`. The `s = 1` specialisation `⟨x⟩^{1−1}` of the `L_p` integrand. -/
+private theorem anglePowCM_zero : anglePowCM p K 0 = 1 := by
+  ext u
+  rw [anglePowCM_apply,
+    show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) from by rw [Nat.cast_zero],
+    PadicInt.onePAdicPow_natCast, pow_zero, map_one]
+  rfl
+
+omit [CharZero K] in
+/-- P6-p8 step 1 (the mass identity): the `L_p`-integrand of `ζ_η` at `s = 1`
+(where `⟨x⟩^{1−1} = 1`) pairs to the constant coefficient of `𝓐_{ρ_θ}`.
+Concretely `(ζ_η-cleared)(χ̃·1) = ρ_θ(x^0) = constantCoeff 𝓐_{ρ_θ}` in
+`integerRing K`: unfolding `ρ_θ = ι(twist χ̃ μ̃_η ∘ extendByZero ∘ ·invU)` and
+`apply_powCM` at `0`, both reduce to `μ̃_η(χ̃·extendByZero(invU))` (the integrand
+identity `extendByZero(invU·(χ̃∘val)) = χ̃·extendByZero(invU)`: at units both are
+`χ̃(u)·invU(u)`, at non-units both `0`). -/
+private theorem zetaEtaCleared_one_eq_rhoTheta_mass {D : ℕ} [NeZero D]
+    {η : DirichletCharacter (integerRing K) D} {ζ : integerRing K}
+    (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D) {n : ℕ}
+    {χ : DirichletCharacter (integerRing K) (p ^ n)} :
+    zetaEtaCleared p K η hζ hD
+        (χ.toContinuousMapZp.comp (PadicMeasure.unitsValCM p) * anglePowCM p K (1 - 1))
+      = PowerSeries.constantCoeff (mahlerTransform p K (rhoTheta p K η hζ hD χ)) := by
+  -- the constant coefficient is the mass `ρ_θ(x^0)`
+  rw [show PowerSeries.constantCoeff (mahlerTransform p K (rhoTheta p K η hζ hD χ))
+        = rhoTheta p K η hζ hD χ (powCM p K 0) from by
+      rw [apply_powCM, Function.iterate_zero_apply]]
+  -- unfold `ρ_θ(x^0)` through `ι`, the twist composition, and `x^0 = 1`
+  rw [rhoTheta, iota, pushforward_apply]
+  change zetaEtaCleared p K η hζ hD _
+    = twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)
+        (extendByZero p K (invUnitsCM p K * ((powCM p K 0).comp (PadicMeasure.unitsValCM p))))
+  rw [twist_apply, zetaEtaCleared_apply]
+  -- both sides are `μ̃_η` of the same function; reduce to the integrand identity
+  congr 1
+  ext x
+  refine congrArg Subtype.val ?_
+  -- `(1 − 1 : ℤ_p) = 0`, so the angle factor is `1`
+  rw [show (1 : ℤ_[p]) - 1 = 0 from sub_self 1, anglePowCM_zero]
+  by_cases hx : IsUnit x
+  · -- at a unit: LHS `extendByZero(invU·(χ̃∘val·1))`, RHS `χ̃·extendByZero(invU·(x^0∘val))`
+    rw [ContinuousMap.mul_apply, ← hx.unit_spec, extendByZero_coe_unit, extendByZero_coe_unit]
+    simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply,
+      powCM_apply, pow_zero, map_one, mul_one]
+    rw [show (PadicMeasure.unitsValCM p) hx.unit = ((hx.unit : ℤ_[p])) from rfl, mul_comm]
+  · -- at a non-unit: LHS `0`, RHS `χ̃(x)·0 = 0`
+    rw [ContinuousMap.mul_apply,
+      show (extendByZero p K (invUnitsCM p K
+          * (χ.toContinuousMapZp.comp (PadicMeasure.unitsValCM p) * 1))) x = 0 from dif_neg hx,
+      show (extendByZero p K (invUnitsCM p K
+          * ((powCM p K 0).comp (PadicMeasure.unitsValCM p)))) x = 0 from dif_neg hx, mul_zero]
 
 omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
 include hp in
@@ -620,12 +730,11 @@ include hp in
 `‖coeff n F̃‖ ≤ C·(n+1)` for a uniform `C` (the positive-degree coefficients are
 linearly bounded; the constant term is absorbed). Hence `seriesEval F̃ z` converges
 for `‖z‖ < 1`. -/
-private theorem summable_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
+private theorem summable_seriesEval_Ftilde {N : ℕ} [NeZero N] (_hN : 1 < N)
     {θ : DirichletCharacter K N} {ε : K} (hε : IsPrimitiveRoot ε N)
-    (hnorm : ∀ c ∈ Finset.range N, ¬ N ∣ c → ‖ε ^ c - 1‖ = 1)
+    (hnorm : ∀ c ∈ Finset.range N, IsUnit ((c : ZMod N)) → ‖ε ^ c - 1‖ = 1)
     {z : K} (hz : ‖z‖ < 1) :
     Summable fun n : ℕ => PowerSeries.coeff n (Ftilde p K θ hε) * z ^ n := by
-  haveI : Fact (1 < N) := ⟨hN⟩
   -- linear bound `‖coeff n F̃‖ ≤ C·(n+1)` with `C := max ‖coeff 0 F̃‖ 1`
   set C : ℝ := max ‖PowerSeries.constantCoeff (Ftilde p K θ hε)‖ 1 with hC
   refine summable_seriesEval_of_norm_coeff_le_linear (C := C) (fun n => ?_) hz
@@ -640,19 +749,16 @@ private theorem summable_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
           (PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c))‖ ≤ (n : ℝ) := by
       refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun c hc => ?_
       rw [PowerSeries.coeff_C_mul, norm_mul]
-      by_cases hcd : N ∣ c
-      · -- `θ⁻¹(c) = 0` (non-unit `c`); whole term vanishes
-        have hc0 : c = 0 := Nat.eq_zero_of_dvd_of_lt hcd (Finset.mem_range.mp hc)
-        rw [hc0, Nat.cast_zero,
-          show (θ⁻¹) (0 : ZMod N) = 0 from MulChar.map_nonunit _
-            (by rw [isUnit_zero_iff]; exact one_ne_zero ∘ Eq.symm), norm_zero, zero_mul]
-        positivity
+      by_cases hcu : IsUnit ((c : ZMod N))
       · calc ‖θ⁻¹ ((c : ZMod N))‖ * ‖PowerSeries.coeff n (logSeriesAt p K (ε ^ c))‖
             ≤ 1 * (n : ℝ) :=
               mul_le_mul (norm_dirichletChar_le_one _ _)
-                (norm_coeff_logSeriesAt_le_of_norm_one (u := ε ^ c) (hnorm c hc hcd) hn)
+                (norm_coeff_logSeriesAt_le_of_norm_one (u := ε ^ c) (hnorm c hc hcu) hn)
                 (norm_nonneg _) zero_le_one
           _ = (n : ℝ) := one_mul _
+      · -- `θ⁻¹(c) = 0` (non-unit `c`); whole term vanishes
+        rw [show (θ⁻¹) ((c : ZMod N)) = 0 from MulChar.map_nonunit _ hcu, norm_zero, zero_mul]
+        positivity
     refine le_trans hbd (le_trans ?_ (le_mul_of_one_le_left (by positivity) (le_max_right _ _)))
     linarith
 
@@ -667,15 +773,19 @@ distribution-free WITHOUT field-level `ψ`): the cleared mass identity
 `ξ^i − 1` (where `φ`-images collapse and `Σ 𝓐_ρ(ξ^i−1) = p·𝓐_{ψρ}(0) = 0`
 by `sum_seriesEval_mahlerK` + `psi_rhoTheta`) pins `c₀`.
 
-**Statement-fix (replan R6.6, recorded 2026-06-11):** the original frozen
-skeleton omitted the norm hypothesis `hnorm`. It is needed twice: (i) to
-discharge the `IsUnit (ε^c − 1)` side-condition of
-`one_add_mul_derivative_Ftilde`, and (ii) to bound `‖coeff n F̃‖` linearly so
-the evaluations `seriesEval F̃ (ξ^i − 1)` converge (Lem 6.2's `ℛ⁺`-membership,
-realised as a coefficient bound). For the contributing `c` (units mod
-`D·p^n`) the tame part `D > 1` forces `‖ε^c − 1‖ = 1` (RJW's cyclotomic-product
-fact, T612 `norm_one_sub_pow_eq_one`); `hnorm` packages this and is discharged
-identically in `LpFunction_one`. -/
+**Statement-fix (replan R6.6, recorded 2026-06-11; coprime-guard refinement
+2026-06-12 in `b2_log.jsonl`):** the original frozen skeleton omitted the norm
+hypothesis `hnorm`, needed to bound `‖coeff n F̃‖` linearly so the evaluations
+`seriesEval F̃ (ξ^i − 1)` converge (Lem 6.2's `ℛ⁺`-membership, as a coefficient
+bound). `hnorm` is guarded by `IsUnit (c : ZMod N)` (equivalently `c` coprime to
+`N`): only the unit-`c` terms contribute (`θ⁻¹(c) = 0` otherwise), and for those
+the tame part `D > 1` forces `‖ε^c − 1‖ = 1` (RJW's cyclotomic-product fact, T612
+`norm_one_sub_pow_eq_one`). The original `¬N∣c`-guard is FALSE for `c = D·j`
+(`ε^{Dj}` a nontrivial `p`-power root, norm `< 1`), hence undischargeable in
+`LpFunction_one`; the coprime-guarded form IS discharged there. The
+`IsUnit (ε^c − 1)` side-condition of `one_add_mul_derivative_Ftilde` is now proved
+directly (`ε^c ≠ 1` for `¬N∣c` since `ε` is primitive, and a field nonzero is a
+unit). -/
 theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
     {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
@@ -687,7 +797,8 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
       * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
     {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n)) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
-    (hnorm : ∀ c ∈ Finset.range (D * p ^ n), ¬ (D * p ^ n) ∣ c → ‖ε ^ c - 1‖ = 1)
+    (hnorm : ∀ c ∈ Finset.range (D * p ^ n), IsUnit ((c : ZMod (D * p ^ n))) →
+      ‖ε ^ c - 1‖ = 1)
     {G : K} (_hG : IsUnit G)
     (hGtwist : mahlerK p K (twist p K χ.toContinuousMapZp
         (muEtaCleared p K η hζ hD))
@@ -702,10 +813,11 @@ theorem p_mul_constantCoeff_mahlerK_rhoTheta {D : ℕ} [NeZero D] (hD1 : 1 < D)
   haveI : Fact (1 < D * p ^ n) := ⟨hN⟩
   -- abbreviations for the power-series objects (NOT the heavy measure terms, which
   -- `set` would expensively abstract through `rhoTheta`/`twist`/`muEtaCleared`)
-  -- the unit hypothesis for `one_add_mul_derivative_Ftilde`, from `hnorm`
+  -- the unit hypothesis for `one_add_mul_derivative_Ftilde`: `ε^c − 1 ≠ 0` for `¬N∣c`
+  -- (a field nonzero is a unit); `ε^c = 1 ⟺ N∣c` since `ε` is a primitive `N`-th root
   have hunit : ∀ c ∈ Finset.range (D * p ^ n), ¬ (D * p ^ n) ∣ c → IsUnit (ε ^ c - 1) :=
-    fun c hc hcd => isUnit_iff_ne_zero.2 (by
-      rw [← norm_pos_iff, hnorm c hc hcd]; exact one_pos)
+    fun c _ hcd => isUnit_iff_ne_zero.2 (sub_ne_zero.2 fun h =>
+      hcd ((hε.pow_eq_one_iff_dvd c).1 h))
   -- the `ψ`-part `K`-series `B` (integral coefficients) and the antiderivative `C₁`
   obtain ⟨C₁, hC₁0, hC₁, hC₁bd⟩ := exists_antideriv_bounded (p := p)
     (mahlerK p K (MeasureR.psi p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))))
@@ -1235,16 +1347,19 @@ and the `μ_p`-collapse `Σ_ξ extLog(ξw−1) = extLog(w^p−1)`; for `n ≥ 1`
 both sides vanish (`θ(p) = 0`; primitive-character fiber sums —
 replan R6.3).
 
-**Statement-fix (replan R6.6, recorded 2026-06-11 in `b2_log.jsonl`):** the
-frozen `hdom : ∀ c, ¬N∣c → ExtLogDomain (ε^c − 1)` is too weak — the per-term
-identity needs the SHIFTED arguments `ξ^i·ε^c − 1` to lie in the extended-log
-domain, which does not follow from `hdom` in the ramified case (`ε^c` reducing
-to `1`). It is replaced by the norm-one hypothesis
-`hnorm : ∀ c, ¬N∣c → ‖ε^c − 1‖ = 1`, from which every shifted domain follows
-(`‖ξ^i ε^c − 1‖ = 1` by ultrametric isoceles + roots-of-unity integrality, then
-`extLogDomain_of_integral_norm_one`). `LpFunction_one` discharges `hnorm` from
-the tame `D > 1` cyclotomic-product fact (T612 `norm_one_sub_pow_eq_one`),
-preserving its provability.
+**Statement-fix (replan R6.6, recorded 2026-06-11; coprime-guard refinement
+2026-06-12 in `b2_log.jsonl`):** the frozen `hdom : ∀ c, ¬N∣c → ExtLogDomain
+(ε^c − 1)` is too weak — the per-term identity needs the SHIFTED arguments
+`ξ^i·ε^c − 1` to lie in the extended-log domain, which does not follow from
+`hdom` in the ramified case (`ε^c` reducing to `1`). It is replaced by the
+norm-one hypothesis `hnorm`, guarded by `IsUnit (c : ZMod N)` (equivalently `c`
+coprime to `N`): the non-unit-`c` terms vanish (`θ⁻¹(c) = 0`), and for the
+unit `c` every shifted domain follows (`‖ξ^i ε^c − 1‖ = 1` by ultrametric
+isoceles + roots-of-unity integrality, then `extLogDomain_of_integral_norm_one`).
+The earlier `¬N∣c`-guard is FALSE for `c = D·j` (`ε^{Dj}` a nontrivial `p`-power
+root, norm `< 1`), so undischargeable in `LpFunction_one`; the coprime-guarded
+form IS discharged there (T612 `norm_one_sub_pow_eq_one` after stripping the
+`p`-part), preserving provability.
 
 The analytic prerequisite (boundary `p`-adic-log multiplicativity
 `extLog (1 + w) = padicLog (1 + w)` for `‖w‖ < 1`, since the arguments `ξ^i − 1`,
@@ -1261,16 +1376,14 @@ theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
     {θ : DirichletCharacter K N} (hprim : θ.IsPrimitive) (_hθ1 : θ ≠ 1)
     {ε : K} (hε : IsPrimitiveRoot ε N) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
-    (hnorm : ∀ c ∈ Finset.range N, ¬ N ∣ c → ‖ε ^ c - 1‖ = 1) :
+    (hnorm : ∀ c ∈ Finset.range N, IsUnit ((c : ZMod N)) → ‖ε ^ c - 1‖ = 1) :
     ∑ i : Fin p, seriesEval (Ftilde p K θ hε) (ξ ^ (i : ℕ) - 1)
       = θ ((p : ZMod N)) * PowerSeries.constantCoeff (Ftilde p K θ hε) := by
   haveI : Fact (1 < N) := ⟨hN⟩
   have hεint : IsIntegral ℤ ε := isIntegral_of_pow_eq_one (NeZero.pos N) hε.pow_eq_one
-  -- `θ⁻¹ c = 0` exactly when `N ∣ c` (in `range N`, that is `c = 0`)
-  have hθ0 : ∀ c ∈ Finset.range N, N ∣ c → θ⁻¹ ((c : ZMod N)) = 0 := fun c hc hcd => by
-    rw [show ((c : ℕ) : ZMod N) = 0 from by
-      rw [Nat.eq_zero_of_dvd_of_lt hcd (Finset.mem_range.mp hc), Nat.cast_zero]]
-    exact MulChar.map_nonunit _ (by rw [isUnit_zero_iff]; exact one_ne_zero ∘ Eq.symm)
+  -- `θ⁻¹ c = 0` for non-unit `c` (the only contributing terms are the coprime ones)
+  have hθ0 : ∀ c ∈ Finset.range N, ¬ IsUnit ((c : ZMod N)) → θ⁻¹ ((c : ZMod N)) = 0 :=
+    fun c _ hcu => MulChar.map_nonunit _ hcu
   -- `‖ξ^i − 1‖ < 1` for every `i : Fin p`
   have hzlt : ∀ i : Fin p, ‖ξ ^ (i : ℕ) - 1‖ < 1 := by
     intro i
@@ -1296,24 +1409,24 @@ theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
         from tsum_congr fun n => by rw [map_sum, Finset.sum_mul]]
     rw [Summable.tsum_finsetSum fun c hc => ?_]
     · refine Finset.sum_congr rfl fun c hc => ?_
-      by_cases hcd : N ∣ c
-      · rw [hθ0 c hc hcd]
-        simp only [zero_mul, map_zero, tsum_zero]
+      by_cases hcu : IsUnit ((c : ZMod N))
       · rw [show (∑' n : ℕ, PowerSeries.coeff n
               (PowerSeries.C (θ⁻¹ ((c : ZMod N))) * logSeriesAt p K (ε ^ c))
                 * (ξ ^ (i : ℕ) - 1) ^ n)
             = θ⁻¹ ((c : ZMod N)) * seriesEval (logSeriesAt p K (ε ^ c)) (ξ ^ (i : ℕ) - 1) from by
-          rw [seriesEval, ← (summable_seriesEval_logSeriesAt (p := p) (hnorm c hc hcd)
+          rw [seriesEval, ← (summable_seriesEval_logSeriesAt (p := p) (hnorm c hc hcu)
             (hzlt i)).tsum_mul_left]
           exact tsum_congr fun n => by rw [PowerSeries.coeff_C_mul, mul_assoc],
-          seriesEval_logSeriesAt_eq_extLog (p := p) hεint (hnorm c hc hcd) (hzlt i)]
+          seriesEval_logSeriesAt_eq_extLog (p := p) hεint (hnorm c hc hcu) (hzlt i)]
+      · rw [hθ0 c hc hcu]
+        simp only [zero_mul, map_zero, tsum_zero]
     · -- summability of each `c`-term at `ξ^i − 1`
-      by_cases hcd : N ∣ c
-      · refine (summable_of_ne_finset_zero (s := ∅) fun n _ => ?_)
-        rw [PowerSeries.coeff_C_mul, hθ0 c hc hcd, zero_mul, zero_mul]
-      · exact ((summable_seriesEval_logSeriesAt (p := p) (hnorm c hc hcd)
+      by_cases hcu : IsUnit ((c : ZMod N))
+      · exact ((summable_seriesEval_logSeriesAt (p := p) (hnorm c hc hcu)
           (hzlt i)).mul_left (θ⁻¹ ((c : ZMod N)))).congr fun n => by
             rw [PowerSeries.coeff_C_mul, mul_assoc]
+      · refine (summable_of_ne_finset_zero (s := ∅) fun n _ => ?_)
+        rw [PowerSeries.coeff_C_mul, hθ0 c hc hcu, zero_mul, zero_mul]
   -- Step B: sum Step A over `i`, swap, apply the `μ_p`-collapse per `c`
   rw [Finset.sum_congr rfl fun i _ => hstepA i]
   -- `Σ_i (−Σ_c ...) = −Σ_c (Σ_i ...)`  then the `μ_p`-collapse on the inner `i`-sum
@@ -1336,10 +1449,10 @@ theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
             * ∑ i : Fin p, extLog p (ξ ^ (i : ℕ) * ε ^ c - 1))
         = ∑ c ∈ Finset.range N, θ⁻¹ ((c : ZMod N)) * extLog p (ε ^ (p * c) - 1) from
     Finset.sum_congr rfl fun c hc => by
-      by_cases hcd : N ∣ c
-      · rw [hθ0 c hc hcd, zero_mul, zero_mul]
+      by_cases hcu : IsUnit ((c : ZMod N))
       · rw [sum_extLog_pow_mul_collapse (p := p) (NeZero.pos N) hε hεint hξ
-          (hnorm c hc hcd) hzlt]]
+          (hnorm c hc hcu) hzlt]
+      · rw [hθ0 c hc hcu, zero_mul, zero_mul]]
   -- the `c ↦ pc` bookkeeping + the constant-coefficient identity
   rw [sum_theta_inv_mul_extLog_pc (p := p) hN hprim hε,
     show PowerSeries.constantCoeff (Ftilde p K θ hε)
