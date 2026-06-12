@@ -3287,7 +3287,12 @@ reference declarations by name (the §5 T521-pattern).
 - **Sizing**: ~140 LOC (the §5-glue ticket).
 
 ### [CLEANUP-66] /cleanup on ValuesAtOne.lean (cadence)
-- **Status**: open | **Depends on**: T612, T613, T614 | **Type**: cleanup
+- **Status**: done (degraded mode, 2026-06-12) | **Depends on**: T612, T613, T614
+- **Type**: cleanup
+- **Progress**: subsumed by the continuous per-ticket golf through
+  T615–T617 and the CL67 final sweep (same file; build green, zero
+  warnings, zero long lines verified 2026-06-12). Tooled CLEANUP-FINAL
+  carries the per-decl golf queue.
 
 ### [T615] The constant pin: 𝓐(ρ_θ) = F̃_θ − φψF̃_θ
 - **Status**: done (2026-06-11; hnorm hypothesis added — logged)
