@@ -2995,3 +2995,192 @@ already designed around).
 
 ### Gate status: draft — skeleton + per-leaf attacks at execution
 (the §6-established per-ticket pattern); survey-gated items marked.
+
+---
+
+## R8: The p-adic family of Eisenstein series (RJW §8, TeX 2361–2446)
+
+### Section prose (read in full 2026-06-12)
+
+§8 closes Part I: the Kubota–Leopoldt pseudo-measure interpolates the
+*constant* coefficients of the (p-stabilised) Eisenstein series; the
+non-constant coefficients are interpolated by elementary divisor-sums of
+Dirac measures; bundling coefficientwise gives the Λ-adic Eisenstein
+family 𝐄 ∈ Q(ℤ_p^×)⟦q⟧. One Definition (p-stabilisation), one impossibility
+remark (no measure interpolates p^k), one Theorem (the family + its
+interpolation property). The notes' proof is 8 lines (TeX 2409–2416)
+because "we've done all the work" — the §4 interpolation theorem.
+
+### Verbatim source quotes (the four content units)
+
+**Q1 (E_k and its expansion, TeX 2367–2373):**
+> "Let k≥4 be an even integer. The Eisenstein series of level k, defined as
+> G_k(z) := Σ_{(c,d)≠(0,0)} 1/(cz+d)^k […] E_k(z) := G_k(z)(k−1)!/(2·(2πi)^k)
+> = ζ(1−k)/2 + Σ_{n≥1} σ_{k−1}(n)qⁿ, where σ_{k−1}(n) = Σ_{0<d|n} d^{k−1}
+> and q = e^{2iπz}."
+
+**Q2 (Dirac interpolation + impossibility, TeX 2376–2383):**
+> "When d is coprime to p, we do this by viewing d as an element of ℤ_p^×
+> and considering the Dirac measure δ_d at d […] ∫_{ℤ_p^×} x^k·δ_d = d^k
+> for any k ∈ ℤ." / "the function k ↦ p^k can never be interpolated
+> continuously p-adically […] Suppose there was indeed a measure θ_p with
+> ∫_{ℤ_p^×} x^k·θ_p = p^k, and then suppose k_n is a strictly increasing
+> sequence of integers p-adically tending to k. Then p^{k_n} = ∫x^{k_n}·θ_p
+> ⟶ ∫x^k·θ_p = p^k, which is clearly impossible since p^{k_n} tends to 0."
+
+**Q3 (p-stabilisation, TeX 2387–2394):**
+> "We define the p-stabilisation of E_k to be E_k^{(p)}(z) := E_k(z) −
+> p^{k−1}E_k(pz). An easy check shows that E_k^{(p)} = (1−p^{k−1})ζ(1−k)/2
+> + Σ_{n≥1} σ^p_{k−1}(n)qⁿ, where σ^p_{k−1}(n) = Σ_{0<d|n, p∤d} d^{k−1}.
+> Note E_k^{(p)} is a modular form of weight k and level Γ₀(p)."
+
+**Q4 (the Theorem + proof, TeX 2399–2416):**
+> "There exists a power series 𝐄(z) = Σ_{n≥0} A_n qⁿ ∈ Q(ℤ_p^×)⟦q⟧ such
+> that: (a) A₀ is a pseudo-measure, and A_n ∈ Λ(ℤ_p^×) for all n≥1;
+> (b) For all even k ≥ 4, we have ∫_{ℤ_p^×} x^{k−1}·𝐄(z) :=
+> Σ_{n≥0}(∫_{ℤ_p^×}x^{k−1}·A_n)qⁿ = E_k^{(p)}(z)." / Proof: "The
+> pseudo-measure A₀ is simply xζ_p/2 (shifting by 1 again, but in the
+> opposite direction to before). We then define A_n = Σ_{0<d|n, p∤d} δ_d ∈
+> Λ(ℤ_p^×). By the interpolation property of the Kubota–Leopoldt p-adic
+> L-function, A₀ interpolates the constant term of the Eisenstein series.
+> We also have ∫x^{k−1}·A_n = Σ_{0<d|n,p∤d} ∫x^{k−1}·δ_d =
+> Σ_{0<d|n,p∤d} d^{k−1} = σ^p_{k−1}(n), so we get the required
+> interpolation property."
+
+### Replans (recorded; statements stay faithful)
+
+- **R8.1 (erratum #11 — twisted pseudo-measure).** TeX 2403's "(a) A₀ is a
+  pseudo-measure" is false with Def 3.34 (the pole of xζ_p is at the
+  character x⁻¹; see errata.md #11 for the computation). Formalise the
+  corrected claim: (g·[g]−[1])·A₀ ∈ Λ for all g, via the x-twist ring
+  automorphism τ of Λ(ℤ_p^×) and its extension τ̂ to Q(ℤ_p^×);
+  A₀ := τ̂(ζ_p)/2. The moment encoding mirrors `padicZeta_moments`:
+  witnesses of (g·[g]−[1])·A₀ have x^{k−1}-moment
+  (g^k−1)·(1−p^{k−1})·ζ(1−k)/2.
+- **R8.2 (τ as a moments-checked ring hom).** τ := unitsCmul (unitsPowCM 1)
+  is a ring automorphism of the convolution ring: additivity is definitional
+  (unitsCmul is composition with mulLeft); multiplicativity follows from
+  the zero-divisor lemma — both sides of τ(μ*ν) = τμ*τν have equal
+  x^k-moments for all k > 0 by `units_mul_apply_unitsPowCM` and the shift
+  τν(x^k) = ν(x^{k+1}); conclude by
+  `eq_zero_of_forall_unitsPowCM_eq_zero`. No Amice/Mellin theory needed.
+  Extension to Q: `IsLocalization.ringEquivOfRingEquiv` at
+  M = T = nonZeroDivisors (a ring equiv maps nzd onto nzd — small lemma).
+- **R8.3 (q-expansions as PowerSeries; modularity of E^{(p)} deferred).**
+  The complex side states (i) the arithmetic identity σ^p_{k−1}(n) =
+  σ_{k−1}(n) − p^{k−1}σ_{k−1}(n/p)·[p∣n], and (ii) the stabilised
+  expansion: HasSum (fun n => c_n·q(z)ⁿ) (E_k^{RJW}(z) − p^{k−1}E_k^{RJW}(pz))
+  with c₀ = (1−p^{k−1})ζ(1−k)/2, c_n = σ^p_{k−1}(n), where E_k^{RJW} :=
+  (ζ(1−k)/2)•(EisensteinSeries.E) — mathlib's normalised E has constant
+  term 1 (`E_qExpansion_coeff`), and RJW's E_k = ζ(1−k)/2·E. The
+  Γ₀(p)-modularity of E^{(p)} (a "Note" inside the Definition, TeX 2394,
+  no proof in source) is DEFERRED: mathlib has no level-raising/V_p
+  operator; recorded in plan.md Deferred + blueprint node note.
+- **R8.4 (𝐄 as PowerSeries over Q(ℤ_p^×)).** 𝐄 := PowerSeries.mk
+  (n = 0 ↦ A₀, n ≥ 1 ↦ algebraMap (A_n)); RJW's display (b) is
+  coefficientwise BY DEFINITION in the source ("∫x^{k−1}·𝐄 := Σ(∫x^{k−1}A_n)qⁿ"),
+  so the theorem is exactly the per-coefficient moment statements +
+  the complex identification of the target coefficients.
+
+### Leaves (per-leaf attack logs at execution per the §6/§7-established
+per-ticket pattern; mathlib discharges verified by grep this session)
+
+- **L8.1a** `isUnit_two_iwasawa : IsUnit (2 : PadicMeasure p ℤ_[p]ˣ)` —
+  2 = (2:ℤ_p)•1, (2:ℤ_p) a unit for p odd (`PadicInt.isUnit_natCast`-route
+  /2-adic-valuation; or inverse exhibited: (2⁻¹:ℤ_p)•1). [mathlib+project]
+- **L8.1b** `unitsDirac_moment : dirac p u (unitsPowCM p k) = (u:ℤ_p)^k` —
+  rfl-level (`dirac_apply`). Q2's "∫x^k δ_d = d^k". [project]
+- **L8.1c** `divisorMeasure (n : ℕ) : PadicMeasure p ℤ_[p]ˣ :=
+  Σ_{d ∈ n.divisors.filter (¬p∣·)} dirac p (unit-of d)` — the unit:
+  `PadicInt.isUnit_natCast_of_not_dvd`-pattern (used in MuA.lean:65 ✓);
+  package d ↦ IsUnit.unit. [project]
+- **L8.1d** `sigmaP (k n : ℕ) : ℕ := Σ_{d ∈ n.divisors.filter(¬p∣·)} d^k`
+  + `divisorMeasure_moment : divisorMeasure n (unitsPowCM p k) = sigmaP k n`
+  — Finset.sum through the linear functional (map_sum) + L8.1b. Q4's
+  computation. [project]
+- **L8.2a** `unitsTwist : PadicMeasure p ℤ_[p]ˣ ≃+* PadicMeasure p ℤ_[p]ˣ`
+  — R8.2's moments route; toFun = unitsCmul (unitsPowCM 1), inv =
+  unitsCmul (inv-character x⁻¹-as-x-valued: invCM... CARE: x⁻¹ has values
+  in ℤ_pˣ ⊂ ℤ_p: invCM p exists, ZetaP.lean:67 ✓); left/right inverse by
+  function algebra invCM·powCM1 = 1. Key sublemmas:
+  `unitsTwist_moment : (τμ)(x^k) = μ(x^{k+1})` (powCM-mul collapse:
+  unitsPowCM p 1 * unitsPowCM p k = unitsPowCM p (k+1) — ContinuousMap.ext
+  + pow_succ) and `unitsTwist_mul` by `eq_zero_of_forall_unitsPowCM_eq_zero`
+  on the difference (k>0 suffices ✓ the lemma only needs k>0). [project]
+- **L8.2b** `map_nonZeroDivisors_unitsTwist : (nonZeroDivisors Λ).map τ =
+  nonZeroDivisors Λ` — both inclusions from "ring equivs preserve
+  (non)zero-divisors": x nzd ⟺ τx nzd (mul_eq_zero transport through the
+  equiv). ~12 LOC, no mathlib gap assumed. [generic algebra]
+- **L8.2c** `quotientTwist : QuotientField p ≃+* QuotientField p :=
+  IsLocalization.ringEquivOfRingEquiv _ _ unitsTwist L8.2b` (mathlib decl
+  verified at Localization/Defs.lean:673 ✓) + `quotientTwist_algebraMap`
+  (= ringEquivOfRingEquiv_eq/`_mk'` simp forms, Defs.lean:696/700 ✓).
+  [mathlib]
+- **L8.2d** `twistedZetaHalf : QuotientField p :=
+  (2:QuotientField p)⁻¹-free form — use algebraMap-of-(2⁻¹•1)·quotientTwist(padicZeta)`
+  — avoid field-inverses: 2 is already a unit in Λ (L8.1a), so multiply by
+  algebraMap(2⁻¹-unit-inverse). `twistedZetaHalf_isTwistedPseudoMeasure :
+  ∀ g, ∃ ν, algebraMap ((g:ℤ_p)•dirac p g − 1)·twistedZetaHalf = algebraMap ν`
+  — witness ν := 2⁻¹•τ(ν_g) with ν_g from `padicZeta_isPseudoMeasure`;
+  the identity (g•[g]−[1]) = τ([g]−[1]) (τ(dirac g) = g•dirac g: cmul of
+  dirac, rfl-level) + quotientTwist_algebraMap transport. Erratum R8.1
+  docstring. [project]
+- **L8.3** `twistedZetaHalf_moments : ∀ b (b-pack) k ≥ 4 …, ∀ ν witness,
+  ((ν (unitsPowCM p (k−1)) : ℤ_p) : ℚ_p) = ((b:ℚ_p)^k − 1)·(1−p^{k−1})·
+  zetaNeg(k−1)/2` — transport of `padicZeta_moments` (ZetaP.lean:303 ✓)
+  through the twist: the witness-translation bijection ν ↔ 2⁻¹•τ(ν_ζ)
+  (uniqueness of witnesses against a fixed nzd denominator: cancel
+  (g•[g]−[1]) ∈ nzd — `dirac_sub_one_mem_nonZeroDivisors` (PseudoMeasure:795
+  ✓) transported through τ via L8.2b) + L8.2a's moment shift. [project]
+- **L8.4** `noMeasure_interpolates_pPow : ¬ ∃ θ : PadicMeasure p ℤ_[p]ˣ,
+  ∀ k : ℕ, 0 < k → ((θ (unitsPowCM p k) : ℤ_p)) = (p:ℤ_p)^k` — Q2's
+  impossibility. Route: k_n := φ(p^{n+1}) = p^n(p−1) > 0; uniform Euler
+  congruence ∀u, u^{k_n} ≡ 1 mod p^{n+1} (`pow_card_eq_one` in
+  (ZMod p^{n+1})ˣ, card = φ via `ZMod.card_units_eq_totient` +
+  `Nat.totient_prime_pow`; transfer through `unitsToZModPow` +
+  `PadicInt.ker_toZModPow` — the §7 `teichmuller_isPrimitiveRoot`/
+  `angleUnit_coe_ne_one` patterns ✓) ⟹ ‖unitsPowCM p k_n − unitsPowCM p 0‖
+  ≤ p^{−(n+1)} → 0 ⟹ |θ(x^{k_n}) − θ(1)| → 0 (`norm_apply_le`,
+  Measure/Basic:109 ✓; map_sub). But θ(x^{k_n}) = p^{k_n} → 0, so
+  θ(1) = 0; ALSO θ(x^{k_n}) = p^{k_n} with ‖p^{k_n}‖ = p^{−k_n}; combine:
+  ‖p^{k_n}‖ = ‖θ(x^{k_n}) − θ(1)‖ ≤ p^{−(n+1)} ⟹ p^{−k_n} ≤ p^{−(n+1)}
+  ⟹ k_n ≥ n+1 ✓ consistent — need the CONTRADICTION: θ(1) = lim p^{k_n} = 0
+  and separately θ(x^{k_n}) → θ(1): take instead k'_n := 1 + k_n·m?? —
+  CAREFUL (attack): the source's k_n "p-adically tending to k": pick target
+  k = 1: k_n := 1 + p^n(p−1)·(anything growing) e.g. k_n := 1 + φ(p^{n+1}):
+  x^{k_n} → x¹ uniformly (same Euler congruence: x^{k_n} − x =
+  x(x^{φ}−1)); then p^{k_n} → 0 (k_n → ∞) but θ(x^{k_n}) → θ(x¹) = p¹ = p
+  ≠ 0. Contradiction ‖p‖ = lim ‖θ(x^{k_n})‖ ≤ lim p^{−(n+1)} = 0. Clean.
+  [project+mathlib]
+- **L8.5a** `sigmaP_eq (k n) (p∣n) : sigmaP k n = σ k n − p^k·σ k (n/p)`
+  and `sigmaP_eq_of_not_dvd (¬p∣n) : sigmaP k n = σ k n` — divisor-sum
+  split `Finset.sum_filter_add_sum_filter_not` + the bijection
+  d ↦ p·d : (n/p).divisors ≃ n.divisors.filter (p∣·) (`Nat.divisors`-
+  membership arithmetic; `ArithmeticFunction.sigma_apply` ✓ mathlib).
+  [mathlib]
+- **L8.5b** `hasSum_stabilisedEisenstein : ∀ z : ℍ, HasSum
+  (fun n => c_n • 𝕢(z)ⁿ) ((ζ(1−k)/2)·E hk z − p^{k−1}·(ζ(1−k)/2)·E hk (p·z))`
+  with c per Q3 — from mathlib `EisensteinSeries.q_expansion_bernoulli`
+  (verified ✓ QExpansion.lean:299) at z and at p·z (ℍ-point: positive real
+  scaling — `UpperHalfPlane` smul/mk machinery), the q^{pn}-reindex
+  (HasSum.comp-injective on n ↦ pn + zero-extension: `Function.Injective.hasSum_iff`),
+  L8.5a, and ζ(1−k) = −B_k/k (`riemannZeta_neg_nat_eq_bernoulli` ✓ +
+  our `zetaNeg_eq_riemannZeta` ✓ ZetaValuesComplex:18) to convert
+  mathlib's 1−(2k/B_k)Σσqⁿ-normalisation into RJW's
+  ζ(1−k)/2 + Σσqⁿ-normalisation. The ζ(1−k)/2-rescale is nonzero for
+  even k ≥ 4 (B_k ≠ 0: `bernoulli`-nonvanishing at even — via
+  ζ(1−k) ≠ 0 ⟸ ζ(k) ≠ 0 functional-equation… simpler: zetaNeg(k−1) ≠ 0
+  ⟸ bernoulli k ≠ 0 ⟸ mathlib `bernoulli_ne_zero`?? — verify at
+  execution; only needed if we divide; statement multiplies, so likely
+  NOT needed at all). [mathlib+project]
+- **L8.6** `eisensteinFamily : PowerSeries (QuotientField p)` (R8.4) +
+  the MILESTONE theorem packaging (b): coefficient 0 moments = L8.3
+  (= (1−p^{k−1})ζ(1−k)/2-values = c₀ of L8.5b), coefficient n ≥ 1
+  moments = L8.1d (= σ^p = c_n of L8.5b via L8.5a). [project]
+
+### Gate status: draft-approved shape — skeleton + per-leaf attacks at
+execution (the §6/§7-established per-ticket pattern). Survey-verified
+mathlib anchors: EisensteinSeries.E + E_qExpansion_coeff +
+q_expansion_bernoulli; IsLocalization.ringEquivOfRingEquiv;
+riemannZeta_neg_nat_eq_bernoulli; ArithmeticFunction.sigma. No
+REVIEW-PENDING leaves. Deferred: Γ₀(p)-modularity of E^{(p)} (R8.3).

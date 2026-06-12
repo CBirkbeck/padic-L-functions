@@ -34,6 +34,8 @@ import PadicLFunctions.MeasureR.FormalPsi
 import PadicLFunctions.ValuesAtOneComplex
 import PadicLFunctions.ValuesAtOne
 import PadicLFunctions.ResidueZeta
+import PadicLFunctions.EisensteinFamily
+import PadicLFunctions.EisensteinComplex
 
 /-!
 # p-adic L-functions

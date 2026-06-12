@@ -86,6 +86,21 @@ formalisation had to make explicit).
     continuity of ζ_{p,i} in s; the notes present it as immediate. (Prose
     remark only; recorded in the blueprint node note.)
 
+11. **TeX 2403 (§8, Theorem, part (a))** — gap/imprecision. "(a) A₀ is a
+    pseudo-measure" with A₀ = xζ_p/2 (TeX 2410). With the notes' own
+    Definition 3.34 (λ ∈ Q(G) is a pseudo-measure iff ([g]−[1])·λ ∈ Λ(G)
+    for **all** g), the twist x·ζ_p is *not* a pseudo-measure: the x-twist
+    τ : [g] ↦ g[g] is a ring automorphism of Λ(ℤ_p^×), so
+    ([g]−[1])·τ(ζ_p) = τ((g⁻¹[g]−[1])·ζ_p), and g⁻¹[g]−[1] =
+    g⁻¹([g]−[1]) − (1−g⁻¹)[1] has augmentation g⁻¹−1 ≠ 0 — it does not lie
+    in the augmentation ideal, so (g⁻¹[g]−[1])ζ_p = (∈ Λ) − (1−g⁻¹)·ζ_p ∉ Λ
+    (a nonzero scalar multiple of ζ_p is never in Λ: the §7 pole is real).
+    The pole of xζ_p sits at the character x⁻¹, not at the trivial
+    character. Correct statement: **(g·[g]−[1])·A₀ ∈ Λ(ℤ_p^×) for all g**
+    (the x-twisted augmentation ideal kills A₀); equivalently A₀ ∈ τ(image
+    of the pseudo-measures). Formalised in that corrected form
+    (`twistedZetaHalf_isTwistedPseudoMeasure`, EisensteinFamily.lean).
+
 ---
 *Add new entries as found; cite TeX line numbers and, where applicable, the
 b2_log.jsonl entry and the Lean declaration that resolves the issue.*

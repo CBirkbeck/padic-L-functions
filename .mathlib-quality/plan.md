@@ -388,3 +388,59 @@ reusable infrastructure: the K-level seriesEval∘subst bridge
 (`seriesEval_subst_formalLog`) — FormalPsi-placement candidate
 (CLEANUP-FINAL). Next: §8 (Iwasawa's theorem / μ-invariant chapters per
 the blueprint roadmap) or the deferred D = 1 case of Thm 6.1(ii).
+
+# §8 pre-plan addendum (2026-06-12, /develop pass)
+
+## Section map (read in full this session)
+§8 "The p-adic family of Eisenstein series" = TeX 2361–2446, the Part-I
+closer. One Definition (p-stabilisation E_k^{(p)} := E_k − p^{k−1}E_k(p·),
+TeX 2387), one impossibility gloss (no measure interpolates k ↦ p^k,
+TeX 2379–2383), one Theorem (TeX 2399–2416): the Λ-adic family
+𝐄 = Σ A_n qⁿ ∈ Q(ℤ_p^×)⟦q⟧ with A₀ = xζ_p/2, A_n = Σ_{d∣n, p∤d} δ_d, and
+∫x^{k−1}·𝐄 = E_k^{(p)} coefficientwise for even k ≥ 4. The notes' proof is
+8 lines: §4's interpolation does all the work.
+
+## Key facts and reuse
+- Convolution ring Λ(ℤ_p^×) = `PadicMeasure p ℤ_[p]ˣ` (CommRing instance,
+  PseudoMeasure.lean), `QuotientField`, `IsPseudoMeasure`, `padicZeta`,
+  `padicZeta_moments` (witness-encoded), `dirac_sub_one_mem_nonZeroDivisors`,
+  the zero-divisor lemma `eq_zero_of_forall_unitsPowCM_eq_zero`, and
+  `units_mul_apply_unitsPowCM` ((μ*ν)(x^k) = μ(x^k)ν(x^k)) — everything
+  the family needs is §3.6/§4 infrastructure.
+- The x-twist τ = unitsCmul (unitsPowCM 1) is a ring automorphism by a
+  pure moments check (decomposition R8.2) — no new analysis.
+- **Erratum #11 (errata.md)**: TeX 2403's "(a) A₀ is a pseudo-measure" is
+  false with Def 3.34 — the pole of xζ_p is at the character x⁻¹.
+  Formalised in the corrected twisted form (g[g]−[1])·A₀ ∈ Λ (replan R8.1).
+- Complex side: mathlib HAS the level-1 Eisenstein q-expansion
+  (`EisensteinSeries.E`, `E_qExpansion_coeff`, `q_expansion_bernoulli` —
+  Mathlib/NumberTheory/ModularForms/EisensteinSeries/QExpansion.lean) with
+  the constant-1 normalisation; RJW's E_k = (ζ(1−k)/2)·E. Stabilised
+  q-expansion proved as a HasSum statement (replan R8.3); the
+  σ^p-arithmetic σ^p_{k−1}(n) = σ_{k−1}(n) − p^{k−1}σ_{k−1}(n/p) is a
+  divisor-sum reindex against mathlib's `ArithmeticFunction.sigma`.
+- Impossibility (TeX 2379) via uniform Euler congruence x^{φ(p^{n+1})} ≡ 1
+  mod p^{n+1} (the §7 unitsToZModPow/ker_toZModPow patterns) +
+  `norm_apply_le`.
+
+## Files
+- `PadicLFunctions/EisensteinFamily.lean` — p-adic side (imports ZetaP;
+  light). Twist, A_n, A₀, family, milestone theorem, impossibility.
+- `PadicLFunctions/EisensteinComplex.lean` — complex side (imports mathlib
+  EisensteinSeries.QExpansion + our ZetaValuesComplex; heavy mathlib
+  imports kept out of the p-adic file). σ^p arithmetic + stabilised HasSum.
+
+## Deferred (§8)
+- **Γ₀(p)-modularity of E_k^{(p)}** (TeX 2394 "Note … is a modular form of
+  weight k and level Γ₀(p)") — mathlib has no level-raising/V_p operator;
+  remark-level in the source (no proof given). Blueprint node gets a prose
+  note; revisit if mathlib gains oldform machinery.
+- Remarks 1–3 (TeX 2431–2446: Λ-adic forms colloquium, weight space 𝒲,
+  Hida/Coleman families) — prose only, no mathematical content to
+  formalise; blueprint prose covers them.
+
+## Generality
+ℤ_p-coefficients throughout (standing rule 6); the family lives over
+`QuotientField p` exactly as the source's Q(ℤ_p^×)⟦q⟧. p = 2 excluded
+where ζ_p enters (hp2 standing); the Dirac/divisor-measure layer and the
+impossibility lemma are p-general.
