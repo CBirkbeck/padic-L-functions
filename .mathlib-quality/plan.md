@@ -373,3 +373,18 @@ cleanup (placement note).
 - {ξ^a} = μ_p needs gcd(a,p) = 1 — the §4 generator a is coprime to p
   (topological generator of ℤ_p^× reduces to a generator mod p; extract
   from the T037 machinery).
+
+## §7 COMPLETE (2026-06-12, /beastmode)
+All of T701–T708 + 3 cleanups done in one session; project-wide ZERO
+sorries, axioms standard, blueprint Residue chapter wired + site rendered.
+Risk outcomes: ℂ_[p]-pack complete in mathlib (no fallback needed; ξ via
+`HasEnoughRootsOfUnity.exists_primitiveRoot`); the zetaNum bridge ran
+through ℤ_p-level cmul + `baseChange_cmul`/`baseChange_res` (no new
+naturality lemma); the {ξ^a}-reindex was replaced by a product collapse
+(Finset.prod_nbij' over ZMod p + Fermat + `extLog_eq_of_witness`), avoiding
+ExtLogDomain(ξ^i−1) entirely. Statement fixes (b2-logged, T704): ∂F̃_a = F_a
+needs ¬p∣a (Fa junk at p∣a); constantCoeff_FtildeA needs a ≠ 0. New
+reusable infrastructure: the K-level seriesEval∘subst bridge
+(`seriesEval_subst_formalLog`) — FormalPsi-placement candidate
+(CLEANUP-FINAL). Next: §8 (Iwasawa's theorem / μ-invariant chapters per
+the blueprint roadmap) or the deferred D = 1 case of Thm 6.1(ii).

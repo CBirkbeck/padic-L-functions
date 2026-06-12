@@ -934,6 +934,15 @@ description, ξ-formulas, locally analytic — per plan.md Deferred).
   instIsDomain/SMulCommClass placement). Widened 2026-06-12 (CL67 fold-in):
   + §6 files (ExtLog, MeasureR/FormalPsi, ValuesAtOne[Complex]);
   crt_collapse decompose-candidate; T618-layer placement review.
+  Widened 2026-06-12 (CL72 fold-in): + §7 ResidueZeta.lean (1794 lines —
+  split-candidate: expTail/character/mass/descent sections could become
+  ResidueZeta/{ExpTail,Denominator,Mass,Descent}.lean; the seriesEval
+  toolkit (seriesEval_pow/_X/_smul/_one, seriesEval_subst_formalLog,
+  coeff_pow_eq_zero_of_constantCoeff_zero, norm_coeff_pow_le_one,
+  norm_seriesEval_le, padicLog_prod_of_norm_lt_one) is
+  FormalPsi.lean-placement-candidate; map_padicLog/map_extLog_natCast are
+  ExtLog.lean-candidates; map_derivativeFun'/map_one_add_mul_derivativeFun'
+  duplicate ValuesAtOne privates — de-private and merge).
 - Then `/pre-submit` when the user wants a checkpointed milestone.
 
 ---
@@ -3773,8 +3782,14 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~130 LOC.
 
 ### [CLEANUP-72] Final per-file cleanup (ResidueZeta.lean)
-- **Status**: open | **Depends on**: T708 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T708 | **Type**: cleanup
   (+ widen CLEANUP-FINAL to §7)
+- **Progress**: 2026-06-12: degraded final pass (no lean-lsp MCP): build green
+  with zero non-sorry warnings → zero warnings outright (file now sorry-free);
+  all 17 public decls + ~40 private helpers docstringed; section-variable
+  omits in place; no maxHeartbeats overrides. CLEANUP-FINAL widened with the
+  §7 fold-in (split-candidate at 1794 lines, seriesEval-toolkit placement,
+  map_derivativeFun' dedup). Tooled golf deferred there.
 
 ## §7 dependency quick-view
 ```
