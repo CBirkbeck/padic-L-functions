@@ -53,6 +53,9 @@ p-adic L-functions* (arXiv:2309.15692). Source TeX:
    Lean-friendlier route is tempting, prefer the paper's route; replan notes are the
    exception, not the rule, and statements/definitions must match the paper's even
    when mathlib offers a different-but-equivalent formulation.
+   Mistakes/typos/gaps found in the notes are recorded in
+   `.mathlib-quality/errata.md` as found (user directive 2026-06-12), with
+   TeX line numbers.
 
 6. **Coefficients**: ℤ_p for now; the O_L generalisation is a dedicated pass when §5
    needs it (plan.md "Generality Decisions"). Don't widen ad hoc.
