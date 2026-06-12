@@ -3998,7 +3998,19 @@ to the twisted pseudo-measure form.
 - **Sizing**: ~90 LOC.
 
 ### [T806] The q-expansion of the p-stabilisation
-- **Status**: open | **File**: EisensteinComplex.lean | **Depends on**: T805
+- **Status**: done (2026-06-12) | **File**: EisensteinComplex.lean | **Depends on**: T805
+- **Pre-dispatch survey note**: bernoulli k ≠ 0 for even k via
+  `riemannZeta_two_mul_nat` + `riemannZeta_ne_zero_of_one_lt_re`
+  (Dirichlet.lean:326) — the route mathlib's own private
+  `eisensteinSeries_coeff_identity` (QExpansion:287) uses.
+- **Progress**: 2026-06-12: proven (subagent), statement verbatim. 4 private
+  helpers: `bernoulli_ne_zero_of_even`, reproduced `summable_sigma_cexp`,
+  `rjw_normalisation` (ζ(1−k) = −B_k/k, Odd(k−1) sign), and
+  `hasSum_rjwEisenstein` (the E_qExpansion_coeff-modelled HasSum). p-reindex
+  via `Function.Injective.hasSum_iff` over multiples of p; three-case
+  coefficient identification against stabilisedCoeff. Verified: build
+  green, axioms standard 3 (independent re-check). Cleanup: degraded mode,
+  defer to CLEANUP-ALL-8.
 - **Type**: theorem
 - **Statement**: skeleton `hasSum_stabilisedEisenstein` (R8 L8.5b, replan
   R8.3).
