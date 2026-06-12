@@ -217,3 +217,19 @@ sorry-free; axioms standard everywhere; blueprint §5 chapter wired
 (Mellin-dependent prose nodes excepted). Open: CLEANUP-FINAL only (blocked
 on lean-lsp tooling; scope note in tickets.md). Next per the user's
 sequential directive: `/develop` for §6 (board approval is the user's).
+
+## Addendum 2026-06-12 — §6 complete
+
+The §6 cycle (T601–T618 + cleanups) closed 2026-06-12: **RJW Theorem 6.1**
+both halves — (i) `ValuesAtOneComplex.LFunction_one_eq` against mathlib's
+`DirichletCharacter.LFunction`, (ii) **Leopoldt's theorem**
+`MeasureR.LpFunction_one` (D > 1; split-root form). New infrastructure:
+extended Iwasawa-branch logarithm (`ExtLog.lean`), formal ψ/digit layer +
+integral Eqphipsi (`MeasureR/FormalPsi.lean`), boundary p-adic log
+(T618). FOUR B2 statement-defects caught and logged in `b2_log.jsonl`
+(general-ring digit decomposition false over fields; seriesEval_phi
+hypothesis too weak; HasSum-form of the boundary log false; hnorm
+coprime-guard) — the adversarial-briefing pattern works. Project remains
+sorry-free, axioms standard, blueprint §6 chapter wired. Open:
+CLEANUP-FINAL only (tooling-blocked). Next: `/develop` for §7 (the residue
+of ζ_p at s = 1, TeX 2181–2360).

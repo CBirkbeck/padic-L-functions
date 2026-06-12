@@ -931,7 +931,9 @@ description, ξ-formulas, locally analytic — per plan.md Deferred).
   the degraded-mode tickets (T519, T520, T521–T523), the `show`-linter
   pattern project-wide, and the CLEANUP-FINAL items from the §4 handover
   (psi-as-LinearMap, delQ→del merge, mahlerTransform_sub/smul placement,
-  instIsDomain/SMulCommClass placement).
+  instIsDomain/SMulCommClass placement). Widened 2026-06-12 (CL67 fold-in):
+  + §6 files (ExtLog, MeasureR/FormalPsi, ValuesAtOne[Complex]);
+  crt_collapse decompose-candidate; T618-layer placement review.
 - Then `/pre-submit` when the user wants a checkpointed milestone.
 
 ---
@@ -3376,8 +3378,16 @@ reference declarations by name (the §5 T521-pattern).
   full CRT collapse cost more).
 
 ### [CLEANUP-67] Final per-file cleanups (§6 files)
-- **Status**: open | **Depends on**: T617 | **Type**: cleanup (ExtLog,
-  FormalPsi, ValuesAtOne[Complex] final; widen CLEANUP-FINAL scope to §6)
+- **Status**: done (degraded mode, 2026-06-12) | **Depends on**: T617
+- **Type**: cleanup (ExtLog, FormalPsi, ValuesAtOne[Complex] final;
+  CLEANUP-FINAL scope widened to §6)
+- **Progress**: degraded sweep: build green, zero warnings, zero long
+  lines, zero sorries project-wide. Queued for tooled CLEANUP-FINAL:
+  per-decl golf of the §6 files (esp. T617's crt_collapse ~310 LOC —
+  /decompose-proof candidate), the T618 bridge-layer placement review
+  (boundary-log lemmas live in ValuesAtOne.lean for import-graph reasons —
+  consider a dedicated file when ValuesAtOne approaches the split
+  threshold).
 
 ## §6 dependency quick-view
 ```
