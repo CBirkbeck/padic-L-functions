@@ -222,6 +222,63 @@ noncomputable def twistedZetaHalf (hp2 : p ≠ 2) : PadicMeasure.QuotientField p
         • (1 : PadicMeasure p ℤ_[p]ˣ))
     * quotientTwist p (PadicMeasure.padicZeta p hp2)
 
+/-- Multiplying by the scaled unit `c·[1]` is the `ℤ_p`-scalar action `c·(−)`.
+There is no `IsScalarTower ℤ_[p] Λ(ℤ_p^×) Λ(ℤ_p^×)` instance, so `smul_mul_assoc`
+does not fire; we unfold the convolution to push the scalar through `1·μ = μ`. -/
+private lemma smul_one_mul' (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    (c • (1 : PadicMeasure p ℤ_[p]ˣ)) * μ = c • μ := by
+  have h : (c • (1 : PadicMeasure p ℤ_[p]ˣ)) * μ
+      = c • ((1 : PadicMeasure p ℤ_[p]ˣ) * μ) := by
+    refine LinearMap.ext fun f => ?_
+    rw [PadicMeasure.units_mul_apply, LinearMap.smul_apply, LinearMap.smul_apply,
+      PadicMeasure.units_mul_apply]
+  rw [h, one_mul]
+
+/-- The halving scalar `1/2 ∈ ℤ_p^×` coerces to `(2 : ℚ_p)⁻¹`. -/
+private lemma coe_inv_two (hp2 : p ≠ 2) :
+    ((((isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) = (2 : ℚ_[p])⁻¹ := by
+  set u := (isUnit_two_padicInt p hp2).unit with hu
+  have hspec : ((u : ℤ_[p]ˣ) : ℤ_[p]) = 2 := IsUnit.unit_spec _
+  have h2 : (2 : ℤ_[p]) * ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) = 1 := by
+    rw [← hspec, ← Units.val_mul, mul_inv_cancel, Units.val_one]
+  have h3 : (2 : ℚ_[p]) * (((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) = 1 := by
+    have := congrArg (fun x : ℤ_[p] => (x : ℚ_[p])) h2
+    push_cast at this
+    convert this using 2
+  exact eq_inv_of_mul_eq_one_left (by rw [mul_comm]; exact h3)
+
+/-- The canonical witness equation behind both the twisted-pseudo-measure property
+and the moment formula: from a witness `νg` of `([g]−[1])·ζ_p ∈ Λ` one obtains the
+witness `(1/2)·τ(νg)` of `(g·[g]−[1])·A₀ ∈ Λ`, where `τ = unitsTwist`. -/
+private lemma twistedZetaHalf_witness_eq (hp2 : p ≠ 2) (g : ℤ_[p]ˣ)
+    (νg : PadicMeasure p ℤ_[p]ˣ)
+    (hνg : algebraMap _ (PadicMeasure.QuotientField p) (PadicMeasure.dirac p g - 1)
+        * PadicMeasure.padicZeta p hp2 = algebraMap _ _ νg) :
+    algebraMap _ (PadicMeasure.QuotientField p)
+        ((g : ℤ_[p]) • PadicMeasure.dirac p g - 1) * twistedZetaHalf p hp2
+      = algebraMap _ _
+          ((((isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • unitsTwist p νg) := by
+  -- (a) the twisted Dirac difference is the twist of the plain Dirac difference
+  have hkey : (g : ℤ_[p]) • PadicMeasure.dirac p g - 1
+      = unitsTwist p (PadicMeasure.dirac p g - 1) := by
+    rw [map_sub, unitsTwist_dirac, map_one]
+  -- (c) push the ζ_p witness through quotientTwist
+  have hc : quotientTwist p (algebraMap _ (PadicMeasure.QuotientField p)
+        (PadicMeasure.dirac p g - 1) * PadicMeasure.padicZeta p hp2)
+      = quotientTwist p (algebraMap _ _ νg) := congrArg _ hνg
+  rw [map_mul, quotientTwist_algebraMap, quotientTwist_algebraMap] at hc
+  set c : ℤ_[p] := (((isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) with hcdef
+  rw [twistedZetaHalf, hkey]
+  -- (d) commute the scalar factor past the twisted Dirac difference, then use hc
+  rw [show algebraMap (PadicMeasure p ℤ_[p]ˣ) (PadicMeasure.QuotientField p)
+        (unitsTwist p (PadicMeasure.dirac p g - 1))
+      * (algebraMap _ _ (c • (1 : PadicMeasure p ℤ_[p]ˣ))
+          * quotientTwist p (PadicMeasure.padicZeta p hp2))
+      = algebraMap _ _ (c • (1 : PadicMeasure p ℤ_[p]ˣ))
+          * (algebraMap _ _ (unitsTwist p (PadicMeasure.dirac p g - 1))
+            * quotientTwist p (PadicMeasure.padicZeta p hp2)) by ring]
+  rw [hc, ← map_mul, smul_one_mul']
+
 /-- R8 (replan R8.1, **erratum #11**): the corrected form of RJW TeX 2403(a).
 The notes claim `A₀ = x·ζ_p/2` is a pseudo-measure; with Def 3.34 this is
 false (the pole of `x·ζ_p` sits at the character `x⁻¹`, not at the trivial
@@ -232,7 +289,9 @@ theorem twistedZetaHalf_isTwistedPseudoMeasure (hp2 : p ≠ 2) (g : ℤ_[p]ˣ) :
     ∃ ν : PadicMeasure p ℤ_[p]ˣ,
       algebraMap _ (PadicMeasure.QuotientField p)
           ((g : ℤ_[p]) • PadicMeasure.dirac p g - 1)
-        * twistedZetaHalf p hp2 = algebraMap _ _ ν := by sorry
+        * twistedZetaHalf p hp2 = algebraMap _ _ ν := by
+  obtain ⟨νg, hνg⟩ := PadicMeasure.padicZeta_isPseudoMeasure p hp2 g
+  exact ⟨_, twistedZetaHalf_witness_eq p hp2 g νg hνg⟩
 
 /-- R8 (RJW TeX 2412 "A₀ interpolates the constant term"): the moments of
 `A₀ = x·ζ_p/2` in the witness encoding — any witness `ν` of
@@ -246,7 +305,23 @@ theorem twistedZetaHalf_moments (hp2 : p ≠ 2) (b : ℤ_[p]ˣ) {k : ℕ}
         * twistedZetaHalf p hp2 = algebraMap _ _ ν) :
     ((ν (PadicMeasure.unitsPowCM p (k - 1)) : ℤ_[p]) : ℚ_[p])
       = ((b : ℚ_[p]) ^ k - 1) * (1 - (p : ℚ_[p]) ^ (k - 1))
-          * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) / 2 := by sorry
+          * ((zetaNeg (k - 1) : ℚ) : ℚ_[p]) / 2 := by
+  obtain ⟨νb, hνb⟩ := PadicMeasure.padicZeta_isPseudoMeasure p hp2 b
+  set c : ℤ_[p] := (((isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) with hcdef
+  -- the canonical witness `(1/2)·τ(νb)` agrees with the supplied `ν`
+  have hw := twistedZetaHalf_witness_eq p hp2 b νb hνb
+  have hνeq : ν = c • unitsTwist p νb := by
+    apply IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ) (PadicMeasure.QuotientField p)
+    rw [← hν, hw]
+  -- the (k−1)-th moment of `ν` is `(1/2)·(k-th moment of νb)`
+  have hmom : ν (PadicMeasure.unitsPowCM p (k - 1))
+      = c * νb (PadicMeasure.unitsPowCM p k) := by
+    rw [hνeq, LinearMap.smul_apply, smul_eq_mul, unitsTwist_moment,
+      Nat.sub_add_cancel (by omega : 1 ≤ k)]
+  -- the k-th moment of νb is the Kubota–Leopoldt interpolation value
+  have hpz := PadicMeasure.padicZeta_moments p hp2 b (by omega : 0 < k) νb hνb
+  rw [hmom, PadicInt.coe_mul, coe_inv_two p hp2, hpz]
+  field_simp
 
 /-- R8 (RJW TeX 2379–2383): the function `k ↦ p^k` can never be interpolated
 by a measure on `ℤ_p^×` — `p^{k_n} → 0` along any `p`-adically convergent

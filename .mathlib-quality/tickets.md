@@ -3876,8 +3876,16 @@ to the twisted pseudo-measure form.
 - **Sizing**: ~140 LOC.
 
 ### [T803] A₀ = x·ζ_p/2: twisted pseudo-measure and moments
-- **Status**: open | **File**: EisensteinFamily.lean
+- **Status**: done (2026-06-12) | **File**: EisensteinFamily.lean
 - **Depends on**: T801, T802 | **Type**: theorems
+- **Progress**: 2026-06-12: both decls proven (subagent), statements
+  verbatim (erratum-#11-corrected forms). Shared canonical-witness helper
+  `twistedZetaHalf_witness_eq`; witness identification by
+  `IsFractionRing.injective`; `smul_one_mul'` proven manually
+  (IsScalarTower ℤ_[p] Λ Λ does NOT synthesize — noted for CLEANUP-FINAL
+  as a possible missing instance); `coe_inv_two` for the ½-scalar.
+  Verified: build green, axioms standard 3. Cleanup: degraded mode, defer
+  to CLEANUP-81.
 - **Statement**: skeleton `twistedZetaHalf_isTwistedPseudoMeasure`,
   `twistedZetaHalf_moments` (R8 L8.2d/L8.3, replan R8.1 = erratum #11).
 - **Proof sketch**: key identity: (g•δ_g − 1) = τ(δ_g − 1) [unitsTwist_dirac
@@ -3913,7 +3921,15 @@ to the twisted pseudo-measure form.
 - **Sizing**: ~110 LOC.
 
 ### [CLEANUP-81] /cleanup on EisensteinFamily.lean (cadence)
-- **Status**: open | **Depends on**: T801, T802, T803 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T801, T802, T803 | **Type**: cleanup
+- **Progress**: 2026-06-12: degraded pass (no lean-lsp MCP): build green
+  with project linter set, zero non-sorry warnings; the 2 awk-flagged
+  >100-byte lines are unicode-only (char-count ≤ 100, linter quiet); all
+  publics docstringed, helpers private. Note for tooled pass: the
+  `((isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ)`-coercion chains in
+  twistedZetaHalf/coe_inv_two are golf candidates (name the scalar once);
+  IsScalarTower ℤ_[p] Λ Λ instance gap noted at T803. Defer to
+  CLEANUP-FINAL.
 
 ### [T804] No measure interpolates k ↦ p^k
 - **Status**: open | **File**: EisensteinFamily.lean | **Depends on**: none
