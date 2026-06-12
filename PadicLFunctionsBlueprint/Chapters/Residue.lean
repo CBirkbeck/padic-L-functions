@@ -32,7 +32,7 @@ behaviour of $`\zeta_{p,p-1}` at $`s=1`.
 
 # The main theorem
 
-:::theorem "residue-zeta-p"
+:::theorem "residue-zeta-p" (lean := "PadicLFunctions.continuousAt_zetaPBranch, PadicLFunctions.tendsto_sub_one_mul_zetaPBranch")
 Let $`i \in \set{1, 2, \ldots, p-1}`.
 
 * (i) If $`i \neq p-1`, then $`\zpi` is analytic at $`s=1`.
@@ -41,6 +41,11 @@ Let $`i \in \set{1, 2, \ldots, p-1}`.
 
 This rests on {uses "kubota-leopoldt"}[], {uses "res-g-pminus1"}[] and
 {uses "res-numerator"}[].
+
+In the formalisation "analytic at $`s=1`" is realised topologically: part (i)
+is `ContinuousAt (zetaPBranch p hp2 i) 1` (the rigid-analytic structure is not
+formalised), and part (ii) is the topological limit
+`Tendsto (fun s => (s-1)·ζ_{p,p-1}(s)) (nhdsWithin 1 {s ≠ 1}) (nhds (1-p⁻¹))`.
 :::
 
 :::proof "residue-zeta-p"
@@ -66,7 +71,7 @@ the rule $`\int_G \chi\cdot\lambda = (\chi(g)-1)^{-1}\int_G \chi\cdot([g]-[1])\l
 for integrating a pseudo-measure $`\lambda` against a non-trivial character, and
 the identity $`\ang{x} = \Teich^{-1}(x)\,x`, the branch $`\zpi` becomes a ratio.
 
-:::definition "res-denominator-g"
+:::definition "res-denominator-g" (lean := "PadicLFunctions.zetaPBranch")
 For $`i \in \set{1,\ldots,p-1}` define the *denominator*
 $$`g_{a,i}(s) := \Teich(a)^{i}\,\ang{a}^{1-s} - 1.`
 Substituting $`\zp = x^{-1}\Res_{\Zpx}(\mu_a)/([a]-[1])` into the definition of
@@ -74,9 +79,15 @@ $`\zpi` and integrating the pseudo-measure yields the closed form
 $$`\zpi(s) = \frac{\int_{\Zpx} \Teich(x)^{s+i-1}\,x^{-s}\cdot \mu_a}{g_{a,i}(s)}.`
 This rests on {uses "kubota-leopoldt"}[], {uses "measure-mu-a"}[] and
 {uses "pseudo-measure"}[].
+
+In the formalisation the closed form *is* the definition: `zetaPBranch` was
+defined in the interpolation chapter as exactly this ratio
+$`g_{a,i}(s)^{-1}\int\Teich(x)^i\ang{x}^{1-s}\mu_a`-numerator at the canonical
+topological generator, so no separate unwinding step is needed; $`g_{a,i}`
+appears inline as its denominator.
 :::
 
-:::lemma_ "res-g-pminus1"
+:::lemma_ "res-g-pminus1" (lean := "PadicLFunctions.branch_denom_ne_zero, PadicLFunctions.tendsto_branch_denom_div, PadicLFunctions.teichmuller_isPrimitiveRoot")
 With $`g_{a,i}` as above:
 
 * (i) If $`i \neq p-1`, then $`g_{a,i}(1) \neq 0`. Consequently
@@ -86,6 +97,14 @@ With $`g_{a,i}` as above:
 
 This depends on {uses "res-denominator-g"}[] and
 {uses "teichmuller-character"}[].
+
+The Lean statement of (i), `branch_denom_ne_zero`, is strengthened from
+$`s=1` to *every* $`s` (the ultrametric isoceles argument is uniform in
+$`s`); (ii) is proved through the exponential/logarithm bridge
+$`\ang{a}^{1-s}=\exp((1-s)\logp\ang{a})` and the quadratic tail bound
+$`\norm{\exp w - 1 - w}\le p\norm{w}^2`, rather than the notes' binomial-series
+manipulation (decomposition R7, replan 3) — the limit and its value are
+identical.
 :::
 
 :::proof "res-g-pminus1"
@@ -110,6 +129,11 @@ $`\logp\Teich(a)=0`. Hence $`\lim_{s\to1}(s-1)^{-1}g_{a,p-1}(s) = -\logp(a)`.
 Combining {uses "res-g-pminus1"}[](ii) with the closed form
 {uses "res-denominator-g"}[] of $`\zeta_{p,p-1}`,
 $$`\lim_{s\to 1} (s-1)\,\zeta_{p,p-1}(s) = -\frac{\int_{\Zpx} x^{-1}\cdot \mu_a}{\logp(a)}.`
+
+(Not a standalone Lean declaration: this limit-algebra step — the inverse of
+the denominator limit times the continuous numerator — is inlined in the proof
+of `tendsto_sub_one_mul_zetaPBranch`, together with the nonvanishing
+$`\logp(a)=\logp\ang{a}\neq 0` for a topological generator.)
 :::
 
 :::proof "res-limit-formula"
@@ -133,14 +157,23 @@ transform of $`\mu_a` is $`F_a(T) = \tfrac{1}{T} - \tfrac{a}{(1+T)^a-1}`. We see
 a primitive $`\Fat` with $`\dpartial\Fat = F_a`, lying in the ring $`\Rp` of
 power series $`\sum a_n T^n` with $`\abs{a_n}r^n \to 0` for every $`0\le r<1`.
 
-:::definition "res-primitive-Fa"
+:::definition "res-primitive-Fa" (lean := "PadicLFunctions.FtildeA, PadicLFunctions.uA")
 Define the *primitive of $`F_a`* by
 $$`\Fat(T) := \log\!\left(\frac{T}{1+T}\cdot\frac{(1+T)^a}{(1+T)^a-1}\right) = \log\!\left(\frac{T}{(1+T)^a-1}\cdot (1+T)^{a-1}\right).`
+
+The Lean definition realises the second expression through the unit
+factorisation $`(1+T)^a-1 = aT\,u_a(T)` (with $`u_a` of constant term $`1`):
+$`\Fat = -\logp(a) - \log u_a + (a-1)\log(1+T)`, each summand a legal formal
+composition over a complete normed $`\Qp`-field $`K`.
 :::
 
-:::lemma_ "res-primitive-derivative"
+:::lemma_ "res-primitive-derivative" (lean := "PadicLFunctions.one_add_mul_derivative_FtildeA")
 Formally, $`\dpartial \Fat(T) = F_a(T)`. This depends on
 {uses "res-primitive-Fa"}[] and {uses "mahler-transform"}[].
+
+The Lean statement carries the (implicit in the notes' §4 setting) hypothesis
+$`p\nmid a`: the project's $`F_a` is the junk value $`0` when $`p \mid a`
+(its denominator-inverse degenerates), while $`\dpartial\Fat` is never zero.
 :::
 
 :::proof "res-primitive-derivative"
@@ -161,6 +194,15 @@ of $`\mu_a`.
 We have $`\Fat(T) \in \Rp`, so that $`\Fat` corresponds under the Mahler
 correspondence to a locally analytic distribution. This depends on
 {uses "res-primitive-Fa"}[] and {uses "mahler-transform"}[].
+
+*Not formalised as stated* (RJW Lemma 7.4): the formalisation follows a
+distribution-free route (decomposition R7, replan 1) that never constructs
+$`\Rp` or the locally analytic distribution $`\widetilde\mu_a`. The analytic
+content actually used — the coefficients of $`\Fat` grow at most linearly, so
+its evaluation series converges on the open unit disc — is proved directly
+(the `norm_coeff_FtildeA_le`/`summable_seriesEval_FtildeA` layer in
+`ResidueZeta.lean`), and the constant-of-integration argument runs in
+$`\ker\psi` exactly as in the value-at-$`s=1` chapter.
 :::
 
 :::proof "res-Fa-tilde-bounded"
@@ -180,7 +222,7 @@ $`\widetilde\mu_a` (the one whose Mahler transform is $`\Fat`), and the relation
 $`\dpartial\Fat = F_a` says precisely that $`x\,\widetilde\mu_a = \mu_a`. This is
 the device that makes sense of the otherwise ill-defined product $`x^{-1}\mu_a`.
 
-:::lemma_ "res-integral-as-eval"
+:::lemma_ "res-integral-as-eval" (lean := "PadicLFunctions.psi_rhoA, PadicLFunctions.one_add_mul_derivative_mahlerK_rhoA, PadicLFunctions.p_mul_constantCoeff_mahlerK_rhoA")
 The numerator of the residue formula is the value at $`0` of the restriction of
 $`\Fat` to $`\Zpx`:
 $$`\int_{\Zpx} x^{-1}\cdot\mu_a = \big((1-\varphi\circ\psi)\Fat\big)(0),`
@@ -188,6 +230,15 @@ where $`\varphi\circ\psi` acts on power series by
 $`\varphi\circ\psi(F)(T) = \tfrac1p\sum_{\xi\in\mu_p} F((1+T)\xi - 1)`. This
 depends on {uses "res-primitive-derivative"}[], {uses "res-Fa-tilde-bounded"}[],
 {uses "locally-analytic-distribution"}[] and {uses "p-adic-value-s1"}[].
+
+Distribution-free realisation: instead of $`\widetilde\mu_a`, the
+formalisation works with the genuine measure $`\rho_a = x^{-1}\Res_{\Zpx}(\mu_a)`
+(the canonical numerator of $`\zp`), shows $`\psi(\rho_a)=0` and
+$`\dpartial\sA_{\rho_a} = \sA_{\Res_{\Zpx}\mu_a}`, and pins the constant of
+integration by evaluating at the $`p`-th roots of unity: the displayed identity
+appears $`p`-scaled as
+$`p\,\sA_{\rho_a}(0) = p\,\Fat(0) - \sum_{\xi\in\mu_p}\Fat(\xi-1)`, with the
+left side equal to $`p\int_{\Zpx}x^{-1}\mu_a`.
 :::
 
 :::proof "res-integral-as-eval"
@@ -204,10 +255,20 @@ computation that produced the value at $`s=1`. This reduces the residue
 computation to a single evaluation.
 :::
 
-:::lemma_ "res-numerator"
+:::lemma_ "res-numerator" (lean := "PadicLFunctions.constantCoeff_FtildeA, PadicLFunctions.sum_seriesEval_FtildeA, PadicLFunctions.constantCoeff_mahlerK_rhoA, PadicLFunctions.zetaNum_one")
 We have
 $$`\big((1-\varphi\circ\psi)\Fat\big)(0) = -(1-p^{-1})\,\logp(a).`
 This depends on {uses "res-primitive-Fa"}[] and {uses "res-Fa-tilde-bounded"}[].
+
+Formalised as `constantCoeff_mahlerK_rhoA` (with the left side realised as
+$`\sA_{\rho_a}(0)`, see {uses "res-integral-as-eval"}[]) from the two evaluations
+`constantCoeff_FtildeA` ($`\Fat(0) = -\logp a`) and `sum_seriesEval_FtildeA`
+($`\sum_{\xi\in\mu_p}\Fat(\xi-1) = -\logp a`); the $`\mu_p`-collapse is run by
+a product identity (the multiset $`\set{\xi^a}` equals $`\mu_p`, so
+$`\prod_{\xi\neq 1} u_a(\xi-1) = a^{-(p-1)}`) together with Fermat's
+$`a^{p-1}\equiv 1 \bmod p`, in a complete algebraically closed field
+$`K=\CC_p` containing $`\mu_p`; `zetaNum_one` is the descent of the resulting
+mass to $`\Qp` along the injective structure map.
 :::
 
 :::proof "res-numerator"
@@ -227,7 +288,7 @@ as before, the factors of $`pT` cancel and the right-hand side at $`T=0`
 collapses to $`-p^{-1}\logp(a)`.
 
 *Conclusion.* Subtracting the two evaluations,
-$$`\big((1-\varphi\circ\psi)\Fat\big)(0) = \Fat(0) - (\varphi\circ\psi)\Fat(0) = -\logp(a) - p^{-1}\logp(a) = -(1-p^{-1})\,\logp(a),`
+$$`\big((1-\varphi\circ\psi)\Fat\big)(0) = \Fat(0) - (\varphi\circ\psi)\Fat(0) = -\logp(a) + p^{-1}\logp(a) = -(1-p^{-1})\,\logp(a),`
 as claimed.
 :::
 

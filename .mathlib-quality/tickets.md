@@ -3730,8 +3730,25 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
   lines — split/golf review deferred to the tooled CLEANUP-FINAL.
 
 ### [T708] **MILESTONE: RJW Theorem 7.1** — the residue of ζ_p
-- **Status**: open | **File**: ResidueZeta.lean
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean
 - **Depends on**: T703, T702, T707, CLEANUP-ALL-7 | **Type**: theorem
+- **Progress**:
+  - 2026-06-12: `tendsto_sub_one_mul_zetaPBranch` proven (subagent), statement
+    verbatim, exactly per sketch: generator-pack destructure; L ≠ 0 via the
+    level-2 order p(p−1) ∤ p−1 contradiction (`angleUnit_coe_ne_one`,
+    `pZpLog_angleUnit_ne_zero`); `Tendsto.inv₀` on T702c × T703-continuity;
+    num(1) via branchChar (p−1) 0 = 1 + T707; `extLog_natCast_eq_pZpLog_angle`
+    (u = ω⟨u⟩, extLog_mul, torsion-kill, extLog_eq_padicLog, pZpLog_coe).
+    PROJECT-WIDE ZERO SORRIES; milestone + Thm (i) axioms standard 3.
+  - 2026-06-12: blueprint Chapters/Residue.lean wired: residue-zeta-p (both
+    decls), res-denominator-g ↦ zetaPBranch (note), res-g-pminus1 ↦ T702
+    triple (replan-R7.3 note), res-primitive-Fa ↦ FtildeA/uA,
+    res-primitive-derivative ↦ T704 (p∤a note), res-Fa-tilde-bounded left
+    unwired with replan-R7.1 rationale (ℛ⁺ deferred), res-integral-as-eval ↦
+    T705+T706a (distribution-free note), res-numerator ↦ T706b/c + zetaNum_one,
+    res-limit-formula note (inlined in milestone); sign typo in res-numerator
+    proof prose fixed (−log a + p⁻¹ log a). `lake build PadicLFunctionsBlueprint`
+    green.
 - **Statement**: skeleton `tendsto_sub_one_mul_zetaPBranch` (Thm (ii);
   Thm (i) = `continuousAt_zetaPBranch`, T703).
 - **Proof sketch**: unfold zetaPBranch at the §4 generator (m, u);
