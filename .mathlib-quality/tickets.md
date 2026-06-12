@@ -4325,7 +4325,27 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
 - **Sizing**: ~170 LOC (the Eisenstein cluster).
 
 ### [T903] Integer-ring structure, element norms, and 𝒰_∞ (authors API)
-- **Status**: open | **File**: Coleman/Tower.lean | **Depends on**: T902
+- **Status**: DONE (2026-06-12) — items 1–7 complete; item 8 (O-basis
+  monogenicity) deferred to [T903b] (see below). Authored: `levelNorm`,
+  `levelNorm_apply`, `levelNorm_mem`, `levelNorm_mul`, `levelNorm_one`,
+  `levelNorm_zetaSys_pow_sub_one` (the TeX 2581–2585 collapse engine),
+  `levelNorm_pi`, `structure NormCompatUnits` + `.one`/`.mul` (+ `One`/`Mul`
+  instances). Engine route: `levelNorm` = `Algebra.norm (K p n)` on
+  `IntermediateField.extendScalars (K_le_succ p n)`, junk-extended off
+  `K_{n+1}`; collapse proven via (private) `minpoly_extendScalars_of_pow`
+  (minpoly of `ξ^b_{n+1}` over `K_n` is `X^p − C(ξ^b_n)`, degree `p` from
+  `extendScalars_adjoin_eq_top` = generation, itself from `primitiveRoot_notMem_K`
+  + prime-degree divisibility), translated by `minpoly.sub_algebraMap` to
+  `(X+1)^p − C(ξ^b_n)`, then `norm = (−1)^p·coeff₀` via
+  `Algebra.norm_eq_norm_adjoin` + `PowerBasis.norm_gen_eq_coeff_zero_minpoly`
+  (p odd ⟹ `ξ^b_n − 1`). Added `hp2 : p ≠ 2` (TeX 2470; docstringed). Norm-≤1
+  lemma (item 6) omitted as unused — the `compat` equation carries `𝒪_n`-membership
+  (= elems n). **Verified**: `lake build PadicLFunctions` green (3811 jobs),
+  zero `sorry` in Tower.lean, `#print axioms` = {propext, Classical.choice,
+  Quot.sound} on all 10 new public decls, mathlib linters green (maxHeartbeat
+  comments + `change` for defeq goal shifts). Item 8's consumer T907 now
+  depends on T903b.
+- **(superseded planning fields below)** | **File**: Coleman/Tower.lean | **Depends on**: T902
 - **Type**: def + lemmas (authors new skeleton per the staged plan)
 - **Statement** (authored at execution against T902's API; shapes fixed
   here): `levelNorm (n) : ℂ_[p] → ℂ_[p]` := the K_n-norm of K_{n+1}
@@ -4361,6 +4381,45 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
   π-adic expansion (the single-level greedy lemma's method).
 - **Sources**: TeX 2503 (𝒰_∞), 2581–2585 (Q7), 2685 (min poly).
 - **Sizing**: ~200 LOC + survey risk (monogenicity).
+
+### [T903b] O-basis monogenicity of the tower step (split from T903 item 8)
+- **Status**: open | **File**: Coleman/Tower.lean | **Parent**: T903
+- **Depends on**: T903 (done) | **Parallel**: yes | **Type**: theorem
+- **Task**: author + prove `O_succ_exists_digits {n} (hn : 1 ≤ n) (hp2 : p ≠ 2)`:
+  `∀ x ∈ O p (n+1), ∃ c : Fin p → ℂ_[p], (∀ i, c i ∈ O p n) ∧
+  x = ∑ i, c i * (zetaSys p (n+1))^(i:ℕ)` (i.e. `O_{n+1} = ⊕_{i<p} O_n·ξ^i`),
+  plus the uniqueness companion `O_succ_digits_unique` (the `Fin p` ξ-power
+  expansion with `O_n`-coefficients is unique). This is the `O_n`-module basis
+  T907's commuting-square det-transport consumes.
+- **Why split (2026-06-12)**: T903 item 8 carried the spawn-T903b escape hatch.
+  Three distinct routes attempted at T903 execution, none lands in a single
+  ticket budget under zero-sorry discipline:
+  1. **Direct relative mathlib**: NO relative-monogenicity / integral-basis
+     API exists in mathlib (`RingTheory/Polynomial/Eisenstein/IsIntegral.lean`
+     + `IsIntegralClosure` are all *absolute*, `R = ℤ_p`-based; nothing matches
+     `O_{n+1} = ⊕ O_n·ξ^i`).
+  2. **MOST PROMISING — absolute monogenicity + reindex**: (a) prove
+     `O_m = adjoin ℤ_p {π_m}` for all `m` via
+     `mem_adjoin_of_smul_prime_pow_smul_of_minpoly_isEisensteinAt` (the minpoly
+     of `π_m = ξ_m − 1` over ℚ_p IS Eisenstein at `(p)` — the file's
+     `cyclotomic_irreducible_Zp` already builds that `IsEisensteinAt` witness;
+     `Algebra.discr_mul_isIntegral_mem_adjoin` for the reverse ⊇ via the
+     discriminant being a `p`-power-unit), giving a `ℤ_p`-power-basis
+     `{π_m^j : j < φ(p^m)}` of `O_m`; (b) re-index `φ(p^{n+1}) = p·φ(p^n)` with
+     `ξ_{n+1}^{i+p·j} = ξ_{n+1}^i · ξ_n^j` (since `ξ_{n+1}^p = ξ_n`,
+     `zetaSys_pow_p`) to convert the absolute `ℤ_p`-basis at level `n+1` into the
+     relative `O_n`-basis `{ξ_{n+1}^i : i < p}`. Each of (a),(b) is itself
+     ticket-sized (≈4 sublemmas total: absolute ⊆, discriminant ⊇, basis
+     packaging, reindex) — hence the split.
+  3. **K-coefficient (field) version only**: `K_succ_exists_digits` — the
+     `{ξ_{n+1}^i : i<p}` are a `K_n`-basis of `extendScalars` (power-basis
+     independence, cheap via `adjoin.powerBasis` + `finrank_K_succ`). Feasible
+     but is NOT the integral `O_n`-version T907 needs; rejected as insufficient.
+- **Recommended attack**: Route 2. Budget the bulk on sub-step (a) (absolute
+  `O_{n+1} = ℤ_p[π_{n+1}]`); (b) is then bookkeeping. The file already exposes
+  `pi_mem_O`, `finrank_K_succ`, `zetaSys_pow_p`, the Eisenstein witness pattern.
+- **Sources**: TeX 2685 (min poly / monogenicity); 2474 (`O_n` = integral
+  closure). Consumer: T907 (commuting square).
 
 ### [CLEANUP-91] /cleanup on Coleman/Tower.lean (cadence)
 - **Status**: open | **Depends on**: T901, T902, T903 | **Type**: cleanup
@@ -4681,8 +4740,12 @@ series + thm:coleman map 2)
 ## §9–10 dependency quick-view
 ```
 T901 → T902 → T903 → CL91 ; T906 ; T909 ; T-D61(planning)
-T902 → T904 → T905 ; T903,T904,T906 → T907 ; T906 → T908
+T903 → T903b (O-basis monogenicity, split 2026-06-12)
+T902 → T904 → T905 ; T903b,T904,T906 → T907 ; T906 → T908
 T904,T905,T906 → CL92
 T905,T907,T908,T909 → CLALL9 → T910* → T912*
 T903 → T911 → T912*(T910,T911) → CL93
 ```
+Note (2026-06-12): T907's `O_n`-basis input moved from T903 to **T903b**
+(T903 item 8 was split out; T903 items 1–7 are done). T911 still depends only
+on T903 (`levelNorm` + `NormCompatUnits`, both delivered).
