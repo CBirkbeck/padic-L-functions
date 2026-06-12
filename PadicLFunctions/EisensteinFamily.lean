@@ -323,13 +323,95 @@ theorem twistedZetaHalf_moments (hp2 : p ≠ 2) (b : ℤ_[p]ˣ) {k : ℕ}
   rw [hmom, PadicInt.coe_mul, coe_inv_two p hp2, hpz]
   field_simp
 
+/-- Uniform congruence at level `p²`: for every unit `u`, raising to the
+exponent `1 + φ(p²)` is the identity modulo `p²`, i.e.
+`u^{1+φ(p²)} ≡ u (mod p²)`. (`u^{φ(p²)} = 1` in `(ℤ/p²)^×` by Lagrange, then
+factor `u^{1+φ(p²)} − u = u·(u^{φ(p²)} − 1)`.) This is the finitary engine
+behind `noMeasure_interpolates_pPow`. -/
+private lemma units_pow_totient_sq_sub_self_mem (u : ℤ_[p]ˣ) :
+    ((u : ℤ_[p]) ^ (1 + Nat.totient (p ^ 2)) - (u : ℤ_[p]))
+      ∈ (Ideal.span {(p : ℤ_[p]) ^ 2} : Ideal ℤ_[p]) := by
+  haveI : NeZero (p ^ 2) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+  -- `u^{φ(p²)} = 1` in `(ℤ/p²)^×`, by Lagrange (`pow_card_eq_one'`)
+  have hcard : Nat.card (ZMod (p ^ 2))ˣ = Nat.totient (p ^ 2) := by
+    rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
+  have himg : (PadicMeasure.unitsToZModPow p 2 u) ^ Nat.totient (p ^ 2) = 1 := by
+    rw [← hcard]; exact pow_card_eq_one'
+  -- push to `ℤ_p`: `u^{φ(p²)} − 1 ∈ ker(toZModPow 2) = span {p²}`
+  have hmem1 : ((u : ℤ_[p]) ^ Nat.totient (p ^ 2) - 1)
+      ∈ (Ideal.span {(p : ℤ_[p]) ^ 2} : Ideal ℤ_[p]) := by
+    rw [← PadicInt.ker_toZModPow, RingHom.mem_ker, map_sub, map_pow, map_one,
+      ← PadicMeasure.unitsToZModPow_coe, ← Units.val_pow_eq_pow_val, himg,
+      Units.val_one, sub_self]
+  -- factor `u^{1+φ(p²)} − u = u·(u^{φ(p²)} − 1)`, a left multiple of the witness
+  have hfact : (u : ℤ_[p]) ^ (1 + Nat.totient (p ^ 2)) - (u : ℤ_[p])
+      = (u : ℤ_[p]) * ((u : ℤ_[p]) ^ Nat.totient (p ^ 2) - 1) := by
+    rw [mul_sub, mul_one, ← pow_succ', Nat.add_comm]
+  rw [hfact]
+  exact Ideal.mul_mem_left _ _ hmem1
+
 /-- R8 (RJW TeX 2379–2383): the function `k ↦ p^k` can never be interpolated
-by a measure on `ℤ_p^×` — `p^{k_n} → 0` along any `p`-adically convergent
-strictly increasing sequence of exponents, while the moments of a measure
-are `p`-adically continuous in the exponent. Notably `p = 2` is allowed. -/
+by a measure on `ℤ_p^×`. Finitary route (replan note in ticket T804): if a
+measure `θ` interpolated `k ↦ p^k`, then at the single congruence level
+`p²` the exponents `K := 1 + φ(p²)` and `1` agree on `ℤ_p^×` modulo `p²`
+(`units_pow_totient_sq_sub_self_mem`), so `‖x^K − x^1‖ ≤ p^{-2}` as a sup
+norm; boundedness of `θ` (`norm_apply_le`) forces `‖p^K − p‖ ≤ p^{-2}`.
+But `‖p^K − p‖ = ‖p‖·‖p^{K−1} − 1‖ = p^{-1}` (`K − 1 = φ(p²) ≥ 1`, so the
+second factor has norm one by the ultrametric isoceles), and `p^{-1} ≤ p^{-2}`
+is false. Notably `p = 2` is allowed (no `hp2` is used). -/
 theorem noMeasure_interpolates_pPow :
     ¬ ∃ θ : PadicMeasure p ℤ_[p]ˣ, ∀ k : ℕ, 0 < k →
-      θ (PadicMeasure.unitsPowCM p k) = (p : ℤ_[p]) ^ k := by sorry
+      θ (PadicMeasure.unitsPowCM p k) = (p : ℤ_[p]) ^ k := by
+  rintro ⟨θ, hθ⟩
+  set K : ℕ := 1 + Nat.totient (p ^ 2) with hK
+  have hp2pos : 0 < p ^ 2 := pow_pos hp.out.pos 2
+  have htot2 : 2 ≤ Nat.totient (p ^ 2) := by
+    rw [Nat.totient_prime_pow hp.out two_pos]
+    have h2le : 2 ≤ p := hp.out.two_le
+    have hpe : p ^ (2 - 1) = p := by norm_num
+    rw [hpe]
+    calc 2 = 2 * 1 := by norm_num
+      _ ≤ p * (p - 1) := Nat.mul_le_mul h2le (by omega)
+  have hKpos : 0 < K := by omega
+  have hppos : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  -- (2) sup-norm bound: `‖x^K − x^1‖ ≤ p^{-2}` on `ℤ_p^×`
+  have hsup : ‖PadicMeasure.unitsPowCM p K - PadicMeasure.unitsPowCM p 1‖
+      ≤ (p : ℝ) ^ (-2 : ℤ) := by
+    rw [ContinuousMap.norm_le _ (zpow_nonneg (le_of_lt hppos) _)]
+    intro u
+    rw [ContinuousMap.coe_sub, Pi.sub_apply]
+    change ‖(u : ℤ_[p]) ^ K - (u : ℤ_[p]) ^ 1‖ ≤ (p : ℝ) ^ (-2 : ℤ)
+    rw [pow_one, show (-2 : ℤ) = (-(2 : ℕ) : ℤ) by norm_num,
+      PadicInt.norm_le_pow_iff_mem_span_pow]
+    exact units_pow_totient_sq_sub_self_mem p u
+  -- (3) measure bound: `‖θ(x^K) − θ(x^1)‖ ≤ p^{-2}`
+  have hmeas : ‖θ (PadicMeasure.unitsPowCM p K) - θ (PadicMeasure.unitsPowCM p 1)‖
+      ≤ (p : ℝ) ^ (-2 : ℤ) := by
+    rw [← map_sub]
+    exact le_trans (PadicMeasure.norm_apply_le p θ _) hsup
+  -- (4) plug in the interpolation values `θ(x^K) = p^K`, `θ(x^1) = p`
+  rw [hθ K hKpos, hθ 1 one_pos, pow_one] at hmeas
+  -- compute `‖p^K − p‖ = p^{-1}`: factor `p^K − p = p·(p^{K−1} − 1)`
+  have hfactp : (p : ℤ_[p]) ^ K - (p : ℤ_[p])
+      = (p : ℤ_[p]) * ((p : ℤ_[p]) ^ (K - 1) - 1) := by
+    rw [mul_sub, mul_one, ← pow_succ', Nat.sub_add_cancel (by omega : 1 ≤ K)]
+  -- `‖p^{K−1} − 1‖ = 1`: `‖1‖ = 1 > ‖p^{K−1}‖`, ultrametric isoceles
+  have hnormfac : ‖(p : ℤ_[p]) ^ (K - 1) - 1‖ = 1 := by
+    have hlt : ‖(p : ℤ_[p]) ^ (K - 1)‖ < ‖(-1 : ℤ_[p])‖ := by
+      rw [norm_pow, norm_neg, norm_one, PadicInt.norm_p]
+      have h1lt : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+      have hb : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ h1lt
+      exact pow_lt_one₀ (by positivity) hb (by omega)
+    rw [sub_eq_add_neg, PadicInt.norm_add_eq_max_of_ne (ne_of_lt hlt),
+      max_eq_right (le_of_lt hlt), norm_neg, norm_one]
+  -- assemble `‖p^K − p‖ = p^{-1}`
+  have hnormpK : ‖(p : ℤ_[p]) ^ K - (p : ℤ_[p])‖ = (p : ℝ) ^ (-1 : ℤ) := by
+    rw [hfactp, norm_mul, PadicInt.norm_p, hnormfac, mul_one, zpow_neg, zpow_one]
+  rw [hnormpK] at hmeas
+  -- (5) contradiction: `p^{-1} ≤ p^{-2}` is false
+  have h1lt : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+  rw [zpow_le_zpow_iff_right₀ h1lt] at hmeas
+  omega
 
 /-- R8: the rational coefficient sequence of the p-stabilised Eisenstein
 series `E_k^{(p)}` (RJW TeX 2391): constant term `(1−p^{k−1})·ζ(1−k)/2`,

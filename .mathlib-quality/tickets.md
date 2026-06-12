@@ -3932,8 +3932,16 @@ to the twisted pseudo-measure form.
   CLEANUP-FINAL.
 
 ### [T804] No measure interpolates k ↦ p^k
-- **Status**: in_progress (2026-06-12, parallel with T805) | **File**: EisensteinFamily.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: EisensteinFamily.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: theorem
+- **Progress**: 2026-06-12: proven (subagent, parallel with T805), statement
+  verbatim, p = 2 allowed, finitary single-level route (K = 1 + φ(p²);
+  replan note in the sketch). Helper `units_pow_totient_sq_sub_self_mem`
+  (uniform Euler congruence via unitsToZModPow/ker_toZModPow +
+  pow_card_eq_one'). Orchestrator re-verified axioms on the live module:
+  standard 3 (the agent's "spurious sorryAx" note was a methodology
+  artifact — the live check is clean). Cleanup: degraded mode, defer to
+  CLEANUP-ALL-8.
 - **Statement**: skeleton `noMeasure_interpolates_pPow` (R8 L8.4). p = 2
   allowed.
 - **Proof sketch**: rintro ⟨θ, hθ⟩. Exponents k_n := 1 + φ(p^{n+1}) =
