@@ -1039,13 +1039,563 @@ theorem p_mul_constantCoeff_mahlerK_rhoA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a)
   rw [hexpand] at h1
   linear_combination h1
 
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- A power `G^d` of a series with zero constant coefficient vanishes below degree `d`
+(`constantCoeff G = 0 ⟹ X ∣ G ⟹ X^d ∣ G^d`). Generic version of
+`coeff_uA_sub_one_pow_eq_zero`. -/
+private lemma coeff_pow_eq_zero_of_constantCoeff_zero {G : PowerSeries K}
+    (hG0 : PowerSeries.constantCoeff G = 0) {k d : ℕ} (hkd : k < d) :
+    PowerSeries.coeff k (G ^ d) = 0 :=
+  PowerSeries.X_pow_dvd_iff.1
+    (pow_dvd_pow_of_dvd (PowerSeries.X_dvd_iff.2 hG0) d) k hkd
+
+omit [CompleteSpace K] [CharZero K] in
+/-- Powers of a series with `‖coeff · G‖ ≤ 1` have integral coefficients
+(`‖coeff k (G^d)‖ ≤ 1`, by induction on `d` through the ultrametric `coeff_mul` bound).
+Generic version of `norm_coeff_uA_sub_one_pow_le_one`. -/
+private lemma norm_coeff_pow_le_one {G : PowerSeries K}
+    (hG : ∀ n, ‖PowerSeries.coeff n G‖ ≤ 1) (d k : ℕ) :
+    ‖PowerSeries.coeff k (G ^ d)‖ ≤ 1 := by
+  induction d generalizing k with
+  | zero => rw [pow_zero, PowerSeries.coeff_one]; split <;> simp [zero_le_one]
+  | succ e ih =>
+    rw [pow_succ, PowerSeries.coeff_mul]
+    rcases (Finset.antidiagonal k).eq_empty_or_nonempty with he | hne
+    · rw [he, Finset.sum_empty, norm_zero]; exact zero_le_one
+    obtain ⟨ab, -, hab⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne
+      (fun ab => PowerSeries.coeff ab.1 (G ^ e) * PowerSeries.coeff ab.2 G)
+    refine hab.trans ?_
+    rw [norm_mul]
+    exact mul_le_one₀ (ih _) (norm_nonneg _) (hG _)
+
+omit [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- `seriesEval 1 z = 1` (the unit series is `C 1`). -/
+private lemma seriesEval_one (z : K) : seriesEval (1 : PowerSeries K) z = 1 := by
+  rw [show (1 : PowerSeries K) = PowerSeries.C (1 : K) from (map_one _).symm, seriesEval_C]
+
+omit [CharZero K] in
+/-- `seriesEval (G^d) z = (seriesEval G z)^d` for an `‖·‖ ≤ 1`-coefficient series `G`
+at `‖z‖ < 1` (induction via `seriesEval_mul`, each power having integral coefficients). -/
+private lemma seriesEval_pow {G : PowerSeries K} (hG : ∀ n, ‖PowerSeries.coeff n G‖ ≤ 1)
+    {z : K} (hz : ‖z‖ < 1) (d : ℕ) :
+    seriesEval (G ^ d) z = (seriesEval G z) ^ d := by
+  induction d with
+  | zero => rw [pow_zero, pow_zero, seriesEval_one]
+  | succ e ih =>
+    rw [pow_succ, pow_succ,
+      seriesEval_mul (summable_seriesEval_of_norm_coeff_le_one (norm_coeff_pow_le_one K hG e) hz)
+        (summable_seriesEval_of_norm_coeff_le_one hG hz), ih]
+
+omit [CompleteSpace K] [CharZero K] in
+/-- `‖seriesEval G z‖ ≤ ‖z‖` when `constantCoeff G = 0` and `‖coeff · G‖ ≤ 1` (each
+term `‖coeff_n G · z^n‖ ≤ ‖z‖^n ≤ ‖z‖` for `n ≥ 1`, the `n = 0` term vanishes). -/
+private lemma norm_seriesEval_le {G : PowerSeries K} (hG0 : PowerSeries.constantCoeff G = 0)
+    (hG : ∀ n, ‖PowerSeries.coeff n G‖ ≤ 1) {z : K} (hz : ‖z‖ ≤ 1) :
+    ‖seriesEval G z‖ ≤ ‖z‖ := by
+  rw [seriesEval]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le fun n => ?_
+  cases n with
+  | zero =>
+    rw [pow_zero, mul_one, PowerSeries.coeff_zero_eq_constantCoeff_apply, hG0, norm_zero]
+    exact norm_nonneg _
+  | succ m =>
+    rw [norm_mul, norm_pow, pow_succ]
+    calc ‖PowerSeries.coeff (m + 1) G‖ * (‖z‖ ^ m * ‖z‖)
+        ≤ 1 * (1 * ‖z‖) :=
+          mul_le_mul (hG _) (mul_le_mul (pow_le_one₀ (norm_nonneg _) hz) le_rfl
+            (norm_nonneg _) zero_le_one) (by positivity) zero_le_one
+      _ = ‖z‖ := by ring
+
+omit [CharZero K] in
+/-- **Step 1 bridge** (the main new infrastructure): substituting a series `G` with
+`constantCoeff G = 0`, `‖coeff · G‖ ≤ 1` into `formalLog` and evaluating at `‖z‖ < 1`
+gives `padicLog p (1 + seriesEval G z)`. Coefficientwise decomposition of `formalLog.subst G`
++ double-sum swap (mirrors `seriesEval_phi_of_summable_prod`) + `seriesEval_pow` reduce it to
+`seriesEval (formalLog) (seriesEval G z) = padicLog p (1 + seriesEval G z)`. -/
+private theorem seriesEval_subst_formalLog {G : PowerSeries K}
+    (hG0 : PowerSeries.constantCoeff G = 0) (hG : ∀ n, ‖PowerSeries.coeff n G‖ ≤ 1)
+    {z : K} (hz : ‖z‖ < 1) :
+    seriesEval ((formalLog (K := K)).subst G) z = padicLog p (1 + seriesEval G z) := by
+  have hS : PowerSeries.HasSubst G := PowerSeries.HasSubst.of_constantCoeff_zero' hG0
+  -- `‖seriesEval G z‖ < 1`
+  have hW : ‖seriesEval G z‖ < 1 := lt_of_le_of_lt (norm_seriesEval_le K hG0 hG hz.le) hz
+  -- the total family `T d n = coeff d (formalLog) · coeff n (G^d) · z^n`
+  let T : ℕ → ℕ → K := fun d n =>
+    PowerSeries.coeff d (formalLog K) * PowerSeries.coeff n (G ^ d) * z ^ n
+  have hTval : ∀ d n, T d n
+      = PowerSeries.coeff d (formalLog K) * PowerSeries.coeff n (G ^ d) * z ^ n := fun _ _ => rfl
+  -- a uniform per-term bound: `‖T d n‖ ≤ (n+1)·‖z‖^n` on `d ≤ n`, `= 0` off it
+  have hTbd : ∀ d n, d ≤ n → ‖T d n‖ ≤ ((n : ℝ) + 1) * ‖z‖ ^ n := by
+    intro d n hdn
+    rw [hTval, norm_mul, norm_mul, norm_pow]
+    calc ‖PowerSeries.coeff d (formalLog K)‖ * ‖PowerSeries.coeff n (G ^ d)‖ * ‖z‖ ^ n
+        ≤ ((d : ℝ) + 1) * 1 * ‖z‖ ^ n :=
+          mul_le_mul (mul_le_mul (norm_coeff_formalLog_le (p := p) (K := K) d)
+            (norm_coeff_pow_le_one K hG d n) (norm_nonneg _) (by positivity)) le_rfl
+            (by positivity) (by positivity)
+      _ ≤ ((n : ℝ) + 1) * ‖z‖ ^ n := by
+          rw [mul_one]
+          exact mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.add_le_add_right hdn 1)
+            (by positivity)
+  -- joint summability over `ℕ × ℕ`
+  have hprod : Summable (Function.uncurry T) := by
+    rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+      NormedAddGroup.tendsto_nhds_zero]
+    intro ε hε
+    rw [Filter.eventually_cofinite]
+    have htend : Filter.Tendsto (fun n : ℕ => ((n : ℝ) + 1) * ‖z‖ ^ n) Filter.atTop (nhds 0) := by
+      have h1 : Filter.Tendsto (fun n : ℕ => (n : ℝ) * ‖z‖ ^ n) Filter.atTop (nhds 0) :=
+        tendsto_self_mul_const_pow_of_lt_one (norm_nonneg z) hz
+      have h2 : Filter.Tendsto (fun n : ℕ => ‖z‖ ^ n) Filter.atTop (nhds 0) :=
+        tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg z) hz
+      simpa only [add_mul, one_mul, add_zero] using h1.add h2
+    obtain ⟨N, hN⟩ := (htend.eventually_lt_const hε).exists_forall_of_atTop
+    refine Set.Finite.subset (Set.Finite.prod (Set.finite_Iio (N + 1)) (Set.finite_Iio (N + 1)))
+      fun dn hdn => ?_
+    simp only [Set.mem_setOf_eq, not_lt, Function.uncurry] at hdn
+    by_cases hdn1 : dn.2 < dn.1
+    · exfalso
+      rw [hTval, coeff_pow_eq_zero_of_constantCoeff_zero K hG0 hdn1, mul_zero, zero_mul,
+        norm_zero] at hdn
+      exact absurd (lt_of_lt_of_le hε hdn) (lt_irrefl _)
+    rw [not_lt] at hdn1
+    have hn : dn.2 < N + 1 := by
+      by_contra hge
+      rw [not_lt] at hge
+      exact absurd (lt_of_le_of_lt (le_trans hdn (hTbd dn.1 dn.2 hdn1)) (hN dn.2 (by omega)))
+        (lt_irrefl ε)
+    exact Set.mem_prod.2 ⟨lt_of_le_of_lt hdn1 hn, hn⟩
+  -- the LHS coefficientwise: `coeff n (formalLog.subst G) · z^n = ∑' d, T d n`
+  have hLHScoeff : ∀ n : ℕ,
+      PowerSeries.coeff n ((formalLog K).subst G) * z ^ n = ∑' d : ℕ, T d n := by
+    intro n
+    rw [PowerSeries.coeff_subst' hS,
+      finsum_eq_finsetSum_of_support_subset _ (s := Finset.range (n + 1)) (by
+        intro d hd
+        simp only [Function.mem_support] at hd
+        by_contra hmem
+        simp only [Finset.coe_range, Set.mem_Iio, not_lt] at hmem
+        exact hd (by rw [coeff_pow_eq_zero_of_constantCoeff_zero K hG0 (by omega), smul_zero]))]
+    rw [Finset.sum_mul, tsum_eq_sum (s := Finset.range (n + 1)) fun d hd => by
+      rw [hTval, coeff_pow_eq_zero_of_constantCoeff_zero K hG0
+        (show n < d by simp only [Finset.mem_range, not_lt] at hd; omega), mul_zero, zero_mul]]
+    refine Finset.sum_congr rfl fun d _ => ?_
+    rw [hTval, smul_eq_mul]
+  -- the inner sum `∑'_n T d n = coeff d (formalLog) · (seriesEval G z)^d`
+  have hRHScoeff : ∀ d : ℕ,
+      (∑' n : ℕ, T d n) = PowerSeries.coeff d (formalLog K) * (seriesEval G z) ^ d := by
+    intro d
+    rw [show (fun n : ℕ => T d n)
+        = fun n : ℕ => PowerSeries.coeff d (formalLog K)
+          * (PowerSeries.coeff n (G ^ d) * z ^ n) from by funext n; rw [hTval]; ring,
+      (summable_seriesEval_of_norm_coeff_le_one (norm_coeff_pow_le_one K hG d) hz).tsum_mul_left,
+      ← seriesEval, seriesEval_pow K hG hz]
+  -- assemble: `seriesEval (formalLog.subst G) z = ∑'_n ∑'_d T d n = ∑'_d ∑'_n T d n`
+  -- `= seriesEval (formalLog) (seriesEval G z) = padicLog p (1 + seriesEval G z)`
+  have hWsub : (1 + seriesEval G z) - 1 = seriesEval G z := by ring
+  rw [seriesEval]
+  simp_rw [hLHScoeff]
+  rw [Summable.tsum_comm hprod]
+  simp_rw [hRHScoeff]
+  rw [← seriesEval,
+    ← MeasureR.seriesEval_formalLog (p := p) (z := 1 + seriesEval G z) (by rw [hWsub]; exact hW),
+    hWsub]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
+  [CharZero K] in
+/-- `seriesEval X z = z` (the monomial `X` peels to its single nonzero term). -/
+private lemma seriesEval_X (z : K) : seriesEval (PowerSeries.X : PowerSeries K) z = z := by
+  rw [seriesEval, tsum_eq_single 1 fun n hn => by
+    rw [PowerSeries.coeff_X, if_neg hn, zero_mul],
+    PowerSeries.coeff_one_X, one_mul, pow_one]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
+  [CharZero K] in
+/-- `seriesEval (c • F) z = c · seriesEval F z`. -/
+private lemma seriesEval_smul (c : K) (F : PowerSeries K) (z : K) :
+    seriesEval (c • F) z = c * seriesEval F z := by
+  rw [PowerSeries.smul_eq_C_mul, seriesEval_C_mul]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
+  [CharZero K] in
+/-- `(n : ℕ) • F = C (n : K) * F` for a `K`-coefficient power series. -/
+private lemma nsmul_eq_C_natCast_mul (n : ℕ) (F : PowerSeries K) :
+    (n • F) = PowerSeries.C ((n : K)) * F := by
+  rw [← PowerSeries.smul_eq_C_mul, Nat.cast_smul_eq_nsmul]
+
+/-- **Step 2** (RJW TeX 2296–2300, evaluated): for `‖z‖ < 1`,
+`(a:K) · z · seriesEval (uA K a) z = (1 + z)^a − 1`. Evaluate the formal identity
+`(a:K) • uA · X = (1+X)^a − 1` at `z` (`seriesEval_mul` + `seriesEval_X` + `seriesEval`
+of the polynomial `(1+X)^a − 1`). -/
+private lemma natCast_mul_seriesEval_uA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 : a ≠ 0)
+    {z : K} (hz : ‖z‖ < 1) :
+    (a : K) * z * seriesEval (uA K a) z = (1 + z) ^ a - 1 := by
+  -- the formal identity `(a:K) • uA · X = (1+X)^a − 1`
+  set M := PowerSeries.map ((algebraMap ℚ_[p] K).comp (PadicInt.Coe.ringHom)) with hM
+  have hform : (a : K) • uA K a * PowerSeries.X = (1 + PowerSeries.X) ^ a - 1 := by
+    rw [natCast_smul_uA_eq_map_geomSum (p := p) K ha0, ← hM,
+      show (PowerSeries.X : PowerSeries K) = M PowerSeries.X from (PowerSeries.map_X _).symm,
+      ← map_mul, PadicMeasure.geomSum_mul_X]
+    simp only [map_sub, map_pow, map_add, map_one]
+  -- summabilities
+  have hu : Summable fun n : ℕ => PowerSeries.coeff n (uA K a) * z ^ n :=
+    summable_seriesEval_of_norm_coeff_le_one (norm_coeff_uA_le_one (p := p) K ha) hz
+  have hsmul : Summable fun n : ℕ => PowerSeries.coeff n ((a : K) • uA K a) * z ^ n := by
+    have hcongr : (fun n : ℕ => PowerSeries.coeff n ((a : K) • uA K a) * z ^ n)
+        = fun n : ℕ => (a : K) * (PowerSeries.coeff n (uA K a) * z ^ n) := by
+      funext n
+      rw [PowerSeries.smul_eq_C_mul, PowerSeries.coeff_C_mul]; ring
+    rw [hcongr]; exact hu.mul_left (a : K)
+  have hX : Summable fun n : ℕ => PowerSeries.coeff n (PowerSeries.X : PowerSeries K) * z ^ n :=
+    summable_seriesEval_of_norm_coeff_le_one (fun n => by
+      rw [PowerSeries.coeff_X]; split <;> simp [zero_le_one]) hz
+  -- evaluate both sides
+  have hlhs : seriesEval ((a : K) • uA K a * PowerSeries.X) z = (a : K) * z * seriesEval (uA K a) z
+      := by
+    rw [seriesEval_mul hsmul hX, seriesEval_smul, seriesEval_X]; ring
+  have hrhs : seriesEval ((1 + PowerSeries.X) ^ a - 1 : PowerSeries K) z = (1 + z) ^ a - 1 := by
+    rw [seriesEval_sub (z := z) ?_ ?_, seriesEval_one_add_X_pow,
+      show (1 : PowerSeries K) = PowerSeries.C (1 : K) from (map_one _).symm, seriesEval_C]
+    · exact summable_seriesEval_of_norm_coeff_le_one (fun n => by
+        rw [coeff_one_add_X_pow]; exact IsUltrametricDist.norm_natCast_le_one K _) hz
+    · exact summable_seriesEval_of_norm_coeff_le_one (fun n => by
+        rw [show (1 : PowerSeries K) = PowerSeries.C (1 : K) from (map_one _).symm,
+          PowerSeries.coeff_C]; split <;> simp [zero_le_one]) hz
+  rw [← hlhs, hform, hrhs]
+
+omit [hp : Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] [CharZero K] in
+/-- The open unit ball `‖· − 1‖ < 1` is closed under finite products (ultrametric:
+`‖xy − 1‖ ≤ max(‖x − 1‖·‖y‖, ‖y − 1‖) < 1`). -/
+private lemma norm_prod_sub_one_lt_one {ι : Type*} (s : Finset ι) (f : ι → K)
+    (hf : ∀ i ∈ s, ‖f i - 1‖ < 1) :
+    ‖(∏ i ∈ s, f i) - 1‖ < 1 := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert a t hat ih =>
+    rw [Finset.prod_insert hat]
+    have hfa : ‖f a - 1‖ < 1 := hf a (Finset.mem_insert_self a t)
+    have hrt : ‖(∏ i ∈ t, f i) - 1‖ < 1 := ih (fun i hi => hf i (Finset.mem_insert_of_mem hi))
+    have hfanorm : ‖f a‖ ≤ 1 := by
+      calc ‖f a‖ = ‖(f a - 1) + 1‖ := by rw [sub_add_cancel]
+        _ ≤ max ‖f a - 1‖ ‖(1 : K)‖ := IsUltrametricDist.norm_add_le_max _ _
+        _ ≤ 1 := by rw [norm_one]; exact max_le hfa.le le_rfl
+    rw [show f a * (∏ i ∈ t, f i) - 1 = f a * ((∏ i ∈ t, f i) - 1) + (f a - 1) from by ring]
+    exact lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt
+      (by rw [norm_mul]; exact lt_of_le_of_lt (mul_le_of_le_one_left (norm_nonneg _) hfanorm) hrt)
+        hfa)
+
+omit [CharZero K] in
+/-- **Step 6** (the `padicLog`-of-product helper): for a finite family with all
+`‖f i − 1‖ < 1`, `padicLog p (∏_{i∈s} f i) = ∑_{i∈s} padicLog p (f i)`
+(induction via `padicLog_mul_of_norm_lt_one`; the unit ball is closed under products). -/
+private lemma padicLog_prod_of_norm_lt_one {ι : Type*} (s : Finset ι) (f : ι → K)
+    (hf : ∀ i ∈ s, ‖f i - 1‖ < 1) :
+    padicLog p (∏ i ∈ s, f i) = ∑ i ∈ s, padicLog p (f i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert a t hat ih =>
+    rw [Finset.prod_insert hat, Finset.sum_insert hat,
+      MeasureR.padicLog_mul_of_norm_lt_one (p := p) (hf a (Finset.mem_insert_self a t))
+        (norm_prod_sub_one_lt_one K t f (fun i hi => hf i (Finset.mem_insert_of_mem hi))),
+      ih (fun i hi => hf i (Finset.mem_insert_of_mem hi))]
+
+omit [CharZero K] in
+/-- `seriesEval (uA K a − 1) z = seriesEval (uA K a) z − 1` for `‖z‖ < 1` (the `−1` is the
+constant series `C 1`, evaluating to `1`). -/
+private lemma seriesEval_uA_sub_one {a : ℕ} (ha : ¬ (p : ℕ) ∣ a)
+    {z : K} (hz : ‖z‖ < 1) :
+    seriesEval (uA K a - 1) z = seriesEval (uA K a) z - 1 := by
+  have h1 : Summable fun n : ℕ => PowerSeries.coeff n (1 : PowerSeries K) * z ^ n :=
+    summable_seriesEval_of_norm_coeff_le_one (fun n => by
+      rw [PowerSeries.coeff_one]; split <;> simp [zero_le_one]) hz
+  rw [seriesEval_sub (summable_seriesEval_of_norm_coeff_le_one (norm_coeff_uA_le_one (p := p) K ha)
+    hz) h1, seriesEval_one]
+
+/-- `seriesEval (uA K a) z` for `‖z‖ < 1` lands in the open unit ball: its distance to `1`
+is `‖seriesEval (uA K a − 1) z‖ ≤ ‖z‖ < 1`. -/
+private lemma norm_seriesEval_uA_sub_one_lt {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 : a ≠ 0)
+    {z : K} (hz : ‖z‖ < 1) : ‖seriesEval (uA K a) z - 1‖ < 1 := by
+  rw [← seriesEval_uA_sub_one (p := p) K ha hz]
+  exact lt_of_le_of_lt (norm_seriesEval_le K (by
+    rw [map_sub, constantCoeff_uA K ha0, map_one, sub_self])
+    (norm_coeff_uA_sub_one_le_one (p := p) K ha ha0) hz.le) hz
+
+/-- **Step 3** (per-point evaluation): for `i : Fin p`, writing `z_i = ξ^i − 1`,
+`seriesEval (F̃_a) z_i = −extLog(a) − padicLog p (seriesEval (uA K a) z_i)`
+(the `(a−1)·log(1+T)` term evaluates to `(a−1)·padicLog(ξ^i) = 0` since `(ξ^i)^p = 1`). -/
+private lemma seriesEval_FtildeA_at_root {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 : a ≠ 0)
+    {ξ : K} (hξ : IsPrimitiveRoot ξ p) (i : Fin p) :
+    seriesEval (FtildeA p K a) (ξ ^ (i : ℕ) - 1)
+      = -(extLog p ((a : K))) - padicLog p (seriesEval (uA K a) (ξ ^ (i : ℕ) - 1)) := by
+  set z := ξ ^ (i : ℕ) - 1 with hzdef
+  -- `‖z‖ < 1` and `1 + z = ξ^i`
+  have hzlt : ‖z‖ < 1 := by
+    rcases Nat.eq_zero_or_pos (i : ℕ) with hi0 | hipos
+    · rw [hzdef, hi0, pow_zero, sub_self, norm_zero]; exact one_pos
+    · have hcop : (i : ℕ).Coprime p :=
+        Nat.coprime_comm.mp (hp.out.coprime_iff_not_dvd.mpr fun hdvd =>
+          absurd (Nat.le_of_dvd hipos hdvd) (by omega : ¬ p ≤ (i : ℕ)))
+      exact (by rw [pow_one] at *; exact hξ.pow_of_coprime (i : ℕ) hcop :
+        IsPrimitiveRoot (ξ ^ (i : ℕ)) (p ^ 1)).norm_sub_one_lt (p := p) le_rfl
+  have h1z : (1 : K) + z = ξ ^ (i : ℕ) := by rw [hzdef]; ring
+  -- the three summability facts at `z`
+  have hsC : Summable fun n : ℕ =>
+      PowerSeries.coeff n (PowerSeries.C (-(extLog p ((a : K))))) * z ^ n :=
+    summable_of_ne_finset_zero (s := {0}) fun m hm => by
+      rw [PowerSeries.coeff_C, if_neg (by simpa using hm), zero_mul]
+  have hsubst : Summable fun n : ℕ =>
+      PowerSeries.coeff n ((formalLog K).subst (uA K a - 1)) * z ^ n :=
+    summable_seriesEval_of_norm_coeff_le_linear (C := 1) (fun n => by
+      rw [one_mul]; exact norm_coeff_subst_formalLog_le (p := p) K ha ha0 n) hzlt
+  have hsLog : Summable fun n : ℕ =>
+      PowerSeries.coeff n ((a - 1 : ℕ) • formalLog (K := K)) * z ^ n := by
+    have hcongr : (fun n : ℕ => PowerSeries.coeff n ((a - 1 : ℕ) • formalLog (K := K)) * z ^ n)
+        = fun n : ℕ => ((a - 1 : ℕ) : K) * (PowerSeries.coeff n (formalLog K) * z ^ n) := by
+      funext n
+      rw [nsmul_eq_C_natCast_mul, PowerSeries.coeff_C_mul]; ring
+    rw [hcongr]
+    exact (summable_seriesEval_of_norm_coeff_le_linear (C := 1) (fun n => by
+      rw [one_mul]; exact norm_coeff_formalLog_le (p := p) (K := K) n) hzlt).mul_left _
+  have hsCsub : Summable fun n : ℕ =>
+      PowerSeries.coeff n (PowerSeries.C (-(extLog p ((a : K)))) - (formalLog K).subst (uA K a - 1))
+        * z ^ n :=
+    (hsC.sub hsubst).congr fun n => by rw [map_sub, sub_mul]
+  -- evaluate `F̃_a = C(−extLog a) − (formalLog).subst(uA−1) + (a−1)•formalLog`
+  rw [FtildeA, seriesEval_add hsCsub hsLog, seriesEval_sub hsC hsubst, seriesEval_C]
+  -- the subst term: bridge value `= padicLog (1 + seriesEval (uA−1) z) = padicLog (uA z)`
+  have hbridge : seriesEval ((formalLog K).subst (uA K a - 1)) z
+      = padicLog p (seriesEval (uA K a) z) := by
+    rw [seriesEval_subst_formalLog (p := p) K (by
+        rw [map_sub, constantCoeff_uA K ha0, map_one, sub_self])
+      (norm_coeff_uA_sub_one_le_one (p := p) K ha ha0) hzlt,
+      seriesEval_uA_sub_one (p := p) K ha hzlt, add_sub_cancel]
+  -- the `(a−1)•formalLog` term: `((a−1):K)·padicLog(ξ^i) = 0`
+  have hformalLog : seriesEval (formalLog K) z = padicLog p (ξ ^ (i : ℕ)) := by
+    have hznorm : ‖ξ ^ (i : ℕ) - 1‖ < 1 := by rw [← hzdef]; exact hzlt
+    rw [show z = ξ ^ (i : ℕ) - 1 from hzdef,
+      MeasureR.seriesEval_formalLog (p := p) hznorm]
+  have hLogzero : padicLog p (ξ ^ (i : ℕ)) = 0 := by
+    rw [← MeasureR.extLog_eq_padicLog_of_norm_lt_one (p := p) (by rw [← hzdef]; exact hzlt),
+      extLog_eq_zero_of_pow_eq_one p hp.out.pos (by rw [← pow_mul, mul_comm, pow_mul,
+        hξ.pow_eq_one, one_pow])]
+  have hLogterm : seriesEval ((a - 1 : ℕ) • formalLog (K := K)) z = 0 := by
+    rw [nsmul_eq_C_natCast_mul, seriesEval_C_mul, hformalLog, hLogzero, mul_zero]
+  rw [hbridge, hLogterm, add_zero]
+
+omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- **Step 5 reindex** (`{ξ^{a·i}} = μ_p \ {1}`): for `p ∤ a` the multiplier `i ↦ a·i mod p`
+permutes `univ.erase 0`, so `Π_{i≠0}(ξ^{a·i} − 1) = Π_{i≠0}(ξ^i − 1)`
+(`Finset.prod_nbij'` through `ZMod p`; `a⁻¹ mod p` is the inverse). -/
+private lemma prod_erase_pow_twist {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {ξ : K}
+    (hξ : IsPrimitiveRoot ξ p) :
+    ∏ i ∈ Finset.univ.erase (0 : Fin p), (ξ ^ (a * (i : ℕ)) - 1)
+      = ∏ i ∈ Finset.univ.erase (0 : Fin p), (ξ ^ (i : ℕ) - 1) := by
+  haveI : NeZero p := ⟨hp.out.ne_zero⟩
+  haveI : Fact (Nat.Prime p) := hp
+  have haz : (a : ZMod p) ≠ 0 := fun h => ha ((ZMod.natCast_eq_zero_iff a p).mp h)
+  -- the order of `ξ` is `p`
+  have hord : orderOf ξ = p := hξ.eq_orderOf ▸ rfl
+  -- `(i : Fin p) = 0 ↔ (i : ZMod p) = 0` (both encode `i % p = 0` for `i < p`)
+  have hcastFin : ∀ i : Fin p, ((i : ℕ) : ZMod p) = 0 ↔ i = 0 := fun i => by
+    rw [ZMod.natCast_eq_zero_iff, Nat.dvd_iff_mod_eq_zero, Nat.mod_eq_of_lt i.2,
+      ← Fin.val_eq_zero_iff]
+  have hval0 : ∀ x : ZMod p, (⟨x.val, ZMod.val_lt x⟩ : Fin p) = 0 ↔ x = 0 := fun x => by
+    rw [Fin.ext_iff, Fin.val_zero, ZMod.val_eq_zero]
+  refine Finset.prod_nbij' (fun i => ⟨((a : ZMod p) * ((i : ℕ) : ZMod p)).val, ZMod.val_lt _⟩)
+    (fun j => ⟨((a : ZMod p)⁻¹ * ((j : ℕ) : ZMod p)).val, ZMod.val_lt _⟩) ?_ ?_ ?_ ?_ ?_
+  · -- forward maps `erase 0 → erase 0`
+    intro i hi
+    rw [Finset.mem_erase] at hi ⊢
+    refine ⟨fun h => hi.1 ((hcastFin i).mp ?_), Finset.mem_univ _⟩
+    rcases mul_eq_zero.mp ((hval0 _).mp h) with h0 | h0
+    · exact absurd h0 haz
+    · exact h0
+  · -- inverse maps `erase 0 → erase 0`
+    intro j hj
+    rw [Finset.mem_erase] at hj ⊢
+    refine ⟨fun h => hj.1 ((hcastFin j).mp ?_), Finset.mem_univ _⟩
+    rcases mul_eq_zero.mp ((hval0 _).mp h) with h0 | h0
+    · exact absurd (inv_eq_zero.mp h0) haz
+    · exact h0
+  · -- left inverse
+    intro i _
+    apply Fin.ext
+    simp only [ZMod.natCast_val, ZMod.cast_id]
+    rw [← mul_assoc, inv_mul_cancel₀ haz, one_mul, ZMod.val_cast_of_lt i.2]
+  · -- right inverse
+    intro j _
+    apply Fin.ext
+    simp only [ZMod.natCast_val, ZMod.cast_id]
+    rw [← mul_assoc, mul_inv_cancel₀ haz, one_mul, ZMod.val_cast_of_lt j.2]
+  · -- the summand matches: `ξ^{a·i} = ξ^{(a·i mod p)}`
+    intro i _
+    have hexp : ((a : ZMod p) * ((i : ℕ) : ZMod p)).val = (a * (i : ℕ)) % p := by
+      rw [← Nat.cast_mul, ZMod.val_natCast]
+    have hfo : IsOfFinOrder ξ := isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp.out.pos, hξ.pow_eq_one⟩
+    have hmod : a * (i : ℕ) ≡ ((a : ZMod p) * ((i : ℕ) : ZMod p)).val [MOD orderOf ξ] := by
+      rw [hord, hexp]; exact (Nat.mod_modEq _ _).symm
+    exact congrArg (· - 1) (hfo.pow_eq_pow_iff_modEq.mpr hmod)
+
+omit [CompleteSpace K] [CharZero K] in
+/-- **Step 7 (Fermat bound)**: for `p ∤ a`, `‖(a:K)^{p−1} − 1‖ ≤ p⁻¹`
+(`a^{p−1} ≡ 1 mod p` over `ℤ`, so `a^{p−1} − 1 = p·m` in `K` with `‖m‖ ≤ 1`). -/
+private lemma norm_natCast_pow_sub_one_le {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) :
+    ‖((a : K)) ^ (p - 1) - 1‖ ≤ (p : ℝ)⁻¹ := by
+  haveI : Fact (Nat.Prime p) := hp
+  have haz : (a : ZMod p) ≠ 0 := fun h => ha ((ZMod.natCast_eq_zero_iff a p).mp h)
+  -- Fermat over `ℤ`: `p ∣ a^{p−1} − 1`
+  have hdvd : (p : ℤ) ∣ (a : ℤ) ^ (p - 1) - 1 := by
+    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    rw [ZMod.pow_card_sub_one_eq_one haz, sub_self]
+  obtain ⟨m, hm⟩ := hdvd
+  -- transport to `K`: `a^{p−1} − 1 = p·m`
+  have hK : ((a : K)) ^ (p - 1) - 1 = (p : K) * ((m : ℤ) : K) := by
+    have := congrArg (fun z : ℤ => (z : K)) hm
+    push_cast at this
+    linear_combination this
+  rw [hK, norm_mul, norm_natCast_p p]
+  calc (p : ℝ)⁻¹ * ‖((m : ℤ) : K)‖ ≤ (p : ℝ)⁻¹ * 1 :=
+        mul_le_mul_of_nonneg_left (IsUltrametricDist.norm_intCast_le_one K m) (by positivity)
+    _ = (p : ℝ)⁻¹ := mul_one _
+
+omit [CompleteSpace K] [CharZero K] in
+/-- **Step 7 (membership)**: for `p` odd and `p ∤ a`, `(a:K)^{p−1}` lies in the exponential
+ball (`‖·‖^{p−1} ≤ (p⁻¹)^{p−1} ≤ (p⁻¹)^2 < p⁻¹` using `p − 1 ≥ 2`). -/
+private lemma inExpBall_natCast_pow_sub_one (hp2 : p ≠ 2) {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) :
+    InExpBall p (((a : K)) ^ (p - 1) - 1) := by
+  have hp3 : 3 ≤ p := by
+    have h2 := hp.out.two_le
+    rcases hp.out.eq_two_or_odd with he | ho
+    · exact absurd he hp2
+    · omega
+  have hppos : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hnb := norm_natCast_pow_sub_one_le (p := p) K ha
+  have hnn : (0 : ℝ) ≤ ‖((a : K)) ^ (p - 1) - 1‖ := norm_nonneg _
+  rw [InExpBall]
+  calc ‖((a : K)) ^ (p - 1) - 1‖ ^ (p - 1)
+      ≤ ((p : ℝ)⁻¹) ^ (p - 1) := pow_le_pow_left₀ hnn hnb _
+    _ ≤ ((p : ℝ)⁻¹) ^ 2 := pow_le_pow_of_le_one (by positivity)
+        (by rw [inv_le_one_iff₀]; right; exact_mod_cast hp.out.one_le) (by omega)
+    _ < (p : ℝ)⁻¹ := by
+        rw [pow_two]
+        refine (mul_lt_iff_lt_one_left (by positivity)).mpr ?_
+        rw [inv_lt_one_iff₀]; right; exact_mod_cast by omega
+
 /-- R7.6b (RJW Lemma 7.5's trace, TeX 2330–2349): the evaluated `μ_p`-sum
 collapses — `Σ_{i<p} F̃_a(ξ^i − 1) = −log_p(a)` (the `{ξ^a} = μ_p`
 reindex for `p ∤ a` and `Π_ξ(Xξ−1) = X^p−1`). -/
 theorem sum_seriesEval_FtildeA (hp2 : p ≠ 2) {a : ℕ} (ha : ¬ (p : ℕ) ∣ a)
     (ha0 : a ≠ 0) {ξ : K} (hξ : IsPrimitiveRoot ξ p) :
     ∑ i : Fin p, seriesEval (FtildeA p K a) (ξ ^ (i : ℕ) - 1)
-      = -(extLog p ((a : K))) := by sorry
+      = -(extLog p ((a : K))) := by
+  classical
+  haveI : NeZero p := ⟨hp.out.ne_zero⟩
+  set u : Fin p → K := fun i => seriesEval (uA K a) (ξ ^ (i : ℕ) - 1) with hudef
+  have haK : (a : K) ≠ 0 := Nat.cast_ne_zero.mpr ha0
+  -- `‖ξ^i − 1‖ < 1` for all `i`
+  have hzlt : ∀ i : Fin p, ‖ξ ^ (i : ℕ) - 1‖ < 1 := by
+    intro i
+    rcases Nat.eq_zero_or_pos (i : ℕ) with hi0 | hipos
+    · rw [hi0, pow_zero, sub_self, norm_zero]; exact one_pos
+    · have hcop : (i : ℕ).Coprime p :=
+        Nat.coprime_comm.mp (hp.out.coprime_iff_not_dvd.mpr fun hdvd =>
+          absurd (Nat.le_of_dvd hipos hdvd) (by omega : ¬ p ≤ (i : ℕ)))
+      exact (by rw [pow_one] at *; exact hξ.pow_of_coprime (i : ℕ) hcop :
+        IsPrimitiveRoot (ξ ^ (i : ℕ)) (p ^ 1)).norm_sub_one_lt (p := p) le_rfl
+  -- Step 3 per-point, summed
+  rw [show (∑ i : Fin p, seriesEval (FtildeA p K a) (ξ ^ (i : ℕ) - 1))
+      = ∑ i : Fin p, (-(extLog p ((a : K))) - padicLog p (u i)) from
+    Finset.sum_congr rfl fun i _ => seriesEval_FtildeA_at_root (p := p) K ha ha0 hξ i,
+    Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin]
+  -- the `i = 0` log term vanishes (`u 0 = 1`)
+  have hu0 : u (0 : Fin p) = 1 := by
+    rw [hudef]; simp only
+    rw [Fin.val_zero, pow_zero, sub_self, seriesEval_zero_arg, constantCoeff_uA K ha0]
+  have hsumlog : (∑ i : Fin p, padicLog p (u i))
+      = ∑ i ∈ Finset.univ.erase (0 : Fin p), padicLog p (u i) := by
+    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ (0 : Fin p)), hu0, padicLog_one, add_zero]
+  -- `‖u i − 1‖ < 1` on the erase
+  have hunorm : ∀ i ∈ Finset.univ.erase (0 : Fin p), ‖u i - 1‖ < 1 := fun i _ =>
+    norm_seriesEval_uA_sub_one_lt (p := p) K ha ha0 (hzlt i)
+  -- Step 5 product collapse: `Π_{i≠0} u i = ((a:K)^{p−1})⁻¹`
+  have hzne : ∀ i ∈ Finset.univ.erase (0 : Fin p), ξ ^ (i : ℕ) - 1 ≠ 0 := by
+    intro i hi
+    rw [Finset.mem_erase] at hi
+    have hipos : 0 < (i : ℕ) := Nat.pos_of_ne_zero (fun h => hi.1 (Fin.ext (by simpa using h)))
+    exact sub_ne_zero.mpr (hξ.pow_ne_one_of_pos_of_lt hipos.ne' i.2)
+  have hProdZne : (∏ i ∈ Finset.univ.erase (0 : Fin p), (ξ ^ (i : ℕ) - 1)) ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr hzne
+  -- card of the erase is `p − 1`
+  have hcard : (Finset.univ.erase (0 : Fin p)).card = p - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin]
+  have hProdU : (∏ i ∈ Finset.univ.erase (0 : Fin p), u i) = ((a : K) ^ (p - 1))⁻¹ := by
+    -- `Π_{i≠0} ((a:K)·z_i·u_i) = Π_{i≠0}(ξ^{a·i}−1) = Π_{i≠0}(ξ^i−1) = Π_{i≠0} z_i`
+    have hStep2 : ∀ i ∈ Finset.univ.erase (0 : Fin p),
+        (a : K) * (ξ ^ (i : ℕ) - 1) * u i = ξ ^ (a * (i : ℕ)) - 1 := by
+      intro i _
+      rw [hudef]; simp only
+      rw [natCast_mul_seriesEval_uA (p := p) K ha ha0 (hzlt i),
+        show (1 : K) + (ξ ^ (i : ℕ) - 1) = ξ ^ (i : ℕ) from by ring, ← pow_mul, Nat.mul_comm]
+    have hLHS : (∏ i ∈ Finset.univ.erase (0 : Fin p),
+          ((a : K) * (ξ ^ (i : ℕ) - 1) * u i))
+        = (a : K) ^ (p - 1) * (∏ i ∈ Finset.univ.erase (0 : Fin p), (ξ ^ (i : ℕ) - 1))
+          * (∏ i ∈ Finset.univ.erase (0 : Fin p), u i) := by
+      rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib, Finset.prod_const, hcard]
+    have hRHS : (∏ i ∈ Finset.univ.erase (0 : Fin p), ((a : K) * (ξ ^ (i : ℕ) - 1) * u i))
+        = ∏ i ∈ Finset.univ.erase (0 : Fin p), (ξ ^ (i : ℕ) - 1) := by
+      rw [Finset.prod_congr rfl hStep2, prod_erase_pow_twist (p := p) K ha hξ]
+    rw [hLHS] at hRHS
+    -- cancel `Π z_i` and solve for `Π u_i`
+    have hkey : (a : K) ^ (p - 1) * (∏ i ∈ Finset.univ.erase (0 : Fin p), u i) = 1 := by
+      refine mul_right_cancel₀ hProdZne ?_
+      rw [one_mul]
+      linear_combination hRHS
+    have hpowne : ((a : K)) ^ (p - 1) ≠ 0 := pow_ne_zero _ haK
+    field_simp
+    linear_combination hkey
+  -- Step 6 + 7: `Σ_{i≠0} padicLog(u i) = padicLog(Π u_i) = −padicLog((a:K)^{p−1})`
+  rw [hsumlog, ← padicLog_prod_of_norm_lt_one (p := p) K _ u hunorm, hProdU]
+  -- `padicLog((a:K)^{p−1}) = ((p−1:ℕ):K)·extLog(a)` (witness)
+  have hp3 : 3 ≤ p := by
+    have h2 := hp.out.two_le
+    rcases hp.out.eq_two_or_odd with he | ho
+    · exact absurd he hp2
+    · omega
+  have hpm1 : ((p - 1 : ℕ) : ℚ_[p]) ≠ 0 := by
+    rw [Nat.cast_ne_zero]; omega
+  have hWitness : extLog p ((a : K))
+      = ((p - 1 : ℕ) : ℚ_[p])⁻¹ • padicLog p (((a : K)) ^ (p - 1)) :=
+    extLog_eq_of_witness p (by omega) (by rw [zpow_zero, one_mul]) (by
+      have := inExpBall_natCast_pow_sub_one (p := p) K hp2 ha; exact this)
+  have hpm1K : ((p - 1 : ℕ) : K) ≠ 0 := by rw [Nat.cast_ne_zero]; omega
+  have hLogPow : padicLog p (((a : K)) ^ (p - 1)) = ((p - 1 : ℕ) : K) * extLog p ((a : K)) := by
+    conv_rhs => rw [hWitness, Algebra.smul_def, map_inv₀, map_natCast, ← mul_assoc,
+      mul_inv_cancel₀ hpm1K, one_mul]
+  -- log of the inverse: `padicLog((a^{p−1})⁻¹) = −padicLog(a^{p−1})`
+  have hInvLog : padicLog p (((a : K) ^ (p - 1))⁻¹) = -padicLog p (((a : K)) ^ (p - 1)) := by
+    have hpowne : ((a : K)) ^ (p - 1) ≠ 0 := pow_ne_zero _ haK
+    have hballnorm : ‖((a : K)) ^ (p - 1) - 1‖ < 1 :=
+      lt_of_le_of_lt (norm_natCast_pow_sub_one_le (p := p) K ha)
+        (by rw [inv_lt_one_iff₀]; right; exact_mod_cast hp.out.one_lt)
+    have hinvnorm : ‖(((a : K)) ^ (p - 1))⁻¹ - 1‖ < 1 := by
+      have hnorm1 : ‖((a : K)) ^ (p - 1)‖ = 1 := by
+        rw [norm_pow, norm_natCast_eq_one_of_not_dvd (p := p) K ha, one_pow]
+      rw [show (((a : K)) ^ (p - 1))⁻¹ - 1 = (((a : K)) ^ (p - 1))⁻¹ * (1 - ((a : K)) ^ (p - 1))
+          from by field_simp, norm_mul, norm_inv, hnorm1, inv_one, one_mul,
+        show (1 : K) - ((a : K)) ^ (p - 1) = -(((a : K)) ^ (p - 1) - 1) from by ring, norm_neg]
+      exact hballnorm
+    have hmul := MeasureR.padicLog_mul_of_norm_lt_one (p := p) hballnorm hinvnorm
+    rw [mul_inv_cancel₀ hpowne, padicLog_one] at hmul
+    linear_combination -hmul
+  rw [hInvLog, hLogPow]
+  -- final bookkeeping: `p•(−extLog a) − (−((p−1:ℕ):K)·extLog a) = −extLog a`
+  have hpcast : ((p - 1 : ℕ) : K) = (p : K) - 1 := by
+    rw [Nat.cast_sub (by omega), Nat.cast_one]
+  rw [hpcast, nsmul_eq_mul]
+  ring
 
 /-- R7.6c (RJW Lemma 7.5, TeX 2320): the mass of `x⁻¹·Res(μ_a)` —
 `((1−φψ)F̃_a)(0) = −(1−p⁻¹)·log_p(a)`, in the c₀-design form. -/
@@ -1053,7 +1603,14 @@ theorem constantCoeff_mahlerK_rhoA (hp2 : p ≠ 2) {a : ℕ}
     (ha : ¬ (p : ℕ) ∣ a) (ha0 : a ≠ 0) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p) :
     PowerSeries.constantCoeff (mahlerK p K (rhoA p K a))
-      = -(1 - (p : K)⁻¹) * extLog p ((a : K)) := by sorry
+      = -(1 - (p : K)⁻¹) * extLog p ((a : K)) := by
+  have hpne : (p : K) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
+  -- `p·cc(𝓐ρ) = p·cc(F̃_a) − Σ_i F̃_a(z_i) = p·(−extLog a) − (−extLog a)`
+  have hp_mul := p_mul_constantCoeff_mahlerK_rhoA (p := p) K ha ha0 hξ
+  rw [constantCoeff_FtildeA p K ha0, sum_seriesEval_FtildeA (p := p) K hp2 ha ha0 hξ] at hp_mul
+  -- divide by `p` (nonzero)
+  field_simp
+  linear_combination hp_mul
 
 end mass
 

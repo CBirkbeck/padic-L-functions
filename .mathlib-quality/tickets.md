@@ -3622,7 +3622,7 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~110 LOC.
 
 ### [T706] The mass identity (c₀-pin + trace)
-- **Status**: in_progress (2026-06-12) | **File**: ResidueZeta.lean
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean
 - **Depends on**: T704, T705 | **Type**: theorems
 - **Orchestrator replan (route refinement for R7.6b)**: the trace avoids
   ExtLogDomain(ξ^i−1) and the i↦ai reindex: per-point
@@ -3638,6 +3638,21 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
   padicLog(1 + seriesEval G z) — Fubini swap, master_bridge's pattern
   (PadicExp.lean:690) at K-level. Split into two dispatches (A: c₀-pin;
   B: bridge + trace + combination).
+- **Progress**:
+  - 2026-06-12 (dispatch A): `p_mul_constantCoeff_mahlerK_rhoA` proven —
+    T615-template minus G-clearing; M-bridge `mahlerK_baseChange_muA`
+    (mahlerK∘baseChange = map M ∘ mahlerTransform, rfl at the codRestrict);
+    new FtildeA coefficient/summability stack (11 private helpers);
+    de-privated `MeasureR.exists_antideriv_bounded` (authorized).
+  - 2026-06-12 (dispatch B): `sum_seriesEval_FtildeA` +
+    `constantCoeff_mahlerK_rhoA` proven. The subst-eval bridge
+    `seriesEval_subst_formalLog` landed (Summable.tsum_comm Fubini, K-level
+    master_bridge); product collapse via Finset.prod_nbij' through ZMod p
+    (mul-by-a bijection) — NOT nthRootsFinset; Σ log u_i =
+    log Π u_i = −log a^{p−1} (Fermat `ZMod.pow_card_sub_one_eq_one`) and
+    `extLog_eq_of_witness` (m = p−1, k = 0) finishes. 18 more private
+    helpers. All three decls: build green, axioms standard 3. Cleanup:
+    degraded mode (no MCP), defer to CLEANUP-ALL-7.
 - **Statement**: skeleton `p_mul_constantCoeff_mahlerK_rhoA`,
   `sum_seriesEval_FtildeA`, `constantCoeff_mahlerK_rhoA` (R7.6a/b/c).
 - **Proof sketch**: pin: T615's proof VERBATIM minus the G-clearing
