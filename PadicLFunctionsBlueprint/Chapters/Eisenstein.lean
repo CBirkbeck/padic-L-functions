@@ -27,7 +27,7 @@ is the upper half-plane and $`q = e^{2\pi i z}`.
 
 # Eisenstein series and their q-expansions
 
-:::definition "eis-series"
+:::definition "eis-series" (lean := "ModularForm.E, EisensteinSeries.q_expansion_bernoulli, PadicLFunctions.rjwEisenstein")
 For an even integer $`k \geq 4`, the *Eisenstein series of weight $`k`* is the
 holomorphic function on $`\uhp` given by
 $$`G_k(z) := \sum_{\substack{c,d \in \Z \\ (c,d) \neq (0,0)}} \frac{1}{(cz+d)^k}.`
@@ -39,6 +39,13 @@ $$`E_k(z) = \frac{\zeta(1-k)}{2} + \sum_{n \geq 1} \sigma_{k-1}(n)\, q^n,
 \qquad \sigma_{k-1}(n) = \sum_{0 < d \mid n} d^{k-1}.`
 The constant term is the special value {uses "special-values-zeta"}[]
 $`\zeta(1-k) = -B_k/k`.
+
+Mathlib already provides the level-1 Eisenstein series and its q-expansion
+(`ModularForm.E`, normalised with constant term $`1`, and
+`EisensteinSeries.q_expansion_bernoulli` giving
+$`E = 1 - (2k/B_k)\sum \sigma_{k-1}(n)q^n`); the notes' normalisation is the
+rescale `rjwEisenstein` $`= (\zeta(1-k)/2)\cdot E`, under which the
+$`n`-th coefficient becomes exactly $`\sigma_{k-1}(n)`.
 :::
 
 The constant term $`\zeta(1-k)/2` is precisely the special value interpolated by
@@ -46,12 +53,18 @@ $`\zeta_p`. The shape of the $`q`-expansion already tells us what is left to do:
 interpolate the divisor sums $`\sigma_{k-1}(n)`, which only requires interpolating
 the power maps $`k \mapsto d^{k}`.
 
-:::proposition "eis-dirac-interpolation"
+:::proposition "eis-dirac-interpolation" (lean := "PadicLFunctions.unitOfNat_coe, PadicLFunctions.divisorMeasure_moment")
 Let $`d` be an integer coprime to $`p`. Then the Dirac measure
 $`\delta_d \in \Lam(\Zpx)` at $`d`, i.e.\ evaluation at $`d`, interpolates the
 power map: for every $`k \in \Z`,
 $$`\int_{\Zpx} x^{k} \cdot \delta_d = d^{k}.`
 This rests on {uses "iwasawa-algebra"}[].
+
+Formalised at natural exponents and directly in the summed form the family
+needs: `divisorMeasure_moment` evaluates the divisor-sum measure
+$`A_n = \sum_{p\nmid d\mid n}\delta_d` against $`x^k` to
+$`\sigma^p_k(n)`; the single-Dirac case is its $`n`-prime instance, with
+`unitOfNat_coe` realising "viewing $`d` as an element of $`\Zpx`".
 :::
 
 :::proof "eis-dirac-interpolation"
@@ -65,10 +78,15 @@ function on $`\Zpx` for all integer exponents, including negative ones — exact
 the contrast with $`k \mapsto p^k`, where no such point exists.
 :::
 
-:::proposition "eis-no-measure-at-p"
+:::proposition "eis-no-measure-at-p" (lean := "PadicLFunctions.noMeasure_interpolates_pPow")
 The power map $`k \mapsto p^{k}` *cannot* be $`p`-adically interpolated by a measure
 on $`\Zpx`: there is no $`p`-adic measure {uses "p-adic-measure"}[] $`\theta_p` on
 $`\Zpx` with $`\int_{\Zpx} x^{k} \cdot \theta_p = p^{k}` for all $`k`.
+
+The Lean proof replaces the notes' sequential-limit gloss with a single
+finitary congruence level: with $`K = 1 + \varphi(p^2)`, the uniform Euler
+congruence $`x^K \equiv x \bmod p^2` on $`\Zpx` forces
+$`|p^K - p| \le p^{-2}`, which is absurd. Notably $`p = 2` is allowed.
 :::
 
 :::proof "eis-no-measure-at-p"
@@ -88,7 +106,7 @@ The way around the obstruction is classical: pass to the *$`p`-stabilisation*,
 which removes the divisors of $`n` that are divisible by $`p` and lowers the level
 to $`\Gamma_0(p)`.
 
-:::definition "eis-p-stabilisation"
+:::definition "eis-p-stabilisation" (lean := "PadicLFunctions.sigmaP, PadicLFunctions.stabilisedCoeff, PadicLFunctions.hasSum_stabilisedEisenstein, PadicLFunctions.stabilisedEisenstein, PadicLFunctions.stabilisedEisenstein_apply")
 The *$`p`-stabilisation* of $`E_k` is
 $$`E_k^{(p)}(z) := E_k(z) - p^{k-1} E_k(pz).`
 Its $`q`-expansion is
@@ -98,6 +116,14 @@ $$`E_k^{(p)}(z) = \frac{(1 - p^{k-1})\,\zeta(1-k)}{2} + \sum_{n \geq 1}
 It is a modular form of weight $`k` and level
 $`\Gamma_0(p) = \set{\left(\begin{smallmatrix} a & b \\ c & d \end{smallmatrix}\right)
 \in \mathrm{SL}_2(\Z) : p \mid c}`. This depends on {uses "eis-series"}[].
+
+Fully formalised: the rational coefficient sequence is `stabilisedCoeff`,
+the q-expansion is the convergence statement `hasSum_stabilisedEisenstein`,
+and the $`\Gamma_0(p)`-modularity — the "Note" of the source, given there
+without proof — is the genuine `ModularForm ((Gamma0 p).map (mapGL ℝ)) k`
+`stabilisedEisenstein`, built on the level-raising operator
+$`\iota_p f = f(p\,\cdot)` of the LeanModularForms strong-multiplicity-one
+project (Miyake §4.6, Lemma 4.6.1).
 :::
 
 :::proof "eis-p-stabilisation"
@@ -122,7 +148,7 @@ We can now assemble the family. The constant term is interpolated by $`\zeta_p`
 (after a shift in the variable), and each non-constant coefficient by a finite sum
 of Dirac measures.
 
-:::theorem "p-adic-eisenstein-family"
+:::theorem "p-adic-eisenstein-family" (lean := "PadicLFunctions.eisensteinFamily, PadicLFunctions.eisensteinFamily_interpolation, PadicLFunctions.unitsTwist, PadicLFunctions.twistedZetaHalf, PadicLFunctions.twistedZetaHalf_isTwistedPseudoMeasure, PadicLFunctions.twistedZetaHalf_moments")
 There exists a power series
 $$`\mathbf{E}(z) = \sum_{n \geq 0} A_n\, q^n \in Q(\Zpx)[\![q]\!]`
 with coefficients in the fraction ring $`Q(\Zpx)` of the Iwasawa algebra, such
@@ -138,6 +164,22 @@ $$`\int_{\Zpx} x^{k-1} \cdot \mathbf{E}(z) := \sum_{n \geq 0}
 This rests on {uses "eis-p-stabilisation"}[], {uses "eis-dirac-interpolation"}[],
 {uses "kubota-leopoldt"}[], {uses "interpolation-property"}[] and
 {uses "pseudo-measure"}[].
+
+**Erratum (errata.md #11).** As stated in the notes, "(a) $`A_0` is a
+pseudo-measure" fails for the notes' own Definition 3.34: the
+$`x`-twist moves the pole of $`\zeta_p` from the trivial character to the
+character $`x^{-1}`, so $`([g]-[1])\,x\zeta_p \notin \Lam` for $`g \neq 1`.
+The formalisation realises the $`x`-twist as a ring automorphism
+`unitsTwist` of $`\Lam(\Zpx)` (extended to $`Q(\Zpx)`), defines
+$`A_0 = x\zeta_p/2` as `twistedZetaHalf`, and proves the corrected claim
+$`(g[g]-[1])A_0 \in \Lam(\Zpx)` for all $`g`
+(`twistedZetaHalf_isTwistedPseudoMeasure`), together with the moment
+interpolation in the same witness encoding as $`\zeta_p`'s
+(`twistedZetaHalf_moments`). The full coefficientwise display is
+`eisensteinFamily_interpolation`, whose target coefficients tie to the
+complex $`E_k^{(p)}` through `stabilisedCoeff` and
+`hasSum_stabilisedEisenstein`; evenness of $`k` enters only on that complex
+side.
 :::
 
 :::proof "p-adic-eisenstein-family"

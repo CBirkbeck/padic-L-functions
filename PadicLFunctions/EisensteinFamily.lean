@@ -452,7 +452,23 @@ theorem eisensteinFamily_interpolation (hp2 : p ≠ 2) {k : ℕ} (hk : 4 ≤ k) 
           = algebraMap _ _ (divisorMeasure p n)
         ∧ ((divisorMeasure p n (PadicMeasure.unitsPowCM p (k - 1)) : ℤ_[p])
               : ℚ_[p])
-          = ((stabilisedCoeff p k n : ℚ) : ℚ_[p]) := by sorry
+          = ((stabilisedCoeff p k n : ℚ) : ℚ_[p]) := by
+  refine ⟨fun b ν hν => ?_, fun n hn => ⟨?_, ?_⟩⟩
+  · -- Clause 1: the constant coefficient is `twistedZetaHalf`; apply its moment formula.
+    rw [show PowerSeries.constantCoeff (eisensteinFamily p hp2) = twistedZetaHalf p hp2 from rfl]
+      at hν
+    have hmom := twistedZetaHalf_moments p hp2 b hk ν hν
+    rw [hmom, stabilisedCoeff, if_pos rfl]
+    push_cast
+    ring
+  · -- Clause 2a: the `n`-th coefficient (`n ≠ 0`) is the divisor measure, definitionally.
+    rw [show PowerSeries.coeff n (eisensteinFamily p hp2)
+        = algebraMap _ _ (divisorMeasure p n) from by
+      rw [eisensteinFamily, PowerSeries.coeff_mk, if_neg hn]]
+  · -- Clause 2b: the `(k−1)`-th moment of the divisor measure is `σ^p_{k−1}(n) = stabilisedCoeff`.
+    rw [divisorMeasure_moment, stabilisedCoeff, if_neg hn]
+    push_cast
+    rfl
 
 end family
 

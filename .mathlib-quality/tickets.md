@@ -4061,11 +4061,32 @@ to the twisted pseudo-measure form.
   bernoulli_ne_zero).
 
 ### [CLEANUP-ALL-8] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T801–T806 | **Type**: cleanup-all
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T801–T806 | **Type**: cleanup-all
+- **Progress**: 2026-06-12: degraded sweep (no lean-lsp MCP): project files
+  build green with zero non-sorry warnings (EisensteinFamily 459 /
+  EisensteinComplex 410 lines, all publics docstringed); the only warnings
+  are in the DEP checkout (2 benign change-does-nothing + 1 deprecation in
+  LeanModularForms — belongs to the upstream compat branch, noted in the
+  CLEANUP-82 patch task). Tooled golf deferred to CLEANUP-FINAL.
 
 ### [T807] **MILESTONE: RJW §8 Theorem** — the Λ-adic Eisenstein family
-- **Status**: open | **File**: EisensteinFamily.lean
+- **Status**: done (2026-06-12) | **File**: EisensteinFamily.lean
 - **Depends on**: T801, T803, T806, CLEANUP-ALL-8 | **Type**: theorem
+- **Progress**:
+  - 2026-06-12: `eisensteinFamily_interpolation` proven (subagent), statement
+    verbatim, pure assembly (constantCoeff/coeff-mk collapses +
+    twistedZetaHalf_moments + divisorMeasure_moment + cast bookkeeping).
+    PROJECT-WIDE ZERO SORRIES (orchestrator re-verified); axioms standard 3.
+  - 2026-06-12: blueprint Chapters/Eisenstein.lean wired: eis-series ↦
+    mathlib ModularForm.E + q_expansion_bernoulli + rjwEisenstein
+    (mathlib-link directive); eis-dirac-interpolation ↦ unitOfNat_coe +
+    divisorMeasure_moment; eis-no-measure-at-p ↦ noMeasure_interpolates_pPow
+    (finitary-route note); eis-p-stabilisation ↦ sigmaP/stabilisedCoeff/
+    hasSum_stabilisedEisenstein + stabilisedEisenstein(_apply) (Γ₀(p) note,
+    Miyake/LeanModularForms credit); p-adic-eisenstein-family ↦
+    eisensteinFamily(_interpolation) + unitsTwist/twistedZetaHalf decls with
+    the erratum-#11 note. Blueprint build green (4106 jobs); site
+    re-rendered, chapter page present with the wired names.
 - **Statement**: skeleton `eisensteinFamily_interpolation` (R8 L8.6,
   replan R8.4).
 - **Proof sketch**: constructor. Clause 1 (constant coefficient):
