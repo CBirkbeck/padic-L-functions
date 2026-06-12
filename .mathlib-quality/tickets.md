@@ -3444,7 +3444,17 @@ Decomposition: decomposition.md R7 (verbatim quotes + replans 1–4).
 Statements live in the skeleton; the §6 statement-fix protocol applies.
 
 ### [T701] Exponential tail and the character isometry
-- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean | **Depends on**: none
+- **Progress**:
+  - 2026-06-12: both decls proven (subagent, batched with T702). Tail bound came
+    out cleaner than sketched: per-term `(p−1)`-power comparison via
+    `norm_factorial_inv_smul_pow_le` + `p·(p·‖w‖^{p−1})^{n−2} ≤ p ≤ p^{p−1}`
+    (helper `norm_factorial_inv_smul_pow_le_quad`); tail by
+    `IsUltrametricDist.norm_tsum_le_of_forall_le` after peeling n∈{0,1} with
+    `Summable.tsum_eq_zero_add` ×2. Isometry exactly per sketch (T523 bridge +
+    `norm_padicExp_sub_one` + `norm_padicLog`). Verified: build green, axioms
+    standard 3. Cleanup: degraded mode (no lean-lsp MCP) — code reviewed, calc
+    structure clean; defer golf to CLEANUP-71.
 - **Parallel**: yes | **Type**: lemmas
 - **Statement**: skeleton `norm_padicExp_sub_one_sub_self_le`,
   `norm_onePAdicPow_sub_one` (R7.1a/b).
@@ -3463,7 +3473,19 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~90 LOC.
 
 ### [T702] The branch denominator: primitivity, nonvanishing, derivative
-- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: T701
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean | **Depends on**: T701
+- **Progress**:
+  - 2026-06-12: all three decls proven (subagent, batched with T701).
+    Primitivity via `orderOf_map_dvd` against `unitsToZModPow p 1` (level-1
+    reduction has order p−1 by hgen; `ker_toZModPow` + `teichmullerFun_sub_self_mem`
+    identify the reductions). Nonvanishing: helper
+    `norm_teichmuller_pow_sub_one_eq_one` (`norm_lt_one_iff_dvd` contrapositive)
+    + ultrametric isoceles `IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm`.
+    Derivative limit: NO case split on L = 0 needed — the squeeze
+    `‖f(s)+L‖ ≤ p·‖L‖²·‖s−1‖ → 0` (via T701a) covers it uniformly;
+    `squeeze_zero_norm'` + `linear_combination` for the pointwise identity.
+    Verified: build green, axioms standard 3. Cleanup: degraded mode, defer to
+    CLEANUP-71.
 - **Type**: lemmas
 - **Statement**: skeleton `teichmuller_isPrimitiveRoot`,
   `branch_denom_ne_zero`, `tendsto_branch_denom_div` (R7.2a/b/c).

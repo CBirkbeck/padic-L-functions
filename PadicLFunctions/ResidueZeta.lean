@@ -38,11 +38,57 @@ section expTail
 variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L]
   [IsUltrametricDist L] [CompleteSpace L]
 
+omit [IsUltrametricDist L] [CompleteSpace L] in
+/-- Per-term quadratic bound: for `n ≥ 2`, the `n`-th exponential term is
+`≤ p·‖w‖²` on the convergence ball (compared at the `(p−1)`-power level). -/
+private lemma norm_factorial_inv_smul_pow_le_quad {w : L} (hw : InExpBall p w)
+    {n : ℕ} (hn : 2 ≤ n) :
+    ‖(n.factorial : ℚ_[p])⁻¹ • w ^ n‖ ≤ (p : ℝ) * ‖w‖ ^ 2 := by
+  have hp1 : 0 < p - 1 := by have := hp.out.one_lt; omega
+  have hppos : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hT0 : 0 ≤ (p : ℝ) * ‖w‖ ^ (p - 1) := by positivity
+  have hT1 : (p : ℝ) * ‖w‖ ^ (p - 1) < 1 :=
+    calc (p : ℝ) * ‖w‖ ^ (p - 1) < (p : ℝ) * (p : ℝ)⁻¹ :=
+          mul_lt_mul_of_pos_left hw hppos
+      _ = 1 := mul_inv_cancel₀ hppos.ne'
+  -- power-level comparison `‖term‖^{p−1} ≤ (p·‖w‖²)^{p−1}`
+  have hpow : ‖(n.factorial : ℚ_[p])⁻¹ • w ^ n‖ ^ (p - 1)
+      ≤ ((p : ℝ) * ‖w‖ ^ 2) ^ (p - 1) := by
+    calc ‖(n.factorial : ℚ_[p])⁻¹ • w ^ n‖ ^ (p - 1)
+        ≤ ‖w‖ ^ (p - 1) * ((p : ℝ) * ‖w‖ ^ (p - 1)) ^ (n - 1) :=
+          norm_factorial_inv_smul_pow_le p w (by omega)
+      _ = ‖w‖ ^ (p - 1)
+            * (((p : ℝ) * ‖w‖ ^ (p - 1)) ^ (n - 2)
+              * ((p : ℝ) * ‖w‖ ^ (p - 1))) := by
+          rw [← pow_succ, show n - 2 + 1 = n - 1 from by omega]
+      _ ≤ ‖w‖ ^ (p - 1) * (1 * ((p : ℝ) * ‖w‖ ^ (p - 1))) := by
+          gcongr
+          exact pow_le_one₀ hT0 hT1.le
+      _ = (p : ℝ) * (‖w‖ ^ (p - 1)) ^ 2 := by ring
+      _ ≤ (p : ℝ) ^ (p - 1) * (‖w‖ ^ (p - 1)) ^ 2 := by
+          gcongr
+          · exact le_self_pow₀ (by exact_mod_cast hp.out.one_le) (by omega)
+      _ = ((p : ℝ) * ‖w‖ ^ 2) ^ (p - 1) := by
+          rw [mul_pow, ← pow_mul, ← pow_mul, Nat.mul_comm 2 (p - 1)]
+  exact le_of_pow_le_pow_left₀ (by omega) (by positivity) hpow
+
 /-- R7.1a: the quadratic tail of the exponential —
 `‖exp w − 1 − w‖ ≤ p·‖w‖²` on the convergence ball (the `n ≥ 2` terms at
 the `(p−1)`-power level). -/
 theorem norm_padicExp_sub_one_sub_self_le {w : L} (hw : InExpBall p w) :
-    ‖padicExp p w - 1 - w‖ ≤ (p : ℝ) * ‖w‖ ^ 2 := by sorry
+    ‖padicExp p w - 1 - w‖ ≤ (p : ℝ) * ‖w‖ ^ 2 := by
+  have hsd := summable_padicExp_terms p hw
+  -- peel the `n = 0` and `n = 1` terms
+  have hdiff : padicExp p w - 1 - w
+      = ∑' n : ℕ, ((n + 1 + 1 : ℕ).factorial : ℚ_[p])⁻¹ • w ^ (n + 1 + 1) := by
+    rw [padicExp, hsd.tsum_eq_zero_add,
+      ((summable_nat_add_iff 1).mpr hsd).tsum_eq_zero_add]
+    simp only [Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_smul,
+      zero_add, Nat.factorial_one, pow_one]
+    ring
+  rw [hdiff]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le
+    fun n => norm_factorial_inv_smul_pow_le_quad p hw (by omega)
 
 end expTail
 
@@ -54,14 +100,84 @@ section character
 theorem norm_onePAdicPow_sub_one (hp2 : p ≠ 2) {y : ℤ_[p]}
     (hy : y - 1 ∈ Ideal.span {(p : ℤ_[p])}) (t : ℤ_[p]) :
     ‖(PadicInt.onePAdicPow p y hy t : ℤ_[p]) - 1‖ = ‖t‖ * ‖y - 1‖ := by
-  sorry
+  set ℓ : ℤ_[p] := pZpLog p y with hℓ
+  have hℓmem : ℓ ∈ Ideal.span {(p : ℤ_[p])} := pZpLog_mem p hp2 hy
+  have htℓmem : t * ℓ ∈ Ideal.span {(p : ℤ_[p])} := Ideal.mul_mem_left _ _ hℓmem
+  -- the bridge `y^t = exp(t·log y)`
+  rw [← padicExp_smul_padicLog_eq_onePAdicPow p hp2 hy t, ← hℓ,
+    PadicInt.norm_def, PadicInt.coe_sub, PadicInt.coe_one,
+    pZpExp_coe p hp2 htℓmem,
+    norm_padicExp_sub_one (L := ℚ_[p]) p (inExpBall_of_mem_span p hp2 htℓmem),
+    PadicInt.coe_mul, norm_mul, ← PadicInt.norm_def, ← PadicInt.norm_def]
+  -- `‖log y‖ = ‖y − 1‖`
+  congr 1
+  have hball : InExpBall p ((y : ℚ_[p]) - 1) := by
+    rw [show ((y : ℚ_[p]) - 1) = ((y - 1 : ℤ_[p]) : ℚ_[p]) by
+      rw [PadicInt.coe_sub, PadicInt.coe_one]]
+    exact inExpBall_of_mem_span p hp2 hy
+  rw [hℓ, PadicInt.norm_def, pZpLog_coe p hp2 hy, norm_padicLog (L := ℚ_[p]) p hball,
+    ← PadicInt.coe_one, ← PadicInt.coe_sub, ← PadicInt.norm_def]
 
 /-- R7.2a: the Teichmüller value of a topological generator is a primitive
 `(p−1)`-th root of unity (its reduction generates `(ZMod p)ˣ`). -/
 theorem teichmuller_isPrimitiveRoot {u : ℤ_[p]ˣ}
     (hgen : ∀ n : ℕ, Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u)
       = ⊤) :
-    IsPrimitiveRoot (PadicInt.teichmuller p u) (p - 1) := by sorry
+    IsPrimitiveRoot (PadicInt.teichmuller p u) (p - 1) := by
+  haveI : Fact (1 < p) := ⟨hp.out.one_lt⟩
+  rw [IsPrimitiveRoot.iff_orderOf]
+  -- `ω(u)^{p−1} = 1`, so `orderOf ω(u) ∣ p−1`
+  have hpow : (PadicInt.teichmuller p u) ^ (p - 1) = 1 :=
+    Units.ext (by rw [Units.val_pow_eq_pow_val, PadicInt.teichmuller_coe,
+      PadicInt.teichmullerFun_pow_card_sub_one, Units.val_one])
+  have hdvd1 : orderOf (PadicInt.teichmuller p u) ∣ p - 1 :=
+    orderOf_dvd_of_pow_eq_one hpow
+  -- the level-1 reduction `g := unitsToZModPow p 1 u` generates, so `orderOf g = p−1`
+  have ho1 : orderOf (PadicMeasure.unitsToZModPow p 1 u) = p - 1 := by
+    rw [orderOf_eq_card_of_forall_mem_zpowers fun x => hgen 1 ▸ Subgroup.mem_top x,
+      Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, pow_one,
+      Nat.totient_prime hp.out]
+  -- `ω(u)` reduces to the same residue as `u` mod `p`, so `g = unitsToZModPow p 1 ω(u)`
+  have hred : PadicMeasure.unitsToZModPow p 1 (PadicInt.teichmuller p u)
+      = PadicMeasure.unitsToZModPow p 1 u := by
+    refine Units.ext ?_
+    rw [PadicMeasure.unitsToZModPow_coe, PadicMeasure.unitsToZModPow_coe,
+      PadicInt.teichmuller_coe, ← sub_eq_zero, ← map_sub, ← RingHom.mem_ker,
+      PadicInt.ker_toZModPow, pow_one]
+    exact PadicInt.teichmullerFun_sub_self_mem p u
+  -- hence `(p−1) = orderOf g ∣ orderOf ω(u)`
+  have hdvd2 : p - 1 ∣ orderOf (PadicInt.teichmuller p u) := by
+    rw [← ho1, ← hred]
+    exact orderOf_map_dvd _ _
+  exact Nat.dvd_antisymm hdvd1 hdvd2
+
+/-- For `0 < i < p−1` the reduction `ω(u)^i ≢ 1 mod p`, so `‖ω(u)^i − 1‖ = 1`
+(the Teichmüller value has exact order `p−1` by `teichmuller_isPrimitiveRoot`). -/
+private lemma norm_teichmuller_pow_sub_one_eq_one {u : ℤ_[p]ˣ}
+    (hgen : ∀ n : ℕ, Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u) = ⊤)
+    {i : ℕ} (hi0 : 0 < i) (hi : i < p - 1) :
+    ‖(PadicInt.teichmuller p u : ℤ_[p]) ^ i - 1‖ = 1 := by
+  -- `(toZMod u)^i ≠ 1` (else `(p−1) ∣ i`, impossible for `0 < i < p−1`)
+  have hred : PadicInt.toZMod ((PadicInt.teichmuller p u : ℤ_[p]) ^ i) ≠ 1 := by
+    rw [map_pow, PadicInt.teichmuller_coe, PadicInt.teichmullerFun,
+      PadicInt.toZMod_teichmullerZMod]
+    intro h
+    -- lift `(toZMod u)^i = 1` back to the units level through the section ω
+    have hu1 : (PadicInt.teichmuller p u) ^ i = 1 :=
+      Units.ext (by rw [Units.val_pow_eq_pow_val, PadicInt.teichmuller_coe,
+        PadicInt.teichmullerFun, ← map_pow, h, map_one, Units.val_one])
+    have hdvd : p - 1 ∣ i := by
+      rw [(teichmuller_isPrimitiveRoot p hgen).eq_orderOf]
+      exact orderOf_dvd_of_pow_eq_one hu1
+    exact absurd (Nat.le_of_dvd hi0 hdvd) (by omega)
+  -- nonzero reduction ⟺ norm one
+  have hnotdvd : ¬ ((p : ℤ_[p]) ∣ ((PadicInt.teichmuller p u : ℤ_[p]) ^ i - 1)) := by
+    rw [← Ideal.mem_span_singleton, ← PadicInt.maximalIdeal_eq_span_p,
+      ← PadicInt.ker_toZMod, RingHom.mem_ker, map_sub, map_one, sub_eq_zero]
+    exact hred
+  have hlt : ¬ (‖(PadicInt.teichmuller p u : ℤ_[p]) ^ i - 1‖ < 1) :=
+    fun h => hnotdvd ((PadicInt.norm_lt_one_iff_dvd _).mp h)
+  exact le_antisymm (PadicInt.norm_le_one _) (not_lt.mp hlt)
 
 /-- R7.2b: for `0 < i < p−1` the branch denominator never vanishes —
 `‖ω(u)^i − 1‖ = 1` beats `‖⟨u⟩^{1−s} − 1‖ < 1` (ultrametric isoceles);
@@ -70,7 +186,41 @@ theorem branch_denom_ne_zero {u : ℤ_[p]ˣ}
     (hgen : ∀ n : ℕ, Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u)
       = ⊤)
     {i : ℕ} (hi0 : 0 < i) (hi : i < p - 1) (s : ℤ_[p]) :
-    (((branchChar p i s u : ℤ_[p])) : ℚ_[p]) - 1 ≠ 0 := by sorry
+    (((branchChar p i s u : ℤ_[p])) : ℚ_[p]) - 1 ≠ 0 := by
+  set ω : ℤ_[p] := (PadicInt.teichmuller p u : ℤ_[p]) with hω
+  set A : ℤ_[p] := PadicInt.onePAdicPow p (PadicInt.angleUnit p u : ℤ_[p])
+    (PadicInt.angleUnit_sub_one_mem p u) s with hA
+  -- the value `V = ω^i·A`
+  have hV : (branchChar p i s u : ℤ_[p]) = ω ^ i * A := by
+    rw [branchChar_apply]
+  -- `‖ω^i − 1‖ = 1`
+  have hωi : ‖ω ^ i - 1‖ = 1 := norm_teichmuller_pow_sub_one_eq_one p hgen hi0 hi
+  -- `‖A − 1‖ < 1`
+  have hAlt : ‖A - 1‖ < 1 := by
+    have hmem : A - 1 ∈ Ideal.span {(p : ℤ_[p])} :=
+      PadicInt.onePAdicPow_sub_one_mem p _ _ s
+    exact (PadicInt.norm_lt_one_iff_dvd _).mpr (Ideal.mem_span_singleton.mp hmem)
+  -- `‖ω^i‖ = 1`
+  have hωnorm : ‖ω ^ i‖ = 1 := by
+    rw [hω, ← Units.val_pow_eq_pow_val]
+    exact PadicInt.norm_units _
+  -- isoceles: `‖V − 1‖ = max ‖ω^i·A − ω^i‖ ‖ω^i − 1‖ = 1`
+  have hlt : ‖ω ^ i * A - ω ^ i‖ < ‖ω ^ i - 1‖ := by
+    rw [show ω ^ i * A - ω ^ i = ω ^ i * (A - 1) from by ring, norm_mul, hωnorm,
+      one_mul, hωi]
+    exact hAlt
+  have hkey := IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (ne_of_lt hlt)
+  rw [show ω ^ i * A - ω ^ i + (ω ^ i - 1) = ω ^ i * A - 1 from by ring,
+    max_eq_right hlt.le, hωi] at hkey
+  -- `‖V − 1‖ = 1 ≠ 0`, so `V − 1 ≠ 0` in `ℤ_[p]`, hence the `ℚ_[p]`-coercion
+  have hVsub : (branchChar p i s u : ℤ_[p]) - 1 ≠ 0 := by
+    rw [hV]
+    refine fun h => one_ne_zero (?_ : (1 : ℝ) = 0)
+    rw [← hkey, h, norm_zero]
+  rw [show (((branchChar p i s u : ℤ_[p])) : ℚ_[p]) - 1
+      = (((branchChar p i s u : ℤ_[p]) - 1 : ℤ_[p]) : ℚ_[p]) by
+    rw [PadicInt.coe_sub, PadicInt.coe_one]]
+  rwa [Ne, PadicInt.coe_eq_zero]
 
 /-- R7.2c (RJW Lemma 7.2(ii), TeX 2224–2226): the denominator has a simple
 zero at `s = 1` with derivative `−log_p⟨a⟩`:
@@ -79,7 +229,84 @@ theorem tendsto_branch_denom_div (hp2 : p ≠ 2) {u : ℤ_[p]ˣ} :
     Filter.Tendsto (fun s : ℤ_[p] => ((s : ℚ_[p]) - 1)⁻¹
         * ((((branchChar p (p - 1) (1 - s) u : ℤ_[p])) : ℚ_[p]) - 1))
       (nhdsWithin 1 {s | s ≠ 1})
-      (nhds (-((pZpLog p ((PadicInt.angleUnit p u : ℤ_[p]))) : ℚ_[p]))) := by sorry
+      (nhds (-((pZpLog p ((PadicInt.angleUnit p u : ℤ_[p]))) : ℚ_[p]))) := by
+  set L : ℤ_[p] := pZpLog p (PadicInt.angleUnit p u : ℤ_[p]) with hL
+  set Lq : ℚ_[p] := (L : ℚ_[p]) with hLq
+  have hLmem : L ∈ Ideal.span {(p : ℤ_[p])} :=
+    pZpLog_mem p hp2 (PadicInt.angleUnit_sub_one_mem p u)
+  have hppos : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  -- the branch value `branchChar p (p−1) (1−s) u = exp((1−s)·L)`, coerced
+  have hpow1 : (PadicInt.teichmuller p u : ℤ_[p]) ^ (p - 1) = 1 := by
+    rw [← Units.val_pow_eq_pow_val,
+      show (PadicInt.teichmuller p u) ^ (p - 1) = 1 from
+        Units.ext (by rw [Units.val_pow_eq_pow_val, PadicInt.teichmuller_coe,
+          PadicInt.teichmullerFun_pow_card_sub_one, Units.val_one]),
+      Units.val_one]
+  have hval : ∀ s : ℤ_[p], (((branchChar p (p - 1) (1 - s) u : ℤ_[p])) : ℚ_[p])
+      = padicExp p ((((1 - s) * L : ℤ_[p])) : ℚ_[p]) := by
+    intro s
+    have hmem : (1 - s) * L ∈ Ideal.span {(p : ℤ_[p])} :=
+      Ideal.mul_mem_left _ _ hLmem
+    rw [branchChar_apply, hpow1, one_mul,
+      ← padicExp_smul_padicLog_eq_onePAdicPow p hp2
+        (PadicInt.angleUnit_sub_one_mem p u) (1 - s),
+      pZpExp_coe p hp2 hmem]
+  -- the squeezing function `a(s) = p·‖Lq‖²·‖s−1‖ → 0`
+  have hcoe : Filter.Tendsto (fun s : ℤ_[p] => ‖(s : ℚ_[p]) - 1‖)
+      (nhds (1 : ℤ_[p])) (nhds 0) := by
+    have hc : Continuous (fun s : ℤ_[p] => ‖(s : ℚ_[p]) - 1‖) :=
+      continuous_norm.comp (continuous_subtype_val.sub continuous_const)
+    have h2 := hc.tendsto (1 : ℤ_[p])
+    simpa only [PadicInt.coe_one, sub_self, norm_zero] using h2
+  have ha : Filter.Tendsto (fun s : ℤ_[p] => (p : ℝ) * ‖Lq‖ ^ 2 * ‖(s : ℚ_[p]) - 1‖)
+      (nhdsWithin 1 {s | s ≠ 1}) (nhds 0) := by
+    have h0 : Filter.Tendsto (fun s : ℤ_[p] => ‖(s : ℚ_[p]) - 1‖)
+        (nhdsWithin (1 : ℤ_[p]) {s | s ≠ 1}) (nhds 0) :=
+      hcoe.mono_left nhdsWithin_le_nhds
+    have := h0.const_mul ((p : ℝ) * ‖Lq‖ ^ 2)
+    simpa using this
+  -- pointwise bound on `{s ≠ 1}`
+  have hbound : ∀ᶠ s : ℤ_[p] in nhdsWithin 1 {s | s ≠ 1},
+      ‖(((s : ℚ_[p]) - 1)⁻¹
+          * ((((branchChar p (p - 1) (1 - s) u : ℤ_[p])) : ℚ_[p]) - 1)) - (-Lq)‖
+        ≤ (p : ℝ) * ‖Lq‖ ^ 2 * ‖(s : ℚ_[p]) - 1‖ := by
+    refine eventually_nhdsWithin_of_forall fun s hs => ?_
+    have hs1 : (s : ℚ_[p]) - 1 ≠ 0 := by
+      rw [show ((s : ℚ_[p]) - 1) = ((s - 1 : ℤ_[p]) : ℚ_[p]) by
+        rw [PadicInt.coe_sub, PadicInt.coe_one], Ne, PadicInt.coe_eq_zero,
+        sub_eq_zero]
+      exact hs
+    have hsn : ‖(s : ℚ_[p]) - 1‖ ≠ 0 := norm_ne_zero_iff.mpr hs1
+    set w : ℚ_[p] := ((((1 - s) * L : ℤ_[p])) : ℚ_[p]) with hw
+    have hwval : w = -((s : ℚ_[p]) - 1) * Lq := by
+      rw [hw, PadicInt.coe_mul, PadicInt.coe_sub, PadicInt.coe_one, ← hLq]; ring
+    have hwnorm : ‖w‖ = ‖(s : ℚ_[p]) - 1‖ * ‖Lq‖ := by
+      rw [hwval, norm_mul, norm_neg]
+    have hwball : InExpBall p w :=
+      inExpBall_of_mem_span p hp2 (Ideal.mul_mem_left _ _ hLmem)
+    have hwinv : ((s : ℚ_[p]) - 1)⁻¹ * w = -Lq := by
+      rw [hwval]; field_simp
+    -- the shifted difference is `(s−1)⁻¹·(exp w − 1 − w)`
+    have hid : (((s : ℚ_[p]) - 1)⁻¹
+        * ((((branchChar p (p - 1) (1 - s) u : ℤ_[p])) : ℚ_[p]) - 1)) - (-Lq)
+        = ((s : ℚ_[p]) - 1)⁻¹ * (padicExp p w - 1 - w) := by
+      rw [hval s, ← hw]
+      linear_combination hwinv
+    rw [hid, norm_mul, norm_inv]
+    calc ‖(s : ℚ_[p]) - 1‖⁻¹ * ‖padicExp p w - 1 - w‖
+        ≤ ‖(s : ℚ_[p]) - 1‖⁻¹ * ((p : ℝ) * ‖w‖ ^ 2) := by
+          gcongr
+          exact norm_padicExp_sub_one_sub_self_le p hwball
+      _ = (p : ℝ) * ‖Lq‖ ^ 2 * ‖(s : ℚ_[p]) - 1‖ := by
+          rw [hwnorm, mul_pow]
+          field_simp
+  -- squeeze
+  have hsq : Filter.Tendsto (fun s : ℤ_[p] => (((s : ℚ_[p]) - 1)⁻¹
+        * ((((branchChar p (p - 1) (1 - s) u : ℤ_[p])) : ℚ_[p]) - 1)) - (-Lq))
+      (nhdsWithin 1 {s | s ≠ 1}) (nhds 0) :=
+    squeeze_zero_norm' hbound ha
+  have := hsq.add (tendsto_const_nhds (x := -Lq))
+  simpa using this
 
 /-- R7.3a: the numerator pairing is continuous in `s` (the `p^m`-congruence
 route: `s ≡ s' mod p^m ⟹ ⟨x⟩^{1−s} ≡ ⟨x⟩^{1−s'} mod p^m` uniformly in
