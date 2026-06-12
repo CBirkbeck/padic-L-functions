@@ -4261,7 +4261,26 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
 - **Sizing**: ~90 LOC.
 
 ### [T902] The degree ladder and the uniformiser norms (Eisenstein)
-- **Status**: open | **File**: Coleman/Tower.lean | **Depends on**: T901
+- **Status**: done (2026-06-12) | **File**: Coleman/Tower.lean | **Depends on**: T901
+- **Pre-dispatch survey (orchestrator)**: mathlib anchors verified:
+  `cyclotomic_prime_pow_comp_X_add_one_isEisensteinAt` (Eisenstein/
+  IsIntegral.lean:77, over ℤ at span{p}) and
+  `Polynomial.irreducible_of_eisenstein_criterion` (Criterion.lean:176).
+  Route ℤ → ℤ_[p]-Eisenstein-transport → irreducible over ℤ_[p] →
+  fraction-field transfer (Monic.irreducible_iff-family) → minpoly =
+  mapped Φ → finrank = totient.
+- **Progress**: 2026-06-12: all six proven (subagent). Statement fix
+  applied per pre-authorization (b2-logged): finrank_K_succ += (hn : 1 ≤ n)
+  (false at n = 0: degree p−1). Route refinements: degree ladder via the
+  `IsCyclotomicExtension` framework (instance `isCyclotomicExtension_K`
+  built from `IsPrimitiveRoot.adjoin_isCyclotomicExtension`); uniformiser
+  norm WITHOUT Algebra.norm/spectral theory — Vieta on Φ_{p^n}(T+1) over
+  ℂ_[p] (`Splits.coeff_zero_eq_prod_roots_of_monic` +
+  `eval_one_cyclotomic_prime_pow`) + the elementary equal-conjugate-norms
+  helper (`norm_root_sub_one_eq`, two-sided geometric-factor argument).
+  6 private helpers (the T903 consumers). Verified: build green (3811
+  jobs), Tower.lean ZERO sorries, axioms standard 3 (independent
+  re-check). Cleanup: degraded mode, defer to CLEANUP-91.
 - **Type**: lemmas
 - **Statement**: skeleton `finrank_K`, `finrank_K_succ`,
   `norm_pi_pow_totient`, `norm_pi_lt_one`, `pi_ne_zero`, `pi_mem_O`.
