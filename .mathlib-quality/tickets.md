@@ -8,8 +8,8 @@ Skeleton: all statements already exist as `:= by sorry` in `PadicLFunctions/Meas
 but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
-- Total: 30 work tickets + 12 cleanup tickets
-- Open: 1 (CLEANUP-FINAL — unblocked 2026-06-10: this session has lean-lsp) | Done: 41 — ALL PROOF TICKETS DISCHARGED incl. T029 wiring, project sorry-free (2026-06-10)
+- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708) + cleanups
+- Open: 1 (CLEANUP-FINAL — BLOCKED on a lean-lsp-MCP-tooled session; 2026-06-12 sessions ran degraded) | everything else done — **§§3–7 ALL PROOF TICKETS DISCHARGED, project sorry-free, axioms standard (2026-06-12, §7 milestone `tendsto_sub_one_mul_zetaPBranch`)**
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
