@@ -8,8 +8,8 @@ Skeleton: all statements already exist as `:= by sorry` in `PadicLFunctions/Meas
 but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
-- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808), §§9–10 (T901–T912 + T903b/T904b) + cleanups
-- Open: 1 blocked (CLEANUP-FINAL — needs a lean-lsp-MCP-tooled session) + 3 gated (D611–D613 — await the D61 sub-board 1i review) | everything else done — **§§3–10 ALL PROOF TICKETS DISCHARGED (Part I + the Coleman map), project sorry-free, axioms standard (2026-06-12; §10 milestones `coleman_existsUnique` + `coleman_to_kl`, errata #12 found)**
+- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808), §§9–10 (T901–T912 + T903b/T904b), **§11 (T1101–T1114 + CLEANUP-111…114 + CLEANUP-ALL-6)** + cleanups
+- Open: **the §11 board (T1102–T1114; T1101 done at skeleton) — skeleton landed 2026-06-13 (4 files under PadicLFunctions/Iwasawa/ + the R11.5 convolution generalisation, build green, sorries only in the new files), awaiting 1i approval → /beastmode**; 1 blocked (CLEANUP-FINAL — needs a lean-lsp-MCP-tooled session) + 3 gated (D611–D613 — await the D61 sub-board 1i review) | §§3–10 ALL PROOF TICKETS DISCHARGED (Part I + the Coleman map) — sorry-free, axioms standard (2026-06-12; milestones `coleman_existsUnique` + `coleman_to_kl`; errata #12, and #13 found at the §11 pass)
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -5051,3 +5051,455 @@ T903 → T911 → T912*(T910,T911) → CL93
 Note (2026-06-12): T907's `O_n`-basis input moved from T903 to **T903b**
 (T903 item 8 was split out; T903 items 1–7 are done). T911 still depends only
 on T903 (`levelNorm` + `NormCompatUnits`, both delivered).
+
+---
+
+# §11 board — Iwasawa's theorem on the zeros: the §11 layer (TeX 2949–3112)
+
+Decomposition: `.mathlib-quality/decomposition.md` R11 (quotes Q1–Q12, replans
+R11.1–R11.8). Skeleton (canonical): `PadicLFunctions/Iwasawa/{PlusPart, ZetaGalois,
+LocalUnits, CyclotomicUnits}.lean` — `lake build` green at board creation
+(2026-06-13), sorries only in the four new files. Scope note (plan.md §11): the
+statements of `thm:iwasawa` and the class-number index theorem are NOT on this
+board (Q9 permanently-deferred prose; Q11 → §12 board). hp2-conventions: the
+±-splitting and everything ζ_p carry `(hp2 : p ≠ 2)`; the bare c-invariance
+criterion is p-general.
+
+### [T1101] Generalise the convolution algebra to compact commutative monoids
+- **Status**: done (2026-06-13, at skeleton construction — performed sorry-free
+  during /develop to avoid a data-diamond placeholder instance for Λ(𝒢⁺); full
+  `lake build` green before AND after; downstream files untouched and rebuilt
+  clean; statement-preservation audited: `units_mul_apply`,
+  `units_mul_apply_unitsPowCM`, `units_one_def`, `units_dirac_mul_dirac`,
+  `deg`, `augmentationIdeal` all keep their exact downstream-facing statements)
+  | **File**: Measure/PseudoMeasure.lean | **Depends on**: none
+- **Type**: refactor (replan R11.5)
+- **What changed**: `mulCM₂ G` / `conv` / `Mul`/`One`/`CommRing` instances /
+  `conv_dirac_mul_dirac` / `deg` / `augmentationIdeal` now live over
+  `{G} [TopologicalSpace G] [CommMonoid G] [ContinuousMul G] [CompactSpace G]`
+  (RJW Rem. 3.33's generality); `unitsMulCM₂`/`unitsConv` are abbrevs, the
+  `units_*` lemmas restatements (`rfl`). This is what makes
+  `CommRing (PadicMeasure p (GPlus p))` an instance, with zero new analysis
+  (`innerInt`/`integral_swap` were already general).
+- **Sources**: TeX 1173–1175 (eq:convolution), Rem. 3.33; R11.5 attack log.
+
+### [T1102] The ±-decomposition: involution splitting + the c-action + the
+odd-moment criterion (RJW lem:decompose plus minus + the TeX 3019 lemma)
+- **Status**: open | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1101 (done)
+- **Parallel**: yes (vs T1105, T1108 — different files) | **Type**: lemmas + instances
+#### Statement (skeleton canonical)
+General: `mem_invariants_iff`, `mem_antiInvariants_iff`,
+`isCompl_invariants_antiInvariants [Invertible (2:R)] (σ) (hσ : σ ∘ₗ σ = id)`,
+`smul_add_apply_mem_invariants`, `smul_sub_apply_mem_antiInvariants`.
+Λ-side: `SMulCommClass ℤ_[p] Λ Λ` + `IsScalarTower ℤ_[p] Λ Λ` instances,
+`cAct_apply`, `cAct_involutive`, `mem_plusPart_iff`, `mem_minusPart_iff`,
+`mul_mem_plusPart`, `isCompl_plusPart_minusPart (hp2)`.
+Criterion: `cAct_apply_unitsPowCM`, `mem_plusPart_iff_forall_odd_moment`.
+#### Proof sketch
+1. General splitting (Q3's idempotent proof): `e := ⅟2 • (1 + σ)`; for `x`,
+   `x = ⅟2•(x + σx) + ⅟2•(x − σx)` with the parts in ker(σ∓1) by `hσ`
+   (apply σ, expand); disjointness: `σx = x` ∧ `σx = −x` ⟹ `2x = 0` ⟹
+   `x = ⅟2•(2x) = 0`. `IsCompl` via `disjoint + codisjoint`
+   (`Submodule.isCompl_iff`-style; or `isCompl_of_proj` with the idempotent —
+   mathlib has the idempotent API, LinearAlgebra/Projection).
+2. Bilinearity instances: `(c•μ)*ν = c•(μ*ν)` is `rfl`-adjacent from `conv`
+   (the outer μ is applied last); `μ*(c•ν) = c•(μ*ν)` via `innerInt_smul`.
+   Closes the §8-noted IsScalarTower gap.
+3. `cAct_involutive`: `mulLeft` composition = mulLeft of product;
+   `units_dirac_mul_dirac` gives `[−1]·[−1] = [1]`; `mulLeft 1 = id`.
+4. Criterion (Q5's proof): moments of `[−1]*μ` via `units_mul_apply_unitsPowCM`
+   + `dirac_apply`: `((−1:ℤ_[p]ˣ):ℤ_[p])^k = (−1)^k`. (→) odd k:
+   `μ(x^k) = −μ(x^k)` ⟹ `2·μ(x^k) = 0` ⟹ 0 (ℤ_[p] char-0 domain — no hp2).
+   (←) δ := `[−1]*μ − μ` has ALL moments 0 (odd by hypothesis ×(−2);
+   even by cancellation) ⟹ δ = 0 by `eq_zero_of_forall_unitsPowCM_eq_zero`.
+- **Mathlib**: `LinearMap.mulLeft`, `IsIdempotentElem`/`LinearMap.isProj_*`
+  (Projection.lean), `invOf` API; `PadicLFunctions.isUnit_two_padicInt` (§8) for
+  `Invertible (2:ℤ_[p])` from hp2.
+- **Sources**: Q3 (TeX 2994–3002), Q5 (TeX 3019–3029), TeX 3004.
+- **Sizing**: ~150 LOC.
+
+### [T1103] 𝒢⁺ and the projection ring hom π_*
+- **Status**: open | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102 (file order)
+- **Parallel**: no (same file as T1102) | **Type**: def-fields + lemmas
+#### Statement
+`projPlus` RingHom fields (toFun = `pushforward p (quotientMk p)` — fixed),
+`projPlus_apply`, `projPlus_dirac`, `deg_projPlus`.
+#### Proof sketch
+1. `map_one'/map_mul'`: pushforward along the continuous MonoidHom
+   `QuotientGroup.mk`. map_one: both sides are `dirac` at `mk 1 = 1`
+   (`pushforward_dirac`). map_mul: for `g : C(GPlus p, ℤ_[p])`,
+   `mk∘mul_𝒢 = mul_𝒢⁺∘(mk×mk)` (mk monoid hom), so
+   `(g.comp quotientMk).comp (mulCM₂ 𝒢) = (g.comp (mulCM₂ 𝒢⁺)).comp (mk×mk)`;
+   then `innerInt p ν` of that at `x` = `innerInt p (projPlus ν) (g∘mul⁺) (mk x)`
+   (curry computation, `ContinuousMap.ext`), and the outer integral transports.
+   map_zero/map_add: linearity of pushforward (`rfl`).
+2. `projPlus_apply`: `rfl`. `projPlus_dirac`: `pushforward_dirac` (Basic.lean).
+3. `deg_projPlus`: `1 ∘ mk = 1` (`rfl`-ext).
+- **Mathlib**: `QuotientGroup.mk' `, `continuous_quotient_mk'` (already used in the
+  skeleton's `quotientMk`); instance pack verified at decompose
+  (Quotient.lean:36/:151).
+- **Sources**: Q4's "natural surjection" (TeX 3012); R11.2 attack log item (2).
+- **Sizing**: ~80 LOC.
+
+### [T1104] The even-part section and Λ(𝒢)⁺ ≅ Λ(𝒢⁺) (RJW TeX 3006–3015)
+- **Status**: open | **File**: Iwasawa/PlusPart.lean | **Depends on**: T1102, T1103
+- **Parallel**: no (same file) | **Type**: defs + lemmas (replan R11.2)
+#### Statement
+`negTranslate` continuity field, `evenPart_even`, `descendEven` (soundness +
+continuity fields), `descendEven_mk`, `plusSection` (4 linearity fields),
+`plusSection_mem_plusPart`, `projPlus_plusSection`, `plusSection_projPlus`,
+`projPlus_surjective`, `plusEquiv` round-trips, `projPlus_eq_zero_iff`,
+`ker_projPlus`.
+#### Proof sketch
+1. `negTranslate`: `u ↦ -u = (-1)*u`, `continuous_const.mul continuous_id`
+   (`ContinuousMul ℤ_[p]ˣ` ✓).
+2. `descendEven` soundness: `Quotient.liftOn'`-coherence: `leftRel (zpowers −1)`
+   relates u,v iff `v = ±u` (zpowers of an order-2 element = {1, −1}:
+   `(-1:ℤ_[p]ˣ)^2 = 1`, `zpowers_eq` … enumerate via `Subgroup.mem_zpowers_iff`
+   + order-2); continuity: `(QuotientGroup.isQuotientMap_mk).continuous_iff`,
+   the composite with mk is `g` ✓ continuous.
+3. `evenPart_even`: `−(−u) = u` + commutativity of the average; the ⅟2-smul
+   is a fixed scalar.
+4. `plusSection` linearity: ν linear + `descendEven`/`evenPart` additive in f
+   (descendEven of a sum = sum of descends: check on `mk`-points via
+   `descendEven_mk` + `Quotient.ind` — or prove `descendEven` is the unique
+   continuous lift and use uniqueness).
+5. Round-trips (R11.2 attack log): `projPlus (plusSection ν) = ν`: at
+   `g : C(𝒢⁺)`, `evenPart (g∘mk) = g∘mk` (mk∘negTranslate = mk:
+   `QuotientGroup.mk (−u) = mk u` since `(−u)⁻¹u = −1 ∈ zpowers`), and
+   `descendEven (g∘mk) = g` (agree on mk-points, `Quotient.ind`).
+   `plusSection (projPlus μ) = μ` for c-invariant μ:
+   `μ(evenPart f) = ⅟2(μ f + μ(f∘negTranslate))`; `μ(f∘negTranslate) =
+   ([−1]*μ)(f) = μ f` (mem_plusPart_iff; the convolution-by-dirac =
+   argument-translation: curry computation); so `μ(evenPart f) = μ f`;
+   and `(plusSection (projPlus μ))(f) = (projPlus μ)(descendEven …) =
+   μ((descendEven …)∘mk) = μ(evenPart f)` ✓.
+6. `projPlus_eq_zero_iff`: (←) μ ∈ minusPart: `μ(g∘mk) = μ(evenPart (g∘mk))`…
+   for minus-part: `μ(f∘τ) = −μ(f)` ⟹ `μ(even fn) = 0`; g∘mk is even ⟹ 0.
+   (→) `projPlus μ = 0` ⟹ plus-component of μ is `plusSection (projPlus μ⁺…)`
+   — cleanest: decompose μ = μ⁺ + μ⁻ (T1102 IsCompl), projPlus μ⁻ = 0 (above),
+   so projPlus μ⁺ = 0, so μ⁺ = plusSection (projPlus μ⁺) = 0.
+7. `ker_projPlus`: minusPart = span{[−1]−1}: (⊇) `projPlus ([−1]−1) =
+   dirac(mk −1) − dirac 1 = 0` (mk(−1) = 1). (⊆) μ ∈ minusPart ⟹
+   μ = ([−1]−1)·(−⅟2•μ) (compute: ([−1]−1)·μ = [−1]μ − μ = −2μ).
+- **Mathlib**: `IsQuotientMap.continuous_iff`, `Quotient.liftOn'`,
+  `QuotientGroup.eq` (coset equality), `Submodule.exists_add_eq_of_isCompl`-style
+  decomposition API.
+- **Sources**: Q4 (TeX 3006–3017); replan R11.2 (recorded: functional route;
+  the source's finite-level rank count would need the still-deferred
+  Prop 3.9/3.10).
+- **Sizing**: ~220 LOC. The board's largest single ticket; Tier-A split point if
+  needed: descend/section machinery (4) vs round-trips (5–7).
+
+### [CLEANUP-111] /cleanup PlusPart.lean
+- **Status**: open | **Depends on**: T1102–T1104. Single-file pass after the
+  PlusPart chain (degraded mode if no lean-lsp MCP — record it).
+
+### [T1105] Odd moments of ζ_p vanish + c-invariance (erratum #13 realised)
+- **Status**: open | **File**: Iwasawa/ZetaGalois.lean | **Depends on**: T1101 (done)
+- **Parallel**: yes (vs T1102-chain — different file; uses only proven §3/§4 API)
+- **Type**: lemmas
+#### Statement
+`odd_moment_factor_eq_zero {k} (hk : Odd k) : (1 − (p:ℚ_[p])^(k−1)) ·
+((zetaNeg (k−1) : ℚ) : ℚ_[p]) = 0`; `padicZeta_odd_moment_eq_zero`;
+`dirac_neg_one_sub_one_mul_padicZeta : algebraMap … ([−1]−1) · ζ_p = 0`;
+`padicZeta_witness_neg`.
+#### Proof sketch
+1. Factor lemma (the erratum-#13 case split): k = 1 ⟹ `p^(1−1) = p^0 = 1`
+   ⟹ first factor 0. k odd ≥ 3 ⟹ `zetaNeg (k−1) = (−1)^{k−1}·bernoulli k/k`
+   (unfold zetaNeg; `k−1+1 = k` for k ≥ 1) and `bernoulli_eq_zero_of_odd hk
+   (by omega : 1 < k)` ⟹ second factor 0. Cast through ℚ → ℚ_[p].
+2. Witness odd moments: `padicZeta_moments p hp2 b hk' ν hν` gives
+   `(ν(x^k):ℚ_[p]) = (b^k−1)·(factor)` = 0 by (1); `ν(x^k) = 0` by
+   `Subtype.coe_injective`-style (ℤ_[p] ↪ ℚ_[p], the T-pattern in
+   kubotaLeopoldt's uniqueness proof — copy).
+3. c-invariance: the b = −1 witness ν₀ (exists: `padicZeta_isPseudoMeasure`)
+   has all moments 0: `padicZeta_moments` at b = −1: `((−1)^k − 1)·factor`;
+   k even ⟹ first factor 0; k odd ⟹ second factor 0 by (1). So ν₀ = 0
+   (`eq_zero_of_forall_unitsPowCM_eq_zero`), and the witness identity reads
+   `([−1]−1)·ζ_p = algebraMap 0 = 0`.
+4. Witness symmetry: `ν' − ν` witnesses `([−g]−[g])·ζ_p = [g]·([−1]−1)·ζ_p
+   = 0` (by 3); witnesses are unique (`IsFractionRing.injective`), so ν' = ν.
+- **Mathlib**: `bernoulli_eq_zero_of_odd` (Bernoulli.lean:217, verified).
+- **Sources**: Q2 (TeX 2992), Q6 + erratum #13 (TeX 3033–3039; errata.md #13).
+- **Sizing**: ~110 LOC.
+
+### [T1106] ζ_p as a pseudo-measure on 𝒢⁺ (the corollary, RJW TeX 3033)
+- **Status**: open | **File**: Iwasawa/ZetaGalois.lean
+- **Depends on**: T1102, T1104, T1105 | **Parallel**: no
+- **Type**: def-fields + lemmas
+#### Statement
+`dirac_mk_sub_one_mem_nonZeroDivisors`, the `padicZetaPlus` denominator
+membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
+`isPlusPseudoMeasure_padicZetaPlus`.
+#### Proof sketch
+1. Regularity transport (D4, R11 leaf ledger): suppose `ν·([ā]−1) = 0` in
+   Λ(𝒢⁺). Lift `μ := plusSection ν ∈ plusPart` (T1104); then
+   `projPlus (μ·([a]−1)) = ν·([ā]−1) = 0` (T1103 map_mul + T1104
+   projPlus_plusSection + projPlus_dirac), and `μ·([a]−1) ∈ plusPart`
+   (`mul_mem_plusPart`), so `μ·([a]−1) ∈ plusPart ⊓ ker = plusPart ⊓
+   minusPart = ⊥` (T1104 projPlus_eq_zero_iff + T1102 IsCompl.disjoint) ⟹
+   `μ([a]−1) = 0` ⟹ μ = 0 (hypothesis `ha`) ⟹ `ν = projPlus μ = 0`.
+   Mirror for the left factor (CommRing — same argument).
+2. Denominator membership: instantiate (1) at the packed generator
+   (`topGen_pow_ne_one` + `dirac_sub_one_mem_nonZeroDivisors`, both proven §3/§4).
+3. Witness compat (D5): from the 𝒢-side defining relation
+   `([a]−1)·ζ_p = zetaNum m` (mk'_spec') and the witness identity at g:
+   `([g]−1)·zetaNum m = ([a]−1)·ν` in Λ (pull back along the injective
+   algebraMap — the padicZeta_moments-proof pattern); apply the RING HOM
+   projPlus: `([ḡ]−1)·projPlus(zetaNum m) = ([ā]−1)·projPlus ν`; divide in
+   Q(𝒢⁺) by the regular `([ā]−1)` (IsLocalization.mk' algebra) to get the
+   claimed witness identity for ζ_p⁺ = mk'(projPlus (zetaNum m))/([ā]−1).
+4. The corollary: for `ḡ : 𝒢⁺` choose a lift g (`QuotientGroup.mk_surjective`),
+   take the 𝒢-side witness (padicZeta_isPseudoMeasure), push by (3).
+   (Lift-independence is not even needed for the ∃-statement; it is the
+   content of T1105's witness symmetry and (3) jointly.)
+- **Sources**: Q6 (TeX 3033–3039), Q1's closing sentence; R11 leaf ledger D4/D5.
+- **Sizing**: ~140 LOC.
+
+### [T1107] The ideals I(𝒢)ζ_p and I(𝒢⁺)ζ_p (RJW Proposition, TeX 3052)
+- **Status**: open | **File**: Iwasawa/ZetaGalois.lean
+- **Depends on**: T1105, T1106 | **Parallel**: no (same file)
+- **Type**: def-fields + lemmas (replan R11.4)
+#### Statement
+`zetaIdeal` carrier-Ideal fields + `mem_zetaIdeal_iff` + `zetaIdeal_eq_span`;
+`augmentationIdealPlus_eq_span`; `zetaIdealPlus` fields + `mem_zetaIdealPlus_iff`
++ `zetaIdealPlus_eq_span`.
+#### Proof sketch
+1. Ideal fields (no principality needed): zero: l := 0; add: l₁ + l₂
+   (aug ideal add-closed); smul r x: l' := r·l (`Ideal.mul_mem_left`;
+   `algebraMap (r·l) = algebraMap r·algebraMap l`, rearrange in Q). mem_iff: rfl.
+2. `zetaIdeal_eq_span` (⊇): ν ∈ zetaIdeal with l := [b]−1 ∈ aug (deg of
+   dirac−1 = 0). (⊆): x with `algebraMap x = algebraMap l·ζ_p`, l ∈ I(𝒢) =
+   span{[b]−1} (`augmentationIdeal_eq_span p hb` — proven §3): l = ρ·([b]−1);
+   then `algebraMap x = algebraMap ρ·(([b]−1)ζ_p) = algebraMap (ρ·ν)`
+   (witness hν) ⟹ `x = ρ·ν` (IsFractionRing.injective) ∈ span{ν}.
+3. `augmentationIdealPlus_eq_span`: `deg⁺∘π_* = deg` (T1103) + π_* surjective
+   (T1104): `ker deg⁺ = π_*(ker deg)` (⊇ by composition; ⊆: lift y = π_* x,
+   `deg x = deg⁺ y = 0`); then `π_*(span{[a]−1}) = span{π_*([a]−1)}`
+   (`Ideal.map_span` along the surjection; `Ideal.map` vs image — use
+   `Ideal.map_eq_submodule_map`-style or argue elementwise with surjectivity).
+4. 𝒢⁺-ideal: same as (1)–(2) with T1106's `padicZetaPlus` witnesses and (3)
+   for the principality; the span generator is `projPlus ν` by the witness
+   compatibility (T1106 step 3).
+- **Sources**: Q7 (TeX 3047–3057); replan R11.4 (the "topological ideal"
+  line replaced by the proven principality).
+- **Sizing**: ~160 LOC.
+
+### [CLEANUP-112] /cleanup ZetaGalois.lean
+- **Status**: open | **Depends on**: T1105–T1107.
+
+### [T1108] The local unit groups 𝒰_n, 𝒰_{n,1} and the ⁺-variants
+- **Status**: open | **File**: Iwasawa/LocalUnits.lean | **Depends on**: none new
+- **Parallel**: yes (vs T1102-chain and T1105 — different file)
+- **Type**: def-fields + lemmas
+#### Statement
+`localUnits`/`localUnitsOne`/`localUnitsPlus` Subgroup fields, `mem_*_iff` (rfl),
+`norm_eq_one_of_mem_localUnits`, `KPlus_le_K`.
+#### Proof sketch
+1. `localUnits` closure: mul: `O p n` is a Subring (`mul_mem`), inverses
+   distribute (`mul_inv_rev`, coe lemmas `Units.val_mul`/`Units.val_inv_eq…`);
+   inv: swap the two conjuncts.
+2. `norm_eq_one`: `‖u‖ ≤ 1` and `‖u⁻¹‖ ≤ 1` (integerRing membership unfolds to
+   the norm bound — `O = K ⊓ integerRing`, Coefficients.lean) with
+   `‖u‖·‖u⁻¹‖ = 1` (`norm_mul`, NormMulClass ℂ_[p]) ⟹ both = 1.
+3. `localUnitsOne` closure: mul: `uv − 1 = u(v−1) + (u−1)`, ultrametric max +
+   `‖u‖ = 1`; inv: `u⁻¹ − 1 = u⁻¹(1 − u)`, norms multiply.
+4. `KPlus_le_K`: `adjoin_le_iff`; `ξ + ξ⁻¹ ∈ K_n`: ξ ∈ K_n (zetaSys_mem_K),
+   ξ⁻¹ ∈ K_n (IntermediateField.inv_mem), sum closed.
+- **Sources**: Q12 (TeX 2474, 2494, 2473); replan R11.6.
+- **Sizing**: ~120 LOC.
+
+### [T1109] The ℤ_p-power structure on principal units (RJW TeX 2494–2496)
+- **Status**: open | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
+- **Parallel**: no (same file) | **Type**: def + lemmas + instance
+#### Statement
+`zpPow` (the sorried def body — to be filled with the
+`PadicInt.addChar_of_value_at_one`-route or a direct `mahlerSeries` construction),
+`zpPow_natCast`, `zpPow_add`, `zpPow_mul`, `norm_zpPow_sub_one_lt_one`,
+`zpPow_mem_localUnitsOne`, `localUnitsOneModule` instance.
+#### Proof sketch
+1. Instance pack on ℂ_[p]: `Algebra ℤ_[p] ℂ_[p]` via `(toCp p).toAlgebra`
+   (Coleman/Theorem.lean's `toCp`) declared as a SCOPED/local instance (do not
+   leak a global instance on mathlib types) + `IsBoundedSMul` (norm of the
+   algebra-map image ≤ 1 ⟹ `‖c • x‖ ≤ ‖c‖·‖x‖`… the smul is via the hom,
+   bounded as `‖toCp c‖ = ‖c‖ ≤ 1`); `CompleteSpace ℂ_[p]` ✓ exists.
+   FALLBACK (decision recorded at decompose): define zpPow directly as
+   `mahlerSeries`-free limit `lim_k (y ^ (a_k))` over integer approximations
+   a_k → a (Cauchy by `‖y^m − y^n‖ = ‖y^{n}‖·‖y^{m−n} − 1‖` + the
+   1-unit-power estimate `‖y^j − 1‖ ≤ ‖y−1‖`) — no ambient instances needed.
+2. `Tendsto ((y−1)^·) → 0` from `‖y−1‖ < 1` (geometric: norm_pow ≤ ‖y−1‖^k).
+3. Laws: AddChar gives add; natCast: `addChar value at (k:ℤ_[p])` =
+   `(1 + (y−1))^k` (the mahlerSeries-at-naturals lemma in AddChar.lean's proof
+   — `mahlerSeries_apply_nat`); mul: both sides continuous characters in b
+   agreeing on ℕ (density `PadicInt.denseRange_natCast`).
+4. Norm estimate: each summand of `Σ_{k≥1} (a choose k)(y−1)^k` has norm
+   ≤ ‖y−1‖ (binomials integral); ultrametric sum.
+5. Membership: the partial sums lie in K_n (ξ-polynomials) — K_n closed
+   (finite-dimensional over complete ℚ_[p] ⟹ complete ⟹ closed; instance
+   `FiniteDimensional.complete` + `Submodule.closed_of_finiteDimensional`-style
+   through the IntermediateField); the limit stays; norm conditions by (4);
+   the unit `v`: `zpPow y a · zpPow y (−a) = 1` by the add law.
+6. Module instance on `Additive`: smul a u := the (4)/(5)-packaged power;
+   module axioms = the (3) laws (one/add/mul/zero).
+- **Mathlib**: `PadicInt.addChar_of_value_at_one` (AddChar.lean:59, verified
+  signature `(r : R) (hr : Tendsto (r ^ ·) atTop (𝓝 0)) : AddChar ℤ_[p] R` with
+  `[NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [CompleteSpace R]`).
+- **Sources**: Q12 (TeX 2494–2496); replan R11.6.
+- **Sizing**: ~170 LOC (instance-pack risk priced in; fallback route documented).
+
+### [T1110] 𝒰_∞ as a group; the towers 𝒰_{∞,1} and 𝒰⁺_{∞,1}
+- **Status**: open | **File**: Iwasawa/LocalUnits.lean | **Depends on**: T1108
+- **Parallel**: no (same file; can start before T1109 finishes if convenient —
+  no dependence on zpPow)
+- **Type**: instance + def-fields
+#### Statement
+`NormCompatUnits.inv` fields (mem/inv_mem/compat), `CommGroup (NormCompatUnits p)`,
+`unitsTower1`/`unitsTower1Plus` fields, `unitsTower1Plus_le_unitsTower1`.
+#### Proof sketch
+1. inv fields: mem/inv_mem are the original's swapped (coercion shuffle
+   `Units.val_inv_eq_inv_val`); compat: `levelNorm (u⁻¹) = (levelNorm u)⁻¹`
+   for units of K_{n+1} — from `levelNorm_mul` + `levelNorm_one`
+   (Map.lean has the private `levelNorm_inv` PATTERN at :156 — re-derive
+   locally or unprivate it in the cleanup).
+2. CommGroup: `NormCompatUnits.ext` (Theorem.lean:1127) + pointwise group laws
+   of ℂ_[p]ˣ.
+3. Towers: pointwise subgroup conditions; closure under mul/inv from T1108's
+   subgroups (elems of products are products).
+- **Sources**: Q12 (TeX 2503–2505).
+- **Sizing**: ~90 LOC.
+
+### [CLEANUP-113] /cleanup LocalUnits.lean
+- **Status**: open | **Depends on**: T1108–T1110.
+
+### [T1111] The global tower: F_n, F_n⁺, 𝒱_n and 𝒱_n ≤ 𝒰_n
+- **Status**: open | **File**: Iwasawa/CyclotomicUnits.lean | **Depends on**: T1108
+- **Parallel**: yes vs T1109/T1110 (different file)
+- **Type**: lemmas + def-fields
+#### Statement
+`FglobalPlus_le_Fglobal`, `norm_le_one_of_isIntegral_int`,
+`globalUnits`/`globalUnitsPlus` fields, `globalUnits_le_localUnits`.
+#### Proof sketch
+1. `FglobalPlus_le_Fglobal`: adjoin_le_iff; ξ + ξ⁻¹ ∈ ℚ⟮ξ⟯ (inv_mem + add).
+2. Integral norm bound (R11.7 attack log): monic `P = X^n + Σ a_i X^i ∈ ℤ[X]`,
+   `P(x) = 0`. If `‖x‖ > 1`: `‖x^n‖ = ‖x‖^n > ‖x‖^i ≥ ‖a_i x^i‖` (integer
+   coefficients have ‖·‖ ≤ 1 in ℂ_[p]: `norm_intCast_le_one` — ultrametric +
+   `‖(1:ℂ_[p])‖ = 1`; if absent, induct), so
+   `‖x^n‖ = ‖−Σ a_i x^i‖ ≤ max < ‖x‖^n` — contradiction
+   (`IsUltrametricDist.norm_sum_le_max`-style, finite max over i < n).
+3. `globalUnits` closure: products/inverses of integral elements are integral
+   (`IsIntegral.mul`, integralClosure is a subring); field membership via
+   `Fglobal` subfield ops.
+4. `𝒱_n ≤ 𝒰_n`: u global ⟹ `‖u‖ ≤ 1 ∧ ‖u⁻¹‖ ≤ 1` by (2) ⟹ both in
+   integerRing; `u ∈ F_n ≤ ?K_n`: F_n = ℚ⟮ξ⟯ ≤ K_n as SETS (ξ ∈ K_n,
+   ℚ ⊆ ℚ_[p] ⊆ K_n; `IntermediateField.adjoin_le_iff` after transporting the
+   base — argue elementwise: x ∈ ℚ⟮ξ⟯ ⟹ x ∈ K_n via `adjoin_induction`
+   or `IntermediateField.restrictScalars`-monotony) ⟹ membership in O_n ✓.
+- **Mathlib**: `IsIntegral.mul/inv`-API (`integralClosure`),
+  `IntermediateField.adjoin_induction`, `adjoin_le_iff`.
+- **Sources**: Q12 (TeX 2471–2472); R11.7.
+- **Sizing**: ~140 LOC.
+
+### [T1112] The cyclotomic units 𝒟_n and the closures 𝒞 (definitional layer)
+- **Status**: open | **File**: Iwasawa/CyclotomicUnits.lean
+- **Depends on**: T1110, T1111 | **Parallel**: no (same file as T1111)
+- **Type**: def-fields + lemmas
+#### Statement
+`cycloUnitsPlus` fields, `cycloUnits_le_globalUnits`, `cycloTower1`/
+`cycloTower1Plus` fields, `cycloTower1_le_unitsTower1`.
+#### Proof sketch
+1. `cycloUnitsPlus` fields: intersection of a subgroup with a subfield-valued
+   condition (the T1108 localUnitsPlus pattern verbatim).
+2. `cycloUnits_le_globalUnits`: `inf_le_right`.
+3. Towers: pointwise conditions over `cycloClosureOne` (subgroups by
+   construction: closure/inf of subgroups); `le`: `cycloClosureOne ≤
+   localUnitsOne` (`inf_le_right`) pointwise.
+- **Sources**: Q8 (TeX 3065–3067), Q10 (TeX 3090–3094).
+- **Sizing**: ~60 LOC.
+
+### [CLEANUP-ALL-6] pre-milestone project sweep
+- **Status**: open | **Depends on**: T1101–T1112 + CLEANUP-111/112/113 done.
+  /cleanup-all (degraded mode acceptable; record). Gate before the milestone
+  ticket per the cadence rule.
+
+### [T1113] **MILESTONE: c(a) ∈ 𝒟_n and cyclo ∈ 𝒞_{∞,1}** (RJW TeX 3084)
+- **Status**: open | **File**: Iwasawa/CyclotomicUnits.lean
+- **Depends on**: T1112 (+ CLEANUP-ALL-6 gate) | **Type**: lemmas
+#### Statement
+`isIntegral_cycloUnit`, `isIntegral_inv_cycloUnit`,
+`norm_cycloUnit_sub_one_lt_one`, `cyclo_elems_mem_cycloUnits`,
+`cyclo_mem_cycloTower1`, `cyclo_mem_unitsTower1`.
+#### Proof sketch
+1. Integrality: `c_n(a)·(ξ−1) = ξ^a−1` ⟹ for p∤a write the geometric sum:
+   `c_n(a) = Σ_{i<a} ξ^i` (from `(ξ^a−1) = (ξ−1)·Σ_{i<a} ξ^i` — `geom_sum_mul`/
+   `mul_geom_sum` mathlib + division by the nonzero ξ−1); ξ integral over ℤ
+   (root of monic `X^{p^n} − 1`) ⟹ the sum is (subring). Inverse: pick a' with
+   `a·a' ≡ 1 [MOD p^n]` (`Nat.exists_mul_emod_eq_one_of_coprime`,
+   gcd(a, p^n) = 1 from p∤a): `ξ^{aa'} = ξ` (`zetaSys_primitiveRoot` order
+   divides) ⟹ `(ξ−1) = (ξ^a)^{a'} − 1 = (ξ^a − 1)·Σ_{i<a'} ξ^{ai}` ⟹
+   `c_n(a)⁻¹ = Σ_{i<a'} ξ^{ai}` integral.
+2. Norm: `c_n(a) − 1 = Σ_{1≤i<a} ξ^i − (a−1) = Σ_{1≤i<a} (ξ^i − 1)`; each
+   `‖ξ^i − 1‖ < 1` (i < a: if p ∣ i it's a lower-level root or 0 — handle
+   `ξ^i = 1` term as 0; else `norm_zetaSys_pow_sub_one`-type from Map.lean's
+   privates / norm_pi_pow_totient route: ANY p^n-th root of unity η has
+   ‖η − 1‖ < 1: η^{p^n} = 1 ⟹ (η−1) divides… simplest: `‖η − 1‖ ≤ ‖π_m‖ < 1`
+   via the primitive-root norm formulas already in Tower/Map privates —
+   re-derive the single inequality `‖η−1‖ < 1` for η^{p^n} = 1, η ≠ ±…:
+   from `∏_{j<p^m}(X − η^j) = X^{p^m} − 1` at X = 1 if needed, or the
+   crude argument: `(η−1)^{p^n} ≡ η^{p^n} − 1 = 0 mod p`-style binomial
+   estimate: `‖η−1‖^{p^n} = ‖(η−1)^{p^n}‖ = ‖Σ_{j<p^n} binom·(η−1)^j·…‖` —
+   take the Tower-private route first; Tier-A sub-ticket if it resists);
+   ultrametric max < 1.
+3. Subgroup word: `(cyclo …).elems n` coe = `cycloUnit p a n` (dif_pos hn) =
+   `(ξ^{a mod p^n} − 1)·(ξ − 1)⁻¹` (reduce: `ξ^a = ξ^{a % p^n}` by
+   `pow_mod_orderOf`-style with `zetaSys_primitiveRoot`): the two factors'
+   unit-versions lie in `cycloGenSet` (`a % p^n ≠ 0` since p∤a ⟹ p^n ∤ a;
+   bounds `1 ≤ a % p^n ≤ p^n − 1` ✓; the (ξ−1)-generator is the a = 1 case),
+   so the word ∈ `Subgroup.closure` (mul_mem + inv_mem + subset_closure);
+   `Units.ext`-bridge between the mk0-units and the val-specified set members.
+   Global side: (1) + `cycloUnit_mem_K`-analogue for `Fglobal` (the same
+   geometric sums are ℚ⟮ξ⟯-elements) gives `∈ globalUnits` ⟹ ∈ 𝒟_n.
+4. `cyclo_mem_cycloTower1`: per n ≥ 1: elems n ∈ 𝒟_n (3) ⟹
+   ∈ closure(𝒟_n) (`Subgroup.le_topologicalClosure` + subset) and ∈ 𝒰_{n,1}
+   ((2) + `cycloUnit_mem_O`/`inv_cycloUnit_mem_O` from Map.lean) ⟹
+   ∈ 𝒞_{n,1}. `cyclo_mem_unitsTower1`: via `cycloTower1_le_unitsTower1`.
+- **Mathlib**: `geom_sum_mul`, `Nat.Coprime` mod-inverse, `IsIntegral` subring
+  API, `Subgroup.subset_closure`/`le_topologicalClosure`.
+- **Sources**: Q10's sentence (TeX 3084) + Q8; Map.lean cycloUnit pack.
+- **Sizing**: ~200 LOC. Tier-A split point: the `‖η−1‖ < 1` sub-lemma.
+
+### [CLEANUP-114] /cleanup CyclotomicUnits.lean
+- **Status**: open | **Depends on**: T1113.
+
+### [T1114] Blueprint: wire the IwasawaZeros chapter
+- **Status**: open | **Depends on**: all §11 proof tickets
+- **File**: PadicLFunctionsBlueprint/Chapters/IwasawaZeros.lean
+#### Work
+Wire the proven §11 nodes: lem:decompose-plus-minus ↦
+`isCompl_invariants_antiInvariants`/`isCompl_plusPart_minusPart`; the Λ⁺-iso
+node ↦ `plusEquiv` (prose note: functional-route proof, finite-level rank count
+deferred with Prop 3.9/3.10 — replan R11.2); the criterion node ↦
+`mem_plusPart_iff_forall_odd_moment`; the corollary node ↦
+`isPlusPseudoMeasure_padicZetaPlus` (+ erratum-#13 prose note: the k = 1
+Euler-factor case); the ideal node ↦ `zetaIdeal`/`zetaIdealPlus` (+eq_span);
+𝒟_n/𝒞-definition nodes ↦ `cycloUnits`/`cycloClosure`-family; the TeX-3084
+node ↦ `cyclo_mem_cycloTower1`. thm:cyclo-units-class-number and thm:iwasawa
+STAY PROSE (unwired; deferral notes per R11.8 — never wire partial
+realisations). Prose note on the identification (Q1/R11.1) in the chapter
+intro. `lake build PadicLFunctionsBlueprint` green; re-render via
+`./scripts/ci-pages.sh` when convenient.
+
+## §11 dispatch notes
+- Verification bar per ticket: `lake build` green, zero sorry in the ticket's
+  declarations, `#print axioms` ⊆ {propext, Classical.choice, Quot.sound};
+  record in Progress. Cleanup immediately per file-chain (degraded mode note if
+  no lean-lsp MCP).
+- Parallel lanes: (A) T1102→T1103→T1104→CL-111; (B) T1105 (→T1106 after A's
+  T1102/T1104; →T1107)→CL-112; (C) T1108→{T1109, T1110}→CL-113;
+  (D) T1111 (after T1108)→T1112 (after T1110/T1111). Then CLEANUP-ALL-6 →
+  T1113 → CL-114 → T1114.
+- The sorried INSTANCES (`SMulCommClass`/`IsScalarTower` in PlusPart;
+  `localUnitsOneModule`, `Inv`/`CommGroup (NormCompatUnits)`) are
+  load-bearing data/prop mixes: T1102/T1109/T1110 must replace them with real
+  constructions FIRST in their lanes (nothing else may prove THROUGH a sorried
+  instance; the axiom check catches leakage via `sorryAx`).

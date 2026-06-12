@@ -35,41 +35,54 @@ noncomputable section
 
 namespace PadicMeasure
 
-/-- Multiplication on `ℤ_[p]ˣ` as a single continuous map. -/
-def unitsMulCM₂ : C(ℤ_[p]ˣ × ℤ_[p]ˣ, ℤ_[p]ˣ) := ⟨fun q => q.1 * q.2, continuous_mul⟩
+section convolution
 
-/-- Convolution of measures on the multiplicative group `ℤ_p^×`:
+/-! The convolution algebra is defined for an arbitrary compact commutative topological
+monoid `G` — the generality of RJW Rem. 3.33 ("for any profinite abelian `G`"). This
+section was generalised in place from its original hardcoded `G = ℤ_[p]ˣ` by the §11
+pass (decomposition replan R11.5); the `ℤ_p^×`-named specialisations below preserve
+every downstream-facing statement verbatim. -/
+
+variable (G : Type*) [TopologicalSpace G] [CommMonoid G] [ContinuousMul G] [CompactSpace G]
+
+/-- Multiplication on a topological monoid `G` as a single continuous map. -/
+def mulCM₂ : C(G × G, G) := ⟨fun q => q.1 * q.2, continuous_mul⟩
+
+variable {G}
+
+/-- Convolution of measures on the (multiplicative) compact commutative monoid `G`:
 `∫ f d(μ ⋆ ν) = ∫ (∫ f(xy) dν(y)) dμ(x)`.
 
-Source: RJW Eq. (3.11) (`eq:convolution`, TeX lines 1173–1175). -/
-noncomputable def unitsConv (μ ν : PadicMeasure p ℤ_[p]ˣ) : PadicMeasure p ℤ_[p]ˣ where
-  toFun f := μ (innerInt p ν (f.comp (unitsMulCM₂ p)))
+Source: RJW Eq. (3.11) (`eq:convolution`, TeX lines 1173–1175) + Rem. 3.33. -/
+noncomputable def conv (μ ν : PadicMeasure p G) : PadicMeasure p G where
+  toFun f := μ (innerInt p ν (f.comp (mulCM₂ G)))
   map_add' f g := by rw [ContinuousMap.add_comp, innerInt_add, map_add]
   map_smul' c f := by rw [ContinuousMap.smul_comp, innerInt_smul, map_smul, RingHom.id_apply]
 
-noncomputable instance : Mul (PadicMeasure p ℤ_[p]ˣ) := ⟨unitsConv p⟩
+noncomputable instance : Mul (PadicMeasure p G) := ⟨conv p⟩
 
-noncomputable instance : One (PadicMeasure p ℤ_[p]ˣ) := ⟨dirac p 1⟩
+noncomputable instance : One (PadicMeasure p G) := ⟨dirac p 1⟩
 
-lemma units_mul_def (μ ν : PadicMeasure p ℤ_[p]ˣ) : μ * ν = unitsConv p μ ν := rfl
+lemma conv_mul_def (μ ν : PadicMeasure p G) : μ * ν = conv p μ ν := rfl
 
 @[simp]
-lemma units_mul_apply (μ ν : PadicMeasure p ℤ_[p]ˣ) (f : C(ℤ_[p]ˣ, ℤ_[p])) :
-    (μ * ν) f = μ (innerInt p ν (f.comp (unitsMulCM₂ p))) := rfl
+lemma conv_mul_apply (μ ν : PadicMeasure p G) (f : C(G, ℤ_[p])) :
+    (μ * ν) f = μ (innerInt p ν (f.comp (mulCM₂ G))) := rfl
 
-lemma units_one_def : (1 : PadicMeasure p ℤ_[p]ˣ) = dirac p 1 := rfl
+omit [ContinuousMul G] [CompactSpace G] in
+lemma conv_one_def : (1 : PadicMeasure p G) = dirac p 1 := rfl
 
-/-- The Iwasawa algebra `Λ(ℤ_p^×) = ℳ(ℤ_p^×, ℤ_p)` as a commutative ring under
-convolution. Commutativity is the Fubini swap (`integral_swap`); associativity is the
-triple-integral computation.
+/-- The Iwasawa algebra `Λ(G) = ℳ(G, ℤ_p)` of a compact commutative topological monoid
+as a commutative ring under convolution. Commutativity is the Fubini swap
+(`integral_swap`); associativity is the triple-integral computation.
 
 Source: RJW Rem. 3.11 ("One checks that this does give an algebra structure") +
 Rem. 3.33. -/
-noncomputable instance : CommRing (PadicMeasure p ℤ_[p]ˣ) where
+noncomputable instance : CommRing (PadicMeasure p G) where
   mul_assoc a b c := by
     refine LinearMap.ext fun f => ?_
-    change a (innerInt p b ((innerInt p c (f.comp (unitsMulCM₂ p))).comp (unitsMulCM₂ p)))
-      = a (innerInt p (unitsConv p b c) (f.comp (unitsMulCM₂ p)))
+    change a (innerInt p b ((innerInt p c (f.comp (mulCM₂ G))).comp (mulCM₂ G)))
+      = a (innerInt p (conv p b c) (f.comp (mulCM₂ G)))
     congr 1
     ext x
     change b _ = b _
@@ -82,36 +95,36 @@ noncomputable instance : CommRing (PadicMeasure p ℤ_[p]ˣ) where
     rw [mul_assoc]
   one_mul a := by
     refine LinearMap.ext fun f => ?_
-    change a ((f.comp (unitsMulCM₂ p)).curry 1) = a f
+    change a ((f.comp (mulCM₂ G)).curry 1) = a f
     congr 1
     ext y
     change f (1 * y) = f y
     rw [one_mul]
   mul_one a := by
     refine LinearMap.ext fun f => ?_
-    change a (innerInt p (dirac p 1) (f.comp (unitsMulCM₂ p))) = a f
+    change a (innerInt p (dirac p 1) (f.comp (mulCM₂ G))) = a f
     congr 1
     ext x
     change f (x * 1) = f x
     rw [mul_one]
   left_distrib a b c := by
     refine LinearMap.ext fun f => ?_
-    change a (innerInt p (b + c) (f.comp (unitsMulCM₂ p))) = _
+    change a (innerInt p (b + c) (f.comp (mulCM₂ G))) = _
     rw [innerInt_measure_add, map_add]
     rfl
   right_distrib a b c := by
     refine LinearMap.ext fun f => ?_
-    change (a + b) (innerInt p c (f.comp (unitsMulCM₂ p))) = _
+    change (a + b) (innerInt p c (f.comp (mulCM₂ G))) = _
     rw [LinearMap.add_apply]
     rfl
   zero_mul a := LinearMap.ext fun f => rfl
   mul_zero a := by
     refine LinearMap.ext fun f => ?_
-    change a (innerInt p (0 : PadicMeasure p ℤ_[p]ˣ) (f.comp (unitsMulCM₂ p))) = 0
+    change a (innerInt p (0 : PadicMeasure p G) (f.comp (mulCM₂ G))) = 0
     rw [innerInt_measure_zero, map_zero]
   mul_comm a b := by
     refine LinearMap.ext fun f => ?_
-    change a (innerInt p b (f.comp (unitsMulCM₂ p))) = b (innerInt p a (f.comp (unitsMulCM₂ p)))
+    change a (innerInt p b (f.comp (mulCM₂ G))) = b (innerInt p a (f.comp (mulCM₂ G)))
     rw [integral_swap]
     congr 1
     ext y
@@ -122,40 +135,73 @@ noncomputable instance : CommRing (PadicMeasure p ℤ_[p]ˣ) where
     rw [mul_comm]
 
 @[simp]
-theorem units_dirac_mul_dirac (u v : ℤ_[p]ˣ) :
-    (dirac p u : PadicMeasure p ℤ_[p]ˣ) * dirac p v = dirac p (u * v) :=
+theorem conv_dirac_mul_dirac (u v : G) :
+    (dirac p u : PadicMeasure p G) * dirac p v = dirac p (u * v) :=
   LinearMap.ext fun _f => rfl
 
 section degree
 
-/-- The degree (augmentation) map `Λ(ℤ_p^×) → ℤ_p`, `μ ↦ ∫_{ℤ_p^×} 1 dμ`.
+/-- The degree (augmentation) map `Λ(G) → ℤ_p`, `μ ↦ ∫_G 1 dμ`.
 
 Source: RJW Def. 3.37 (`DefAugmentationIdealFiniteLevel`, TeX lines 1245–1253); the
 inverse-limit degree map is evaluation at the constant function `1`. -/
-noncomputable def deg : PadicMeasure p ℤ_[p]ˣ →+* ℤ_[p] where
+noncomputable def deg : PadicMeasure p G →+* ℤ_[p] where
   toFun μ := μ 1
   map_one' := by
-    change (1 : C(ℤ_[p]ˣ, ℤ_[p])) 1 = 1
+    change (1 : C(G, ℤ_[p])) 1 = 1
     rfl
   map_mul' μ ν := by
-    change μ (innerInt p ν ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p))) = μ 1 * ν 1
-    have h1 : innerInt p ν ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p))
-        = ν 1 • (1 : C(ℤ_[p]ˣ, ℤ_[p])) := by
+    change μ (innerInt p ν ((1 : C(G, ℤ_[p])).comp (mulCM₂ G))) = μ 1 * ν 1
+    have h1 : innerInt p ν ((1 : C(G, ℤ_[p])).comp (mulCM₂ G))
+        = ν 1 • (1 : C(G, ℤ_[p])) := by
       ext x
       change ν _ = _
-      have hc : ((1 : C(ℤ_[p]ˣ, ℤ_[p])).comp (unitsMulCM₂ p)).curry x
-          = (1 : C(ℤ_[p]ˣ, ℤ_[p])) := ContinuousMap.ext fun y => rfl
+      have hc : ((1 : C(G, ℤ_[p])).comp (mulCM₂ G)).curry x
+          = (1 : C(G, ℤ_[p])) := ContinuousMap.ext fun y => rfl
       rw [hc]
       simp [smul_eq_mul]
     rw [h1, map_smul, smul_eq_mul, mul_comm]
   map_zero' := rfl
   map_add' _ _ := rfl
 
-/-- The augmentation ideal `I(ℤ_p^×) = ker(deg)`. Source: RJW Def. 3.37. -/
-noncomputable def augmentationIdeal : Ideal (PadicMeasure p ℤ_[p]ˣ) :=
+/-- The augmentation ideal `I(G) = ker(deg)`. Source: RJW Def. 3.37. -/
+noncomputable def augmentationIdeal : Ideal (PadicMeasure p G) :=
   RingHom.ker (deg p)
 
 end degree
+
+end convolution
+
+section unitsSpecialisations
+
+/-! Specialisations at `G = ℤ_p^×` — every name and statement below is exactly what the
+pre-generalisation file exported, so downstream users (`ZetaP`, `EisensteinFamily`,
+`TameConductor`, `MeasureR/UnitsRing`, …) are unaffected. -/
+
+/-- Multiplication on `ℤ_[p]ˣ` as a single continuous map. -/
+abbrev unitsMulCM₂ : C(ℤ_[p]ˣ × ℤ_[p]ˣ, ℤ_[p]ˣ) := mulCM₂ ℤ_[p]ˣ
+
+/-- Convolution of measures on the multiplicative group `ℤ_p^×`:
+`∫ f d(μ ⋆ ν) = ∫ (∫ f(xy) dν(y)) dμ(x)`.
+
+Source: RJW Eq. (3.11) (`eq:convolution`, TeX lines 1173–1175). -/
+noncomputable abbrev unitsConv (μ ν : PadicMeasure p ℤ_[p]ˣ) : PadicMeasure p ℤ_[p]ˣ :=
+  conv p μ ν
+
+lemma units_mul_def (μ ν : PadicMeasure p ℤ_[p]ˣ) : μ * ν = unitsConv p μ ν := rfl
+
+@[simp]
+lemma units_mul_apply (μ ν : PadicMeasure p ℤ_[p]ˣ) (f : C(ℤ_[p]ˣ, ℤ_[p])) :
+    (μ * ν) f = μ (innerInt p ν (f.comp (unitsMulCM₂ p))) := rfl
+
+lemma units_one_def : (1 : PadicMeasure p ℤ_[p]ˣ) = dirac p 1 := rfl
+
+@[simp]
+theorem units_dirac_mul_dirac (u v : ℤ_[p]ˣ) :
+    (dirac p u : PadicMeasure p ℤ_[p]ˣ) * dirac p v = dirac p (u * v) :=
+  conv_dirac_mul_dirac p u v
+
+end unitsSpecialisations
 
 section finiteLevel
 

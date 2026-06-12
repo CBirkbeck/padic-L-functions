@@ -40,6 +40,10 @@ import PadicLFunctions.Coleman.Tower
 import PadicLFunctions.Coleman.NormOperator
 import PadicLFunctions.Coleman.Theorem
 import PadicLFunctions.Coleman.Map
+import PadicLFunctions.Iwasawa.PlusPart
+import PadicLFunctions.Iwasawa.ZetaGalois
+import PadicLFunctions.Iwasawa.LocalUnits
+import PadicLFunctions.Iwasawa.CyclotomicUnits
 
 /-!
 # p-adic L-functions

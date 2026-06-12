@@ -54,6 +54,18 @@ formalisation had to make explicit).
     Formalised in the honest-sign form (`coleman_to_kl`, Coleman/Map.lean;
     the core `Col(c(a)) = −zetaNum a` is `Col_cyclo`).
 
+13. **TeX 3038 (§11.1, proof of the corollary "ζ_p is a pseudo-measure on
+    𝒢⁺")** — wrong at k = 1. The proof reads "This follows from the
+    interpolation property, as ζ(1−k) = 0 for odd k ≥ 1"; but
+    ζ(1−1) = ζ(0) = −1/2 ≠ 0. What vanishes for *all* odd k ≥ 1 is the
+    *interpolated moment* (1−p^{k−1})·ζ(1−k): at k = 1 via the Euler factor
+    1−p⁰ = 0, at odd k ≥ 3 via ζ(1−k) = −B_k/k = 0. (The preceding text at
+    TeX 2992 hedges with "vanishes at the characters χ^k, for any odd
+    integer k > 1" — but the membership criterion the corollary leans on
+    (TeX 3019–3022) needs all odd k ≥ 1, so the k = 1 case cannot be
+    skipped.) Formalised with the Euler-factor case split
+    (`padicZeta_odd_moment_eq_zero`, Iwasawa/ZetaGalois.lean).
+
 ## Gaps
 
 6. **Thm 6.1(ii) at tame conductor D = 1 (TeX 1987–1995 vs §5.2 standing
