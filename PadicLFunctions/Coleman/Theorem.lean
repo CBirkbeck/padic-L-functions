@@ -841,6 +841,318 @@ theorem evalPi_normOp (f : PowerSeries ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
   rw [levelNorm_apply p n hmem]
   rfl
 
+/-! ## Coleman's theorem (T910, the §9 milestone)
+
+RJW `thm:coleman power series` (TeX 2553–2560) and `thm:coleman map 2` (TeX 2796–2807):
+the map `𝒰_∞ → ℤ_p⟦T⟧^×` sending a norm-compatible system of units `(u_n)_n` to the
+unique `𝒩`-invariant unit power series `f` with `f(π_n) = u_n` for all `n ≥ 1` is a
+well-defined injective group homomorphism (the **Coleman map**). Existence is the
+diagonal/compactness argument of TeX 2763–2791; uniqueness is the Weierstrass
+`evalPi_injective` (T905).
+
+Two analytic bridges feed the diagonal step (d):
+
+* `norm_evalPi_sub_le_of_modEqPow`: a congruence `f ≡ g mod p^{m+1}` of power series
+  pushes to the *evaluated* proximity `‖f(π_n) − g(π_n)‖ ≤ p^{−(m+1)}` (the `C(p^{m+1})`
+  factor evaluates to `toCp(p)^{m+1}`, of norm `p^{−(m+1)}`, times a value in the unit
+  ball);
+* `tendsto_evalPi_of_tendsto`: coefficientwise (Pi-topology) convergence `h_j → h`
+  forces `h_j(π_n) → h(π_n)` — an honest ultrametric `max(head, tail)` argument
+  (finitely many coefficients converge; the `‖π_n‖^N`-tail is uniformly small). -/
+
+open scoped PowerSeries.WithPiTopology
+
+variable (p)
+
+/-- For a member of `𝒰_∞`, the level-`n` value has norm exactly `1`: both `‖u_n‖ ≤ 1`
+and `‖u_n⁻¹‖ ≤ 1` (membership of `u_n, u_n⁻¹` in `𝒪_n`), and `u_n · u_n⁻¹ = 1` forces
+`‖u_n‖ · ‖u_n⁻¹‖ = 1`, so both norms are `1`. -/
+private theorem norm_elems_eq_one (u : NormCompatUnits p) (n : ℕ) :
+    ‖(u.elems n : ℂ_[p])‖ = 1 := by
+  have hle : ‖(u.elems n : ℂ_[p])‖ ≤ 1 := (Subring.mem_inf.1 (u.mem n)).2
+  have hile : ‖((u.elems n)⁻¹ : ℂ_[p])‖ ≤ 1 := (Subring.mem_inf.1 (u.inv_mem n)).2
+  have hmul : ‖(u.elems n : ℂ_[p])‖ * ‖((u.elems n)⁻¹ : ℂ_[p])‖ = 1 := by
+    rw [← norm_mul, ← Units.val_inv_eq_inv_val, ← Units.val_mul, mul_inv_cancel, Units.val_one,
+      norm_one]
+  nlinarith [norm_nonneg (u.elems n : ℂ_[p]), norm_nonneg ((u.elems n)⁻¹ : ℂ_[p])]
+
+/-- **The mod-`p^{m+1}` evaluation bridge** (the (d)-step proximity, RJW TeX 2779–2783):
+if `f ≡ g mod p^{m+1}` (`ModEqPow`) then `‖f(π_n) − g(π_n)‖ ≤ p^{−(m+1)}` for `n ≥ 1`.
+Writing `f − g = C(p^{m+1})·h` (`modEqPow_iff_exists_C_mul`), `evalPi`-linearity and the
+`C`-rule give `f(π_n) − g(π_n) = toCp(p^{m+1})·h(π_n)`; then `‖toCp(p^{m+1})‖ = p^{−(m+1)}`
+(`norm_toCp` + `PadicInt.norm_p`) and `‖h(π_n)‖ ≤ 1` (`evalPi_mem_O`). -/
+theorem norm_evalPi_sub_le_of_modEqPow {m : ℕ} {f g : PowerSeries ℤ_[p]}
+    (hfg : ModEqPow p (m + 1) f g) {n : ℕ} (hn : 1 ≤ n) :
+    ‖evalPi p f n - evalPi p g n‖ ≤ ((p : ℝ)⁻¹) ^ (m + 1) := by
+  obtain ⟨h, hh⟩ := modEqPow_iff_exists_C_mul.1 hfg
+  have hsub : evalPi p f n - evalPi p g n = toCp p ((p : ℤ_[p]) ^ (m + 1)) * evalPi p h n := by
+    rw [← evalPi_sub p f g hn, hh, evalPi_mul p _ _ hn, evalPi_C]
+  rw [hsub, norm_mul, norm_toCp, norm_pow, PadicInt.norm_p]
+  calc ((p : ℝ)⁻¹) ^ (m + 1) * ‖evalPi p h n‖
+      ≤ ((p : ℝ)⁻¹) ^ (m + 1) * 1 :=
+        mul_le_mul_of_nonneg_left (Subring.mem_inf.1 (evalPi_mem_O p h hn)).2 (by positivity)
+    _ = ((p : ℝ)⁻¹) ^ (m + 1) := mul_one _
+
+/-- **The evaluation-continuity bridge** (T909-feeding, RJW TeX 2784): if a sequence
+`g_j` of `ℤ_p`-power series converges coefficientwise (Pi-topology) to `h`, then the
+values `g_j(π_n)` converge to `h(π_n)` for `n ≥ 1`. Honest ultrametric `max`-argument:
+the difference `g_j(π_n) − h(π_n) = ∑'_k toCp(coeff_k(g_j − h))·π_n^k`; for any `ε`, pick
+`N` with `‖π_n‖^N < ε`, then each term is `≤ max(∑_{k<N} ‖coeff_k(g_j − h)‖, ‖π_n‖^N)`
+(coefficients in `ℤ_p` have `toCp`-image of norm `≤ 1`, and `‖π_n‖ < 1`), so the `tsum`
+is `≤` that `max`; the head `→ 0` (finitely many `coeff_k(g_j) → coeff_k h`,
+`tendsto_coeff`) and the tail `< ε`. -/
+theorem tendsto_evalPi_of_tendsto {g : ℕ → PowerSeries ℤ_[p]} {h : PowerSeries ℤ_[p]}
+    (hg : Filter.Tendsto g Filter.atTop (nhds h)) {n : ℕ} (hn : 1 ≤ n) :
+    Filter.Tendsto (fun j => evalPi p (g j) n) Filter.atTop (nhds (evalPi p h n)) := by
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  -- pick `N` with `‖π_n‖^N < ε`
+  obtain ⟨N, hN⟩ := ((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg (pi p n))
+    (norm_pi_lt_one p hn)).eventually_lt_const hε).exists_forall_of_atTop
+  -- the head `H_j := ∑_{k<N} ‖coeff_k (g j − h)‖ → 0`
+  have hhead : Filter.Tendsto
+      (fun j => ∑ k ∈ Finset.range N, ‖PowerSeries.coeff k (g j - h)‖) Filter.atTop (nhds 0) := by
+    have hk : ∀ k, Filter.Tendsto (fun j => ‖PowerSeries.coeff k (g j - h)‖)
+        Filter.atTop (nhds 0) := by
+      intro k
+      have hc : Filter.Tendsto (fun j => PowerSeries.coeff k (g j - h)) Filter.atTop (nhds 0) := by
+        have := (tendsto_coeff hg k).sub_const (PowerSeries.coeff k h)
+        rw [sub_self] at this
+        exact this.congr (fun j => by rw [map_sub])
+      have := (continuous_norm.tendsto (0 : ℤ_[p])).comp hc
+      rwa [norm_zero] at this
+    have := tendsto_finsetSum (Finset.range N) (fun k _ => hk k)
+    simpa using this
+  -- eventually the head `< ε`
+  rw [Metric.tendsto_atTop] at hhead
+  obtain ⟨J, hJ⟩ := hhead ε hε
+  refine ⟨J, fun j hj => ?_⟩
+  rw [dist_eq_norm]
+  -- the difference as the seriesEval of `map toCp (g j − h)`
+  have hdiff : evalPi p (g j) n - evalPi p h n
+      = ∑' k, PowerSeries.coeff k (PowerSeries.map (toCp p) (g j - h)) * pi p n ^ k := by
+    rw [← evalPi_sub p (g j) h hn, evalPi, seriesEval]
+  rw [hdiff]
+  -- per-term bound by the `max` of head-sum and `‖π_n‖^N`
+  set B := max (∑ k ∈ Finset.range N, ‖PowerSeries.coeff k (g j - h)‖) (‖pi p n‖ ^ N) with hB
+  have hterm : ∀ k, ‖PowerSeries.coeff k (PowerSeries.map (toCp p) (g j - h)) * pi p n ^ k‖
+      ≤ B := by
+    intro k
+    rw [norm_mul, norm_pow, PowerSeries.coeff_map, norm_toCp]
+    by_cases hkN : k < N
+    · -- head: `‖coeff_k‖·‖π_n‖^k ≤ ‖coeff_k‖ ≤ head-sum ≤ B`
+      refine le_trans ?_ (le_max_left _ _)
+      calc ‖PowerSeries.coeff k (g j - h)‖ * ‖pi p n‖ ^ k
+          ≤ ‖PowerSeries.coeff k (g j - h)‖ * 1 :=
+            mul_le_mul_of_nonneg_left
+              (pow_le_one₀ (norm_nonneg _) (norm_pi_lt_one p hn).le) (norm_nonneg _)
+        _ = ‖PowerSeries.coeff k (g j - h)‖ := mul_one _
+        _ ≤ ∑ i ∈ Finset.range N, ‖PowerSeries.coeff i (g j - h)‖ :=
+            Finset.single_le_sum (f := fun i => ‖PowerSeries.coeff i (g j - h)‖)
+              (fun i _ => norm_nonneg _) (Finset.mem_range.2 hkN)
+    · -- tail: `‖coeff_k‖·‖π_n‖^k ≤ 1·‖π_n‖^N ≤ B`
+      refine le_trans ?_ (le_max_right _ _)
+      rw [not_lt] at hkN
+      calc ‖PowerSeries.coeff k (g j - h)‖ * ‖pi p n‖ ^ k
+          ≤ 1 * ‖pi p n‖ ^ k :=
+            mul_le_mul_of_nonneg_right (PadicInt.norm_le_one _) (by positivity)
+        _ = ‖pi p n‖ ^ k := one_mul _
+        _ ≤ ‖pi p n‖ ^ N := pow_le_pow_of_le_one (norm_nonneg _)
+            (norm_pi_lt_one p hn).le hkN
+  have htsum_le : ‖∑' k, PowerSeries.coeff k (PowerSeries.map (toCp p) (g j - h)) * pi p n ^ k‖
+      ≤ B := IsUltrametricDist.norm_tsum_le_of_forall_le hterm
+  refine lt_of_le_of_lt htsum_le ?_
+  rw [hB, max_lt_iff]
+  refine ⟨?_, hN N le_rfl⟩
+  have := hJ j hj
+  rw [dist_eq_norm, sub_zero, Real.norm_eq_abs,
+    abs_of_nonneg (Finset.sum_nonneg (fun k _ => norm_nonneg _))] at this
+  exact this
+
+/-- **Coleman's theorem** (RJW `thm:coleman power series`, TeX 2553–2560; `thm:coleman map 2`,
+TeX 2796–2807): for every norm-compatible system of units `u = (u_n)_n ∈ 𝒰_∞`, there is a
+*unique* unit power series `f ∈ ℤ_p⟦T⟧^×` that is `𝒩`-invariant (`𝒩 f = f`) and interpolates
+`u` (`f(π_n) = u_n` for all `n ≥ 1`).
+
+**Uniqueness** is the Weierstrass `evalPi_injective` (T905, RJW lem:unique-coleman): two such
+`f, g` agree at every `π_n`, `n ≥ 1`, hence are equal (the `IsUnit`/`𝒩`-invariance clauses are
+not needed for uniqueness).
+
+**Existence** is the diagonal/compactness argument (TeX 2763–2791):
+* (a) per-level interpolants `F_m` (`exists_evalPi_eq`, `‖u_m‖ = 1` from `norm_elems_eq_one`);
+* (b) the norm-iterate evaluation `𝒩^{[k]} F_{n+k}(π_n) = u_n` (induction on `k`, via
+  `evalPi_normOp` (T907) and `u.compat`);
+* (c) the diagonal `g_m := 𝒩^{[m]} F_{2m}` and a coefficientwise-convergent subsequence
+  `g_{φ j} → f_u` (`exists_subseq_tendsto`, T909/compactness);
+* (d) `f_u(π_n) = u_n`: the value `g_{φ j}(π_n)` tends to `f_u(π_n)`
+  (`tendsto_evalPi_of_tendsto`) *and* to `u_n` (the congruence `u_n ≡ g_m(π_n) mod p^{m+1}`
+  from `normOp_iterate_modEq` (T908 iv) + `norm_evalPi_sub_le_of_modEqPow`, squeezed as
+  `φ j → ∞`), so the two limits agree;
+* (e) `IsUnit f_u`: each `g_m` is a unit (`normOp_iterate_isUnit`) and the units are closed
+  (`isClosed_isUnit`, `IsClosed.mem_of_tendsto`);
+* (f) `𝒩 f_u = f_u`: `𝒩 f_u` also interpolates `u` (`evalPi_normOp` + `u.compat`), so
+  `evalPi_injective` forces `𝒩 f_u = f_u`. -/
+theorem coleman_existsUnique (u : NormCompatUnits p) :
+    ∃! f : PowerSeries ℤ_[p],
+      IsUnit f ∧ normOp f = f ∧ ∀ n, 1 ≤ n → evalPi p f n = (u.elems n : ℂ_[p]) := by
+  classical
+  -- (a) per-level interpolants, packaged with junk `1` at level `0`
+  have hlevel : ∀ m, 1 ≤ m →
+      ∃ f : PowerSeries ℤ_[p], IsUnit f ∧ evalPi p f m = (u.elems m : ℂ_[p]) :=
+    fun m hm => exists_evalPi_eq p hm (u.mem m) (norm_elems_eq_one p u m)
+  set F : ℕ → PowerSeries ℤ_[p] := fun m =>
+    if hm : 1 ≤ m then (hlevel m hm).choose else 1 with hF
+  have hF_unit : ∀ m, IsUnit (F m) := by
+    intro m
+    rcases Nat.eq_zero_or_pos m with hm0 | hm0
+    · simp only [hF]; rw [dif_neg (show ¬ 1 ≤ m by omega)]; exact isUnit_one
+    · simp only [hF]; rw [dif_pos (show 1 ≤ m by omega)]; exact (hlevel m (by omega)).choose_spec.1
+  have hF_eval : ∀ m, 1 ≤ m → evalPi p (F m) m = (u.elems m : ℂ_[p]) := by
+    intro m hm; simp only [hF]; rw [dif_pos hm]; exact (hlevel m hm).choose_spec.2
+  -- (b) the norm-iterate evaluation `𝒩^{[k]} F_{n+k}(π_n) = u_n` for `n ≥ 1`
+  have hiter : ∀ k n, 1 ≤ n → evalPi p (normOp^[k] (F (n + k))) n = (u.elems n : ℂ_[p]) := by
+    intro k
+    induction k with
+    | zero => intro n hn; simpa using hF_eval n hn
+    | succ j ih =>
+      intro n hn
+      have horient : F (n + (j + 1)) = F ((n + 1) + j) := by congr 1; omega
+      rw [Function.iterate_succ_apply', evalPi_normOp _ hn, horient, ih (n + 1) (by omega),
+        u.compat n hn]
+  -- (c) the diagonal sequence and a convergent subsequence
+  set g : ℕ → PowerSeries ℤ_[p] := fun m => normOp^[m] (F (2 * m)) with hg
+  obtain ⟨f_u, φ, hφ_mono, hφ_tendsto⟩ := exists_subseq_tendsto g
+  -- (e) `f_u` is a unit (limit of units, units closed)
+  have hf_u_unit : IsUnit f_u := by
+    refine isClosed_isUnit.mem_of_tendsto hφ_tendsto (Filter.Eventually.of_forall fun j => ?_)
+    rw [hg, Function.comp_apply]; exact normOp_iterate_isUnit (hF_unit _) _
+  -- (d) `f_u(π_n) = u_n`
+  have hf_u_eval : ∀ n, 1 ≤ n → evalPi p f_u n = (u.elems n : ℂ_[p]) := by
+    intro n hn
+    -- limit A: `g(φ j)(π_n) → f_u(π_n)` (evaluation continuity along the subsequence)
+    have hlimA : Filter.Tendsto (fun j => evalPi p ((g ∘ φ) j) n) Filter.atTop
+        (nhds (evalPi p f_u n)) := tendsto_evalPi_of_tendsto p hφ_tendsto hn
+    -- the bound: for `m ≥ n`, `‖u_n − g_m(π_n)‖ ≤ p^{−(m+1)}`
+    have hbound : ∀ m, n ≤ m →
+        ‖(u.elems n : ℂ_[p]) - evalPi p (g m) n‖ ≤ ((p : ℝ)⁻¹) ^ (m + 1) := by
+      intro m hnm
+      -- `evalPi (𝒩^{[2m−n]} F_{2m}) n = u_n` (part (b) at `k = 2m − n`)
+      have hkey : evalPi p (normOp^[2 * m - n] (F (2 * m))) n = (u.elems n : ℂ_[p]) := by
+        have := hiter (2 * m - n) n hn
+        rwa [show n + (2 * m - n) = 2 * m from by omega] at this
+      -- the congruence `𝒩^{[2m−n]} F_{2m} ≡ 𝒩^{[m]} F_{2m} mod p^{m+1}` (part (iv))
+      have hmod : ModEqPow p (m + 1) (normOp^[2 * m - n] (F (2 * m)))
+          (normOp^[m] (F (2 * m))) := normOp_iterate_modEq (by omega) (hF_unit _)
+      have hb := norm_evalPi_sub_le_of_modEqPow p hmod hn
+      rw [hkey] at hb
+      simp only [hg]; exact hb
+    -- limit B: `g(φ j)(π_n) → u_n` (squeeze, eventually `φ j ≥ n`)
+    have hp0 : (0 : ℝ) ≤ (p : ℝ)⁻¹ := by positivity
+    have hplt : (p : ℝ)⁻¹ < 1 := by
+      rw [inv_lt_one_iff₀]; right; exact_mod_cast hp.out.one_lt
+    have hφ1_atTop : Filter.Tendsto (fun j => φ j + 1) Filter.atTop Filter.atTop :=
+      (Filter.tendsto_add_atTop_nat 1).comp hφ_mono.tendsto_atTop
+    have htend0 : Filter.Tendsto (fun j => ((p : ℝ)⁻¹) ^ (φ j + 1)) Filter.atTop (nhds 0) :=
+      (tendsto_pow_atTop_nhds_zero_of_lt_one hp0 hplt).comp hφ1_atTop
+    have hlimB : Filter.Tendsto (fun j => evalPi p ((g ∘ φ) j) n) Filter.atTop
+        (nhds (u.elems n : ℂ_[p])) := by
+      rw [tendsto_iff_dist_tendsto_zero]
+      refine squeeze_zero' ?_ ?_ htend0
+      · exact Filter.Eventually.of_forall fun j => dist_nonneg
+      · -- eventually (for `j ≥ n`) `dist ≤ p^{−(φ j + 1)}`
+        filter_upwards [Filter.eventually_ge_atTop n] with j hj
+        rw [Function.comp_apply, dist_comm, dist_eq_norm]
+        exact hbound (φ j) (le_trans hj (hφ_mono.id_le j))
+    exact tendsto_nhds_unique hlimA hlimB
+  -- (f) `𝒩 f_u = f_u`
+  have hf_u_norm : normOp f_u = f_u := by
+    refine evalPi_injective p (fun n hn => ?_)
+    rw [evalPi_normOp _ hn, hf_u_eval (n + 1) (by omega), u.compat n hn, hf_u_eval n hn]
+  refine ⟨f_u, ⟨hf_u_unit, hf_u_norm, hf_u_eval⟩, ?_⟩
+  -- uniqueness via `evalPi_injective`
+  rintro f' ⟨-, -, hf'_eval⟩
+  exact evalPi_injective p (fun n hn => by rw [hf'_eval n hn, hf_u_eval n hn])
+
+/-- **The Coleman series** of a norm-compatible system of units `u ∈ 𝒰_∞`: the unique
+`𝒩`-invariant unit power series interpolating `u` (`coleman_existsUnique`). RJW
+`thm:coleman power series` (TeX 2553–2560). -/
+noncomputable def colemanSeries (u : NormCompatUnits p) : PowerSeries ℤ_[p] :=
+  (coleman_existsUnique p u).choose
+
+/-- `colemanSeries u` is a unit (the first clause of `coleman_existsUnique`). -/
+theorem colemanSeries_isUnit (u : NormCompatUnits p) : IsUnit (colemanSeries p u) :=
+  (coleman_existsUnique p u).choose_spec.1.1
+
+/-- `colemanSeries u` is `𝒩`-invariant (the second clause of `coleman_existsUnique`). -/
+theorem normOp_colemanSeries (u : NormCompatUnits p) :
+    normOp (colemanSeries p u) = colemanSeries p u :=
+  (coleman_existsUnique p u).choose_spec.1.2.1
+
+/-- `colemanSeries u` interpolates `u`: `colemanSeries u (π_n) = u_n` for `n ≥ 1` (the third
+clause of `coleman_existsUnique`). -/
+theorem evalPi_colemanSeries (u : NormCompatUnits p) {n : ℕ} (hn : 1 ≤ n) :
+    evalPi p (colemanSeries p u) n = (u.elems n : ℂ_[p]) :=
+  (coleman_existsUnique p u).choose_spec.1.2.2 n hn
+
+/-- **Multiplicativity of the Coleman map** (RJW `thm:coleman map 2`, TeX 2796–2807): the map
+`u ↦ colemanSeries u` is a homomorphism, `colemanSeries (u·v) = colemanSeries u · colemanSeries v`.
+The product `colemanSeries u · colemanSeries v` satisfies all three defining clauses of
+`coleman_existsUnique (u·v)` (`IsUnit.mul`, `normOp_mul`, `evalPi_mul` against
+`(u·v).elems n = u_n·v_n`), so it equals `colemanSeries (u·v)` by uniqueness. -/
+theorem colemanSeries_mul (u v : NormCompatUnits p) :
+    colemanSeries p (u * v) = colemanSeries p u * colemanSeries p v := by
+  refine (coleman_existsUnique p (u * v)).unique
+    (coleman_existsUnique p (u * v)).choose_spec.1 ⟨?_, ?_, ?_⟩
+  · exact (colemanSeries_isUnit p u).mul (colemanSeries_isUnit p v)
+  · rw [normOp_mul, normOp_colemanSeries, normOp_colemanSeries]
+  · intro n hn
+    rw [evalPi_mul p _ _ hn, evalPi_colemanSeries p u hn, evalPi_colemanSeries p v hn]
+    show (u.elems n : ℂ_[p]) * (v.elems n : ℂ_[p]) = ((u * v).elems n : ℂ_[p])
+    rw [show ((u * v).elems n : ℂ_[p]) = ((u.elems n * v.elems n : ℂ_[p]ˣ) : ℂ_[p]) from rfl,
+      Units.val_mul]
+
+namespace NormCompatUnits
+
+variable {p}
+
+/-- Two members of `𝒰_∞` with equal unit systems are equal — the remaining fields
+(`mem`, `inv_mem`, `compat`) are propositions. (`@[ext]` lemma feeding the injectivity
+characterisation of the Coleman map.)
+
+Note (T910/CLEANUP-FINAL): the structure carries a vestigial `elems 0` (the level-0 unit),
+which the norm-compatibility `compat` — imposed only for `n ≥ 1` — does not constrain.
+`elems` equality is therefore strictly stronger than the `n ≥ 1` interpolation data; this is
+why `colemanSeries` is injective only up to the level-0 component (`colemanSeries_eq_iff`). -/
+@[ext]
+theorem ext {u v : NormCompatUnits p} (h : u.elems = v.elems) : u = v := by
+  cases u; cases v; simp only [mk.injEq]; exact h
+
+end NormCompatUnits
+
+/-- **Injectivity of the Coleman map** (RJW `thm:coleman map 2`, TeX 2796–2807, the "injective
+homomorphism" claim), in the honest form pinned to the `n ≥ 1` interpolation data:
+`colemanSeries u = colemanSeries v ↔ ∀ n ≥ 1, u_n = v_n`.
+
+Forward: equal series have equal values `u_n = colemanSeries(·)(π_n) = v_n` for `n ≥ 1`
+(`evalPi_colemanSeries`), and `Units.ext`. Backward: if `u_n = v_n` for all `n ≥ 1`, then
+`colemanSeries v` interpolates `u` as well, so `coleman_existsUnique u`'s uniqueness gives
+`colemanSeries u = colemanSeries v`.
+
+Note (T910): the `n ≥ 1` restriction is *forced*, not a weakening — the level-0 unit `elems 0`
+is unconstrained by the tower (`compat` starts at `n = 1`, the `K_0 = ℚ_p` design of T903), so
+`colemanSeries` cannot see it; full `elems`-injectivity would be false. The source's
+`𝒰_∞ = lim_{n≥1}` has no level-0 component, matching this iff. -/
+theorem colemanSeries_eq_iff {u v : NormCompatUnits p} :
+    colemanSeries p u = colemanSeries p v ↔ ∀ n, 1 ≤ n → u.elems n = v.elems n := by
+  constructor
+  · intro h n hn
+    refine Units.ext ?_
+    rw [← evalPi_colemanSeries p u hn, ← evalPi_colemanSeries p v hn, h]
+  · intro h
+    refine (coleman_existsUnique p u).unique (coleman_existsUnique p u).choose_spec.1
+      ⟨colemanSeries_isUnit p v, normOp_colemanSeries p v, fun n hn => ?_⟩
+    rw [evalPi_colemanSeries p v hn, h n hn]
+
 end Coleman
 
 end PadicLFunctions

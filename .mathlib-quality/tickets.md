@@ -4782,8 +4782,46 @@ Coleman/NormOperator.lean)
 
 ### [T910] **MILESTONE: Coleman's theorem** (RJW thm:coleman power
 series + thm:coleman map 2)
-- **Status**: open | **File**: Coleman/Theorem.lean
+- **Status**: DONE (2026-06-12) — `coleman_existsUnique` (∃!: existence via
+  the TeX 2763–2791 diagonal, uniqueness via T905 `evalPi_injective`) +
+  wrappers `colemanSeries` (choice), `colemanSeries_isUnit`/`normOp_colemanSeries`/
+  `evalPi_colemanSeries` (the 3 choose_spec components), `colemanSeries_mul`
+  (ExistsUnique.unique on the product), `colemanSeries_eq_iff` (honest
+  injectivity iff — see below), `NormCompatUnits.ext` (@[ext]). All 10 new
+  publics axiom-clean (propext/Classical.choice/Quot.sound); `lake build
+  PadicLFunctions` green. | **File**: Coleman/Theorem.lean
 - **Depends on**: T905, T907, T908, T909, CLEANUP-ALL-9 | **Type**: theorem
+- **Route notes (bridges added for the (d)-step, both axiom-clean)**:
+  - `norm_evalPi_sub_le_of_modEqPow {m} (hfg : ModEqPow p (m+1) f g) (hn : 1 ≤ n)
+    : ‖evalPi f n − evalPi g n‖ ≤ (p⁻¹)^(m+1)`. Proof: `modEqPow_iff_exists_C_mul`
+    gives `f − g = C(p^{m+1})·h`; `evalPi_sub`+`evalPi_mul`+`evalPi_C` ⟹
+    `evalPi f n − evalPi g n = toCp(p^{m+1})·evalPi h n`; `norm_toCp`+`PadicInt.norm_p`
+    give `‖toCp(p^{m+1})‖ = (p⁻¹)^{m+1}` and `evalPi_mem_O` gives `‖evalPi h n‖ ≤ 1`.
+  - `tendsto_evalPi_of_tendsto (hg : Tendsto g atTop (nhds h)) (hn : 1 ≤ n)
+    : Tendsto (fun j => evalPi (g j) n) atTop (nhds (evalPi h n))`. The honest
+    ultrametric `max(head,tail)` argument (NOT a generic continuity lemma —
+    evalPi is a tsum, not Pi-continuous): difference =
+    `∑'_k toCp(coeff_k(g_j − h))·π_n^k`; per-term bound `≤ max(∑_{k<N} ‖coeff_k‖,
+    ‖π_n‖^N)` (k<N: ‖π‖^k ≤ 1 and head-sum dominates; k≥N: ‖coeff‖ ≤ 1 and
+    ‖π‖^k ≤ ‖π‖^N); `IsUltrametricDist.norm_tsum_le_of_forall_le` lifts to the
+    tsum; head → 0 by `tendsto_coeff`+`tendsto_finsetSum`, tail < ε by choosing
+    `‖π_n‖^N < ε`. Uses `Metric.tendsto_atTop` + `Nonempty ℕ` for the tsum bound.
+  - Diagonal (d) joins TWO limits of `evalPi (g (φ j)) n` (`g_m := 𝒩^[m] F_{2m}`):
+    limit A = `evalPi f_u n` (`tendsto_evalPi_of_tendsto` on `g∘φ → f_u`); limit B
+    = `u_n` (squeeze: `u_n = evalPi(𝒩^[2m−n]F_{2m}) n` by the (b)-induction at
+    `k=2m−n`, congruent mod `p^{m+1}` to `g_m` by `normOp_iterate_modEq` k₁=m,
+    k₂=2m−n, then `norm_evalPi_sub_le_of_modEqPow`; `(p⁻¹)^{φj+1}→0` since
+    `φ` StrictMono); joined by `tendsto_nhds_unique`. (b)-induction strengthened
+    to `∀ n` and uses `Function.iterate_succ_apply'` + `evalPi_normOp` + `u.compat`.
+  - helper `norm_elems_eq_one` (private): `‖u.elems n‖ = 1` from
+    `‖u‖,‖u⁻¹‖ ≤ 1` (mem/inv_mem) + `‖u‖·‖u⁻¹‖ = 1`.
+- **CLEANUP-FINAL note (level-0 vestige)**: `NormCompatUnits` carries `elems 0`
+  unconstrained (its `compat` is ∀ n ≥ 1). So `colemanSeries` is NOT injective on
+  the nose — stated honestly as `colemanSeries_eq_iff : colemanSeries u =
+  colemanSeries v ↔ ∀ n ≥ 1, u.elems n = v.elems n` (mirrors RJW's `𝒰_∞ =
+  lim_{n≥1}`, no level-0 component). Changing the structure to start at n=1 is a
+  T903-statement-change — deliberately NOT done; revisit at CLEANUP-FINAL if a
+  level-0 normalisation is wanted.
 - **Statement** (authored; Q1+Q2): existence-uniqueness package:
   `theorem coleman (u : NormCompatUnits p) : ∃! f : PowerSeries ℤ_[p],
   IsUnit f ∧ normOp p f = f ∧ ∀ n, 1 ≤ n → evalPi p f n = u.elems n`
