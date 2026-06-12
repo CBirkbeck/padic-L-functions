@@ -146,18 +146,33 @@ $`\widetilde F_\theta(T)=-G(\chi^{-1})^{-1}\sum_{c\in(\Z/p^n\Z)^\times}\chi^{-1}
 Since $`\widetilde F_\eta\in\sR^+` by the prime-to-$`p` case and $`\sR^+` is stable
 under the substitution $`T\mapsto(1+T)\zeta-1` for a root of unity $`\zeta`, the
 same holds for $`\widetilde F_\theta`. This uses {uses "mahler-transform"}[].
+
+This node stays unwired: the distribution-free route (replan R6.6) never needs
+full $`\sR^+`-membership, only the weaker coefficient bound
+$`\|\,[T^n]\widetilde F_\theta\|\le C(n+1)` that makes the boundary evaluations
+$`\widetilde F_\theta(\xi^i-1)` converge (the Lean lemma
+`summable_seriesEval_Ftilde`, guarded by the norm-one fact for the contributing
+coprime roots).
 :::
 
 By the theory of locally analytic distributions, a power series in $`\sR^+` is the
 Mahler transform of a locally analytic distribution. Let $`\widetilde\mu_\theta`
 be the distribution with $`\sA_{\widetilde\mu_\theta}=\widetilde F_\theta`.
 
-:::lemma_ "val1-x-mu-tilde"
+:::lemma_ "val1-x-mu-tilde" (lean := "PadicLFunctions.MeasureR.one_add_mul_derivative_Ftilde")
 We have $`x\,\widetilde\mu_\theta=\mu_\theta` as distributions on $`\Zp`. In
 particular $`\Res_{\Zpx}(\widetilde\mu_\theta)=x^{-1}\Res_{\Zpx}(\mu_\theta)`,
 making sense of the ill-defined product in
 $`L_p(\theta,1)=\sA_{x^{-1}\Res_{\Zpx}(\mu_\theta)}(0)`. This depends on
 {uses "measure-mu-a"}[] and {uses "locally-analytic-distribution"}[].
+
+In the distribution-free route (replan R6.6) the content $`x\,\widetilde\mu_\theta
+=\mu_\theta` is the Mahler-side formal identity $`\partial\widetilde F_\theta
+=F_\theta`, where $`\partial=(1+T)\tfrac{d}{dT}`. The Lean lemma
+`one_add_mul_derivative_Ftilde` is exactly this identity for the explicit power
+series $`\widetilde F_\theta`; the companion measure-side fact
+$`\partial\sA_{\rho_\theta}=\sA_{\Res_{\Zpx}(\mu_\theta)}` is
+`one_add_mul_derivative_mahlerK_rhoTheta`.
 :::
 
 :::proof "val1-x-mu-tilde"
@@ -183,11 +198,23 @@ Here $`\varphi\circ\psi(\widetilde F_\theta)` is the Mahler transform of
 $`\Res_{p\Zp}(\widetilde\mu_\theta)`, and concretely
 $`\varphi\circ\psi(F)(T)=\tfrac1p\sum_{\xi\in\mu_p}F((1+T)\xi-1)`.
 
-:::theorem "val1-padic-s1"
+:::theorem "val1-padic-s1" (lean := "PadicLFunctions.MeasureR.LpFunction_one")
 Theorem {bpref "p-adic-value-s1"}[] (ii) holds: with $`\widetilde F_\theta` as
 above one has $`L_p(\theta,1)=(1-\theta(p)p^{-1})\widetilde F_\theta(0)`, and
 evaluating $`\widetilde F_\theta(0)` gives the closed formula for $`L_p(\theta,1)`.
 This rests on {uses "interpolation-property"}[].
+
+The Lean statement `LpFunction_one` is the displayed closed formula, proved for
+the tame conductor $`D>1` (the $`\S 5.2` standing hypotheses; the pure
+$`p`-power case $`D=1` is deferred — decomposition R6, replan 4). The proof
+follows a *distribution-free* route (replan R6.6): rather than constructing the
+locally analytic distribution $`\widetilde\mu_\theta`, it works with the genuine
+measure $`\rho_\theta=x^{-1}\Res_{\Zpx}(\mu_\theta)` and the explicit power
+series $`\widetilde F_\theta` over $`K`, pinning the constant of integration in
+$`\ker\psi`. The root $`\varepsilon_N` is taken in split form
+$`\varepsilon_N=\zeta\,\varepsilon_{p^n}` (a primitive tame root times a primitive
+wild root), which realises the Gauss-sum factorisation
+$`G(\theta^{-1})=G(\eta^{-1})G(\chi^{-1})` of the displayed prefactor.
 :::
 
 :::proof "val1-padic-s1"

@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 import PadicLFunctions.ExtLog
 import PadicLFunctions.Interpolation.LpFunction
 import PadicLFunctions.MeasureR.FormalPsi
+import PadicLFunctions.ValuesAtOneComplex
 
 /-!
 # The p-adic value L_p(θ,1) (RJW §6.2, Thm 6.1(ii), decomposition P6)
@@ -1464,12 +1465,155 @@ theorem sum_seriesEval_Ftilde {N : ℕ} [NeZero N] (hN : 1 < N)
     rw [map_mul, PowerSeries.constantCoeff_C, logSeriesAt,
       ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_mk, if_pos rfl]
 
+/-! #### The G-cleared `hGtwist` closed form (the T617 step-3 key)
+
+`mahlerK (twist χ̃ μ̃_η) = C(G(χ⁻¹)⁻¹)·(−Σ_{c<N} θ⁻¹(c)·((1+X)C(ε^c) − 1)⁻¹)`,
+the explicit Mahler transform of the twisted cleared measure in the form
+`one_add_mul_derivative_Ftilde` consumes. Built by smearing the χ-twist into
+`ε_{p^n}^b`-lines (`mahler_twist_formula` + `mahlerTransform_charTwist_muEtaCleared`),
+mapping to `K`, and CRT-collapsing the `(b,c)` double sum to a single `range N`
+sum at the split root `ε = ζ·ε_{p^n}` (decomposition R6 P6-p8 step 3). -/
+
+omit [CompleteSpace K] [CharZero K] in
+/-- `toFieldChar` commutes with `changeLevel` (both are `MulChar`-constructions
+agreeing on units via `changeLevel_eq_cast_of_dvd`). -/
+private theorem toFieldChar_changeLevel {D N : ℕ} [NeZero N] (h : D ∣ N)
+    (η : DirichletCharacter (integerRing K) D) :
+    toFieldChar (DirichletCharacter.changeLevel h η)
+      = DirichletCharacter.changeLevel h (toFieldChar η) := by
+  ext u
+  rw [DirichletCharacter.changeLevel_eq_cast_of_dvd _ h u]
+  change ((DirichletCharacter.changeLevel h η ((u : ZMod N)) : integerRing K) : K) = _
+  rw [DirichletCharacter.changeLevel_eq_cast_of_dvd η h u]
+  rfl
+
+omit [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K] [CharZero K] in
+/-- The CRT collapse (decomposition R6 P6-p8 step 3c): the `η⊗χ` double sum over
+`range p^n × range D` of `θ⁻¹`-weighted inverse-denominators at the product roots
+`ζ^c·ε_{p^n}^b` reindexes — along `ZMod (D·p^n) ≃ ZMod D × ZMod (p^n)`
+(`ZMod.chineseRemainder`) — to the single `range N`-sum at the glued root
+`ε = ζ·ε_{p^n}`. The character factorises (`θ⁻¹ = changeLevel η⁻¹·changeLevel χ⁻¹`,
+both `MulChar.map_nonunit`-killed off the unit CRT dichotomy) and the root
+period-splits (`ζ` is `D`-periodic, `ε_{p^n}` is `p^n`-periodic). -/
+private theorem crt_collapse {D : ℕ} [NeZero D] {n : ℕ} (hco : Nat.Coprime D (p ^ n))
+    {ηK : DirichletCharacter K D} {χK : DirichletCharacter K (p ^ n)}
+    {θK : DirichletCharacter K (D * p ^ n)}
+    (hθ : θK = DirichletCharacter.changeLevel (Dvd.intro _ rfl) ηK
+      * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χK)
+    {ζK εpK : K} (hζK : IsPrimitiveRoot ζK D) (hεpK : IsPrimitiveRoot εpK (p ^ n)) :
+    (∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+        PowerSeries.C (χK⁻¹ ((b : ℕ) : ZMod (p ^ n)) * ηK⁻¹ ((c : ℕ) : ZMod D))
+          * Ring.inverse (PowerSeries.C (ζK ^ c * εpK ^ b) * (1 + PowerSeries.X) - 1))
+      = ∑ j ∈ Finset.range (D * p ^ n),
+          PowerSeries.C (θK⁻¹ ((j : ℕ) : ZMod (D * p ^ n)))
+            * Ring.inverse (PowerSeries.C ((ζK * εpK) ^ j) * (1 + PowerSeries.X) - 1) := by
+  classical
+  haveI : NeZero (p ^ n) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+  haveI : NeZero (D * p ^ n) := ⟨Nat.mul_ne_zero (NeZero.ne D) (pow_ne_zero _ hp.out.ne_zero)⟩
+  set e := ZMod.chineseRemainder hco with he
+  set F : ZMod (p ^ n) → ZMod D → PowerSeries K := fun bb cc =>
+    PowerSeries.C (χK⁻¹ bb * ηK⁻¹ cc)
+      * Ring.inverse (PowerSeries.C (ζK ^ cc.val * εpK ^ bb.val) * (1 + PowerSeries.X) - 1)
+    with hF
+  have hreindex : ∀ {M : ℕ} [NeZero M] (f : ZMod M → PowerSeries K),
+      ∑ c ∈ Finset.range M, f ((c : ℕ) : ZMod M) = ∑ a : ZMod M, f a := fun {M} _ f =>
+    Finset.sum_nbij' (fun c => ((c : ℕ) : ZMod M)) (fun a => a.val)
+      (fun _ _ => Finset.mem_univ _) (fun a _ => Finset.mem_range.mpr (ZMod.val_lt a))
+      (fun c hc => ZMod.val_natCast_of_lt (Finset.mem_range.mp hc))
+      (fun a _ => ZMod.natCast_zmod_val a) (fun _ _ => rfl)
+  have hcycD : ∀ c : ℕ, ζK ^ c = ζK ^ (((c : ℕ) : ZMod D)).val := fun c => by
+    conv_lhs => rw [← Nat.div_add_mod c D, pow_add, pow_mul, hζK.pow_eq_one, one_pow, one_mul]
+    rw [ZMod.val_natCast]
+  have hcycP : ∀ b : ℕ, εpK ^ b = εpK ^ (((b : ℕ) : ZMod (p ^ n))).val := fun b => by
+    conv_lhs => rw [← Nat.div_add_mod b (p ^ n), pow_add, pow_mul, hεpK.pow_eq_one, one_pow,
+      one_mul]
+    rw [ZMod.val_natCast]
+  have hNpow : (ζK * εpK) ^ (D * p ^ n) = 1 := by
+    rw [mul_pow, pow_mul, hζK.pow_eq_one, one_pow, one_mul, mul_comm D (p ^ n), pow_mul,
+      hεpK.pow_eq_one, one_pow]
+  have hcycN : ∀ j : ℕ, (ζK * εpK) ^ j = (ζK * εpK) ^ (((j : ℕ) : ZMod (D * p ^ n))).val :=
+    fun j => by
+      conv_lhs => rw [← Nat.div_add_mod j (D * p ^ n), pow_add, pow_mul, hNpow, one_pow, one_mul]
+      rw [ZMod.val_natCast]
+  have hLHS : (∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+        PowerSeries.C (χK⁻¹ ((b : ℕ) : ZMod (p ^ n)) * ηK⁻¹ ((c : ℕ) : ZMod D))
+          * Ring.inverse (PowerSeries.C (ζK ^ c * εpK ^ b) * (1 + PowerSeries.X) - 1))
+      = ∑ bb : ZMod (p ^ n), ∑ cc : ZMod D, F bb cc := by
+    rw [← hreindex (fun bb => ∑ cc : ZMod D, F bb cc)]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [← hreindex (fun cc => F ((b : ℕ) : ZMod (p ^ n)) cc)]
+    refine Finset.sum_congr rfl fun c _ => ?_
+    rw [hF]; simp only
+    rw [← hcycD c, ← hcycP b]
+  have hpera : ∀ a : ZMod (D * p ^ n),
+      PowerSeries.C (θK⁻¹ a)
+          * Ring.inverse (PowerSeries.C ((ζK * εpK) ^ a.val) * (1 + PowerSeries.X) - 1)
+        = F (ZMod.cast a : ZMod (p ^ n)) (ZMod.cast a : ZMod D) := by
+    intro a
+    have hfst : (e a).1 = (ZMod.cast a : ZMod D) := Prod.fst_zmod_cast a
+    have hsnd : (e a).2 = (ZMod.cast a : ZMod (p ^ n)) := Prod.snd_zmod_cast a
+    have hvalD : (ZMod.cast a : ZMod D).val = a.val % D := by
+      rw [ZMod.cast_eq_val, ZMod.val_natCast]
+    have hvalP : (ZMod.cast a : ZMod (p ^ n)).val = a.val % (p ^ n) := by
+      rw [ZMod.cast_eq_val, ZMod.val_natCast]
+    have hcD : ζK ^ a.val = ζK ^ (a.val % D) := by
+      conv_lhs => rw [← Nat.div_add_mod a.val D, pow_add, pow_mul, hζK.pow_eq_one, one_pow, one_mul]
+    have hcP : εpK ^ a.val = εpK ^ (a.val % (p ^ n)) := by
+      conv_lhs => rw [← Nat.div_add_mod a.val (p ^ n), pow_add, pow_mul, hεpK.pow_eq_one, one_pow,
+        one_mul]
+    have hθinv : θK⁻¹ a = χK⁻¹ (ZMod.cast a : ZMod (p ^ n)) * ηK⁻¹ (ZMod.cast a : ZMod D) := by
+      have h1 : θK⁻¹ = DirichletCharacter.changeLevel (Dvd.intro _ rfl) ηK⁻¹
+          * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χK⁻¹ := by
+        rw [hθ, mul_inv]; congr 1 <;> exact (map_inv _ _).symm
+      rw [h1, MulChar.mul_apply, mul_comm]
+      by_cases ha : IsUnit a
+      · obtain ⟨u, rfl⟩ := ha
+        rw [DirichletCharacter.changeLevel_eq_cast_of_dvd,
+          DirichletCharacter.changeLevel_eq_cast_of_dvd]
+      · rw [(DirichletCharacter.changeLevel (Dvd.intro _ rfl) ηK⁻¹).map_nonunit ha,
+          (DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χK⁻¹).map_nonunit ha, zero_mul]
+        have hunit : ¬ (IsUnit (ZMod.cast a : ZMod D) ∧ IsUnit (ZMod.cast a : ZMod (p ^ n))) := by
+          rw [← hfst, ← hsnd, ← Prod.isUnit_iff, MulEquiv.isUnit_map (f := e) (x := a)]
+          exact ha
+        rw [not_and_or] at hunit
+        rcases hunit with h | h
+        · rw [ηK⁻¹.map_nonunit h, mul_zero]
+        · rw [χK⁻¹.map_nonunit h, zero_mul]
+    rw [hF]; simp only
+    rw [hθinv, mul_pow, hcD, hcP, hvalD, hvalP]
+  have hRHS : (∑ j ∈ Finset.range (D * p ^ n),
+          PowerSeries.C (θK⁻¹ ((j : ℕ) : ZMod (D * p ^ n)))
+            * Ring.inverse (PowerSeries.C ((ζK * εpK) ^ j) * (1 + PowerSeries.X) - 1))
+      = ∑ a : ZMod (D * p ^ n), PowerSeries.C (θK⁻¹ a)
+          * Ring.inverse (PowerSeries.C ((ζK * εpK) ^ a.val) * (1 + PowerSeries.X) - 1) := by
+    rw [← hreindex (fun a => PowerSeries.C (θK⁻¹ a)
+        * Ring.inverse (PowerSeries.C ((ζK * εpK) ^ a.val) * (1 + PowerSeries.X) - 1))]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [hcycN j]
+  rw [hLHS, hRHS, Finset.sum_congr rfl fun a (_ : a ∈ Finset.univ) => hpera a,
+    show (∑ a : ZMod (D * p ^ n), F (ZMod.cast a : ZMod (p ^ n)) (ZMod.cast a : ZMod D))
+          = ∑ a : ZMod (D * p ^ n),
+              (fun pr : ZMod D × ZMod (p ^ n) => F pr.2 pr.1) (e.toEquiv a) from
+        Finset.sum_congr rfl fun a _ => by
+          change F (ZMod.cast a : ZMod (p ^ n)) (ZMod.cast a : ZMod D) = F (e a).2 (e a).1
+          congr 1
+          · exact (Prod.snd_zmod_cast a).symm
+          · exact (Prod.fst_zmod_cast a).symm,
+    Equiv.sum_comp e.toEquiv (fun pr : ZMod D × ZMod (p ^ n) => F pr.2 pr.1),
+    ← Finset.univ_product_univ, Finset.sum_product, Finset.sum_comm]
+
 /-- **RJW Theorem 6.1(ii)** (Leopoldt; `s=1 theorem`(ii), TeX 1992–1995):
 "We have `L_p(θ,1) = −(1 − θ(p)p⁻¹)·G(θ⁻¹)⁻¹·
 Σ_{c∈(ℤ/N)ˣ} θ⁻¹(c)·log_p(1−ε_N^c)`." Stated for tame conductor `D > 1`
 (replan R6.4; the §5.2 standing hypotheses), with `log_p` the extended
 logarithm `extLog` and the Gauss factor through the §5 clearing plus the
-coprime factorisation (C6-c4). -/
+coprime factorisation (C6-c4).
+
+**Statement-fix (replan R6 step 3a, recorded 2026-06-12 in `b2_log.jsonl`):**
+the §6 root `ε` is tied to the §5 split data via `{εp} (hεp) (hsplit : ε = ζ·εp)`
+(RJW's `ε_N` is any primitive `N`-th root; the split form `ζ·ε_{p^n}` realises it
+through the tame/wild factors). This is what enables the CRT Gauss-product split
+`G(θ⁻¹) = G(η⁻¹)·G(χ⁻¹)` (`gaussSum_mul_coprime`) and the `hGtwist` closed form. -/
 theorem LpFunction_one {D : ℕ} [NeZero D] (hD1 : 1 < D)
     {η : DirichletCharacter (integerRing K) D} (hη : η.IsPrimitive)
     {ζ : integerRing K} (hζ : IsPrimitiveRoot ζ D) (hD : ¬ (p : ℕ) ∣ D)
@@ -1479,16 +1623,204 @@ theorem LpFunction_one {D : ℕ} [NeZero D] (hD1 : 1 < D)
     (hθK : θK = toFieldChar (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η
       * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ))
     (hprim : θK.IsPrimitive)
-    {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n)) {ξ : K}
+    {ε : K} (hε : IsPrimitiveRoot ε (D * p ^ n))
+    {εp : integerRing K} (hεp : IsPrimitiveRoot εp (p ^ n))
+    (hsplit : ε = ((ζ : K)) * ((εp : K))) {ξ : K}
     (hξ : IsPrimitiveRoot ξ p)
-    {G : K} (hG : IsUnit G)
+    {G : K} (_hG : IsUnit G)
     (hGval : G = (gaussSum θK⁻¹ (AddChar.zmodChar (D * p ^ n)
       hε.pow_eq_one))) :
     LpFunction p K η hζ hD χ 1
       = -(1 - θK ((p : ZMod (D * p ^ n))) * (p : K)⁻¹) * G⁻¹
         * ∑ c ∈ Finset.range (D * p ^ n),
             θK⁻¹ ((c : ZMod (D * p ^ n))) * extLog p (1 - ε ^ c) := by
-  sorry
+  classical
+  haveI : NeZero (p ^ n) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+  haveI : NeZero (D * p ^ n) := ⟨Nat.mul_ne_zero (NeZero.ne D) (pow_ne_zero _ hp.out.ne_zero)⟩
+  have hN : 1 < D * p ^ n := lt_of_lt_of_le hD1 (Nat.le_mul_of_pos_right D (pow_pos hp.out.pos n))
+  haveI : Fact (1 < D) := ⟨hD1⟩
+  -- coprimality and the K-side roots/characters
+  have hco : Nat.Coprime D (p ^ n) :=
+    Nat.Coprime.pow_right _ (Nat.coprime_comm.mp ((hp.out.coprime_iff_not_dvd).mpr hD))
+  have hζK : IsPrimitiveRoot ((ζ : K)) D :=
+    hζ.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  have hεpK : IsPrimitiveRoot ((εp : K)) (p ^ n) :=
+    hεp.map_of_injective (f := (integerRing K).subtype) fun _ _ h => Subtype.ext h
+  -- `θK = changeLevel(η_K)·changeLevel(χ_K)` (the K-side product factorisation)
+  have hθKfac : θK = DirichletCharacter.changeLevel (Dvd.intro _ rfl) (toFieldChar η)
+      * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) (toFieldChar χ) := by
+    rw [hθK, show toFieldChar (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η
+          * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ)
+        = toFieldChar (DirichletCharacter.changeLevel (Dvd.intro _ rfl) η)
+          * toFieldChar (DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) χ) from by
+        ext x; simp [toFieldChar, MulChar.ringHomComp],
+      toFieldChar_changeLevel, toFieldChar_changeLevel]
+  -- the level-`p^n` Gauss unit `G_χ` (over `integerRing K`), and its `K`-coercion `GχK`
+  set GχR : integerRing K := gaussSum χ⁻¹ (AddChar.zmodChar (p ^ n) hεp.pow_eq_one) with hGχR
+  set GχK : K := ((GχR : integerRing K) : K) with hGχK
+  have hGχKne : GχK ≠ 0 := by
+    rw [hGχK, hGχR, coe_gaussSum_zmodChar χ hεp hεpK]
+    exact gaussSum_inv_ne_zero
+      ((DirichletCharacter.isPrimitive_ringHomComp_iff χ fun _ _ h => Subtype.ext h).mpr hχ) hεpK
+  -- the level-`D` Gauss unit `G_η` (over `integerRing K`), and `GηK`
+  set GηK : K := ((gaussSum η⁻¹ (AddChar.zmodChar D hζ.pow_eq_one) : integerRing K) : K) with hGηK
+  have hGηKne : GηK ≠ 0 := by
+    rw [hGηK]
+    have hu := gaussSum_isUnit_of_coprime hη hζ hD
+    exact fun h => hu.ne_zero (Subtype.coe_injective (by simpa using h))
+  -- STEP 3a: the integerRing-level closed form of the `G(χ⁻¹)`-smeared twist
+  have hcrt : GχR • mahlerTransform p K
+        (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+      = -∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+          PowerSeries.C (χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) * η⁻¹ ((c : ℕ) : ZMod D))
+            * Ring.inverse (PowerSeries.C (ζ ^ c * εp ^ b) * (1 + PowerSeries.X) - 1) := by
+    have h508 := mahler_twist_formula hχ hεp (muEtaCleared p K η hζ hD)
+    have hsmul := congrArg (mahlerTransformₗ p K) h508
+    rw [map_smul] at hsmul
+    rw [show (mahlerTransformₗ p K) (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+        = mahlerTransform p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)) from rfl]
+      at hsmul
+    rw [hsmul, map_sum,
+      show (∑ b ∈ Finset.range (p ^ n), (mahlerTransformₗ p K) (χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) •
+            twist p K (charCM (εp ^ b - 1) (tendsto_pow_pow_sub_one hεp b))
+              (muEtaCleared p K η hζ hD)))
+          = ∑ b ∈ Finset.range (p ^ n), χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) •
+              mahlerTransform p K (twist p K (charCM (εp ^ b - 1) (tendsto_pow_pow_sub_one hεp b))
+                (muEtaCleared p K η hζ hD)) from
+        Finset.sum_congr rfl fun b _ => by rw [map_smul]; rfl,
+      ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [mahlerTransform_charTwist_muEtaCleared η hζ hD hεp b, smul_neg, Finset.smul_sum]
+    refine congrArg Neg.neg (Finset.sum_congr rfl fun c _ => ?_)
+    rw [PowerSeries.smul_eq_C_mul, ← mul_assoc, ← map_mul]
+  -- STEP 3b: map to `K` and CRT-collapse to the single `range N` sum at `ε = ζ·εp`
+  have hGtwistK : PowerSeries.C GχK
+        * mahlerK p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+      = -∑ c ∈ Finset.range (D * p ^ n),
+          PowerSeries.C (θK⁻¹ ((c : ZMod (D * p ^ n))))
+            * Ring.inverse ((1 + PowerSeries.X) * PowerSeries.C (ε ^ c) - 1) := by
+    have hmap := congrArg (PowerSeries.map (integerRing K).subtype) hcrt
+    rw [PowerSeries.smul_eq_C_mul, map_mul, PowerSeries.map_C, Subring.coe_subtype,
+      show PowerSeries.map (integerRing K).subtype
+          (mahlerTransform p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)))
+        = mahlerK p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD)) from rfl,
+      map_neg, map_sum] at hmap
+    rw [hGχK, hGχR, hmap]
+    rw [show (-∑ b ∈ Finset.range (p ^ n),
+            PowerSeries.map (integerRing K).subtype (∑ c ∈ Finset.range D,
+              PowerSeries.C (χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) * η⁻¹ ((c : ℕ) : ZMod D))
+                * Ring.inverse (PowerSeries.C (ζ ^ c * εp ^ b) * (1 + PowerSeries.X) - 1)))
+          = -∑ b ∈ Finset.range (p ^ n), ∑ c ∈ Finset.range D,
+              PowerSeries.C ((toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D))
+                * Ring.inverse (PowerSeries.C ((ζ : K) ^ c * (εp : K) ^ b)
+                    * (1 + PowerSeries.X) - 1) from by
+        refine congrArg Neg.neg (Finset.sum_congr rfl fun b _ => ?_)
+        rw [map_sum]
+        refine Finset.sum_congr rfl fun c hcr => ?_
+        by_cases hc0 : c = 0
+        · subst hc0
+          rw [map_mul, PowerSeries.map_C, Subring.coe_subtype,
+            show ((χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) * η⁻¹ ((0 : ℕ) : ZMod D) : integerRing K) : K) = 0
+              from by
+                rw [show ((0 : ℕ) : ZMod D) = 0 from Nat.cast_zero, η⁻¹.map_nonunit not_isUnit_zero,
+                  mul_zero]; rfl,
+            show (toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                * (toFieldChar η)⁻¹ ((0 : ℕ) : ZMod D) = 0 from by
+              rw [show ((0 : ℕ) : ZMod D) = 0 from Nat.cast_zero,
+                (toFieldChar η)⁻¹.map_nonunit not_isUnit_zero, mul_zero]]
+          simp only [map_zero, zero_mul]
+        · have hcd : ¬ D ∣ c := fun h => hc0 (Nat.eq_zero_of_dvd_of_lt h (Finset.mem_range.mp hcr))
+          have hwlt : ‖((εp ^ b : integerRing K) : K) - 1‖ < 1 := by
+            simpa using norm_pow_sub_one_lt_one hεp b
+          rw [map_mul, PowerSeries.map_C, Subring.coe_subtype,
+            map_ring_inverse_of_isUnit _ (isUnit_root_mul_pow_one_add_X_sub_one hζ hD hcd hwlt),
+            show ((χ⁻¹ ((b : ℕ) : ZMod (p ^ n)) * η⁻¹ ((c : ℕ) : ZMod D) : integerRing K) : K)
+                = (toFieldChar χ)⁻¹ ((b : ℕ) : ZMod (p ^ n))
+                  * (toFieldChar η)⁻¹ ((c : ℕ) : ZMod D) from by
+              push_cast
+              rw [show (toFieldChar χ)⁻¹ = toFieldChar χ⁻¹ from MulChar.ringHomComp_inv χ _,
+                show (toFieldChar η)⁻¹ = toFieldChar η⁻¹ from MulChar.ringHomComp_inv η _]
+              rfl]
+          congr 2
+          simp only [map_sub, map_mul, map_add, map_one, PowerSeries.map_X, PowerSeries.map_C,
+            Subring.coe_subtype, SubmonoidClass.coe_pow]]
+    rw [crt_collapse hco hθKfac hζK hεpK]
+    refine congrArg Neg.neg (Finset.sum_congr rfl fun c _ => ?_)
+    rw [hsplit, mul_comm (1 + PowerSeries.X) (PowerSeries.C (((ζ : K) * (εp : K)) ^ c))]
+  -- STEP 3c: divide out `C GχK` to obtain the `hGtwist` shape (T615's hypothesis)
+  have hGtwist : mahlerK p K (twist p K χ.toContinuousMapZp (muEtaCleared p K η hζ hD))
+      = PowerSeries.C GχK⁻¹ * (-∑ c ∈ Finset.range (D * p ^ n),
+          PowerSeries.C (θK⁻¹ ((c : ZMod (D * p ^ n))))
+            * Ring.inverse ((1 + PowerSeries.X) * PowerSeries.C (ε ^ c) - 1)) := by
+    rw [← hGtwistK, ← mul_assoc, ← map_mul, inv_mul_cancel₀ hGχKne, map_one, one_mul]
+  -- the norm-one discharge (the coprime-guarded `hnorm`) for T615 and T616
+  have hnorm : ∀ c ∈ Finset.range (D * p ^ n), IsUnit ((c : ZMod (D * p ^ n))) →
+      ‖ε ^ c - 1‖ = 1 := fun c _ hcu => norm_pow_sub_one_eq_one_of_unit hD1 hD hε hcu
+  -- STEP 1: the cleared mass `(p)·𝓐_ρ(0)·G_χ = (p)·F̃(0) − Σ_i F̃(ξ^i−1)`  (T615)
+  have hT615 := p_mul_constantCoeff_mahlerK_rhoTheta hD1 hη hζ hD hχ hN hθ1 hθK hε hξ
+    hnorm hGχKne.isUnit hGtwist
+  -- STEP 2: the evaluated trace `Σ_i F̃(ξ^i−1) = θK(p)·F̃(0)`  (T616)
+  have hT616 := sum_seriesEval_Ftilde hN hprim hθ1 hε hξ hnorm
+  -- the constant coefficient of `F̃` (sign-flipped to RJW's `1 − ε^c`)
+  have hF0 : PowerSeries.constantCoeff (Ftilde p K θK hε)
+      = -∑ c ∈ Finset.range (D * p ^ n),
+          θK⁻¹ ((c : ZMod (D * p ^ n))) * extLog p (1 - ε ^ c) := by
+    rw [Ftilde, map_neg, map_sum, neg_inj]
+    refine Finset.sum_congr rfl fun c hc => ?_
+    rw [map_mul, PowerSeries.constantCoeff_C, logSeriesAt,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_mk, if_pos rfl]
+    by_cases hcu : IsUnit ((c : ZMod (D * p ^ n)))
+    · -- contributing term: `extLog(ε^c − 1) = extLog(1 − ε^c)` (a sign, `extLog_neg`)
+      have hc1 : ‖ε ^ c - 1‖ = 1 := hnorm c hc hcu
+      have hdom : ExtLogDomain p (ε ^ c - 1) :=
+        extLogDomain_of_integral_norm_one p
+          ((isIntegral_of_pow_eq_one (NeZero.pos (D * p ^ n)) hε.pow_eq_one).pow c |>.sub
+            isIntegral_one) hc1
+      rw [show (1 : K) - ε ^ c = -(ε ^ c - 1) from by ring, extLog_neg p hdom]
+    · rw [θK⁻¹.map_nonunit hcu, zero_mul, zero_mul]
+  -- STEP 1 (the mass identity): `L_p(θ,1) = G_η⁻¹·𝓐_ρ(0)`
+  have hmass : LpFunction p K η hζ hD χ 1 = GηK⁻¹
+      * PowerSeries.constantCoeff (mahlerK p K (rhoTheta p K η hζ hD χ)) := by
+    rw [show LpFunction p K η hζ hD χ 1
+          = ((gaussSum η⁻¹ (AddChar.zmodChar D hζ.pow_eq_one) : integerRing K) : K)⁻¹
+            * ((zetaEtaCleared p K η hζ hD
+                (χ.toContinuousMapZp.comp (PadicMeasure.unitsValCM p) * anglePowCM p K (1 - 1))
+                  : integerRing K) : K) from rfl,
+      zetaEtaCleared_one_eq_rhoTheta_mass hζ hD,
+      show ((PowerSeries.constantCoeff (mahlerTransform p K (rhoTheta p K η hζ hD χ))
+          : integerRing K) : K)
+        = PowerSeries.constantCoeff (mahlerK p K (rhoTheta p K η hζ hD χ)) from by
+        rw [mahlerK, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+          ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
+        rfl, ← hGηK]
+  -- the headline Gauss sum factors at the split root: `G = G_η·G_χ`
+  have hGprod : G = GηK * GχK := by
+    rw [hGval, hGηK, hGχK, hGχR]
+    have hgsplit : gaussSum θK⁻¹ (AddChar.zmodChar (D * p ^ n) hε.pow_eq_one)
+        = gaussSum θK⁻¹ (AddChar.zmodChar (D * p ^ n)
+            (show ((ζ : K) * (εp : K)) ^ (D * p ^ n) = 1 from by
+              rw [mul_pow, pow_mul, hζK.pow_eq_one, one_pow, one_mul,
+                mul_comm D (p ^ n), pow_mul, hεpK.pow_eq_one, one_pow])) := by
+      subst hsplit; rfl
+    have hθinvfac : θK⁻¹ = DirichletCharacter.changeLevel (Dvd.intro _ rfl) (toFieldChar η)⁻¹
+        * DirichletCharacter.changeLevel (Dvd.intro_left _ rfl) (toFieldChar χ)⁻¹ := by
+      rw [hθKfac, mul_inv]; congr 1 <;> exact (map_inv _ _).symm
+    rw [hgsplit, coe_gaussSum_zmodChar η hζ hζK, coe_gaussSum_zmodChar χ hεp hεpK]
+    exact ValuesAtOneComplex.gaussSum_mul_coprime hco (toFieldChar η)⁻¹ (toFieldChar χ)⁻¹
+      hθinvfac hζK hεpK
+  -- STEP 4 (final algebra): combine T615 + T616, divide by `p`, flip signs, factor `G`
+  have hp0 : (p : K) ≠ 0 := by exact_mod_cast hp.out.ne_zero
+  rw [hT616] at hT615
+  -- `𝓐_ρ(0) = G_χ⁻¹·(1 − θK(p)·p⁻¹)·F̃(0)`
+  have hAρ : PowerSeries.constantCoeff (mahlerK p K (rhoTheta p K η hζ hD χ))
+      = GχK⁻¹ * (1 - θK ((p : ZMod (D * p ^ n))) * (p : K)⁻¹)
+        * PowerSeries.constantCoeff (Ftilde p K θK hε) := by
+    have hGχ0 : GχK ≠ 0 := hGχKne
+    field_simp at hT615 ⊢
+    linear_combination hT615
+  rw [hmass, hAρ, hF0, hGprod]
+  field_simp
 
 end MeasureR
 

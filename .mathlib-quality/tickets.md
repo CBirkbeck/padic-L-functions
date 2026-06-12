@@ -3331,9 +3331,11 @@ reference declarations by name (the §5 T521-pattern).
   golf was continuous; tooled CLEANUP-FINAL queued.
 
 ### [T617] **MILESTONE: RJW Theorem 6.1(ii)** — L_p(θ,1) (Leopoldt)
-- **Status**: in_progress (2026-06-12)
+- **Status**: done (2026-06-12) | **Verification**: `lake build PadicLFunctions`
+  green (3660 jobs); `#print axioms LpFunction_one` = {propext, Classical.choice,
+  Quot.sound}; zero sorries project-wide; linter clean (≤100-char); blueprint green.
 - **Depends on**: T615, T616, T609, CLEANUP-ALL-6 | **Type**: theorem
-- **Statement**: skeleton `LpFunction_one` (P6-p8).
+- **Statement**: `LpFunction_one` (P6-p8), proven sorry-free.
 - **Proof sketch**: LpFunction at s = 1 pairs ζ_η-cleared with χ̃·⟨x⟩⁰ = χ̃;
   identify the pairing with the mass of ρ_θ (extendByZero/χ̃-through
   lemma); mass = constantCoeff(𝓐_ρ) (apply_powCM 0); T615 + T616 give
@@ -3341,10 +3343,37 @@ reference declarations by name (the §5 T521-pattern).
   −Σθ⁻¹(c)extLog(1−ε^c) (extLog_neg, domains T603); un-clear through
   T609 (G(θ⁻¹)-factorisation) to RJW's display.
 - **Sources**: TeX 1992–1995 + 2113–2155 (verbatim at R6).
-- **Blueprint**: §6 chapter — wire Thm 6.1(ii), Lem 6.2/6.3 nodes (with
-  replan prose notes), D = 1 + Coleman/Perrin-Riou rationale comments;
-  re-render.
-- **Sizing**: ~120 LOC.
+- **Progress (2026-06-12, COMPLETE)**:
+  - **Statement-fix (authorised, recorded in b2_log.jsonl)**: added
+    `{εp : integerRing K} (hεp : IsPrimitiveRoot εp (p^n))
+    (hsplit : ε = (ζ:K)·(εp:K))` — the §6 root ε is tied to the §5 split data
+    (RJW's ε_N is any primitive N-th root; the split form ζ·ε_{p^n} realises it
+    through the tame/wild factors). This is what enables the Gauss-product split.
+  - **G-clearing as landed (the step-3 key)**: the headline G = G(θ⁻¹) is NOT a
+    unit in integerRing K (its norm is p^{-n/2}); it is a K-field nonzero, hence
+    a K-unit. The hGtwist hypothesis of T615 is fed G₀ := GχK := the K-coercion
+    of the level-p^n Gauss sum (also a K-field nonzero). The hGtwist closed form
+    `mahlerK(twist χ̃ μ̃η) = C(GχK⁻¹)·(−Σ_{c<N} C(θK⁻¹ c)·inv((1+X)C(ε^c)−1))`
+    is built in three steps: (3a) integerRing closed form of GχR•𝓐(twist) via
+    `mahler_twist_formula` + `mahlerTransform_charTwist_muEtaCleared`; (3b) map to
+    K (c=0 rows killed by η⁻¹(0)=0; c≠0 inverse-map via
+    `isUnit_root_mul_pow_one_add_X_sub_one`); (3c) CRT-collapse the (b,c) double
+    sum to range N at the glued root via the new private `crt_collapse`. The final
+    G-product G = GηK·GχK is `gaussSum_mul_coprime` (ValuesAtOneComplex, general
+    domain R = K) at the split root + `coe_gaussSum_zmodChar` ×2.
+  - **New helpers**: `crt_collapse` (the §6 step-3c double-sum CRT collapse, via
+    ZMod reindex + ZMod.chineseRemainder + θ⁻¹ factorisation + root period-split);
+    `toFieldChar_changeLevel` (toFieldChar/changeLevel commutation). Added import
+    `PadicLFunctions.ValuesAtOneComplex` (no circularity).
+  - **hnorm discharge**: `norm_pow_sub_one_eq_one_of_unit` (T612 cluster, already
+    in file). Sign flip via `extLog_neg` + `extLogDomain_of_integral_norm_one`.
+- **Blueprint**: §6 chapter — wired `val1-padic-s1` → `LpFunction_one` (D>1 +
+  distribution-free + split-root notes); `val1-x-mu-tilde` →
+  `one_add_mul_derivative_Ftilde` (distribution-free ∂F̃=F note + companion
+  `one_add_mul_derivative_mahlerK_rhoTheta`); `val1-Ftilde-in-Rplus` left unwired
+  with the R6.6 coefficient-bound rationale (`summable_seriesEval_Ftilde`).
+- **Sizing**: ~310 LOC (incl. crt_collapse + hGtwist chain; ~120 estimated, the
+  full CRT collapse cost more).
 
 ### [CLEANUP-67] Final per-file cleanups (§6 files)
 - **Status**: open | **Depends on**: T617 | **Type**: cleanup (ExtLog,
