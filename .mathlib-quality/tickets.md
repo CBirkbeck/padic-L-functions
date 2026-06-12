@@ -4383,7 +4383,7 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
 - **Sizing**: ~200 LOC + survey risk (monogenicity).
 
 ### [T903b] O-basis monogenicity of the tower step (split from T903 item 8)
-- **Status**: open | **File**: Coleman/Tower.lean | **Parent**: T903
+- **Status**: in_progress (2026-06-12, 3-way parallel) | **File**: Coleman/Tower.lean | **Parent**: T903
 - **Depends on**: T903 (done) | **Parallel**: yes | **Type**: theorem
 - **Task**: author + prove `O_succ_exists_digits {n} (hn : 1 ≤ n) (hp2 : p ≠ 2)`:
   `∀ x ∈ O p (n+1), ∃ c : Fin p → ℂ_[p], (∀ i, c i ∈ O p n) ∧
@@ -4422,10 +4422,15 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
   closure). Consumer: T907 (commuting square).
 
 ### [CLEANUP-91] /cleanup on Coleman/Tower.lean (cadence)
-- **Status**: open | **Depends on**: T901, T902, T903 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T901, T902, T903 | **Type**: cleanup
+- **Progress**: 2026-06-12: degraded pass (no lean-lsp MCP): build green,
+  zero warnings (linter set on); Tower.lean at 704 lines, publics
+  docstringed, helpers private, maxHeartbeats overrides carry per-decl
+  scope (the nested extendScalars instances). Tooled golf + heartbeats
+  review defer to CLEANUP-FINAL.
 
 ### [T904] Evaluation at π_n (authors Coleman/Theorem.lean)
-- **Status**: open | **File**: Coleman/Theorem.lean | **Depends on**: T902
+- **Status**: done (2026-06-12, items 1–6; item 7 → [T904b]) | **File**: Coleman/Theorem.lean | **Depends on**: T902
 - **Parallel**: yes (after T902; independent of T903) | **Type**: def+lemmas
 - **Statement** (authored): `evalPi (f : PowerSeries ℤ_[p]) (n) : ℂ_[p]`
   := seriesEval (map-to-ℂ_[p] f) (pi p n); lemmas: `evalPi_mem_O`
@@ -4461,6 +4466,61 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
 - **Sources**: TeX 2528–2547 (Q-prose + the single-level lemma),
   2647–2649 (eq:varphi pin); replan R10.3.
 - **Sizing**: ~200 LOC.
+- **Progress (2026-06-12)**: items 1–6 DONE, sorry-free + axiom-clean (standard
+  3 only on all 13 publics), build green, lines ≤ 100. Authored in
+  `Coleman/Theorem.lean`:
+  - `toCp : ℤ_[p] →+* ℂ_[p]` := `(algebraMap ℚ_[p] ℂ_[p]).comp Coe.ringHom`
+    (the §7 M-pattern); `norm_toCp` (isometry, `norm_algebraMap'`+`norm_def`);
+    `norm_coeff_map_le_one`.
+  - `evalPi f n := seriesEval (map toCp f) (pi p n)`; `summable_evalPi {n}
+    (hn : 1 ≤ n)` (`summable_seriesEval_of_norm_coeff_le_one` + `norm_pi_lt_one`).
+  - ring-hom pack `{n} (hn : 1 ≤ n)`: `evalPi_add/sub/mul` (seriesEval_add/sub/mul
+    + summability), `evalPi_one` (=`C 1`, `seriesEval_C`), `evalPi_X` (= `pi`,
+    seriesEval_X inlined ~3 lines), `evalPi_pow` (induction via `evalPi_mul`).
+  - `evalPi_mem_O {n} (hn : 1 ≤ n)`: ‖·‖≤1 via `norm_tsum_le_of_forall_le`
+    (per-term ≤1); ∈ K_n via partial sums ∈ K_n (`algebraMap_mem` + `pi_mem_K`
+    pow + `sum_mem`) and K_n closed — re-derived `finiteDimensional_K` (private,
+    `adjoin.finiteDimensional` + `IsPrimitiveRoot.isIntegral.tower_top`),
+    `isClosed_K` (`Submodule.closed_of_finiteDimensional`), then
+    `IsClosed.mem_of_tendsto` + `HasSum.tendsto_sum_nat`.
+  - `evalPi_phi {n} (hn : 1 ≤ n)` (eq:varphi pin): `evalPi (phiSeries p f) (n+1) =
+    evalPi p f n` — `map_phiSeries` (map ∘ φ = φ ∘ map; public in FormalPsi) +
+    `seriesEval_phi_of_summable_prod` + `summable_prod_of_norm_coeff_le_one`
+    (both public, NOT private — no ResidueZeta-Fubini reproduction needed since
+    G = (1+X)^p−1 is already the FormalPsi φ-bridge's substituend), then the value
+    identity `(1+π_{n+1})^p−1 = π_n` (private `one_add_pi_pow_sub_one`,
+    `zetaSys_pow_p`) and `rfl` to fold into `evalPi p f n`.
+  - **Replan note**: `phiSeries p` is R-generic (FormalPsi, over any `CommRing`),
+    so `phiSeries p f` over `ℤ_[p]` is the correct φ on `ℤ_p⟦T⟧` directly — the
+    ticket's "phiSeries is over K-coefficients" worry is moot.
+  - Item 7 (single-level interpolation, TeX 2538–2547) MOVED to [T904b] below:
+    its honest dependency is the absolute monogenicity `O_n = ℤ_p[π_n]` (T903b),
+    not derivable inside T904's budget without duplicating T903b.
+- **Verification**: `lake build PadicLFunctions.Coleman.Theorem` green;
+  `#print axioms` on all 13 publics = `[propext, Classical.choice, Quot.sound]`;
+  wired `import PadicLFunctions.Coleman.Theorem` into `PadicLFunctions.lean`.
+
+### [T904b] Single-level interpolation (split from T904 item 7)
+- **Status**: open (spawned 2026-06-12) | **File**: Coleman/Theorem.lean | **Parent**: T904
+- **Depends on**: T904 (done), T903b (O_n = ℤ_p[π_n] monogenicity) | **Type**: theorem
+- **Statement**: `exists_evalPi_eq {n} (hn : 1 ≤ n) {u : ℂ_[p]} (hu : u ∈ O p n)
+  (hnorm : ‖u‖ = 1) : ∃ f : PowerSeries ℤ_[p], IsUnit f ∧ evalPi p f n = u`
+  — every norm-one element of `O_n` is the value at `π_n` of a unit power
+  series (RJW TeX 2538–2547, the single-level interpolation lemma).
+- **Proof sketch** (greedy π-adic digits, TeX 2542–2547 verbatim): from the
+  absolute monogenicity `O_n = Σ_{i<φ(p^n)} ℤ_p·π_n^i` (T903b, route 2 sub-step
+  (a): `O_m = adjoin ℤ_p {π_m}` ⟹ ℤ_p-power-basis `{π_n^i}`), the residue step
+  `∀ x ∈ O_n, ∃ a : ℤ_p, x − toCp a ∈ π_n·O_n` (totally ramified ⟹ O_n/(π_n) ≅
+  𝔽_p, the residue field of the absolute ℤ_p-basis), recursively build the
+  digit series `f = Σ a_k T^k`: at step k, `a_k := (residue of (u − S_{k-1})/π_n^k)`,
+  then `‖u − evalPi p (Σ_{j≤k} a_j T^j) n‖ ≤ ‖π_n‖^{k+1} → 0` (convergence via
+  `norm_pi_lt_one` powers → 0); `evalPi p f n = u` by `HasSum`/closedness; `f` a
+  unit since `evalPi p f n = u` has ‖·‖ = 1 ⟹ constantCoeff f is a unit ⟹ f ∈
+  ℤ_p⟦T⟧ˣ (`PowerSeries.isUnit_iff_constantCoeff_isUnit` over local ℤ_p).
+- **Sources**: TeX 2538–2547 (the single-level lemma + greedy digits). Consumer:
+  T910 (existence half of the global Coleman interpolation, per-level `f_n`).
+- **Sizing**: ~120 LOC (the residue step + the `Nat.rec` digit construction +
+  convergence; the monogenicity input is T903b's deliverable).
 
 ### [T905] Uniqueness via Weierstrass preparation
 - **Status**: open | **File**: Coleman/Theorem.lean | **Depends on**: T904
@@ -4576,7 +4636,7 @@ Coleman/NormOperator.lean)
   the O₁⟦T⟧-substitution API if the fallback route is needed).
 
 ### [T909] Compactness of ℤ_p⟦T⟧^× and sequential extraction
-- **Status**: open | **File**: Coleman/NormOperator.lean
+- **Status**: in_progress (2026-06-12, 3-way parallel) | **File**: Coleman/NormOperator.lean
 - **Depends on**: none | **Parallel**: yes | **Type**: lemmas
 - **Statement** (authored): with the Pi topology (open scoped
   WithPiTopology): `instance : CompactSpace (PowerSeries ℤ_[p])`
