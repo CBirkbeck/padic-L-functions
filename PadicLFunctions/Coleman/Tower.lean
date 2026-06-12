@@ -34,6 +34,42 @@ namespace Coleman
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
+/-- The single tower step: from a primitive `p^n`-th root `z` we extract a
+primitive `p^{n+1}`-th root `w` with `w^p = z`. For `n = 0` (`z = 1`) we take
+a genuine primitive `p`-th root (`HasEnoughRootsOfUnity`, available from
+`IsAlgClosed` + char `0`); for `n ≥ 1` any `p`-th root of `z` works — alg.
+closure gives one, and an order count (`Nat.dvd_prime_pow`) pins its order
+to `p^{n+1}`. -/
+private theorem primitiveRoot_pow_succ :
+    ∀ {n : ℕ} {z : ℂ_[p]}, IsPrimitiveRoot z (p ^ n) →
+      ∃ w : ℂ_[p], IsPrimitiveRoot w (p ^ (n + 1)) ∧ w ^ p = z := by
+  haveI : NeZero (p : ℂ_[p]) := ⟨(Nat.cast_ne_zero (R := ℂ_[p])).mpr hp.out.ne_zero⟩
+  rintro (_ | n) z hz
+  · -- `n = 0`: `z = 1`, take a genuine primitive `p`-th root
+    obtain ⟨w, hw⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot ℂ_[p] p
+    have hz1 : z = 1 := by simpa using hz.pow_eq_one
+    exact ⟨w, by simpa using hw, by rw [hz1, hw.pow_eq_one]⟩
+  · -- `n + 1`: any `p`-th root `w` of `z` has order exactly `p^{n+2}`
+    obtain ⟨w, hwz⟩ := IsAlgClosed.exists_pow_nat_eq (k := ℂ_[p]) z (n := p) hp.out.pos
+    refine ⟨w, ?_, hwz⟩
+    rw [IsPrimitiveRoot.iff_orderOf]
+    -- `w^{p^{n+2}} = z^{p^{n+1}} = 1`, so `orderOf w ∣ p^{n+2}`
+    have hpow : w ^ p ^ (n + 1 + 1) = 1 := by
+      rw [pow_succ', pow_mul, hwz, hz.pow_eq_one]
+    have hdvd : orderOf w ∣ p ^ (n + 1 + 1) := orderOf_dvd_of_pow_eq_one hpow
+    obtain ⟨k, hkle, hk⟩ := (Nat.dvd_prime_pow hp.out).1 hdvd
+    -- if `k ≤ n+1` then `z^{p^n} = w^{p^{n+1}} = 1`, contradicting `hz`
+    rcases eq_or_lt_of_le hkle with hkeq | hklt
+    · rw [hk, hkeq]
+    · exfalso
+      have hkle' : k ≤ n + 1 := Nat.lt_succ_iff.1 hklt
+      have hwpn : w ^ p ^ (n + 1) = 1 :=
+        orderOf_dvd_iff_pow_eq_one.1 (hk ▸ pow_dvd_pow p hkle')
+      refine hz.pow_ne_one_of_pos_of_lt (l := p ^ n) (pow_pos hp.out.pos n).ne'
+        (pow_lt_pow_right₀ hp.out.one_lt n.lt_succ_self) ?_
+      rw [pow_succ', pow_mul, hwz] at hwpn
+      exact hwpn
+
 /-- R9: a compatible system of primitive `p^n`-th roots of unity in `ℂ_p`
 exists (`ξ_0 = 1`; each `ξ_{n+1}` is a `p`-th root of `ξ_n`, primitive of
 order `p^{n+1}`): ℕ-recursion + `IsAlgClosed` roots. RJW TeX 2507: "We fix
@@ -41,7 +77,12 @@ once and for all a compatible system of roots of unity `(ξ_{p^n})_n`". -/
 theorem exists_compatible_primitiveRoot :
     ∃ ξ : ℕ → ℂ_[p],
       (∀ n, IsPrimitiveRoot (ξ n) (p ^ n)) ∧ ∀ n, ξ (n + 1) ^ p = ξ n := by
-  sorry
+  -- build the system as a chain of subtypes `{z // IsPrimitiveRoot z (p^n)}`
+  let chain : ∀ n, {z : ℂ_[p] // IsPrimitiveRoot z (p ^ n)} := fun n =>
+    Nat.rec ⟨1, by simp⟩ (fun _ zn => ⟨(primitiveRoot_pow_succ p zn.2).choose,
+      (primitiveRoot_pow_succ p zn.2).choose_spec.1⟩) n
+  refine ⟨fun n => (chain n).1, fun n => (chain n).2, fun n => ?_⟩
+  exact (primitiveRoot_pow_succ p (chain n).2).choose_spec.2
 
 /-- The fixed compatible system `n ↦ ξ_{p^n}` (RJW TeX 2507). -/
 noncomputable def zetaSys : ℕ → ℂ_[p] :=
@@ -62,11 +103,16 @@ noncomputable def K (n : ℕ) : IntermediateField ℚ_[p] ℂ_[p] :=
 /-- R9: the uniformiser `π_n = ξ_{p^n} − 1` of `K_n` (RJW TeX 2507). -/
 noncomputable def pi (n : ℕ) : ℂ_[p] := zetaSys p n - 1
 
-theorem zetaSys_mem_K (n : ℕ) : zetaSys p n ∈ K p n := by sorry
+theorem zetaSys_mem_K (n : ℕ) : zetaSys p n ∈ K p n :=
+  IntermediateField.subset_adjoin ℚ_[p] {zetaSys p n} (Set.mem_singleton _)
 
-theorem pi_mem_K (n : ℕ) : pi p n ∈ K p n := by sorry
+theorem pi_mem_K (n : ℕ) : pi p n ∈ K p n :=
+  sub_mem (zetaSys_mem_K p n) (one_mem _)
 
-theorem K_le_succ (n : ℕ) : K p n ≤ K p (n + 1) := by sorry
+theorem K_le_succ (n : ℕ) : K p n ≤ K p (n + 1) := by
+  refine IntermediateField.adjoin_le_iff.2 (Set.singleton_subset_iff.2 ?_)
+  rw [← zetaSys_pow_p p n]
+  exact pow_mem (zetaSys_mem_K p (n + 1)) p
 
 /-- R10.2 (degree ladder): `[K_n : ℚ_p] = φ(p^n)` — irreducibility of
 `Φ_{p^n}` over `ℚ_p` via Eisenstein at `(p)` after `T ↦ T+1`

@@ -4226,8 +4226,14 @@ R10.1–R10.8). Statement-fix protocol applies. §10.5 (Euler
 systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
 
 ### [T901] The compatible ξ-system and tower membership
-- **Status**: open | **File**: Coleman/Tower.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: Coleman/Tower.lean | **Depends on**: none
 - **Parallel**: yes | **Type**: lemmas
+- **Progress**: 2026-06-12: all four proven (subagent), statements verbatim.
+  ξ-system by Nat.rec over the subtype chain {z // IsPrimitiveRoot z (p^n)}
+  with defeq choose_spec extraction (helper `primitiveRoot_pow_succ`:
+  n = 0 via HasEnoughRootsOfUnity, n ≥ 1 via IsAlgClosed.exists_pow_nat_eq
+  + Nat.dvd_prime_pow order pinning). Verified: build green, axioms
+  standard 3. Cleanup: degraded mode, defer to CLEANUP-91.
 - **Statement**: skeleton `exists_compatible_primitiveRoot`,
   `zetaSys_mem_K`, `pi_mem_K`, `K_le_succ`.
 - **Proof sketch**: existence: ℕ-recursion: ξ₀ := 1 (IsPrimitiveRoot 1 1 ✓
