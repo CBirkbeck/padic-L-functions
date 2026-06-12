@@ -34,10 +34,14 @@ The deliverables (T904):
   polynomial (so finitely many zeros in `B(0,1)`), while the `π_n` are infinitely
   many distinct points, forcing `f = g`.
 
-The single-level interpolation lemma "every norm-one `u ∈ 𝒪_n` is `f(π_n)` for
-a unit `f`" (RJW TeX 2538–2547) is *deferred to* `[T904b]`: its honest
-dependency is the absolute monogenicity `𝒪_n = ℤ_p[π_n]` (in flight as T903b),
-from which the greedy `π_n`-adic-digit construction reads off the unit `f`.
+* the **single-level interpolation** lemma (`exists_evalPi_eq`, RJW TeX 2538–2547,
+  T904b): every norm-one `u ∈ 𝒪_n` is `f(π_n)` for a unit `f ∈ ℤ_p⟦T⟧^×`. The
+  source's greedy `π_n`-adic-digit construction: the residue step
+  `∀ x ∈ 𝒪_n, ∃ a : ℤ_p, ‖x − a‖ ≤ ‖π_n‖` (total ramification ⟹ residue field
+  `𝔽_p`) is realised here via the orthogonal `ℚ_p`-power expansion at the
+  uniformiser (`K_n = ℚ_p(π_n)`, `{π_n^i}_{i<φ(p^n)}` orthogonal), then a
+  `Nat.rec` digit recursion `f = Σ a_k T^k` with telescoping convergence
+  `‖u − Σ_{j<m} a_j π_n^j‖ ≤ ‖π_n‖^m → 0`; `f` is a unit since `‖a_0‖ = ‖u‖ = 1`.
 -/
 
 open PowerSeries
@@ -354,6 +358,310 @@ theorem evalPi_injective {f g : PowerSeries ℤ_[p]}
       (congrArg norm hab)
     omega
   · intro n; exact hrooteval (n + 1) (by omega)
+
+/-! ## Single-level interpolation (RJW TeX 2538–2547, T904b)
+
+Every norm-one `u ∈ 𝒪_n` is the value `f(π_n)` of a unit power series. The source's
+greedy `π_n`-adic-digit construction (TeX 2542–2547): choose `a_0 ∈ ℤ_p` with
+`a_0 ≡ u mod π_n`, then `a_1 ∈ ℤ_p` with `a_1 ≡ (u − a_0)/π_n mod π_n`, and so on;
+`f(T) = Σ a_k T^k`. The crux is the **residue step** `∀ x ∈ 𝒪_n, ∃ a : ℤ_p,
+‖x − a‖ ≤ ‖π_n‖` (`K_{n}/ℚ_p` is totally ramified, so `𝒪_n/(π_n) ≅ 𝔽_p` and `ℤ_p`
+surjects onto it), which we realise via the orthogonal `ℚ_p`-power-basis expansion at
+the uniformiser: `K_n = ℚ_p(π_n)`, the powers `{π_n^i}_{i<φ(p^n)}` are an orthogonal
+basis (`‖Σ q_i π_n^i‖ = max_i ‖q_i‖·‖π_n‖^i`, the term norms being pairwise distinct
+since `‖q_i‖ ∈ p^ℤ` and `‖π_n‖^{φ(p^n)} = p⁻¹` pin the exponent `i` mod `φ(p^n)`);
+`‖x‖ ≤ 1` then forces the constant coefficient `q_0 ∈ ℤ_p` and the tail
+`Σ_{i≥1} q_i π_n^i` to have norm `≤ ‖π_n‖`. -/
+
+/-- The remainder of the greedy step stays in `𝒪_n`: if `r ∈ 𝒪_n` and `a : ℤ_p`
+satisfies `‖r − a‖ ≤ ‖π_n‖`, then `(r − a)/π_n ∈ 𝒪_n` (`K_n`-membership since `K_n`
+is a field and `π_n ≠ 0`; `‖·‖ ≤ 1` since `‖r − a‖ ≤ ‖π_n‖`). -/
+private theorem quot_mem_O {n : ℕ} (hn : 1 ≤ n) {r : ℂ_[p]} (hr : r ∈ O p n) (a : ℤ_[p])
+    (hres : ‖r - toCp p a‖ ≤ ‖pi p n‖) : (r - toCp p a) / pi p n ∈ O p n := by
+  rw [O, Subring.mem_inf]
+  have hrK : r ∈ K p n := (Subring.mem_inf.1 hr).1
+  have htoCpaK : toCp p a ∈ K p n := by
+    rw [toCp, RingHom.comp_apply, PadicInt.Coe.ringHom_apply]
+    exact IntermediateField.algebraMap_mem (K p n) _
+  refine ⟨(K p n).div_mem (sub_mem hrK htoCpaK) (pi_mem_K p n), ?_⟩
+  change ‖(r - toCp p a) / pi p n‖ ≤ 1
+  rw [norm_div, div_le_one (by rw [norm_pos_iff]; exact pi_ne_zero p hn)]
+  exact hres
+
+/-- A single term `‖q‖·‖π_n‖^i` of the orthogonal expansion (`q : ℚ_p`, `1 ≤ i < φ(p^n)`)
+that is `≤ 1` is in fact `≤ ‖π_n‖`. Raising to the totient `M = φ(p^n)` and using
+`‖q‖ = p^{-v}` (`v ∈ ℤ`) and `‖π_n‖^M = p⁻¹`, the inequality reads `Mv + i ≥ 0`; since
+`1 ≤ i < M` this forces `v ≥ 0`, hence `Mv + i ≥ 1`, i.e. `‖q‖·‖π_n‖^i ≤ ‖π_n‖`. -/
+private theorem term_norm_le_pi {n : ℕ} (hn : 1 ≤ n) (q : ℚ_[p]) {i : ℕ}
+    (hi1 : 1 ≤ i) (hiM : i < Nat.totient (p ^ n)) (hle : ‖q‖ * ‖pi p n‖ ^ i ≤ 1) :
+    ‖q‖ * ‖pi p n‖ ^ i ≤ ‖pi p n‖ := by
+  set M := Nat.totient (p ^ n) with hM
+  have hMpos : 0 < M := Nat.totient_pos.2 (pow_pos hp.out.pos n)
+  have hqpM : ‖pi p n‖ ^ M = (p : ℝ)⁻¹ := norm_pi_pow_totient p hn
+  have hpgt1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  have hqpos : 0 < ‖pi p n‖ := norm_pos_iff.2 (pi_ne_zero p hn)
+  rcases eq_or_ne q 0 with hq0 | hq0
+  · rw [hq0, norm_zero, zero_mul]; exact hqpos.le
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, ‖q‖ = (p:ℝ) ^ k := ⟨-q.valuation, Padic.norm_eq_zpow_neg_valuation hq0⟩
+  have hpos : (0:ℝ) ≤ ‖q‖ * ‖pi p n‖ ^ i := by positivity
+  have hraiseM : (‖q‖ * ‖pi p n‖ ^ i) ^ M ≤ 1 := by
+    calc (‖q‖ * ‖pi p n‖ ^ i) ^ M ≤ 1 ^ M := pow_le_pow_left₀ hpos hle M
+      _ = 1 := one_pow _
+  rw [mul_pow] at hraiseM
+  have hqM : ‖q‖ ^ M = (p:ℝ) ^ (k * M) := by rw [hk, ← zpow_natCast ((p:ℝ)^k) M, ← zpow_mul]
+  have hpiM : (‖pi p n‖ ^ i) ^ M = (p:ℝ) ^ (-(i:ℤ)) := by
+    rw [← pow_mul, mul_comm i M, pow_mul, hqpM, ← zpow_natCast ((p:ℝ)⁻¹) i, inv_zpow, ← zpow_neg]
+  rw [hqM, hpiM, ← zpow_add₀ hp0.ne'] at hraiseM
+  have hle0 : k * M + (-(i:ℤ)) ≤ 0 := by
+    by_contra h; push Not at h
+    exact absurd hraiseM (not_le.2 (one_lt_zpow₀ hpgt1 (by omega)))
+  have hkle : k ≤ 0 := by nlinarith [hle0, (by exact_mod_cast hMpos : (0:ℤ) < M), hiM]
+  have hexp_le : k * M + (-(i:ℤ)) ≤ -1 := by
+    nlinarith [hkle, (by exact_mod_cast hMpos : (0:ℤ) < M), hi1]
+  have hterm_M : (‖q‖ * ‖pi p n‖ ^ i) ^ M ≤ ‖pi p n‖ ^ M := by
+    rw [mul_pow, hqM, hpiM, ← zpow_add₀ hp0.ne', hqpM, show ((p:ℝ)⁻¹) = (p:ℝ) ^ (-1 : ℤ) by
+      rw [zpow_neg_one]]
+    exact zpow_le_zpow_right₀ hpgt1.le hexp_le
+  exact le_of_pow_le_pow_left₀ hMpos.ne' hqpos.le hterm_M
+
+/-- Two distinct terms of the orthogonal expansion with nonzero `ℚ_p`-coefficients have
+*distinct* norms (the orthogonality input). Raising to `M = φ(p^n)`, `‖q_a‖·‖π_n‖^a` and
+`‖q_b‖·‖π_n‖^b` become `p^{M v_a − a}` and `p^{M v_b − b}`; equality forces
+`(v_a − v_b)·M = a − b`, impossible for `a ≠ b` with `|a − b| < M`. -/
+private theorem term_norm_distinct {n : ℕ} (hn : 1 ≤ n) {qa qb : ℚ_[p]} {a b : ℕ}
+    (ha : a < Nat.totient (p ^ n)) (hb : b < Nat.totient (p ^ n)) (hab : a ≠ b)
+    (hqa : qa ≠ 0) (hqb : qb ≠ 0) :
+    ‖qa‖ * ‖pi p n‖ ^ a ≠ ‖qb‖ * ‖pi p n‖ ^ b := by
+  set M := Nat.totient (p ^ n) with hM
+  have hMpos : 0 < M := Nat.totient_pos.2 (pow_pos hp.out.pos n)
+  have hqpM : ‖pi p n‖ ^ M = (p : ℝ)⁻¹ := norm_pi_pow_totient p hn
+  have hpgt1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
+  intro heqn
+  have hraise : (‖qa‖ * ‖pi p n‖ ^ a) ^ M = (‖qb‖ * ‖pi p n‖ ^ b) ^ M := by rw [heqn]
+  rw [mul_pow, mul_pow] at hraise
+  obtain ⟨ka, hka⟩ : ∃ k : ℤ, ‖qa‖ = (p:ℝ) ^ k :=
+    ⟨-qa.valuation, Padic.norm_eq_zpow_neg_valuation hqa⟩
+  obtain ⟨kb, hkb⟩ : ∃ k : ℤ, ‖qb‖ = (p:ℝ) ^ k :=
+    ⟨-qb.valuation, Padic.norm_eq_zpow_neg_valuation hqb⟩
+  have hqaM : ‖qa‖ ^ M = (p : ℝ) ^ (ka * M) := by
+    rw [hka, ← zpow_natCast ((p : ℝ) ^ ka) M, ← zpow_mul]
+  have hqbM : ‖qb‖ ^ M = (p : ℝ) ^ (kb * M) := by
+    rw [hkb, ← zpow_natCast ((p : ℝ) ^ kb) M, ← zpow_mul]
+  have hpaa : (‖pi p n‖ ^ a) ^ M = (p : ℝ) ^ (-(a : ℤ)) := by
+    rw [← pow_mul, mul_comm a M, pow_mul, hqpM, ← zpow_natCast ((p : ℝ)⁻¹) a, inv_zpow, ← zpow_neg]
+  have hpbb : (‖pi p n‖ ^ b) ^ M = (p : ℝ) ^ (-(b : ℤ)) := by
+    rw [← pow_mul, mul_comm b M, pow_mul, hqpM, ← zpow_natCast ((p : ℝ)⁻¹) b, inv_zpow, ← zpow_neg]
+  rw [hqaM, hpaa, hqbM, hpbb, ← zpow_add₀ hp0.ne', ← zpow_add₀ hp0.ne'] at hraise
+  have hexp : ka * M + (-(a : ℤ)) = kb * M + (-(b : ℤ)) :=
+    zpow_right_injective₀ hp0 (ne_of_gt hpgt1) hraise
+  have hfactor : (ka - kb) * M = (a : ℤ) - b := by ring_nf; linarith [hexp]
+  have hMz : (0 : ℤ) < M := by exact_mod_cast hMpos
+  have hbnd : |((a:ℤ) - b)| < M := by rw [abs_lt]; omega
+  rcases eq_or_ne (ka - kb) 0 with h0 | h0
+  · rw [h0, zero_mul] at hfactor; omega
+  · exfalso
+    have hge : (M : ℤ) ≤ |(ka - kb) * M| := by
+      rw [abs_mul, abs_of_pos hMz]
+      calc (M : ℤ) = 1 * M := (one_mul _).symm
+        _ ≤ |ka - kb| * M := mul_le_mul_of_nonneg_right (Int.one_le_abs h0) hMz.le
+    rw [hfactor] at hge; omega
+
+set_option synthInstance.maxHeartbeats 1000000 in
+-- the `adjoin.powerBasis`/`Basis.sum_repr` computation runs through the
+-- `IntermediateField.adjoin ℚ_[p] {π_n}` power-basis layer; instance synthesis and the
+-- power-basis term elaboration exceed the defaults
+set_option maxHeartbeats 1000000 in
+/-- **The residue step** (RJW TeX 2542–2547): every `x ∈ 𝒪_n` is `≡ a mod π_n·𝒪_n`
+for some `a : ℤ_p` — i.e. `‖x − a‖ ≤ ‖π_n‖`. Total ramification gives `𝒪_n/(π_n) ≅ 𝔽_p`
+and `ℤ_p ↠ 𝔽_p`; we realise this through the orthogonal `ℚ_p`-power expansion at the
+uniformiser. Writing `x = ∑_{i<φ(p^n)} q_i π_n^i` against the power basis of
+`K_n = ℚ_p(π_n)` (`q_i ∈ ℚ_p`), the terms have pairwise distinct norms
+(`term_norm_distinct`), so orthogonality gives `‖x‖ = max_i ‖q_i π_n^i‖`; from `‖x‖ ≤ 1`
+the constant coefficient has `‖q_0‖ ≤ 1` (so `a := q_0 ∈ ℤ_p`) and each higher term has
+norm `≤ ‖π_n‖` (`term_norm_le_pi`), whence `‖x − a‖ = ‖∑_{i≥1} q_i π_n^i‖ ≤ ‖π_n‖`. -/
+private theorem exists_residue_pi {n : ℕ} (hn : 1 ≤ n) {x : ℂ_[p]} (hx : x ∈ K p n)
+    (hxnorm : ‖x‖ ≤ 1) :
+    ∃ a : ℤ_[p], ‖x - toCp p a‖ ≤ ‖pi p n‖ := by
+  classical
+  have hKeq : ℚ_[p]⟮pi p n⟯ = K p n := by
+    rw [K]; apply le_antisymm
+    · rw [IntermediateField.adjoin_simple_le_iff]
+      exact sub_mem (IntermediateField.mem_adjoin_simple_self _ _) (one_mem _)
+    · rw [IntermediateField.adjoin_le_iff]; intro y hy
+      rw [Set.mem_singleton_iff] at hy; subst hy
+      rw [show zetaSys p n = pi p n + 1 by rw [pi]; ring]
+      exact add_mem (IntermediateField.mem_adjoin_simple_self _ _) (one_mem _)
+  have hint : IsIntegral ℚ_[p] (pi p n) := by
+    rw [pi]; exact (((zetaSys_primitiveRoot p n).isIntegral (pow_pos hp.out.pos n)).tower_top).sub
+      isIntegral_one
+  set pb := IntermediateField.adjoin.powerBasis hint with hpb
+  set xes : ℚ_[p]⟮pi p n⟯ := ⟨x, hKeq ▸ hx⟩ with hxes
+  set q : Fin pb.dim → ℚ_[p] := fun i => pb.basis.repr xes i with hq
+  have hgen : (pb.gen : ℂ_[p]) = pi p n := by rw [hpb, IntermediateField.adjoin.powerBasis_gen]; rfl
+  have hdim : pb.dim = Nat.totient (p ^ n) := by
+    rw [hpb, IntermediateField.adjoin.powerBasis_dim, ← IntermediateField.adjoin.finrank hint,
+      show Module.finrank ℚ_[p] ℚ_[p]⟮pi p n⟯ = Module.finrank ℚ_[p] (K p n) from by rw [hKeq],
+      finrank_K]
+  have hdimpos : 0 < pb.dim := by rw [hdim]; exact Nat.totient_pos.2 (pow_pos hp.out.pos n)
+  have hbasis_coe :
+      ∀ i : Fin pb.dim, ((pb.basis i : ℚ_[p]⟮pi p n⟯) : ℂ_[p]) = (pi p n) ^ (i:ℕ) := by
+    intro i
+    rw [PowerBasis.coe_basis,
+      show ((pb.gen ^ (i:ℕ) : ℚ_[p]⟮pi p n⟯) : ℂ_[p]) = ((pb.gen : ℂ_[p])) ^ (i:ℕ) from by
+        push_cast; ring, hgen]
+  set tm : Fin pb.dim → ℂ_[p] := fun i => algebraMap ℚ_[p] ℂ_[p] (q i) * (pi p n) ^ (i:ℕ) with htm
+  have htmval : ∀ i, tm i = algebraMap ℚ_[p] ℂ_[p] (q i) * (pi p n) ^ (i:ℕ) := fun i => rfl
+  have hexp : x = ∑ i : Fin pb.dim, tm i := by
+    have hco : (xes : ℂ_[p]) = ∑ i : Fin pb.dim, ((q i • pb.basis i : ℚ_[p]⟮pi p n⟯) : ℂ_[p]) := by
+      conv_lhs => rw [← pb.basis.sum_repr xes]
+      rw [IntermediateField.coe_sum]
+    rw [show (xes : ℂ_[p]) = x from rfl] at hco
+    rw [hco]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [IntermediateField.coe_smul, hbasis_coe i, Algebra.smul_def]
+  have hnormtm : ∀ i, ‖tm i‖ = ‖q i‖ * ‖pi p n‖ ^ (i:ℕ) := by
+    intro i; rw [htm]; simp [norm_mul, norm_pow, norm_algebraMap']
+  have htm_ne : ∀ i, tm i ≠ 0 → q i ≠ 0 := by
+    intro i h hqi; exact h (by rw [htm]; simp [hqi])
+  have hdistinct : ∀ a b : Fin pb.dim, a ≠ b → tm a ≠ 0 → tm b ≠ 0 → ‖tm a‖ ≠ ‖tm b‖ := by
+    intro a b hab hta htb
+    rw [hnormtm, hnormtm]
+    exact term_norm_distinct p hn (hdim ▸ a.2) (hdim ▸ b.2)
+      (fun h => hab (Fin.ext h)) (htm_ne a hta) (htm_ne b htb)
+  -- orthogonality: each term is bounded by the norm of the whole sum
+  have hperterm : ∀ (g : Fin pb.dim → ℂ_[p]),
+      (∀ a b, a ≠ b → g a ≠ 0 → g b ≠ 0 → ‖g a‖ ≠ ‖g b‖) → ∀ j, ‖g j‖ ≤ ‖∑ i, g i‖ := by
+    intro g hgd j
+    set S : Finset (Fin pb.dim) := Finset.univ.filter (fun jj => g jj ≠ 0) with hS
+    have hsumS : ∑ jj, g jj = ∑ jj ∈ S, g jj := by
+      rw [hS]; symm; exact Finset.sum_filter_of_ne (fun jj _ hne => hne)
+    rcases eq_or_ne (g j) 0 with hgj | hgj
+    · rw [hgj, norm_zero]; positivity
+    · have hjS : j ∈ S := by rw [hS]; simp [hgj]
+      have hSne : S.Nonempty := ⟨j, hjS⟩
+      have hpw : (↑S : Set (Fin pb.dim)).Pairwise (fun a b => ‖g a‖ ≠ ‖g b‖) := by
+        intro a ha b hb hab
+        rw [hS, Finset.coe_filter] at ha hb
+        exact hgd a b hab ha.2 hb.2
+      rw [hsumS, IsUltrametricDist.norm_sum_eq_sup'_of_pairwise_ne hSne hpw]
+      exact Finset.le_sup' (fun jj => ‖g jj‖) hjS
+  have hterm_le_one : ∀ i, ‖tm i‖ ≤ 1 :=
+    fun i => le_trans (by rw [hexp]; exact hperterm tm hdistinct i) hxnorm
+  -- the constant coefficient `q 0`, which is in `ℤ_p`, is the residue `a`
+  set i0 : Fin pb.dim := ⟨0, hdimpos⟩ with hi0
+  have hq0le : ‖q i0‖ ≤ 1 := by
+    have h := hterm_le_one i0
+    rw [hnormtm, show ((i0:ℕ)) = 0 from rfl, pow_zero, mul_one] at h
+    exact h
+  set a : ℤ_[p] := ⟨q i0, hq0le⟩ with ha
+  have htm0 : tm i0 = toCp p a := by
+    rw [htmval, show ((i0:ℕ)) = 0 from rfl, pow_zero, mul_one, toCp, RingHom.comp_apply,
+      PadicInt.Coe.ringHom_apply]
+  have hsub : x - toCp p a = ∑ i ∈ Finset.univ.erase i0, tm i := by
+    rw [hexp, ← htm0, Finset.sum_erase_eq_sub (Finset.mem_univ i0)]
+  -- the tail `∑_{i ≥ 1}` is bounded by `‖π_n‖` termwise
+  refine ⟨a, ?_⟩
+  rw [hsub]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg _) (fun i hi => ?_)
+  rw [Finset.mem_erase] at hi
+  have hi1 : 1 ≤ (i:ℕ) := by
+    rcases Nat.eq_zero_or_pos (i:ℕ) with h0 | h0
+    · exact absurd (Fin.ext (by rw [h0, hi0])) hi.1
+    · exact h0
+  rw [hnormtm]
+  exact term_norm_le_pi p hn (q i) hi1 (hdim ▸ i.2) (by rw [← hnormtm]; exact hterm_le_one i)
+
+/-- **Single-level interpolation** (RJW TeX 2538–2547, T904b): every norm-one
+`u ∈ 𝒪_n` is the value `f(π_n)` of a unit power series `f ∈ ℤ_p⟦T⟧^×`.
+
+Proof (the source's greedy `π_n`-adic digits): define the remainder/digit recursion
+`r_0 = u`, `a_k = ` the `ℤ_p`-residue of `r_k` (`exists_residue_pi`), `r_{k+1} =
+(r_k − a_k)/π_n ∈ 𝒪_n` (`quot_mem_O`); set `f = Σ_k a_k T^k`. The telescoping identity
+`u − Σ_{j<m} a_j π_n^j = π_n^m · r_m` with `‖r_m‖ ≤ 1` gives `‖u − S_m‖ ≤ ‖π_n‖^m → 0`,
+so the partial sums `S_m` converge to `u`; they also converge to `f(π_n) = evalPi f n`
+(partial sums of the defining `tsum`), so `evalPi f n = u` by uniqueness of limits. As
+`‖u‖ = 1 > ‖π_n‖ ≥ ‖u − a_0‖`, the ultrametric isoceles step gives `‖a_0‖ = ‖u‖ = 1`,
+so `a_0 = constantCoeff f` is a `ℤ_p`-unit and `f ∈ ℤ_p⟦T⟧^×`. -/
+theorem exists_evalPi_eq {n : ℕ} (hn : 1 ≤ n) {u : ℂ_[p]} (hu : u ∈ O p n)
+    (hnorm : ‖u‖ = 1) :
+    ∃ f : PowerSeries ℤ_[p], IsUnit f ∧ evalPi p f n = u := by
+  classical
+  have hpine : pi p n ≠ 0 := pi_ne_zero p hn
+  -- the residue oracle from the residue step
+  set oracle : ∀ x : ℂ_[p], x ∈ O p n → ℤ_[p] := fun x hx =>
+    (exists_residue_pi p hn (Subring.mem_inf.1 hx).1 (Subring.mem_inf.1 hx).2).choose with horacle
+  have oracle_spec : ∀ x (hx : x ∈ O p n), ‖x - toCp p (oracle x hx)‖ ≤ ‖pi p n‖ := fun x hx =>
+    (exists_residue_pi p hn (Subring.mem_inf.1 hx).1 (Subring.mem_inf.1 hx).2).choose_spec
+  -- the remainder/digit recursion, carrying `r_k ∈ 𝒪_n`
+  set seq : ℕ → {x : ℂ_[p] // x ∈ O p n} := fun k =>
+    Nat.rec (⟨u, hu⟩ : {x : ℂ_[p] // x ∈ O p n})
+      (fun _ rk => ⟨(rk.1 - toCp p (oracle rk.1 rk.2)) / pi p n,
+        quot_mem_O p hn rk.2 (oracle rk.1 rk.2) (oracle_spec rk.1 rk.2)⟩) k with hseq
+  set a : ℕ → ℤ_[p] := fun k => oracle (seq k).1 (seq k).2 with ha
+  have hseq_succ : ∀ k, (seq (k+1)).1 = ((seq k).1 - toCp p (a k)) / pi p n := fun k => rfl
+  -- telescoping `u − ∑_{j<m} a_j π_n^j = π_n^m · r_m`
+  have htel : ∀ m, u - ∑ j ∈ Finset.range m, toCp p (a j) * pi p n ^ j
+      = pi p n ^ m * (seq m).1 := by
+    intro m
+    induction m with
+    | zero => simp [hseq]
+    | succ k ih =>
+      have hpk : (pi p n)^k * (seq (k+1)).1 * pi p n
+          = pi p n ^ k * ((seq k).1 - toCp p (a k)) := by
+        rw [hseq_succ k]; field_simp
+      rw [Finset.sum_range_succ, pow_succ]
+      linear_combination ih - hpk
+  refine ⟨PowerSeries.mk a, ?_, ?_⟩
+  · -- `f` is a unit: `‖a_0‖ = ‖u‖ = 1` (ultrametric isoceles), so `constantCoeff f` is a unit
+    have h1 := htel 1
+    rw [Finset.sum_range_one, pow_zero, mul_one, pow_one] at h1
+    have hlt : ‖u - toCp p (a 0)‖ < 1 := by
+      rw [h1, norm_mul]
+      calc ‖pi p n‖ * ‖(seq 1).1‖ ≤ ‖pi p n‖ * 1 :=
+            mul_le_mul_of_nonneg_left (Subring.mem_inf.1 (seq 1).2).2 (norm_nonneg _)
+        _ = ‖pi p n‖ := mul_one _
+        _ < 1 := norm_pi_lt_one p hn
+    have hne : ‖u - toCp p (a 0)‖ ≠ ‖u‖ := by rw [hnorm]; exact ne_of_lt hlt
+    have hkey : ‖toCp p (a 0)‖ = 1 := by
+      have h2 : ‖-(u - toCp p (a 0)) + u‖ = max ‖-(u - toCp p (a 0))‖ ‖u‖ :=
+        IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [norm_neg]; exact hne)
+      rw [show -(u - toCp p (a 0)) + u = toCp p (a 0) from by ring, norm_neg, hnorm,
+        max_eq_right hlt.le] at h2
+      exact h2
+    rw [norm_toCp] at hkey
+    rw [PowerSeries.isUnit_iff_constantCoeff, PowerSeries.constantCoeff_mk]
+    exact PadicInt.isUnit_iff.2 hkey
+  · -- `evalPi f n = u`: the partial sums `S_m` tend to both `u` and `f(π_n)`
+    set f : PowerSeries ℤ_[p] := PowerSeries.mk a with hf
+    have hcoeff : ∀ k, coeff k (PowerSeries.map (toCp p) f) = toCp p (a k) := by
+      intro k; rw [PowerSeries.coeff_map, hf, PowerSeries.coeff_mk]
+    have hsum := (summable_evalPi p f hn).hasSum.tendsto_sum_nat
+    have hzero : Filter.Tendsto (fun m => u - ∑ j ∈ Finset.range m,
+        coeff j (PowerSeries.map (toCp p) f) * pi p n ^ j) Filter.atTop (nhds 0) := by
+      have hbound : Filter.Tendsto (fun m => ‖pi p n‖ ^ m) Filter.atTop (nhds 0) :=
+        tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) (norm_pi_lt_one p hn)
+      rw [NormedAddGroup.tendsto_nhds_zero]
+      rw [NormedAddGroup.tendsto_nhds_zero] at hbound
+      intro ε hε
+      filter_upwards [hbound ε hε] with m hm
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at hm
+      rw [show (u - ∑ j ∈ Finset.range m, coeff j (PowerSeries.map (toCp p) f) * pi p n ^ j)
+          = u - ∑ j ∈ Finset.range m, toCp p (a j) * pi p n ^ j from by
+        rw [Finset.sum_congr rfl (fun j _ => by rw [hcoeff j])], htel m]
+      calc ‖pi p n ^ m * (seq m).1‖ = ‖pi p n‖ ^ m * ‖(seq m).1‖ := by rw [norm_mul, norm_pow]
+        _ ≤ ‖pi p n‖ ^ m * 1 := by
+            apply mul_le_mul_of_nonneg_left _ (by positivity)
+            exact (Subring.mem_inf.1 (seq m).2).2
+        _ = ‖pi p n‖ ^ m := by rw [mul_one]
+        _ < ε := hm
+    have hSu : Filter.Tendsto (fun m => ∑ j ∈ Finset.range m,
+        coeff j (PowerSeries.map (toCp p) f) * pi p n ^ j) Filter.atTop (nhds u) := by
+      have := hzero.const_sub u
+      simpa using this
+    rw [evalPi, seriesEval]
+    exact tendsto_nhds_unique hsum hSu
 
 /-! ## The evaluation/norm commuting square (T907, RJW lem:norm power series vs units)
 

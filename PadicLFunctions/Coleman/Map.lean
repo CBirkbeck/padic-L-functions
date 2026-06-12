@@ -363,3 +363,7 @@ theorem res_derivative_log_geomSum {a : ℕ} (_ha : ¬ (p : ℕ) ∣ a) (_ha0 : 
       = PowerSeries.C (R := ℤ_[p]) ((a : ℤ_[p]) - 1) := by
     rw [map_sub, map_one, ← map_natCast (PowerSeries.C (R := ℤ_[p])) a]
   rw [hconst, map_sub, PadicMeasure.muA, res_sub, res_units_symm_C, zero_sub]
+
+end Coleman
+
+end PadicLFunctions

@@ -4528,7 +4528,34 @@ systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
   wired `import PadicLFunctions.Coleman.Theorem` into `PadicLFunctions.lean`.
 
 ### [T904b] Single-level interpolation (split from T904 item 7)
-- **Status**: open (spawned 2026-06-12) | **File**: Coleman/Theorem.lean | **Parent**: T904
+- **Status**: done (2026-06-12) | **File**: Coleman/Theorem.lean | **Parent**: T904
+- **Progress (2026-06-12)**: DONE, sorry-free, axiom-clean (`propext`,
+  `Classical.choice`, `Quot.sound`). `lake build PadicLFunctions` green.
+  Final signature exactly as planned: `exists_evalPi_eq {n} (hn : 1 ≤ n) {u}
+  (hu : u ∈ O p n) (hnorm : ‖u‖ = 1) : ∃ f : PowerSeries ℤ_[p], IsUnit f ∧
+  evalPi p f n = u`.
+  - **Replan note (residue step)**: the T903b Tower toolkit could NOT be reused —
+    `exists_pi_repr`/`forall_norm_le_one_of_norm_sum_pi_pow_le_one`/
+    `norm_pow_totient_mem_zpow` are `private` (file-scoped, inaccessible from
+    Theorem.lean — verified) AND specialised to the `n→n+1` tower step (`K_{n+1}`),
+    not the absolute level-`n` residue. `O_succ_exists_digits` is accessible but
+    does not reach level 1 (degree `p−1` step), and recursing it needs the base
+    case anyway. The absolute monogenicity `O_n = ℤ_p[π_n]` is unproven.
+  - **Realised STEP 1 instead via the absolute orthogonal ℚ_p-power expansion**
+    (self-contained, all levels `n ≥ 1` uniformly): `K_n = ℚ_p⟮π_n⟯`
+    (adjoin-shift `ζ_n ↔ π_n`), power basis `{π_n^i}_{i<φ(p^n)}`
+    (`IntermediateField.adjoin.powerBasis` + `finrank_K`); orthogonality from
+    pairwise-distinct term norms (`‖q_i‖ ∈ p^ℤ` via `Padic.norm_eq_zpow_neg_valuation`,
+    `‖π_n‖^{φ(p^n)} = p⁻¹` via the accessible `norm_pi_pow_totient`) →
+    `IsUltrametricDist.norm_sum_eq_sup'_of_pairwise_ne`; `‖x‖ ≤ 1` forces
+    `q_0 ∈ ℤ_p` and each tail term `≤ ‖π_n‖` by elementary ℤ-arithmetic. The
+    ℚ_p-coefficient route makes the value group elementary (no spectralNorm needed).
+  - **Helpers added** (all private): `quot_mem_O` (remainder stays in 𝒪_n),
+    `term_norm_le_pi` + `term_norm_distinct` (the value-group arithmetic),
+    `exists_residue_pi` (the residue step). STEPs 2–4 (Nat.rec digit recursion +
+    telescoping `u − S_m = π_n^m·r_m` + convergence via uniqueness of limits +
+    unit via ultrametric isoceles `‖a_0‖ = ‖u‖ = 1`) as planned.
+- **Status (historical)**: in_progress (2026-06-12) | **File**: Coleman/Theorem.lean | **Parent**: T904
 - **Depends on**: T904 (done), T903b (O_n = ℤ_p[π_n] monogenicity) | **Type**: theorem
 - **Statement**: `exists_evalPi_eq {n} (hn : 1 ≤ n) {u : ℂ_[p]} (hu : u ∈ O p n)
   (hnorm : ‖u‖ = 1) : ∃ f : PowerSeries ℤ_[p], IsUnit f ∧ evalPi p f n = u`
@@ -4748,7 +4775,10 @@ Coleman/NormOperator.lean)
 - **Sizing**: ~150 LOC.
 
 ### [CLEANUP-ALL-9] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T901–T909 | **Type**: cleanup-all
+- **Status**: done (2026-06-12, degraded mode) — project builds green with
+  ZERO warnings after the Map.lean namespace-closer fix (orchestrator);
+  all four Coleman files docstringed, helpers private, axioms standard 3
+  re-verified per ticket. Tooled golf defers to CLEANUP-FINAL | **Depends on**: T901–T909 | **Type**: cleanup-all
 
 ### [T910] **MILESTONE: Coleman's theorem** (RJW thm:coleman power
 series + thm:coleman map 2)
