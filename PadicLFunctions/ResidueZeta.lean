@@ -438,6 +438,30 @@ variable (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K]
 noncomputable def uA (a : ℕ) : PowerSeries K :=
   PowerSeries.mk fun n => ((a : K))⁻¹ * (a.choose (n + 1))
 
+/-- The `n`-th coefficient of `(1+X)^a` over any commutative ring is `C(a, n)`
+(the formal binomial theorem, transported from the polynomial statement). -/
+private lemma coeff_one_add_X_pow {R : Type*} [CommRing R] (a n : ℕ) :
+    PowerSeries.coeff n ((1 + PowerSeries.X) ^ a : PowerSeries R) = (a.choose n : R) := by
+  rw [show (1 + PowerSeries.X : PowerSeries R) ^ a
+        = (((1 + Polynomial.X : Polynomial R) ^ a : Polynomial R) : PowerSeries R) by
+      push_cast [Polynomial.coe_pow]; rfl,
+    Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- The constant coefficient of `u_a` is `1` (`C(a,1)·a⁻¹ = 1` for `a ≠ 0`). -/
+private lemma constantCoeff_uA {a : ℕ} (ha0 : a ≠ 0) :
+    PowerSeries.constantCoeff (uA K a) = 1 := by
+  have ha : (a : K) ≠ 0 := Nat.cast_ne_zero.mpr ha0
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, uA, PowerSeries.coeff_mk,
+    Nat.choose_one_right, inv_mul_cancel₀ ha]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- `u_a − 1` has zero constant term, hence is a legal substitution argument. -/
+private lemma hasSubst_uA_sub_one {a : ℕ} (ha0 : a ≠ 0) :
+    PowerSeries.HasSubst (uA K a - 1 : PowerSeries K) :=
+  PowerSeries.HasSubst.of_constantCoeff_zero' (by
+    rw [map_sub, constantCoeff_uA K ha0, map_one, sub_self])
+
 /-- R7.4b: RJW's antiderivative `F̃_a = log(T/(1+T) · (1+T)^a/((1+T)^a−1))`
 (TeX 2268), realised through the factorisation
 `F̃_a = −log_p(a) − log(u_a) + (a−1)·log(1+T)` (TeX eq:tilde F_a 2 +
@@ -448,17 +472,177 @@ noncomputable def FtildeA (a : ℕ) : PowerSeries K :=
     - (formalLog (K := K)).subst (uA K a - 1)
     + ((a - 1 : ℕ)) • formalLog (K := K)
 
-/-- R7.4c: the constant coefficient is `−log_p(a)` (TeX eq:F_a(0)). -/
-theorem constantCoeff_FtildeA {a : ℕ} :
-    PowerSeries.constantCoeff (FtildeA p K a)
-      = -(extLog p ((a : K))) := by sorry
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- R7.4c: the constant coefficient is `−log_p(a)` (TeX eq:F_a(0)).
 
-/-- R7.4d (RJW Lemma 7.3, TeX 2271–2279): `∂F̃_a = F_a` formally. -/
-theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha0 : a ≠ 0) :
+Statement note (T704): `a ≠ 0` added — `uA 0 = 0` makes the formal composition
+junk (`HasSubst` fails at constant coefficient `−1`). -/
+theorem constantCoeff_FtildeA {a : ℕ} (ha0 : a ≠ 0) :
+    PowerSeries.constantCoeff (FtildeA p K a)
+      = -(extLog p ((a : K))) := by
+  -- the substitution term has zero constant coefficient
+  have hc : PowerSeries.constantCoeff (uA K a - 1 : PowerSeries K) = 0 := by
+    rw [map_sub, constantCoeff_uA K ha0, map_one, sub_self]
+  have hsubst : PowerSeries.constantCoeff ((formalLog (K := K)).subst (uA K a - 1)) = 0 :=
+    PowerSeries.constantCoeff_subst_eq_zero hc _ (constantCoeff_formalLog (K := K))
+  rw [FtildeA, map_add, map_sub, PowerSeries.constantCoeff_C, hsubst, sub_zero,
+    map_nsmul, constantCoeff_formalLog (K := K), smul_zero, add_zero]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- The `n`-th coefficient of `geomSum a` is `C(a, n+1)` (from
+`geomSum·X = (1+X)^a − 1` and the binomial coefficient at index `n+1`). -/
+private lemma coeff_geomSum (a n : ℕ) :
+    PowerSeries.coeff n (PadicMeasure.geomSum p a) = (a.choose (n + 1) : ℤ_[p]) := by
+  rw [← PowerSeries.coeff_succ_mul_X n (PadicMeasure.geomSum p a),
+    PadicMeasure.geomSum_mul_X, map_sub, coeff_one_add_X_pow, PowerSeries.coeff_one,
+    if_neg (Nat.succ_ne_zero n), sub_zero]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- Step A (RJW TeX 2296–2300): `a·u_a` is the base-changed geometric sum. -/
+private lemma natCast_smul_uA_eq_map_geomSum {a : ℕ} (ha0 : a ≠ 0) :
+    (a : K) • uA K a
+      = PowerSeries.map ((algebraMap ℚ_[p] K).comp (PadicInt.Coe.ringHom))
+          (PadicMeasure.geomSum p a) := by
+  have ha : (a : K) ≠ 0 := Nat.cast_ne_zero.mpr ha0
+  ext n
+  rw [PowerSeries.coeff_map, coeff_geomSum, map_natCast, map_smul, uA, PowerSeries.coeff_mk,
+    smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+include hp in
+/-- Step B (RJW TeX 2271–2279): substituting `u_a − 1` into `(1+X)·∂(log) = 1`
+gives `u_a·(∂log)(u_a − 1) = 1` (the formal `1/(1+(u_a−1)) = 1/u_a`). -/
+private lemma uA_mul_subst_derivative_formalLog {a : ℕ} (ha0 : a ≠ 0) :
+    uA K a * (PowerSeries.derivativeFun (formalLog (K := K))).subst (uA K a - 1) = 1 := by
+  have hg := hasSubst_uA_sub_one K ha0
+  have h := congrArg (fun f => f.subst (uA K a - 1))
+    (one_add_mul_derivative_formalLog (p := p) (K := K))
+  rw [← PowerSeries.coe_substAlgHom hg, map_mul, map_add, map_one, PowerSeries.substAlgHom_X hg,
+    show (1 : PowerSeries K) + (uA K a - 1) = uA K a by ring] at h
+  rw [← PowerSeries.coe_substAlgHom hg]
+  exact h
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- R7.4d (RJW Lemma 7.3, TeX 2271–2279): `∂F̃_a = F_a` formally.
+
+Statement note (T704): hypothesis `¬p∣a` added — `Fa p a` is the junk value `0`
+when `p ∣ a` (`Ring.inverse` of a non-unit) while `∂F̃_a ≠ 0`; RJW carries
+`p ∤ a` from §4.1 throughout. -/
+theorem one_add_mul_derivative_FtildeA {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (ha0 : a ≠ 0) :
     (1 + PowerSeries.X) * PowerSeries.derivativeFun (FtildeA p K a)
       = PowerSeries.map ((algebraMap ℚ_[p] K).comp (PadicInt.Coe.ringHom))
           (PadicMeasure.Fa p a) := by
-  sorry
+  classical
+  set M := PowerSeries.map ((algebraMap ℚ_[p] K).comp (PadicInt.Coe.ringHom)) with hM
+  -- shorthands
+  set S : PowerSeries K := M (PadicMeasure.geomSum p a) with hS
+  set DuA : PowerSeries K := PowerSeries.derivativeFun (uA K a) with hDuA
+  set P : PowerSeries K := (PowerSeries.derivativeFun (formalLog (K := K))).subst (uA K a - 1)
+    with hP
+  have hα : ((a : ℕ) : PowerSeries K) = PowerSeries.C ((a : ℕ) : K) := (map_natCast _ _).symm
+  -- Step A and consequences
+  have hAsmul := natCast_smul_uA_eq_map_geomSum (p := p) K ha0
+  have hA : ((a : ℕ) : PowerSeries K) * uA K a = S := by
+    rw [hS, ← hAsmul, PowerSeries.smul_eq_C_mul, hα]
+  -- `S·X = (1+X)^a − 1` (base-changed `geomSum_mul_X`)
+  have hSX : S * PowerSeries.X = (1 + PowerSeries.X) ^ a - 1 := by
+    have : S * PowerSeries.X = M (PadicMeasure.geomSum p a * PowerSeries.X) := by
+      rw [hS, map_mul, PowerSeries.map_X]
+    rw [this, PadicMeasure.geomSum_mul_X, map_sub, map_pow, map_add, map_one, PowerSeries.map_X]
+  -- Step B
+  have hB : uA K a * P = 1 := uA_mul_subst_derivative_formalLog (p := p) K ha0
+  -- bridges between `derivativeFun` and the `d⁄dX` derivation
+  have hDX : PowerSeries.derivativeFun (PowerSeries.X : PowerSeries K) = 1 :=
+    PowerSeries.derivative_X
+  have hDpow : PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a : PowerSeries K)
+      = (a : PowerSeries K) * (1 + PowerSeries.X) ^ (a - 1)
+        * PowerSeries.derivativeFun (1 + PowerSeries.X) := PowerSeries.derivative_pow K _ a
+  -- `α·(u_a·X) = (1+X)^a − 1`
+  have hαuAX : ((a : ℕ) : PowerSeries K) * (uA K a * PowerSeries.X)
+      = (1 + PowerSeries.X) ^ a - 1 := by
+    rw [← mul_assoc, hA, hSX]
+  -- differentiate it: `α·(u_a + X·∂u_a) = ∂((1+X)^a)`
+  have hDuAX : ((a : ℕ) : PowerSeries K) * (uA K a + PowerSeries.X * DuA)
+      = PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a : PowerSeries K) := by
+    have hlhs : PowerSeries.derivativeFun
+        (((a : ℕ) : PowerSeries K) * (uA K a * PowerSeries.X))
+          = ((a : ℕ) : PowerSeries K) * (uA K a + PowerSeries.X * DuA) := by
+      rw [hα, ← PowerSeries.smul_eq_C_mul, PowerSeries.derivativeFun_smul,
+        PowerSeries.derivativeFun_mul, hDX, hDuA]
+      rw [PowerSeries.smul_eq_C_mul, ← hα, smul_eq_mul, smul_eq_mul]
+      ring
+    have hrhs : PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a - 1 : PowerSeries K)
+        = PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a : PowerSeries K) := by
+      rw [show ((1 + PowerSeries.X) ^ a - 1 : PowerSeries K)
+            = (1 + PowerSeries.X) ^ a + (-1 : PowerSeries K) by ring,
+        PowerSeries.derivativeFun_add]
+      rw [show (-1 : PowerSeries K) = PowerSeries.C (-1 : K) by simp,
+        PowerSeries.derivativeFun_C, add_zero]
+    rw [← hlhs, hαuAX, hrhs]
+  -- `(1+X)·∂((1+X)^a) = α·(1+X)^a`
+  have hQ : (1 + PowerSeries.X) * PowerSeries.derivativeFun ((1 + PowerSeries.X) ^ a : PowerSeries K)
+      = ((a : ℕ) : PowerSeries K) * (1 + PowerSeries.X) ^ a := by
+    rw [hDpow, PowerSeries.derivativeFun_add, PowerSeries.derivativeFun_one, hDX, zero_add, mul_one]
+    rcases Nat.exists_eq_succ_of_ne_zero ha0 with ⟨b, rfl⟩
+    rw [Nat.succ_sub_one, pow_succ]
+    push_cast
+    ring
+  -- the multiplied-out differentiated Step A
+  have rDA : ((a : ℕ) : PowerSeries K) * (1 + PowerSeries.X) * (uA K a + PowerSeries.X * DuA)
+      = ((a : ℕ) : PowerSeries K) * (((a : ℕ) : PowerSeries K) * uA K a * PowerSeries.X + 1) := by
+    have h1 : (1 + PowerSeries.X) * (((a : ℕ) : PowerSeries K) * (uA K a + PowerSeries.X * DuA))
+        = ((a : ℕ) : PowerSeries K) * (1 + PowerSeries.X) ^ a := by rw [hDuAX, hQ]
+    have h2 : (1 + PowerSeries.X) ^ a = ((a : ℕ) : PowerSeries K) * uA K a * PowerSeries.X + 1 := by
+      rw [hA, hSX]; ring
+    rw [h2] at h1; linear_combination h1
+  -- LHS expansion: `(1+X)·∂F̃_a = −(1+X)·P·∂u_a + (α − 1)`
+  have ha1 : 1 ≤ a := Nat.one_le_iff_ne_zero.mpr ha0
+  have hLHSexp : (1 + PowerSeries.X) * PowerSeries.derivativeFun (FtildeA p K a)
+      = -((1 + PowerSeries.X) * P * DuA) + (((a : ℕ) : PowerSeries K) - 1) := by
+    have hsubF : ∀ x y : PowerSeries K,
+        PowerSeries.derivativeFun (x - y) = PowerSeries.derivativeFun x - PowerSeries.derivativeFun y :=
+      fun x y => map_sub (PowerSeries.derivative K) x y
+    have hnsmul : ∀ (n : ℕ) (f : PowerSeries K),
+        PowerSeries.derivativeFun (n • f) = n • PowerSeries.derivativeFun f :=
+      fun n f => map_nsmul (PowerSeries.derivative K) n f
+    have hDF : PowerSeries.derivativeFun (FtildeA p K a)
+        = -(P * DuA) + (a - 1 : ℕ) • PowerSeries.derivativeFun (formalLog (K := K)) := by
+      have dsubst : PowerSeries.derivativeFun ((formalLog (K := K)).subst (uA K a - 1))
+          = (PowerSeries.derivativeFun (formalLog (K := K))).subst (uA K a - 1)
+            * PowerSeries.derivativeFun (uA K a - 1) :=
+        PowerSeries.derivative_subst (A := K) (hasSubst_uA_sub_one K ha0)
+      have hsub : PowerSeries.derivativeFun ((formalLog (K := K)).subst (uA K a - 1)) = P * DuA := by
+        rw [dsubst, hP, hDuA, hsubF, PowerSeries.derivativeFun_one, sub_zero]
+      rw [FtildeA, PowerSeries.derivativeFun_add, hsubF, PowerSeries.derivativeFun_C, hsub,
+        hnsmul, zero_sub]
+    rw [hDF, mul_add, mul_neg, ← mul_assoc, mul_smul_comm,
+      one_add_mul_derivative_formalLog (p := p) (K := K), nsmul_eq_mul, mul_one,
+      Nat.cast_sub ha1, Nat.cast_one]
+  -- RHS·G computation
+  have hRHSG : M (PadicMeasure.Fa p a) * ((1 + PowerSeries.X) ^ a - 1)
+      = S - ((a : ℕ) : PowerSeries K) := by
+    have hMG : M ((1 + PowerSeries.X) ^ a - 1 : PowerSeries ℤ_[p]) = (1 + PowerSeries.X) ^ a - 1 := by
+      rw [map_sub, map_pow, map_add, map_one, PowerSeries.map_X]
+    calc M (PadicMeasure.Fa p a) * ((1 + PowerSeries.X) ^ a - 1)
+        = M (PadicMeasure.Fa p a) * M ((1 + PowerSeries.X) ^ a - 1 : PowerSeries ℤ_[p]) := by
+          rw [hMG]
+      _ = M (((1 + PowerSeries.X) ^ a - 1) * PadicMeasure.Fa p a) := by rw [← map_mul, mul_comm]
+      _ = M (PadicMeasure.geomSum p a - ((a : ℕ) : PowerSeries ℤ_[p])) := by
+          rw [PadicMeasure.one_add_X_pow_sub_one_mul_Fa p ha]
+      _ = S - ((a : ℕ) : PowerSeries K) := by rw [map_sub, hS, map_natCast]
+  -- `G ≠ 0`
+  have hG_ne : ((1 + PowerSeries.X) ^ a - 1 : PowerSeries K) ≠ 0 := by
+    intro h
+    have : PowerSeries.coeff 1 ((1 + PowerSeries.X) ^ a - 1 : PowerSeries K) = 0 := by rw [h]; simp
+    rw [map_sub, coeff_one_add_X_pow, PowerSeries.coeff_one, if_neg one_ne_zero, sub_zero,
+      Nat.choose_one_right] at this
+    exact (Nat.cast_ne_zero.mpr ha0) this
+  -- cancel `G` and assemble
+  refine mul_right_cancel₀ hG_ne ?_
+  rw [hRHSG, hLHSexp, ← hSX, ← hA]
+  -- now a polynomial identity in `uA, DuA, P, X, α`; `hB : uA·P = 1`, `rDA` the chain
+  linear_combination
+    (-(((a : ℕ) : PowerSeries K)) * PowerSeries.X * (1 + PowerSeries.X) * DuA) * hB - rDA
 
 /-- R7.5a: the §4 numerator measure `x⁻¹·Res_{ℤ_p^×}(μ_a)` (=
 `PadicMeasure.zetaNum`), pushed to `ℤ_p` and base-changed to `K`. -/

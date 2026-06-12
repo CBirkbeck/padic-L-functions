@@ -3541,10 +3541,29 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~100 LOC.
 
 ### [CLEANUP-71] /cleanup on ResidueZeta.lean (cadence)
-- **Status**: open | **Depends on**: T701, T702, T703 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T701, T702, T703 | **Type**: cleanup
+- **Progress**: 2026-06-12: degraded pass (no lean-lsp MCP this session): full
+  read-through of lines 36–430; build green with project linter set; helpers
+  well-factored (`norm_factorial_inv_smul_pow_le_quad`,
+  `norm_teichmuller_pow_sub_one_eq_one`, `onePAdicPow_sub_one_mem_span_pow`,
+  `norm_onePAdicPow_sub_one_le` — all private, all docstringed); no unused
+  hypotheses; calc structure idiomatic. No edits needed. Tooled re-pass folded
+  into CLEANUP-FINAL scope.
 
 ### [T704] The antiderivative F̃_a and ∂F̃_a = F_a
-- **Status**: open | **File**: ResidueZeta.lean | **Depends on**: none
+- **Status**: done (2026-06-12) | **File**: ResidueZeta.lean | **Depends on**: none
+- **Progress**:
+  - 2026-06-12: statement defects found in pre-dispatch review and fixed per
+    protocol (2 b2_log entries): `one_add_mul_derivative_FtildeA` += `ha : ¬p∣a`
+    (Fa is junk 0 when p∣a; counterexample a = p) and `constantCoeff_FtildeA`
+    += `ha0 : a ≠ 0` (uA 0 = 0 breaks HasSubst). Both then proven (subagent):
+    constant coeff via `PowerSeries.constantCoeff_subst_eq_zero`; derivative by
+    multiply-by-G := (1+X)^a−1 + `mul_right_cancel₀` in the domain K⟦X⟧,
+    `derivative_subst` chain rule, Step A `natCast_smul_uA_eq_map_geomSum`
+    (a•u_a = mapped geomSum), Step B `uA_mul_subst_derivative_formalLog`
+    (u_a·(∂L∘(u_a−1)) = 1), RHS collapsed by `one_add_X_pow_sub_one_mul_Fa`.
+    6 private helpers. Verified: build green, axioms standard 3. Cleanup:
+    degraded mode, defer golf to CLEANUP-ALL-7.
 - **Parallel**: yes (mass-chain head) | **Type**: def-lemmas
 - **Statement**: skeleton `constantCoeff_FtildeA`,
   `one_add_mul_derivative_FtildeA` (R7.4c/d; defs uA/FtildeA in skeleton).
