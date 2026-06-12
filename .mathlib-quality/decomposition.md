@@ -3197,3 +3197,166 @@ REVIEW-PENDING leaves. Deferred: Γ₀(p)-modularity of E^{(p)} (R8.3).
   "Note"). Ticket T808. Two mathlib-skew compat fixes applied to the dep
   checkout (ZMod.Units import; HeckeCoset.rep simp-unfold) — upstream at
   CLEANUP-82.
+
+---
+
+## R9–R10: Notation + The Coleman map (RJW §9 TeX 2466–2511, §10 TeX 2512–2948)
+
+### Section prose (read in full 2026-06-12)
+
+§9 is the Part-II notation index: F_n = ℚ(μ_{p^n}), the LOCAL tower
+K_n = ℚ_p(μ_{p^n}), units 𝒰_n = O_{K_n}^×, principal units 𝒰_{n,1},
+norm-inverse-limits 𝒰_∞, the cyclotomic character 𝒢 ≅ ℤ_p^×, and the
+fixed compatible system ξ_{p^n} (ξ_{p^{n+1}}^p = ξ_{p^n}) with
+π_n = ξ_{p^n} − 1 a uniformiser of K_n. Only the LOCAL tower is needed
+for §10 (the global F_n/𝒱_n and the +-objects enter at §11).
+
+§10 proves Coleman's theorem and builds the Coleman map:
+- 10.1: single-level interpolation lemma + the statement (thm:coleman
+  power series): a unique injective multiplicative hom 𝒰_∞ → ℤ_p⟦T⟧^×,
+  u ↦ f_u, with f_u(π_n) = u_n.
+- 10.2: cyclotomic units c_n(a) = (ξ^a−1)/(ξ−1), norm-compatibility,
+  the explicit f_{c(a)} = ((1+T)^a−1)/T, ∂log f_{c(a)} = a − 1 − F_a
+  (prop:coleman zetap), and (1−φψ)∂log f_{c(a)} = −(1−φψ)F_a
+  (lem:relate cyclo to mua).
+- 10.3: uniqueness (Weierstrass preparation ⟹ finitely many zeros in
+  the open ball; the π_n are infinitely many), the norm operator 𝒩
+  (φ∘𝒩 f = Π_{η∈μ_p} f(η(1+T)−1), defined as the B/A-algebra norm for
+  B = ℤ_p⟦T⟧ ⊇ A = φ(ℤ_p⟦T⟧)), the evaluation/norm commuting square
+  ((𝒩f)(π_n) = N_{n+1,n}(f(π_{n+1})), via min poly X^p − ξ_{p^n} and
+  φ(f)(π_{n+1}) = f(π_n)), the mod-p^k continuity lemmas (i)–(iv) of
+  lem:norm continuity, and surjectivity of R by the diagonal argument
+  g_n := 𝒩^n f_{2n} + compactness of ℤ_p⟦T⟧^×. Result: the isomorphism
+  𝒰_∞ ≅ (ℤ_p⟦T⟧^×)^{𝒩=id} (thm:coleman map 2).
+- 10.4: Col := 𝓐⁻¹ ∘ ∂⁻¹-free composition
+  u ↦ f_u ↦ ∂log f_u ↦ (1−φψ)(∂log f_u) ↦ x⁻¹-divide ↦ measure on ℤ_p^×
+  and thm:coleman to kl: ζ_p = Col(c(a))/θ_a in Q(ℤ_p^×).
+- 10.5: Kummer sequence/Euler systems/Perrin-Riou — expository
+  ("may be skipped"); PROSE-ONLY (blueprint chapter covers; no Lean).
+
+### Verbatim source quotes (headline results)
+
+**Q1 (Coleman's theorem, TeX 2553–2560):**
+> "There exists a unique injective homomorphism 𝒰_∞ ⟶ ℤ_p⟦T⟧^×,
+> u ⟼ f_u of multiplicative groups such that f_u(π_n) = u_n for all
+> u ∈ 𝒰_∞ and n ≥ 1."
+
+**Q2 (the refined form, TeX 2796–2803):**
+> "There exists a unique isomorphism of groups 𝒰_∞ → (ℤ_p⟦T⟧^×)^{𝒩=id},
+> u ↦ f_u such that f_u(π_n) = u_n for all u ∈ 𝒰_∞ and n ≥ 1."
+
+**Q3 (norm operator, TeX 2654–2659):**
+> "There exists a unique multiplicative operator 𝒩 on ℤ_p⟦T⟧, the norm
+> operator, such that (φ∘𝒩)(f)(T) = Π_{η∈μ_p} f(η(1+T)−1)."
+
+**Q4 (commuting square, TeX 2673–2692):** the diagram
+> "ℤ_p⟦T⟧^× →[f ↦ f(π_{n+1})] 𝒰_{n+1}; 𝒩 ↓ ↓ N_{n+1,n};
+> ℤ_p⟦T⟧^× →[f ↦ f(π_n)] 𝒰_n" commutes; proof:
+> "N_{n+1,n}(f(π_{n+1})) = Π_{η∈μ_p} f(ηξ_{p^{n+1}} − 1) =
+> (φ∘𝒩)(f)(π_{n+1}) = (𝒩f)(π_n)" using "the minimal polynomial of
+> ξ_{p^{n+1}} over K_n is X^p − ξ_{p^n}".
+
+**Q5 (continuity, TeX 2726–2739):**
+> "(i) If φ(f)(T) ≡ 1 mod p^k … then f(T) ≡ 1 mod p^k. (ii) 𝒩(f) ≡ f
+> mod p. (iii) If f ≡ 1 mod p^k with k ≥ 1, then 𝒩(f) ≡ 1 mod p^{k+1}.
+> (iv) If k₂ ≥ k₁ ≥ 0, then 𝒩^{k₂}(f) ≡ 𝒩^{k₁}(f) mod p^{k₁+1}."
+
+**Q6 (surjectivity diagonal, TeX 2763–2791):**
+> "define g_n := 𝒩^n f_{2n} ∈ ℤ_p⟦T⟧^×. Then for any m ≥ n …
+> u_n ≡ g_m(π_n) mod p^{m+1} … It thus suffices to find a convergent
+> subsequence of (g_m); but such a subsequence exists, as ℤ_p⟦T⟧^× is
+> compact."
+
+**Q7 (cyclotomic units, TeX 2572–2607):**
+> "c_n(a) := (ξ_{p^n}^a − 1)/(ξ_{p^n} − 1) ∈ 𝒰_n" /
+> "N_{n,n−1}(ξ_{p^n}^b − 1) = Π_{η∈μ_p}(ξ_{p^n}^b η − 1) =
+> ξ_{p^n}^{bp} − 1 = ξ_{p^{n−1}}^b − 1" / "f_{c(a)}(T) = ((1+T)^a−1)/T"
+> / "∂ log f_{c(a)}(T) = a − 1 − F_a(T)".
+
+**Q8 (Coleman map + KL, TeX 2826–2841):**
+> "Col : 𝒰_∞ →[u↦f_u] (ℤ_p⟦T⟧^×)^{𝒩=id} →[∂log] ℤ_p⟦T⟧ →[1−φψ]
+> ℤ_p⟦T⟧^{ψ=0} →[∂⁻¹] ℤ_p⟦T⟧^{ψ=0} →[𝓐⁻¹] Λ(ℤ_p^×)" /
+> "For any topological generator a of ℤ_p^×, we have an equality of
+> pseudo-measures ζ_p = Col(c(a))/θ_a ∈ Q(ℤ_p^×)."
+
+### Design decisions (replans R9/R10 — recorded, statements faithful)
+
+- **R10.1 (the tower lives in ℂ_p).** K_n := ℚ_p⟮ξ_{p^n}⟯ as
+  IntermediateField ℚ_p ℂ_[p], for a FIXED compatible system
+  ξ : ℕ → ℂ_[p] (ξ_{n+1}^p = ξ_n, ξ_n primitive p^n-th; existence by
+  ℕ-recursion + IsAlgClosed roots). This matches the source's own
+  motivation (TeX 2528–2532 frames everything inside B(0,1) ⊂ ℂ_p),
+  gives K_n ≤ K_{n+1} with honest mathlib `Algebra.norm`, and reuses
+  the §7/§8 PadicComplex + seriesEval infrastructure. O_n := the
+  norm-unit-ball of K_n (= integerRing ℂ_[p] ∩ K_n); 𝒰_n := O_nˣ.
+- **R10.2 (degree ladder via Eisenstein).** [K_n : ℚ_p] = φ(p^n) from
+  irreducibility of Φ_{p^n} over ℚ_p: Eisenstein at (p) after T ↦ T+1
+  (mathlib `cyclotomic_prime_pow_comp_X_add_one_isEisensteinAt`-family
+  — survey: generic Eisenstein machinery READY, the ℚ_p-instantiation
+  is project work) + Gauss-primitivity over the DVR ℤ_[p]. Tower step
+  [K_{n+1} : K_n] = p and minpoly_{K_n}(ξ_{n+1}) = X^p − ξ_n.
+  ‖π_n‖ = p^{−1/φ(p^n)} via ‖N_{K_n/ℚ_p}(π_n)‖ = ‖±p‖ and
+  Galois-invariance of the (unique, spectral) norm.
+- **R10.3 (evaluation = seriesEval).** f(π_n) := seriesEval (map f) π_n
+  over K := ℂ_[p] (‖π_n‖ < 1, integral coefficients ⟹ convergent; the
+  §8 `seriesEval_pow`/`seriesEval_mul` layer gives multiplicativity);
+  the value lies in K_n (closed: finite-dim ⟹ complete ⟹ closed;
+  partial sums in ℤ_p[ξ_n]). Mathlib's new `PowerSeries.eval₂`
+  (Evaluation.lean) is the recorded alternative if the normed route
+  rubs; we prefer seriesEval for continuity with §§6–8.
+- **R10.4 (𝒩 via the digit basis, no field-norm theory).** The source
+  defines 𝒩 = φ⁻¹∘N_{B/A} for B = ℤ_p⟦T⟧ ⊇ A = φ(ℤ_p⟦T⟧). The
+  μ_p-product formula is NOT formal over ℤ_p (the T ↦ η(1+T)−1
+  substitution has non-nilpotent constant term — the §6 Eqphipsi
+  subtlety, errata-adjacent). Faithful realisation: B is FREE of rank p
+  over A with basis (1+T)^i, i < p — this is EXACTLY the proven
+  integral digit decomposition (FormalPsi, T605 layer) — so define
+  𝒩 f := φ⁻¹ (Algebra.norm along the φ-algebra structure) =
+  φ⁻¹(det of multiplication-by-f in the digit basis). Multiplicativity
+  is `Algebra.norm`'s; the commuting square (Q4) follows by mapping the
+  multiplication matrix entrywise under f ↦ f(π_{n+1}) (which carries
+  A-entries to O_n via φf(π_{n+1}) = f(π_n)) and `RingHom.map_det`,
+  against the O_n-basis (ξ_{n+1}^i)_{i<p} of O_{n+1} (monogenic by the
+  Eisenstein tower step). The trace identity ψ = p⁻¹φ⁻¹∘Tr (TeX 2670)
+  becomes a digit-trace computation against the SAME basis.
+- **R10.5 (continuity lemmas at the digit level).** Q5(i): φ is
+  coefficientwise-injective mod p^k (digit-extraction). Q5(ii)/(iii):
+  the source's proofs run mod 𝔭₁ in O_1⟦T⟧ via the product formula;
+  our route: the det-formula mod p — over 𝔽_p, φ̄(f) = f(T^p)-Frobenius
+  and the digit matrix of f becomes... realised as: 𝒩f ≡ f mod p ⟺
+  det ≡ φ(f)-related congruence; ATTACK at execution — fallback route
+  recorded: prove (ii)/(iii) via the EVALUATED form over O₁⟦T⟧ with the
+  (π₁)-adic evaluation API (mathlib eval₂ at topologically nilpotent
+  η(1+T)−1 — legal there) and descend by φ-injectivity (i). The
+  surjectivity argument (Q6) needs only (iii)+(iv) and compactness.
+- **R10.6 (compactness of ℤ_p⟦T⟧^×).** Via the coefficientwise
+  homeomorphism PowerSeries ℤ_[p] ≃ (ℕ → ℤ_[p]) (Pi topology — mathlib
+  WithPiTopology) + Tychonoff; the unit group as a closed subset
+  (constant coeff a unit: clopen condition). Convergent-subsequence
+  extraction: sequential compactness from compact + metrizable?? —
+  ℕ → ℤ_[p] with product topology IS metrizable (countable product) ✓
+  `IsCompact.isSeqCompact`-route.
+- **R10.7 (scope).** §10.5 (Kummer/Euler systems/Perrin-Riou):
+  prose-only, deferred — blueprint chapter text covers it; no Lean.
+  §9's global objects (F_n, 𝒱_n, +-subfields, 𝒢-Galois): deferred to
+  the §11 pass (only the local tower is §10-load-bearing); the
+  cyclotomic character iso 𝒢 ≅ ℤ_p^× rides §11.
+- **R10.8 (θ_a and the final identity).** thm:coleman to kl: both sides
+  are pseudo-measures with ([a]−[1])-witnesses; the witness of the
+  RHS is Col(c(a)) itself against θ_a := [a]−... (RJW's θ_a from §4 —
+  our `dirac p u − 1`-denominator); the proof is moment-comparison:
+  Col(c(a))'s moments = (1−φψ)∂log f_{c(a)}-coefficients = −(1−φψ)F_a
+  data (Q7's lem:relate cyclo to mua) = ([a]−[1])ζ_p's moments
+  (zetaNum), then `pseudoMeasure_eq_zero_of_moments`-uniqueness — all
+  §3.6/§4 infrastructure.
+
+### Gate status: draft-approved shape — skeleton + per-leaf attacks at
+execution (the established per-ticket pattern). Survey anchors
+(Explore agent, 2026-06-12): IsCyclotomicExtension API READY;
+Eisenstein machinery READY (ℚ_p-instantiation = project leaf);
+Algebra.norm + autEquivPow READY; PowerSeries.eval₂ (Evaluation.lean,
+2024) READY; Weierstrass preparation (WeierstrassPreparation.lean,
+2025) READY; Pi-topology READY (CompactSpace instance = small project
+leaf); inverse limits = ad-hoc subtype (standard). MISSING/project:
+Φ_{p^n}-irreducibility over ℚ_p, O_n-monogenicity, the 𝒩-cluster,
+norm-compatible towers.

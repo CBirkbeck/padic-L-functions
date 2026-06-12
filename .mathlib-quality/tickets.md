@@ -4210,3 +4210,454 @@ T801 ; T802 → T803 → CL81 ; T804 ; T805 → T806
   → CLALL8 → T807*(T801,T803,T806) → CL82
 T805 → T808 (dep: LeanModularForms levelRaise) → CL82
 ```
+
+---
+
+# §9–§10 board (Notation + The Coleman map; TeX 2466–2948) — created 2026-06-12
+
+Skeleton: PadicLFunctions/Coleman/Tower.lean (11 sorried decls, build
+green). STAGED SKELETON (recorded design decision): the
+NormOperator/Theorem/Map layers' Lean skeletons are authored by their own
+tickets (T904/T906/T911 are explicitly skeleton-authoring) because their
+statement shapes consume Tower's settled API — Tower is the API-gap
+developed first, per /develop's API-gap recursion. Decomposition:
+decomposition.md R9–R10 (verbatim quotes Q1–Q8 + design replans
+R10.1–R10.8). Statement-fix protocol applies. §10.5 (Euler
+systems/Perrin-Riou) and §9's global objects: deferred (plan.md).
+
+### [T901] The compatible ξ-system and tower membership
+- **Status**: open | **File**: Coleman/Tower.lean | **Depends on**: none
+- **Parallel**: yes | **Type**: lemmas
+- **Statement**: skeleton `exists_compatible_primitiveRoot`,
+  `zetaSys_mem_K`, `pi_mem_K`, `K_le_succ`.
+- **Proof sketch**: existence: ℕ-recursion: ξ₀ := 1 (IsPrimitiveRoot 1 1 ✓
+  p^0 = 1); given ξ_n primitive p^n-th, IsAlgClosed gives a root y of
+  X^p − ξ_n (`IsAlgClosed.exists_pow_nat_eq`-shape/`exists_root` of the
+  polynomial — ℂ_[p] IsAlgClosed instance from §7); y is primitive
+  p^{n+1}-th: orderOf-argument: y^{p^{n+1}} = ξ_n^{p^n} = 1 and y^{p^n} =
+  ξ_n^{p^{n−1}}... careful n = 0: y^p = ξ₀ = 1, need y of EXACT order p:
+  choose y a PRIMITIVE root via `HasEnoughRootsOfUnity`/the §7 route, then
+  CORRECT it to hit ξ_n: the set of p-th roots of ξ_n is y₀·μ_p for any
+  fixed root y₀; primitivity of SOME root: if all p-th roots of ξ_n had
+  order < p^{n+1} then each root z satisfies z^{p^n} = 1, but
+  (z^{p^n})... z^{p^n} is a p-th root... cleanest: take z with z^p = ξ_n;
+  z^{p^{n+1}} = 1; order of z divides p^{n+1} and is divisible by
+  order(ξ_n) = p^n (z^p = ξ_n ⟹ orderOf ξ_n ∣ orderOf z); so order ∈
+  {p^n, p^{n+1}}; if p^n then z^{p^n} = 1 ⟹ ξ_n^{p^{n−1}} = z^{p^n} = 1
+  contradicting primitivity (n ≥ 1); n = 0 separately: pick z primitive
+  p-th (HasEnoughRootsOfUnity) — z^p = 1 = ξ₀ ✓. Package with
+  `IsPrimitiveRoot` API (`IsPrimitiveRoot.orderOf`-bridges). Membership:
+  `IntermediateField.mem_adjoin_simple_self`; pi: sub_mem + one_mem;
+  K_le_succ: adjoin-mono via zetaSys p n = (zetaSys p (n+1))^p ∈ adjoin
+  (pow_mem + zetaSys_pow_p): `IntermediateField.adjoin_le_iff` +
+  singleton-subset.
+- **Sources**: TeX 2507 (Q-prose); RJW §9.
+- **Sizing**: ~90 LOC.
+
+### [T902] The degree ladder and the uniformiser norms (Eisenstein)
+- **Status**: open | **File**: Coleman/Tower.lean | **Depends on**: T901
+- **Type**: lemmas
+- **Statement**: skeleton `finrank_K`, `finrank_K_succ`,
+  `norm_pi_pow_totient`, `norm_pi_lt_one`, `pi_ne_zero`, `pi_mem_O`.
+- **Proof sketch**: Φ_{p^n} irreducible over ℚ_p: mathlib has the
+  ℤ-statement `Polynomial.cyclotomic_prime_pow_comp_X_add_one_isEisensteinAt`
+  (VERIFY exact name — survey Q2/Q3; it exists for the ℤ-coefficients
+  Eisenstein at (p)); map to ℤ_[p] (Eisenstein transports along the ring
+  map into the DVR with 𝔭 = (p): coefficients-in-ideal by map; or
+  re-instantiate the mathlib lemma at R := ℤ_[p] if it's
+  ring-generic); `Polynomial.IsEisensteinAt.irreducible` (Criterion.lean:
+  needs ℤ_[p] integrally closed + IsFractionRing ℤ_[p] ℚ_[p] ✓ both
+  mathlib) gives Φ_{p^n}(X+1)-irreducible hence Φ_{p^n} irreducible over
+  ℚ_p (comp X+1 unit-translate: `Polynomial.irreducible_comp`-bridges);
+  minpoly (zetaSys p n) = Φ_{p^n} (monic + irreducible + root:
+  `IsPrimitiveRoot.isRoot_cyclotomic` + `minpoly.eq_of_irreducible_of_monic`);
+  finrank_K = natDegree Φ = totient (`IntermediateField.adjoin.finrank`
+  (integral element: root of monic) + `natDegree_cyclotomic`). Tower step:
+  finrank mul ladder: finrank ℚ_p K_{n+1} = finrank ℚ_p K_n ·
+  finrank K_n K_{n+1} (`Module.finrank_mul_finrank` through
+  extendScalars/IsScalarTower — the extendScalars instances; totient
+  ratio φ(p^{n+1})/φ(p^n) = p for n ≥ 1, = p−1 for n = 0:
+  CAREFUL — finrank_K_succ as stated (= p) is FALSE at n = 0
+  (φ(p)/φ(1) = p−1)!! STATEMENT FIX REQUIRED at execution: add (hn : 1 ≤ n)
+  to finrank_K_succ — pre-authorized, b2-log + docstring note (orchestrator
+  caught at board-writing; the skeleton statement lacks hn).
+  Norms: N_{K_n/ℚ_p}(π_n) = ±Φ_{p^n}(1) = ±p (norm = (−1)^d·(minpoly
+  constant term): `Algebra.norm_eq_neg_one_pow_natDegree_mul_coeff_zero`-
+  shaped mathlib lemma — five-method search; `minpoly` of π_n =
+  Φ_{p^n}(X+1) (translate); Φ_{p^n}(1) = p (`Polynomial.cyclotomic_prime_pow_eval_one`?
+  — `eval_one_cyclotomic_prime_pow` exists in mathlib ✓ verify name);
+  then ‖π‖^d = ‖N(π)‖ = p⁻¹: Galois-invariance of the norm on ℂ_[p]
+  (the unique extension: ‖σx‖ = ‖x‖ for σ ∈ Gal — via spectralNorm
+  uniqueness or: N(π) = Π σ(π), ‖N‖ = Π‖σπ‖, and ‖σπ‖ = ‖π‖ ∀σ —
+  ATTACK at execution: the clean route is `spectralNorm`-invariance
+  (PadicAlgCl's norm IS spectralNorm, mathlib Complex.lean:78) +
+  `spectralNorm_aut_invariant`-shaped lemma (search
+  Mathlib/Analysis/Normed/Unbundled/SpectralNorm — survey said spectral
+  norm machinery exists); FALLBACK: ‖·‖∘σ is another ℚ_p-algebra norm
+  extending and norm-unique on finite extensions
+  (`spectralNorm_unique`-family)). pi_mem_O: norm ≤ 1 + mem K ✓.
+- **Sources**: TeX 2475 + 2685; replan R10.2.
+- **Sizing**: ~170 LOC (the Eisenstein cluster).
+
+### [T903] Integer-ring structure, element norms, and 𝒰_∞ (authors API)
+- **Status**: open | **File**: Coleman/Tower.lean | **Depends on**: T902
+- **Type**: def + lemmas (authors new skeleton per the staged plan)
+- **Statement** (authored at execution against T902's API; shapes fixed
+  here): `levelNorm (n) : ℂ_[p] → ℂ_[p]` := the K_n-norm of K_{n+1}
+  (Algebra.norm through extendScalars, junk-extended off K_{n+1});
+  `levelNorm_collapse {b} (hb : ¬p∣b) (n ≥ 1) :
+  levelNorm p n (zetaSys p (n+1)^b − 1) = zetaSys p n^b − 1` (Q7's
+  engine, TeX 2581–2585: min poly X^p − ξ_n + X^p−1 = Π(Xη−1));
+  `levelNorm_mem_O`/`levelNorm_unit` (norms preserve integrality and
+  units: integral closure stability — via the ball: ‖N(x)‖ = ‖x‖^p ≤ 1
+  Galois-invariance again, or minpoly-coefficient integrality);
+  `structure NormCompatUnits` (𝒰_∞): elems : ∀ n, ℂ_[p]ˣ with
+  mem : (elems n : ℂ_[p]) ∈ O p n, inv_mem, compat :
+  levelNorm p n (elems (n+1)) = elems n; O-basis monogenicity:
+  `O_succ_basis (n ≥ 1)`: (ξ_{n+1}^i)_{i<p} is an O_n-basis of O_{n+1}
+  (Eisenstein monogenic: mathlib Eisenstein/IsIntegral
+  `IsIntegralClosure`-route — survey Q2(b); state minimally as the
+  ∃!-digit-expansion form the commuting square consumes).
+- **Proof sketch**: collapse: N(x) = Π_{η∈μ_p}-conjugates: over the
+  degree-p step the conjugates of ξ_{n+1} are ηξ_{n+1} (roots of
+  X^p − ξ_n: `minpoly`-roots + the p distinct roots ηξ; Galois ⟹ norm =
+  product of conjugates `Algebra.norm_eq_prod_automorphisms` or
+  norm = (−1)^p·constant-of-minpoly applied to the TRANSLATED minpoly of
+  ξ^b_{n+1}−1... CLEANEST: norm multiplicative + norm(ξ^b_{n+1} − 1):
+  minpoly of ξ^b_{n+1} over K_n is X^p − ξ^b_n (b coprime p: ξ^b also
+  generates, same Eisenstein-shape — or reindex the system: ξ^b is
+  another compatible system!); then N(ξ^b−1) = ±((X^p−ξ_n^b) at 1)·sign
+  = ±(1 − ξ_n^b)... sign bookkeeping (−1)^p = −1 (p odd):
+  N(ξ^b_{n+1}−1) = (−1)^p·minpolyConst(ξ^b_{n+1}−1) with minpoly
+  (X+1)^p − ξ^b_n: constant = 1 − ξ^b_n ⟹ N = ξ^b_n − 1 ✓ exact (Q7's
+  computation, faithfully). 𝒰_∞/basis: per sketch; basis via mathlib
+  Eisenstein-IsIntegral (`IsEisensteinAt`-adjoin results) — survey-gated;
+  FALLBACK: state the digit-expansion existence directly and prove via
+  π-adic expansion (the single-level greedy lemma's method).
+- **Sources**: TeX 2503 (𝒰_∞), 2581–2585 (Q7), 2685 (min poly).
+- **Sizing**: ~200 LOC + survey risk (monogenicity).
+
+### [CLEANUP-91] /cleanup on Coleman/Tower.lean (cadence)
+- **Status**: open | **Depends on**: T901, T902, T903 | **Type**: cleanup
+
+### [T904] Evaluation at π_n (authors Coleman/Theorem.lean)
+- **Status**: open | **File**: Coleman/Theorem.lean | **Depends on**: T902
+- **Parallel**: yes (after T902; independent of T903) | **Type**: def+lemmas
+- **Statement** (authored): `evalPi (f : PowerSeries ℤ_[p]) (n) : ℂ_[p]`
+  := seriesEval (map-to-ℂ_[p] f) (pi p n); lemmas: `evalPi_mem_O`
+  (integral coeffs + ‖π‖ < 1 ⟹ value in the ball; in K_n: partial sums
+  in ℤ_p[ξ_n], K_n closed (finite-dim complete subspace — mathlib
+  `Submodule.complete_of_finiteDimensional`/closed); `evalPi_mul/one/add`
+  (the §8 seriesEval_mul/seriesEval_one layer + summability from
+  integral coeffs ‖coeff‖ ≤ 1); `evalPi_unit (f : ℤ_p⟦T⟧ˣ)`: value is a
+  unit of O_n (f·f⁻¹ = 1 evaluated); `evalPi_phi (n) :
+  evalPi (phiSeries p f)?? — CARE: phiSeries is over K-coefficients in
+  FormalPsi; over ℤ_[p]: the §3 Toolbox `phi`-series form — use the
+  measure-side `PadicMeasure.phi`-transform or restate: evalPi of
+  f((1+T)^p−1): subst is formal-legal ((1+T)^p−1 has constant 0 ✓) —
+  evalPi (f.subst ((1+X)^p−1)) (n+1) = evalPi f n (eq:varphi pin,
+  TeX 2647–2649: (π_{n+1}+1)^p − 1 = π_n via zetaSys_pow_p) — the
+  subst-eval composition: the §7 `seriesEval_subst_formalLog`-style
+  bridge BUT with polynomial G = (1+X)^p−1 (FINITE subst — much easier:
+  subst by a POLYNOMIAL: coeff-finite, the double sum is finite-by-rows;
+  prove a small `seriesEval_subst_poly` helper or evaluate through
+  `Polynomial.aeval`); single-level interpolation (TeX 2538–2547):
+  ∀ u unit of O_n, ∃ f ∈ ℤ_p⟦T⟧ˣ, evalPi f n = u — the greedy π-adic
+  digit construction (totally-ramified: O_n/(π_n) = 𝔽_p — from T902's
+  e·f = d ramification... ATTACK: needs residue-field-trivality:
+  O_n/(π_n) ≅ ℤ_p/(p)?? — totally ramified ⟸ e = d ⟸ ‖π‖^d = p⁻¹
+  exactly (T902); the greedy step needs: ∀ x ∈ O_n ∃ a ∈ ℤ_p,
+  x ≡ a mod π_nO_n — i.e. ℤ_p + π_nO_n = O_n — from the O-basis (T903's
+  digit expansion at level... hmm the basis is for the STEP; full-level:
+  O_n = ℤ_p[ξ_n] (monogenic over ℤ_p — T903-adjacent; the Eisenstein
+  machinery gives O_n = ℤ_p[π_n] — survey Q2(b))); state the lemma with
+  the O_n = ℤ_p[π_n]-input from T903 and recursively choose digits
+  (`Nat.rec`-construction + convergence: the constructed series'
+  partial sums converge to u: ‖u − S_k‖ ≤ ‖π‖^k → 0).
+- **Sources**: TeX 2528–2547 (Q-prose + the single-level lemma),
+  2647–2649 (eq:varphi pin); replan R10.3.
+- **Sizing**: ~200 LOC.
+
+### [T905] Uniqueness via Weierstrass preparation
+- **Status**: open | **File**: Coleman/Theorem.lean | **Depends on**: T904
+- **Type**: lemma
+- **Statement** (authored): `evalPi_injective_of_forall {f g : PowerSeries
+  ℤ_[p]} (h : ∀ n, 1 ≤ n → evalPi p f n = evalPi p g n) : f = g`
+  (lem:unique coleman, TeX 2635–2642).
+- **Proof sketch**: h := f − g; if h ≠ 0: mathlib Weierstrass
+  factorization (`PowerSeries.exists_isWeierstrassFactorization`,
+  WeierstrassPreparation.lean — ℤ_[p] is adic-complete local DVR ✓
+  instances): h = p^m·(unit)·(distinguished poly r) — CHECK the mathlib
+  statement shape (it may be h = f·h-unit with f distinguished; the
+  p^m-power comes from h ≠ 0 mod p^∞: extract the p-adic content first:
+  h = p^m·h' with h' ≢ 0 mod p — `PowerSeries.exists_eq_pow_mul`-shaped
+  or order-of-p-divisibility — small helper). Evaluate at π_n: unit
+  factor evaluates to a unit (evalPi_unit), p^m ≠ 0, so r(π_n) = 0 for
+  all n ≥ 1. r is a POLYNOMIAL with finitely many roots in ℂ_[p]
+  (`Polynomial.finite_setOf_root`-shape); the π_n are pairwise distinct
+  (‖π_n‖ strictly increasing: from T902's norm formula —
+  p^{−1/φ(p^n)} strictly increases in n: totient strictly increases —
+  rpow-free comparison: ‖π_n‖^{φ(p^n)} = p⁻¹ = ‖π_{n+1}‖^{φ(p^{n+1})}
+  and φ(p^{n+1}) > φ(p^n) ⟹ ‖π_{n+1}‖ > ‖π_n‖ by pow-monotonicity
+  juggling) ⟹ infinitely many roots, contradiction; so h = 0.
+- **Sources**: TeX 2635–2642 (verbatim Weierstrass argument).
+- **Sizing**: ~110 LOC.
+
+### [T906] The norm operator 𝒩 via the digit basis (authors
+Coleman/NormOperator.lean)
+- **Status**: open | **File**: Coleman/NormOperator.lean
+- **Depends on**: none (pure ℤ_p⟦T⟧-algebra; parallel with the tower)
+- **Parallel**: yes | **Type**: def+lemmas
+- **Statement** (authored): the φ-algebra `phiAlg : Algebra
+  (PowerSeries ℤ_[p]) (PowerSeries ℤ_[p])` := RingHom.toAlgebra
+  (the §3 φ-ring-hom (subst (1+X)^p−1) — local instance, NOT global);
+  `digitBasis : Basis (Fin p) ...` from the PROVEN integral digit
+  decomposition (FormalPsi T605 layer — the ∃!-decomposition F =
+  Σ(1+T)^iφ(F_i) IS the free-basis statement: `Basis.mk` from
+  linear-independence + span, both = the uniqueness/existence halves);
+  `normOp (f) : PowerSeries ℤ_[p]` := Algebra.norm along phiAlg —
+  CARE: Algebra.norm lands in the BASE = ℤ_p⟦T⟧-as-A: normOp := the
+  norm VALUE (an element of the base copy) — no φ⁻¹ needed (the base IS
+  ℤ_p⟦T⟧; the source's φ⁻¹ is an artifact of viewing A inside B);
+  `normOp_mul` (Algebra.norm multiplicative — wait norm is
+  MonoidHom-multiplicative ✓ `Algebra.norm`-MonoidHom), `normOp_one`,
+  `normOp_unit` (norm of unit is unit: `Algebra.norm`-isUnit transport
+  — for FREE algebras `IsUnit.map`-route via det of invertible lmul);
+  `phi_normOp_eq_prod`-form NOT stated (the μ_p-product is not formal —
+  replan R10.4; the evaluated form is T907's square).
+- **Proof sketch**: per R10.4; the basis: FormalPsi's digit
+  existence/uniqueness (grep the exact decl names of the T605 layer:
+  the ∃!-statement over ℤ_[p]-coefficient series; bridge ∃!-decomposition
+  ↔ Basis: `Basis.mk` with linearIndependent from uniqueness-at-0 and
+  span from existence — module structure = phiAlg's restrictScalars).
+- **Sources**: TeX 2654–2670 (Q3 + the B/A free-of-rank-p framing:
+  "obtained by adjoining a p-th root of (1+T)^p"); replan R10.4.
+- **Sizing**: ~160 LOC.
+
+### [T907] The evaluation/norm commuting square
+- **Status**: open | **File**: Coleman/Theorem.lean
+- **Depends on**: T903, T904, T906 | **Type**: theorem
+- **Statement** (authored): `evalPi_normOp (f) {n} (hn : 1 ≤ n) :
+  evalPi p (normOp p f) n = levelNorm p n (evalPi p f (n+1))`
+  (Q4, TeX 2673–2692).
+- **Proof sketch**: both sides are dets: LHS: normOp = det of
+  mult-by-f in digitBasis (matrix M over A ≅ ℤ_p⟦T⟧); evalPi∘(A-copy
+  embedding) = the ring hom A → O_n sending φ(g) ↦ evalPi g n... the
+  A-entries map under (φ-inverse then evalPi-at-n) = evalPi-at-(n+1)∘incl
+  (eq:varphi pin, T904's evalPi_phi); `RingHom.map_det`: evalPi(det M) =
+  det(M mapped); RHS: levelNorm = det of mult-by-(evalPi f (n+1)) in the
+  O_n-basis (ξ_{n+1}^i) (T903's O_succ_basis; Algebra.norm = det via
+  `Algebra.norm_eq_matrix_det` at that basis); the mapped digit matrix
+  IS the O-basis matrix: the basis correspondence (1+T)^i ↦ ξ^i_{n+1}
+  under evalPi-at-(n+1) (evalPi((1+T)^i) = ξ^i: evalPi_mul/pow +
+  evalPi(1+T) = 1 + π = ξ ✓) + the module-map compatibility
+  (`LinearMap.toMatrix`-naturality along the ring-hom base change —
+  the matrix-entry identity: f·(1+T)^i = Σ_j φ(M_{ij})(1+T)^j evaluated
+  gives f(π)·ξ^i = Σ M_{ij}(π_n)·ξ^j — entrywise push of the digit
+  identity through evalPi ✓ multiplicativity + additivity + a
+  convergence-commutes-with-finite-sums step).
+- **Sources**: TeX 2673–2692 (Q4 verbatim); replan R10.4.
+- **Sizing**: ~150 LOC.
+
+### [T908] The mod-p^k continuity of 𝒩
+- **Status**: open | **File**: Coleman/NormOperator.lean
+- **Depends on**: T906 | **Type**: lemmas
+- **Statement** (authored; Q5): `phi_injective_mod` ((i): φf ≡ 1 mod p^k
+  → f ≡ 1 mod p^k — coefficientwise: φ's coefficient matrix is
+  unitriangular-supported: coeff_{pj}(φf) = coeff_j f + (lower
+  contributions p-divisible?) — honest route: φf − 1 = φ(f − 1) and
+  φ-coefficient-extraction: ‖φg‖-coeff sup = ‖g‖-coeff sup mod p^k:
+  the SUBSTITUTION (1+X)^p−1 has lowest term pX + … + X^p: coeff-of-φg
+  at p·(top index)… prove by strong induction on the least index where
+  f − 1 has a unit-mod-p^k coefficient); `normOp_congr_self` ((ii):
+  𝒩f ≡ f mod p): ATTACK per R10.5 — primary route: mod p, φ̄(g) = g(T^p)
+  = g^p-Frobenius-free… det route: M ≡ f·Id + N mod p?? — fallback
+  (RECORDED): prove (ii) via the evaluated O₁⟦T⟧-product form using
+  mathlib `PowerSeries.eval₂`/MvPowerSeries-substitution at the
+  topologically-nilpotent η(1+T)−1 over the (π₁)-adic O₁⟦T⟧ (legal
+  there), the congruence η(1+T)−1 ≡ T mod 𝔭₁ (TeX 2743–2751's own
+  argument!), and descent by (i) + 𝔭₁ ∩ ℤ_p⟦T⟧-bookkeeping
+  (TeX 2751: "this is actually an equivalence modulo 𝔭₁p^k ∩ ℤ_p =
+  p^{k+1}"); `normOp_one_congr` ((iii): f ≡ 1 mod p^k, k ≥ 1 ⟹ 𝒩f ≡ 1
+  mod p^{k+1}): TeX 2743–2751 verbatim route (the same O₁-congruence +
+  f^p ≡ 1 mod p^{k+1} + (i)); `normOp_iterate_congr` ((iv)): from
+  (ii)+(iii) by the division-and-iterate argument (TeX 2753–2755:
+  𝒩^{k₂−k₁}f/f ≡ 1 mod p + iterate (iii) k₁ times — needs unit-division:
+  f ∈ ℤ_p⟦T⟧ˣ here ✓ statement carries the unit hypothesis as in
+  source).
+- **Sources**: TeX 2726–2756 (Q5 verbatim + the source's own proofs of
+  (iii)/(iv); (i)/(ii) "left as an exercise (cf. CS06 Lem 2.3.1)" —
+  expanded by us per the source-gap rule, routes above).
+- **Sizing**: ~220 LOC (the board's analytical heart; survey-gated on
+  the O₁⟦T⟧-substitution API if the fallback route is needed).
+
+### [T909] Compactness of ℤ_p⟦T⟧^× and sequential extraction
+- **Status**: open | **File**: Coleman/NormOperator.lean
+- **Depends on**: none | **Parallel**: yes | **Type**: lemmas
+- **Statement** (authored): with the Pi topology (open scoped
+  WithPiTopology): `instance : CompactSpace (PowerSeries ℤ_[p])`
+  (homeomorph to ℕ → ℤ_[p] + Tychonoff: `Pi.compactSpace` ✓ mathlib +
+  the PowerSeries≃Pi homeomorphism — `PowerSeries`-toFun is literally
+  ℕ →₀-free… PowerSeries R := MvPowerSeries Unit R := (Unit →₀ ℕ) → R:
+  the coefficient equiv to (ℕ → R) — search FormalPsi/mathlib PiTopology
+  for the established homeomorphism or build `Homeomorph.mk` from the
+  linear equiv + continuity-both-ways (coordinatewise ✓));
+  `seqCompact`-extraction: metrizable (countable product of metrizable:
+  `TopologicalSpace.PseudoMetrizableSpace`-Pi-instance) + compact ⟹
+  `IsCompact.isSeqCompact`; the unit-subset: {f | IsUnit f} =
+  {f | IsUnit (constantCoeff f)} (`PowerSeries.isUnit_iff_constantCoeff` ✓
+  mathlib) is CLOSED (preimage of the closed ℤ_[p]ˣ-ball-condition
+  ‖constantCoeff f‖ = 1 under the continuous coeff-0 projection) ⟹
+  sequences of units with convergent subsequence have unit limits;
+  `evalPi`-continuity in f (coefficientwise-convergence ⟹ values
+  converge: uniform bound ‖coeff‖ ≤ 1, dominated/ultrametric tail —
+  needed to pass g_m(π_n) → f_u(π_n) in the diagonal argument: state as
+  `evalPi_tendsto_of_tendsto`: pointwise-coefficient convergence +
+  uniform integrality ⟹ evalPi converges — ultrametric 3ε: split at
+  coefficient-index N with ‖π‖^N small).
+- **Sources**: TeX 2784 ("such a subsequence exists, as ℤ_p⟦T⟧^× is
+  compact"); replan R10.6.
+- **Sizing**: ~150 LOC.
+
+### [CLEANUP-ALL-9] Pre-milestone /cleanup-all
+- **Status**: open | **Depends on**: T901–T909 | **Type**: cleanup-all
+
+### [T910] **MILESTONE: Coleman's theorem** (RJW thm:coleman power
+series + thm:coleman map 2)
+- **Status**: open | **File**: Coleman/Theorem.lean
+- **Depends on**: T905, T907, T908, T909, CLEANUP-ALL-9 | **Type**: theorem
+- **Statement** (authored; Q1+Q2): existence-uniqueness package:
+  `theorem coleman (u : NormCompatUnits p) : ∃! f : PowerSeries ℤ_[p],
+  IsUnit f ∧ normOp p f = f ∧ ∀ n, 1 ≤ n → evalPi p f n = u.elems n`
+  + the multiplicativity/injectivity wrappers (`colemanSeries u`-def via
+  choice; `colemanSeries_mul`; `colemanSeries_injective`) realising
+  "unique injective homomorphism 𝒰_∞ → ℤ_p⟦T⟧^×" and the refined
+  𝒩-fixed image (Q2).
+- **Proof sketch**: uniqueness: T905. Existence: TeX 2763–2791 verbatim:
+  per-level f_n by T904's single-level lemma; 𝒩^k f_{n+k}(π_n) = u_n by
+  T907-iterate; g_m := 𝒩^m f_{2m}; u_n ≡ g_m(π_n) mod p^{m+1} by
+  T908(iv) (the evalPi-side congruence: f ≡ g mod p^{m+1} ⟹ evalPi
+  agree mod p^{m+1}-ball: coefficientwise + ‖π‖ ≤ 1 — small bridge);
+  T909-extraction: convergent subsequence g_{m_j} → f_u (units-closed ⟹
+  f_u unit); evalPi-continuity (T909) passes the limit: evalPi f_u n =
+  lim g_{m_j}(π_n) = u_n; 𝒩-invariance: 𝒩(f_u) and f_u are both
+  Coleman series of u (T907 + norm-compat of u) ⟹ equal by T905.
+  Group-hom packaging: multiplicativity from uniqueness of the product
+  series (evalPi_mul + normOp_mul); injectivity: f_u = 1-values ⟹ u = 1
+  (evalPi 1 = 1). Blueprint: wire ColemanMap.lean chapter's
+  thm:coleman-nodes in the same cycle (T912 does the chapter pass).
+- **Sources**: TeX 2553–2560 (Q1), 2763–2807 (Q6 + thm:coleman map 2).
+- **Sizing**: ~180 LOC.
+
+### [T911] Cyclotomic units and the logarithmic-derivative bridge
+(authors Coleman/Map.lean)
+- **Status**: open | **File**: Coleman/Map.lean | **Depends on**: T903
+- **Parallel**: yes (after T903; independent of T905–T910)
+- **Type**: def+lemmas
+- **Statement** (authored; Q7): `cycloUnit (a) (n) : ℂ_[p]` :=
+  (ξ_n^a − 1)/(ξ_n − 1); `cycloUnit_isUnit {a} (ha : ¬p∣a) {n} (hn)`:
+  it's a unit of O_n (both numerator and denominator are
+  same-norm: ‖ξ^a−1‖ = ‖ξ−1‖ (ξ^a = (ξ)^a with a coprime: ξ^a is also
+  primitive ⟹ T902's norm formula applies to BOTH via the reindexed
+  system) ⟹ ratio has norm 1 + lies in K_n ✓); `cycloUnit_normCompat`:
+  levelNorm-compatibility (Q7's computation = T903's levelNorm_collapse
+  at b = a and b = 1 + norm-multiplicativity/division);
+  `cyclo (a) (ha) : NormCompatUnits p` (the packaged tower c(a));
+  `evalPi_geomCyclo (a) (n ≥ 1) : evalPi p (geomSum-form) n = cycloUnit`:
+  the explicit Coleman series f_{c(a)} = ((1+T)^a − 1)/T — REUSE
+  `PadicMeasure.geomSum p a` (MuA.lean: geomSum·X = (1+X)^a − 1 — the
+  SAME series!): f_{c(a)} := geomSum p a and the evaluation:
+  geomSum(π_n)·π_n = ξ^a − 1 (evaluated geomSum_mul_X) ⟹ value =
+  cycloUnit ✓ (division in the field); `colemanSeries_cyclo :
+  colemanSeries (cyclo a) = geomSum p a` (uniqueness T905 + the
+  evaluations + 𝒩-fixedness FROM T910's uniqueness package — or directly
+  via the ∃!); `oneAdd_mul_derivative_log_geomSum` (Q7's prop:coleman
+  zetap): ∂log f_{c(a)} := (1+T)·(geomSum)'·inverse(geomSum)-form =
+  (a − 1) − Fa p a: PURE ℤ_p⟦T⟧-algebra against MuA's
+  `one_add_X_pow_sub_one_mul_Fa`/geomSum-API (clear denominators by
+  geomSum (unit for p∤a, isUnit_geomSum ✓): the identity
+  (1+T)·D(geomSum)·1 = ((a−1) − Fa)·geomSum — derive from
+  differentiating geomSum·X = (1+X)^a − 1: (the §8 T704-pattern
+  VERBATIM — hQ/hDpow machinery); `restriction_bridge` (Q7's lem:relate
+  cyclo to mua): (1−φψ)-applied: ∂log f_{c(a)}-measure restricted =
+  −Res_{ℤ_p^×}(μ_a): at the measure level: the measure with transform
+  ∂log f = (a−1)·δ₁-free… the transform-side identity
+  (1−φψ)((a−1) − F_a) = −(1−φψ)F_a (constants are φψ-fixed:
+  φψ(C) = C — the §3 Toolbox/ψ-of-constant: ψ(1) = 1 ✓ res-kills-
+  constants: RJW's "1−φ∘ψ kills the term a−1", TeX 2620–2622).
+- **Sources**: TeX 2572–2628 (Q7 verbatim); MuA.lean (geomSum, Fa).
+- **Sizing**: ~190 LOC.
+
+### [T912] **MILESTONE: the Coleman map and ζ_p = Col(c(a))/θ_a**
+- **Status**: open | **File**: Coleman/Map.lean
+- **Depends on**: T910, T911 | **Type**: def+theorem
+- **Statement** (authored; Q8): `Col (u : NormCompatUnits p) :
+  PadicMeasure p ℤ_[p]ˣ` := the §3/§4 composition: 𝓐⁻¹ of the
+  ψ=0-series x⁻¹-divided… realised measure-side: the measure ν with
+  ι(ν) = mahler-inverse of (1−φψ)(∂log f_u) restricted-divided — REUSE
+  the §4 zetaNum-pattern: Col u := unitsCmul p (invCM p)
+  (res-to-units of the measure of ∂log f_u) (the EXACT composite RJW
+  lists, each arrow already a project construction: mahlerLinearEquiv⁻¹,
+  PadicMeasure.res/iota-comp, unitsCmul invCM); `theorem coleman_to_kl
+  (hp2) {a} (gen-pack for a)`: algebraMap-form: padicZeta p hp2 =
+  Col(cyclo a)-image / θ_a-image in QuotientField p — stated via the
+  witness equation: algebraMap (θ_a-measure) * padicZeta = algebraMap
+  (Col (cyclo a))-shaped?? CARE with sign: lem:relate cyclo gives
+  −Res(μ_a): ζ_p's witness is zetaNum = x⁻¹Res(μ_a); Col(c(a)) =
+  x⁻¹Res(μ_{∂log f}) = −zetaNum?? — SIGN ATTACK at execution: RJW
+  Q8 states ζ_p = Col(c(a))/θ_a with NO sign; our lem-bridge has the
+  −: re-derive: ∂log f_{c(a)} = (a−1) − F_a; μ_{(a−1)−F_a} = (a−1)δ₀-c…
+  Res kills (a−1)-part? (1−φψ)((a−1)) = 0 ✓ so Res μ_{∂log f} =
+  −Res μ_a — so Col(c(a)) = −x⁻¹Res μ_a = −zetaNum(a)?! Then
+  ζ_p = −Col/θ_a?? — CHECK RJW's θ_a: §4's θ_a := [a] − 1?? RJW §4
+  (sec:dep on a): θ_a-measure with ∫x^k θ_a = a^{k+1}... RE-READ at
+  execution; the sign discrepancy is a LIKELY ERRATUM #12 candidate
+  (or θ_a's own sign absorbs it) — the ticket REQUIRES the executor to
+  resolve the sign against §4's actual θ_a def and our padicZeta
+  (zetaNum/(δ_a − 1)) and record (errata.md if the notes' display is
+  off; replan note if our θ-realisation differs). Then the proof:
+  moment-comparison of both pseudo-measures' witnesses against
+  `pseudoMeasure_eq_zero_of_moments` (R10.8): the ([b]−1)-witnesses of
+  both sides have equal x^k-moments for all k > 0: LHS-witness =
+  zetaNum-data (padicZeta_moments-machinery); RHS: Col(cyclo a)-moments
+  via the transform (∂-shifts and (1−φψ)-restriction in moments —
+  the §4 moment-lemmas (`res`-moments, `unitsCmul`-moments,
+  mahler-transform-of-measure moments — all §3/§4 API). Blueprint:
+  Chapters/ColemanMap.lean full wiring pass (thm:coleman nodes,
+  cyclo-units nodes, Col-node, coleman-to-kl node + §10.5-prose nodes
+  stay unwired with a deferral note) + `lake build
+  PadicLFunctionsBlueprint` + site render.
+- **Sources**: TeX 2826–2841 (Q8 verbatim), 2572–2628; §4 ZetaP.
+- **Sizing**: ~170 LOC + blueprint pass + the sign-resolution.
+
+### [T-D61] Deferred-debt planning ticket: Thm 6.1(ii) at D = 1
+- **Status**: open | **File**: (planning) | **Depends on**: none
+- **Parallel**: yes | **Type**: develop-pass
+- **Task**: run the Phase-1e decompose pass for the pure p-power-conductor
+  case of RJW Thm 6.1(ii) (the notes' own gap — errata.md #6): θ = χ of
+  conductor p^m, m ≥ 1, χ ≠ 1; target `LpFunction_one`-analogue at D = 1.
+  Expected route (recorded 2026-06-12): pair χ directly against the
+  pseudo-measure ζ_p via its ([b]−1)-witnesses (χ ≠ 1 ⟹ finite); the
+  §8 twist machinery (unitsTwist generalised to χ-twists — the
+  CLEANUP-FINAL-noted generalisation) + the §5 NonTame p-power Gauss-sum
+  machinery + the §6 c₀-design at D = 1 (no tame clearing). Deliverable:
+  decomposition.md addendum + skeleton + tickets appended to this board
+  (the §6-debt sub-board). NOT dispatched to /beastmode until its own
+  1i review.
+- **Sources**: TeX 1987–2010 + 2040–2179 re-read; errata #6.
+
+### [CLEANUP-92] /cleanup after T904–T906 (cadence, Theorem+NormOperator)
+- **Status**: open | **Depends on**: T904, T905, T906 | **Type**: cleanup
+
+### [CLEANUP-93] Final per-file cleanup (Coleman/*) + close-out
+- **Status**: open | **Depends on**: T912 | **Type**: cleanup
+  (+ widen CLEANUP-FINAL to §§9–10)
+
+## §9–10 dependency quick-view
+```
+T901 → T902 → T903 → CL91 ; T906 ; T909 ; T-D61(planning)
+T902 → T904 → T905 ; T903,T904,T906 → T907 ; T906 → T908
+T904,T905,T906 → CL92
+T905,T907,T908,T909 → CLALL9 → T910* → T912*
+T903 → T911 → T912*(T910,T911) → CL93
+```

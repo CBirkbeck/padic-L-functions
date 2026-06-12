@@ -36,6 +36,7 @@ import PadicLFunctions.ValuesAtOne
 import PadicLFunctions.ResidueZeta
 import PadicLFunctions.EisensteinFamily
 import PadicLFunctions.EisensteinComplex
+import PadicLFunctions.Coleman.Tower
 
 /-!
 # p-adic L-functions

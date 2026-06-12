@@ -462,3 +462,53 @@ operator. With §§3–8 done, Part I of RJW is fully formalised. Next:
 Part II (§§9–11: the Coleman map, Iwasawa's theorem, the Main
 Conjecture — blueprint chapters exist) or the deferred D = 1 case of
 Thm 6.1(ii), or CLEANUP-FINAL in a tooled session.
+
+# §9–§10 pre-plan addendum (2026-06-12, /develop pass) — PART II OPENS
+
+## Section map
+§9 (TeX 2466–2511): Part-II notation — only the LOCAL tower
+(K_n = ℚ_p(μ_{p^n}), 𝒰_n, π_n, norm-limits 𝒰_∞) is §10-load-bearing;
+global/Galois objects ride the §11 pass. §10 (TeX 2512–2948): Coleman's
+theorem (𝒰_∞ ≅ (ℤ_p⟦T⟧^×)^{𝒩=id}, u ↦ f_u with f_u(π_n) = u_n), the
+cyclotomic units c(a) with f_{c(a)} = ((1+T)^a−1)/T and
+∂log f_{c(a)} = a−1−F_a, the Coleman map Col, and
+**ζ_p = Col(c(a))/θ_a** (thm:coleman to kl) — the arithmetic
+reconstruction of the Kubota–Leopoldt pseudo-measure. §10.5
+(Euler systems/Perrin-Riou): prose-only, deferred.
+
+## Design (decomposition R10.1–R10.8)
+The tower lives inside ℂ_[p] (PadicComplex — the §7/§8 investment):
+fixed compatible ξ-system by recursion + IsAlgClosed; K n :=
+ℚ_p⟮ξ n⟯ IntermediateField; O n := norm-unit-ball; degree ladder by
+Eisenstein (Φ_{p^n}(T+1) Eisenstein at p over ℤ_[p]); evaluation
+f(π_n) := our seriesEval (§6–§8 layer; mathlib's new
+PowerSeries.eval₂ as fallback); 𝒩 := φ⁻¹∘(det in the PROVEN digit
+basis (1+T)^i of ℤ_p⟦T⟧ over φ(ℤ_p⟦T⟧)) — no field-norm theory, no
+illegal μ_p-substitution (the Eqphipsi subtlety); commuting square by
+RingHom.map_det; compactness of ℤ_p⟦T⟧^× by Pi-topology + Tychonoff +
+metrizability; uniqueness by mathlib's NEW Weierstrass preparation.
+
+## Files
+- `PadicLFunctions/Coleman/Tower.lean` — ξ-system, K/O/π/𝒰, degree
+  ladder, element norms (X^p−ξ_n collapse), 𝒰_∞.
+- `PadicLFunctions/Coleman/NormOperator.lean` — digit-basis algebra,
+  𝒩, ψ-trace relation, continuity lemmas, compactness.
+- `PadicLFunctions/Coleman/Theorem.lean` — eval-at-π_n, single-level
+  lemma, Weierstrass uniqueness, commuting square, R, surjectivity,
+  Coleman's theorem (both forms).
+- `PadicLFunctions/Coleman/Map.lean` — cyclotomic units, ∂log-bridge
+  to F_a, Col, thm:coleman to kl.
+
+## Deferred (§9–§10)
+- §10.5 Kummer/Euler systems/Perrin-Riou (TeX 2847–2948): prose-only
+  in source ("may be skipped"); blueprint ColemanMap chapter prose
+  covers it; no Lean.
+- §9's global tower (F_n, 𝒱_n), +-subfields, 𝒢 ≅ ℤ_p^×: §11 pass.
+- 𝒰_{n,1}-structure (ℤ_p-module): §11 pass (not §10-load-bearing).
+
+## Standing deferred queue (status 2026-06-12)
+- D = 1 case of Thm 6.1(ii): queued as board ticket T-D61 (a
+  /develop --decompose planning ticket — the notes' own gap, errata #6;
+  the §8 twist machinery is the expected key).
+- CLEANUP-FINAL: still blocked on a lean-lsp-MCP-tooled session.
+- LeanModularForms compat branch: tidied + repinned (bc83277) — CLOSED.
