@@ -3720,7 +3720,14 @@ Statements live in the skeleton; the §6 statement-fix protocol applies.
 - **Sizing**: ~90 LOC + survey risk.
 
 ### [CLEANUP-ALL-7] Pre-milestone /cleanup-all
-- **Status**: open | **Depends on**: T701–T707 | **Type**: cleanup-all
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T701–T707 | **Type**: cleanup-all
+- **Progress**: 2026-06-12: degraded sweep (no lean-lsp MCP): full
+  `lake build PadicLFunctions` green with ZERO non-sorry warnings (mathlib
+  linter set incl. line-length/show/unused-var all quiet; the only 3
+  awk-flagged lines are unicode-heavy comments under 100 chars);
+  maxHeartbeats overrides confirmed absent; per-dispatch slack fixed in
+  flight (T704 long lines, T707 show-linter). ResidueZeta.lean at 1714
+  lines — split/golf review deferred to the tooled CLEANUP-FINAL.
 
 ### [T708] **MILESTONE: RJW Theorem 7.1** — the residue of ζ_p
 - **Status**: open | **File**: ResidueZeta.lean

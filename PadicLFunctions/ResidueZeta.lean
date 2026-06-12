@@ -1700,6 +1700,94 @@ theorem zetaNum_one (hp2 : p ≠ 2) {a : ℕ} (ha : ¬ (p : ℕ) ∣ a)
     map_mul, map_neg, map_sub, map_one, map_inv₀, map_natCast,
     map_extLog_natCast (p := p) ℂ_[p] hp2 ha]
 
+/-- The angle bracket `⟨u⟩` of a topological generator is nontrivial:
+`(angleUnit p u : ℤ_[p]) ≠ 1`. If it were `1` then `u = ω(u)·⟨u⟩ = ω(u)`, so
+`u^{p−1} = 1`, forcing `orderOf (unitsToZModPow p 2 u) ∣ p−1`; but `hgen 2`
+makes that order `φ(p²) = p(p−1)`, and `p(p−1) ∣ p−1` is impossible. -/
+private lemma angleUnit_coe_ne_one {u : ℤ_[p]ˣ}
+    (hgen : ∀ n : ℕ, Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u) = ⊤) :
+    (PadicInt.angleUnit p u : ℤ_[p]) ≠ 1 := by
+  intro h
+  -- `⟨u⟩ = 1` at the units level (coe-injective)
+  have hau1 : PadicInt.angleUnit p u = 1 := Units.ext (by rw [h, Units.val_one])
+  -- so `u = ω(u)` and `u^{p−1} = ω(u)^{p−1} = 1`
+  have hueq : u = PadicInt.teichmuller p u := by
+    conv_lhs => rw [← PadicInt.teichmuller_mul_angleUnit p u, hau1, mul_one]
+  have hpow1 : u ^ (p - 1) = 1 := by
+    rw [hueq]
+    exact Units.ext (by rw [Units.val_pow_eq_pow_val, PadicInt.teichmuller_coe,
+      PadicInt.teichmullerFun_pow_card_sub_one, Units.val_one])
+  -- the level-2 reduction then has order dividing `p−1`
+  have himg : (PadicMeasure.unitsToZModPow p 2 u) ^ (p - 1) = 1 := by
+    rw [← map_pow, hpow1, map_one]
+  have hdvd : orderOf (PadicMeasure.unitsToZModPow p 2 u) ∣ p - 1 :=
+    orderOf_dvd_of_pow_eq_one himg
+  -- but `hgen 2` forces that order to be `φ(p²) = p(p−1)`
+  haveI : NeZero (p ^ 2) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+  have ho2 : orderOf (PadicMeasure.unitsToZModPow p 2 u) = p ^ (2 - 1) * (p - 1) := by
+    rw [orderOf_eq_card_of_forall_mem_zpowers fun x => hgen 2 ▸ Subgroup.mem_top x,
+      Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime_pow hp.out two_pos]
+  rw [ho2, pow_one] at hdvd
+  -- `p(p−1) ∣ p−1` is impossible (`p ≥ 2`, `p − 1 > 0`)
+  have hp1 : 0 < p - 1 := by have := hp.out.one_lt; omega
+  have hle := Nat.le_of_dvd hp1 hdvd
+  have hp2le : 2 ≤ p := hp.out.two_le
+  nlinarith [hp1, hp2le]
+
+/-- `log_p⟨u⟩ ≠ 0` for a topological generator `u`: via the T523 bridge
+`exp(1·log⟨u⟩) = ⟨u⟩`, so `log⟨u⟩ = 0` would give `⟨u⟩ = exp 0 = 1`,
+contradicting `angleUnit_coe_ne_one`. -/
+private lemma pZpLog_angleUnit_ne_zero (hp2 : p ≠ 2) {u : ℤ_[p]ˣ}
+    (hgen : ∀ n : ℕ, Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u) = ⊤) :
+    pZpLog p (PadicInt.angleUnit p u : ℤ_[p]) ≠ 0 := by
+  intro hL
+  -- `⟨u⟩ = exp(1·log⟨u⟩) = exp 0 = 1`
+  have hbridge := padicExp_smul_padicLog_eq_onePAdicPow p hp2
+    (PadicInt.angleUnit_sub_one_mem p u) 1
+  rw [PadicInt.onePAdicPow_apply_one, hL, mul_zero] at hbridge
+  have hexp0 : pZpExp p (0 : ℤ_[p]) = 1 := by
+    refine PadicInt.ext ?_
+    rw [pZpExp_coe p hp2 (Ideal.zero_mem _), PadicInt.coe_zero, padicExp_zero, PadicInt.coe_one]
+  rw [hexp0] at hbridge
+  exact angleUnit_coe_ne_one p hgen (by rw [← hbridge])
+
+/-- The extended logarithm of `(m : ℚ_[p])` equals the `ℚ_[p]`-coercion of
+`log_p⟨u⟩`, where `m` and `u` are the topological-generator data with
+`(u : ℤ_[p]) = (m : ℤ_[p])`. Via `u = ω(u)·⟨u⟩`, `extLog_mul`, and
+`extLog ω = 0` (it is a `(p−1)`-th root of unity). -/
+private lemma extLog_natCast_eq_pZpLog_angle (hp2 : p ≠ 2) {m : ℕ} {u : ℤ_[p]ˣ}
+    (huv : (u : ℤ_[p]) = (m : ℤ_[p])) :
+    extLog p ((m : ℚ_[p]))
+      = ((pZpLog p (PadicInt.angleUnit p u : ℤ_[p]) : ℤ_[p]) : ℚ_[p]) := by
+  have hp1 : 0 < p - 1 := by have := hp.out.one_lt; omega
+  -- `(m : ℚ_[p]) = (u : ℚ_[p]) = ω·⟨u⟩` (coerced)
+  have hmq : ((m : ℕ) : ℚ_[p]) = (((u : ℤ_[p])) : ℚ_[p]) := by
+    rw [huv, PadicInt.coe_natCast]
+  have hsplit : (((u : ℤ_[p])) : ℚ_[p])
+      = (((PadicInt.teichmuller p u : ℤ_[p])) : ℚ_[p])
+        * (((PadicInt.angleUnit p u : ℤ_[p])) : ℚ_[p]) := by
+    rw [← PadicInt.coe_mul, ← Units.val_mul, PadicInt.teichmuller_mul_angleUnit]
+  -- `ω`-coe lies in the domain (it is a `(p−1)`-th root of unity)
+  have hωpow : (((PadicInt.teichmuller p u : ℤ_[p])) : ℚ_[p]) ^ (p - 1) = 1 := by
+    rw [← PadicInt.coe_pow, ← Units.val_pow_eq_pow_val,
+      show (PadicInt.teichmuller p u) ^ (p - 1) = 1 from Units.ext (by
+        rw [Units.val_pow_eq_pow_val, PadicInt.teichmuller_coe,
+          PadicInt.teichmullerFun_pow_card_sub_one, Units.val_one]),
+      Units.val_one, PadicInt.coe_one]
+  have hωdom : ExtLogDomain p (((PadicInt.teichmuller p u : ℤ_[p])) : ℚ_[p]) :=
+    ⟨p - 1, 0, 1, hp1, by rw [hωpow, zpow_zero, one_mul], inExpBall_one_sub_one p⟩
+  -- `⟨u⟩`-coe lies in the domain (it is in `1 + pℤ_p`, the exp ball)
+  have hanball : InExpBall p ((((PadicInt.angleUnit p u : ℤ_[p])) : ℚ_[p]) - 1) := by
+    rw [show ((((PadicInt.angleUnit p u : ℤ_[p])) : ℚ_[p]) - 1)
+        = (((PadicInt.angleUnit p u : ℤ_[p]) - 1 : ℤ_[p]) : ℚ_[p]) by
+      rw [PadicInt.coe_sub, PadicInt.coe_one]]
+    exact inExpBall_of_mem_span p hp2 (PadicInt.angleUnit_sub_one_mem p u)
+  have handom : ExtLogDomain p (((PadicInt.angleUnit p u : ℤ_[p])) : ℚ_[p]) :=
+    ⟨1, 0, _, one_pos, by rw [pow_one, zpow_zero, one_mul], hanball⟩
+  rw [hmq, hsplit, extLog_mul p hωdom handom,
+    extLog_eq_zero_of_pow_eq_one p hp1 hωpow, zero_add,
+    extLog_eq_padicLog p hanball, ← pZpLog_coe p hp2 (PadicInt.angleUnit_sub_one_mem p u)]
+
 /-- **RJW Theorem 7.1(ii)** (`thm:residue`, TeX 2191–2192): "The function
 `ζ_{p,p−1}` has a simple pole at `s = 1` with residue `1 − p⁻¹`" — as the
 topological limit `lim_{s→1, s≠1} (s−1)·ζ_{p,p−1}(s) = 1 − p⁻¹`. -/
@@ -1707,7 +1795,68 @@ theorem tendsto_sub_one_mul_zetaPBranch (hp2 : p ≠ 2) :
     Filter.Tendsto
       (fun s : ℤ_[p] => ((s : ℚ_[p]) - 1) * zetaPBranch p hp2 (p - 1) s)
       (nhdsWithin 1 {s | s ≠ 1})
-      (nhds (1 - (p : ℚ_[p])⁻¹)) := by sorry
+      (nhds (1 - (p : ℚ_[p])⁻¹)) := by
+  classical
+  obtain ⟨hpm, huv, hgen⟩ :=
+    (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  set m := (PadicMeasure.exists_nat_topological_generator p hp2).choose with hm_def
+  set u := (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose with hu_def
+  set Lq : ℚ_[p] := ((pZpLog p (PadicInt.angleUnit p u : ℤ_[p]) : ℤ_[p]) : ℚ_[p]) with hLq
+  -- shorthands for the denominator and numerator
+  set denom : ℤ_[p] → ℚ_[p] :=
+    fun s => (((branchChar p (p - 1) (1 - s) u : ℤ_[p]) : ℚ_[p]) - 1) with hdenom
+  set num : ℤ_[p] → ℚ_[p] :=
+    fun s => ((PadicMeasure.zetaNum p m (branchChar p (p - 1) (1 - s)) : ℤ_[p]) : ℚ_[p])
+    with hnum
+  -- Step 1: `Lq ≠ 0`
+  have hL0 : pZpLog p (PadicInt.angleUnit p u : ℤ_[p]) ≠ 0 :=
+    pZpLog_angleUnit_ne_zero p hp2 hgen
+  have hLq0 : Lq ≠ 0 := by rw [hLq, Ne, PadicInt.coe_eq_zero]; exact hL0
+  -- Step 2: denominator limit and its inverse
+  have hden : Filter.Tendsto (fun s : ℤ_[p] => ((s : ℚ_[p]) - 1)⁻¹ * denom s)
+      (nhdsWithin 1 {s | s ≠ 1}) (nhds (-Lq)) := by
+    have h := tendsto_branch_denom_div p hp2 (u := u)
+    rw [hLq]; exact h
+  have hinv : Filter.Tendsto (fun s : ℤ_[p] => (((s : ℚ_[p]) - 1)⁻¹ * denom s)⁻¹)
+      (nhdsWithin 1 {s | s ≠ 1}) (nhds (-Lq)⁻¹) :=
+    hden.inv₀ (neg_ne_zero.mpr hLq0)
+  -- Step 3: numerator limit
+  have hnumlim : Filter.Tendsto num (nhdsWithin 1 {s | s ≠ 1}) (nhds (num 1)) :=
+    ((continuous_zetaNum_branch_pairing p m (p - 1)).continuousAt
+      (x := 1)).mono_left nhdsWithin_le_nhds
+  -- Step 4: the value `num 1`
+  have hbr1 : branchChar p (p - 1) (1 - 1) = (1 : C(ℤ_[p]ˣ, ℤ_[p])) := by
+    refine ContinuousMap.ext fun x => ?_
+    rw [sub_self, branchChar_apply]
+    have hωpow : (PadicInt.teichmuller p x : ℤ_[p]) ^ (p - 1) = 1 := by
+      rw [← Units.val_pow_eq_pow_val,
+        show (PadicInt.teichmuller p x) ^ (p - 1) = 1 from Units.ext (by
+          rw [Units.val_pow_eq_pow_val, PadicInt.teichmuller_coe,
+            PadicInt.teichmullerFun_pow_card_sub_one, Units.val_one]),
+        Units.val_one]
+    rw [hωpow, one_mul, AddChar.map_zero_eq_one, ContinuousMap.one_apply]
+  have hnum1 : num 1 = -(1 - (p : ℚ_[p])⁻¹) * extLog p ((m : ℚ_[p])) := by
+    have hm0 : m ≠ 0 := fun h => hpm (by rw [h]; exact dvd_zero p)
+    rw [hnum]; simp only
+    rw [hbr1, zetaNum_one p hp2 hpm hm0]
+  -- Step 5: `extLog p (m:ℚ_[p]) = Lq`
+  have hextlog : extLog p ((m : ℚ_[p])) = Lq := by
+    rw [hLq]; exact extLog_natCast_eq_pZpLog_angle p hp2 huv
+  -- Step 6: assemble the limit value
+  have hval : (-Lq)⁻¹ * num 1 = 1 - (p : ℚ_[p])⁻¹ := by
+    rw [hnum1, hextlog]
+    rw [show (-Lq)⁻¹ = -(Lq⁻¹) from (neg_inv ..).symm]
+    field_simp
+  -- the product limit, congruent to the target function
+  have htend : Filter.Tendsto
+      (fun s : ℤ_[p] => (((s : ℚ_[p]) - 1)⁻¹ * denom s)⁻¹ * num s)
+      (nhdsWithin 1 {s | s ≠ 1}) (nhds ((-Lq)⁻¹ * num 1)) := hinv.mul hnumlim
+  rw [hval] at htend
+  refine htend.congr fun s => ?_
+  -- pointwise: `((s−1)⁻¹·denom)⁻¹·num = (s−1)·ζ_{p,p−1}(s)`
+  simp only [hdenom, hnum, zetaPBranch]
+  rw [mul_inv_rev, inv_inv]
+  ring
 
 end descent
 
