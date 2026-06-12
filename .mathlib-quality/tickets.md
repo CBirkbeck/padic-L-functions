@@ -9,7 +9,7 @@ but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
 - Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808), §§9–10 (T901–T912 + T903b/T904b), **§11 (T1101–T1114 + CLEANUP-111…114 + CLEANUP-ALL-6)** + cleanups
-- Open: **the §11 board (T1102–T1114; T1101 done at skeleton) — skeleton landed 2026-06-13 (4 files under PadicLFunctions/Iwasawa/ + the R11.5 convolution generalisation, build green, sorries only in the new files), awaiting 1i approval → /beastmode**; 1 blocked (CLEANUP-FINAL — needs a lean-lsp-MCP-tooled session) + 3 gated (D611–D613 — await the D61 sub-board 1i review) | §§3–10 ALL PROOF TICKETS DISCHARGED (Part I + the Coleman map) — sorry-free, axioms standard (2026-06-12; milestones `coleman_existsUnique` + `coleman_to_kl`; errata #12, and #13 found at the §11 pass)
+- Open: 1 blocked (CLEANUP-FINAL — needs a lean-lsp-MCP-tooled session; scope grew with §11 fold-ins) + 3 gated (D611–D613 — await the D61 sub-board 1i review) | everything else done — **§§3–11 ALL PROOF TICKETS DISCHARGED, project sorry-free, axioms standard (2026-06-13; §11 milestone `cyclo_mem_cycloTower1` + corollary `isPlusPseudoMeasure_padicZetaPlus`; T1113 statement-fix b2-logged (a ≡ 1 mod p); blueprint IwasawaZeros wired)**
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -5009,7 +5009,7 @@ series + thm:coleman map 2)
   Theorem.lean (1158-line) split candidate defer to CLEANUP-FINAL.
 
 ### [D611] χ-twisted moments of ζ_p (GATED: D61 1i review)
-- **Status**: open (GATED — not dispatchable until the D61 sub-board passes
+- **Status**: done (2026-06-13, DEGRADED MODE project sweep: full lake build green, ZERO warnings project-wide, ZERO sorries project-wide, axioms standard on all §11 decls (per-ticket checks logged above). Ordering note: ran after T1113's join due to parallel dispatch (the milestone agent was already in flight when the gate came due); the sweep covers the milestone's output. All golf/dedupe scope folded into CLEANUP-FINAL (lean-lsp-MCP-tooled session).) (GATED — not dispatchable until the D61 sub-board passes
   its 1i review) | **File**: ValuesAtOne.lean or a new ValuesAtOneWild.lean
 - **Depends on**: none | **Type**: theorem
 - **Statement** (shape; skeleton at dispatch): witness-encoded
@@ -5192,7 +5192,7 @@ continuity fields), `descendEven_mk`, `plusSection` (4 linearity fields),
   needed: descend/section machinery (4) vs round-trips (5–7).
 
 ### [CLEANUP-111] /cleanup PlusPart.lean
-- **Status**: open | **Depends on**: T1102–T1104. Single-file pass after the
+- **Status**: done (2026-06-13, DEGRADED MODE — no lean-lsp MCP session-wide: lake-build linter set green on PlusPart.lean, zero warnings (1 show→change fixed at join); 10 private helpers reviewed-by-name (descendEven/evenPart calculus — coherent); golf pass deferred: fold-in note added to CLEANUP-FINAL). | **Depends on**: T1102–T1104. Single-file pass after the
   PlusPart chain (degraded mode if no lean-lsp MCP — record it).
 
 ### [T1105] Odd moments of ζ_p vanish + c-invariance (erratum #13 realised)
@@ -5288,7 +5288,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~160 LOC.
 
 ### [CLEANUP-112] /cleanup ZetaGalois.lean
-- **Status**: open | **Depends on**: T1105–T1107.
+- **Status**: done (2026-06-13, DEGRADED MODE: ZetaGalois.lean lint-green (1 show→change fixed at join); toQPlus-bridge idiom noted; golf deferred to CLEANUP-FINAL). | **Depends on**: T1105–T1107.
 
 ### [T1108] The local unit groups 𝒰_n, 𝒰_{n,1} and the ⁺-variants
 - **Status**: done (2026-06-13; axiom check at join: localUnits/norm_eq_one/localUnitsOne/KPlus_le_K/localUnitsPlus all standard-axioms, no sorryAx. Degraded-mode cleanup deferred to CLEANUP-113.) | **File**: Iwasawa/LocalUnits.lean | **Depends on**: none new
@@ -5372,7 +5372,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~90 LOC.
 
 ### [CLEANUP-113] /cleanup LocalUnits.lean
-- **Status**: open | **Depends on**: T1108–T1110.
+- **Status**: done (2026-06-13, DEGRADED MODE: LocalUnits.lean lint-green (2 longLine wraps at join); REVIEW ITEM folded to CLEANUP-FINAL: promote the file-local instance pack (UniformContinuousConstSMul ℤ_[p] (PadicAlgCl p), Algebra ℤ_[p] ℂ_[p], IsBoundedSMul) to a dedicated infrastructure file — genuinely global-worthy; zpPow helper-cluster golf deferred). | **Depends on**: T1108–T1110.
 
 ### [T1111] The global tower: F_n, F_n⁺, 𝒱_n and 𝒱_n ≤ 𝒰_n
 - **Status**: done (2026-06-13; agent: all targets + the T1112 bonus pair. norm_le_one_of_isIntegral_int via eval₂_eq_sum_range + Finset.sum_range_succ top-term isolation + IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty + norm_intCast_le_one + pow strict-monotonicity (mirrors Coefficients.lean's IsPrimitiveRoot.norm_sub_one_lt); new helper Fglobal_le_K via adjoin_induction + eq_ratCast + SubfieldClass.ratCast_mem (the base-field crossing ℚ→ℚ_[p]). globalUnits via IsIntegral.mul/mul_inv_rev; bonus cycloUnitsPlus + cycloUnits_le_globalUnits (inf_le_right). Statements unchanged. AXIOM CHECK PENDING join. Cleanup deferred to CLEANUP-114.) | **File**: Iwasawa/CyclotomicUnits.lean | **Depends on**: T1108
@@ -5403,7 +5403,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~140 LOC.
 
 ### [T1112] The cyclotomic units 𝒟_n and the closures 𝒞 (definitional layer)
-- **Status**: in_progress (2026-06-13, towers remainder; cycloUnitsPlus + le-lemma already done by T1111's agent) | **File**: Iwasawa/CyclotomicUnits.lean
+- **Status**: done (2026-06-13; towers via the unitsTower1 template + mem_inf; cycloUnitsPlus/le-lemma by T1111's agent. Axioms standard at join.) | **File**: Iwasawa/CyclotomicUnits.lean
 - **Depends on**: T1110, T1111 | **Parallel**: no (same file as T1111)
 - **Type**: def-fields + lemmas
 #### Statement
@@ -5425,7 +5425,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
   ticket per the cadence rule.
 
 ### [T1113] **MILESTONE: c(a) ∈ 𝒟_n and cyclo ∈ 𝒞_{∞,1}** (RJW TeX 3084)
-- **Status**: in_progress (2026-06-13, beastmode wave 3 — dispatched with T1112 remainder; note CLEANUP-ALL-6 gate runs before its verification is accepted) | **File**: Iwasawa/CyclotomicUnits.lean
+- **Status**: done (2026-06-13; MILESTONE. isIntegral via geomSum forms (cycloUnit_eq_geomSum / inv via the a·a' ≡ 1 mod p^n trick); D_n-membership via the closure word (ζ^{a%p^n}−1)·(ζ−1)⁻¹ + globalUnits; **STATEMENT FIX (b2-logged 2026-06-13)**: norm_cycloUnit_sub_one_lt_one + cyclo_mem_cycloTower1 + cyclo_mem_unitsTower1 gained (ha1 : a ≡ 1 [MOD p]) — c_n(a) ≡ a mod 𝔭_n so the principal-unit claims are false for a ≢ 1 (counterexample p=5, a=3); NOT an RJW erratum (TeX 3084 only claims 𝒟_n-membership, kept unconditional); §12 handoff note in b2_log + plan.md. 2 Map.lean norm-privates copied with dedupe-at-CLEANUP-FINAL markers. Project-wide ZERO sorries; axioms standard; full build green. NOTE: CLEANUP-ALL-6 ran concurrently-after due to parallel dispatch — ordering recorded.) | **File**: Iwasawa/CyclotomicUnits.lean
 - **Depends on**: T1112 (+ CLEANUP-ALL-6 gate) | **Type**: lemmas
 #### Statement
 `isIntegral_cycloUnit`, `isIntegral_inv_cycloUnit`,
@@ -5471,10 +5471,10 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~200 LOC. Tier-A split point: the `‖η−1‖ < 1` sub-lemma.
 
 ### [CLEANUP-114] /cleanup CyclotomicUnits.lean
-- **Status**: open | **Depends on**: T1113.
+- **Status**: done (2026-06-13, DEGRADED MODE: CyclotomicUnits.lean lint-green; 2 copied Map.lean norm-privates carry dedupe-at-CLEANUP-FINAL markers; geomSum-helper golf deferred). | **Depends on**: T1113.
 
 ### [T1114] Blueprint: wire the IwasawaZeros chapter
-- **Status**: open | **Depends on**: all §11 proof tickets
+- **Status**: done (2026-06-13; 7 nodes wired (plus-minus-decomposition, lambda-plus-iso + functional-route prose note, plus-criterion, zeta-p-pseudo-measure-plus + erratum-#13 prose, ideal-of-zeta-p, cyclotomic-units-global, local-cyclotomic-units + the milestone code-refs with the a≡1-mod-p caveat prose); zeros-cyclo-units-class-number and iwasawa-zeros-theorem STAY PROSE per R11.8. lake build PadicLFunctionsBlueprint green (4130 jobs); site re-rendered via ci-pages.sh. Pre-existing emph-lint in Eisenstein.lean:168 noted for CLEANUP-FINAL.) | **Depends on**: all §11 proof tickets
 - **File**: PadicLFunctionsBlueprint/Chapters/IwasawaZeros.lean
 #### Work
 Wire the proven §11 nodes: lem:decompose-plus-minus ↦

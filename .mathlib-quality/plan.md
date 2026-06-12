@@ -685,3 +685,13 @@ replaced monogenicity-by-discriminants. Deferred-debt: the D61 sub-board
 (D611–D613, Route A: χ against ζ_p-witnesses) is written and GATED on its
 own 1i review. Next: §11 (Iwasawa's theorem on the zeros, TeX 2949+) or
 release the D61 gate, or CLEANUP-FINAL in a tooled session.
+
+## §11 statement-fix note (2026-06-13, b2-logged at T1113)
+The board's milestone packaging claimed cyclo ∈ 𝒞_{∞,1} unconditionally;
+the principal-unit membership needs a ≡ 1 (mod p) (c_n(a) ≡ a mod 𝔭_n).
+Fixed minimally (hypothesis added to the three affected lemmas; 𝒟_n-
+membership stays unconditional = RJW TeX 3084's literal claim). **§12
+handoff**: a topological generator is never ≡ 1 mod p (p > 3), so the
+coleman_to_kl generator's tower is NOT itself in 𝒞_{∞,1}; §12's
+lem:closure / fundamental-exact-sequence layer performs the principal-
+unit normalisation — thread this through the §12 /develop pass.

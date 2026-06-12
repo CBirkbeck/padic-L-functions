@@ -39,7 +39,7 @@ $`\GG^+ = \Gal(F_\infty^+/\Q) = \GG/\ang{c}`, identified via $`\chi` with
 $`\Zpx/\{\pm 1\}`. The $`p`-adic zeta function vanishes at the characters $`\chi^k`
 for odd $`k > 1`; we use this to show it descends to a pseudo-measure on $`\GG^+`.
 
-:::lemma_ "zeros-plus-minus-decomposition"
+:::lemma_ "zeros-plus-minus-decomposition" (lean := "PadicMeasure.isCompl_invariants_antiInvariants, PadicMeasure.isCompl_plusPart_minusPart")
 Let $`R` be a ring in which $`2` is invertible and let $`M` be an $`R`-module with a
 continuous action of $`\GG`. Then $`M` decomposes as
 $$`M \cong M^+ \oplus M^-,`
@@ -57,7 +57,7 @@ Since $`p` is odd, $`2` is invertible in $`\Zp`, so applying the lemma to
 $`M = \Lam(\GG)` yields $`\Lam(\GG) \cong \Lam(\GG)^+ \oplus \Lam(\GG)^-`. The plus
 part is governed entirely by the quotient group $`\GG^+`.
 
-:::lemma_ "zeros-lambda-plus-iso"
+:::lemma_ "zeros-lambda-plus-iso" (lean := "PadicMeasure.plusEquiv, PadicMeasure.projPlus, PadicMeasure.plusSection, PadicMeasure.ker_projPlus")
 There is a natural isomorphism $`\Lam(\GG)^+ \cong \Lam(\GG^+)`. We henceforth
 identify $`\Lam(\GG^+)` with the submodule $`\Lam(\GG)^+` of $`\Lam(\GG)`. This rests
 on {uses "zeros-plus-minus-decomposition"}[].
@@ -70,10 +70,14 @@ $`\Zp[\GG_n] \twoheadrightarrow \Zp[\GG_n^+]` which kills $`\Zp[\GG_n]^-`, hence
 factors through a map $`\Zp[\GG_n]^+ \to \Zp[\GG_n^+]`. Both sides are free
 $`\Zp`-modules of rank $`(p-1)p^{n-1}/2`, and the map sends a basis to a basis, so it
 is an isomorphism. Passing to the inverse limit over $`n` gives
-$`\Lam(\GG)^+ \cong \Lam(\GG^+)`.
+$`\Lam(\GG)^+ \cong \Lam(\GG^+)`. (The formalisation proves bijectivity by a
+functional even-part section — $`\nu \mapsto \nu\circ(f \mapsto \tfrac12(f + f\circ c))`
+inverts the pushforward on the plus part — rather than the finite-level rank count,
+whose inverse-limit presentation of $`\Lam` is deferred infrastructure; same map,
+different proof of bijectivity.)
 :::
 
-:::lemma_ "zeros-plus-criterion"
+:::lemma_ "zeros-plus-criterion" (lean := "PadicMeasure.mem_plusPart_iff_forall_odd_moment")
 Let $`\mu \in \Lam(\GG)`. Then $`\mu \in \Lam(\GG^+)` if and only if
 $$`\int_{\GG}\chi(x)^k\,d\mu = 0 \quad\text{for all odd } k \ge 1.`
 This uses {uses "zeros-plus-minus-decomposition"}[].
@@ -96,7 +100,7 @@ supported on $`\Zpx`$ has vanishing constant term. Hence $`\mu^- = 0` precisely 
 the odd moments of $`\mu` vanish.
 :::
 
-:::corollary "zeros-zeta-p-pseudo-measure-plus"
+:::corollary "zeros-zeta-p-pseudo-measure-plus" (lean := "PadicMeasure.padicZetaPlus, PadicMeasure.isPlusPseudoMeasure_padicZetaPlus, PadicMeasure.dirac_neg_one_sub_one_mul_padicZeta")
 The $`p`-adic zeta function $`\zeta_p` is a pseudo-measure on $`\GG^+`. This uses the
 {uses "interpolation-property"}[interpolation property] and
 {uses "zeros-plus-criterion"}[].
@@ -109,7 +113,9 @@ $`(1-p^{k-1})\,\zeta(1-k)` of the Riemann zeta function at the trivial character
 For odd $`k \ge 1` this vanishes: when $`k \ge 3` is odd, $`1-k` is a negative even
 integer, so $`\zeta(1-k) = 0` is a trivial zero of $`\zeta`; and at $`k = 1` the
 $`p`-adic Euler factor $`(1-p^{k-1}) = 1-p^0 = 0` itself kills the moment (here
-$`\zeta(0) = -\tfrac12 \neq 0`, so it is the Euler factor that is responsible).
+$`\zeta(0) = -\tfrac12 \neq 0`, so it is the Euler factor that is responsible —
+the source's proof line "$`\zeta(1-k) = 0` for odd $`k \ge 1`" overlooks this
+$`k = 1` case; erratum #13 of the formalisation's errata file).
 Hence all odd moments of $`\zeta_p` vanish. Applying the plus-part criterion
 {uses "zeros-plus-criterion"}[] to the measure $`([g]-[1])\zeta_p \in \Lam(\GG)`,
 whose odd moments are $`(\chi(g)^k - 1)\int_\GG\chi^k\,d\zeta_p = 0`, shows it lies in
@@ -132,7 +138,7 @@ the elements $`[g] - [1]`, $`g \in \GG`. The ideal $`I(\GG^+)` is defined the sa
 way. By the defining property of a pseudo-measure, $`([g]-[1])\zeta_p \in \Lam(\GG)`
 for every $`g \in \GG`.
 
-:::proposition "ideal-of-zeta-p"
+:::proposition "ideal-of-zeta-p" (lean := "PadicMeasure.zetaIdeal, PadicMeasure.zetaIdealPlus, PadicMeasure.zetaIdeal_eq_span, PadicMeasure.zetaIdealPlus_eq_span, PadicMeasure.augmentationIdealPlus_eq_span")
 The module $`I(\GG)\,\zeta_p` is an ideal of $`\Lam(\GG)`, and likewise
 $`I(\GG^+)\,\zeta_p` is an ideal of $`\Lam(\GG^+)`. This uses the
 {uses "pseudo-measure"}[pseudo-measure] property of
@@ -155,7 +161,7 @@ Iwasawa's theorem describes the ideal $`I(\GG)\zeta_p` in terms of the module of
 cyclotomic units. We recall this module and its classical link to class numbers, and
 then state the theorem.
 
-:::definition "zeros-cyclotomic-units-global"
+:::definition "zeros-cyclotomic-units-global" (lean := "PadicLFunctions.Coleman.Fglobal, PadicLFunctions.Coleman.FglobalPlus, PadicLFunctions.Coleman.globalUnits, PadicLFunctions.Coleman.cycloUnits, PadicLFunctions.Coleman.cycloUnitsPlus")
 For $`n \ge 1`, the group $`\DD_n` of *cyclotomic units* of $`F_n` is the
 intersection of $`\cO_{F_n}^\times` with the multiplicative subgroup of $`F_n^\times`
 generated by $`\set{\pm\xi_{p^n},\ \xi_{p^n}^a - 1 : 1 \le a \le p^n - 1}`, where
@@ -189,11 +195,18 @@ As explained in the construction of the Coleman map, the cyclotomic units $`c_n(
 used to build $`\zeta_p` are naturally elements of $`\DD_n`, hence *global*; one then
 takes their image in the *local* units and applies the (purely local) Coleman map.
 In the same spirit we now pass from the global
-modules $`\DD_n, \DD_n^+` to their closures inside the local units. Recall that
+modules $`\DD_n, \DD_n^+` to their closures inside the local units. (Formalised:
+the $`\DD_n`-membership of $`c_n(a)` is
+`PadicLFunctions.Coleman.cyclo_elems_mem_cycloUnits`, unconditional in
+$`a` coprime to $`p`; its norm-compatible tower lies in $`\CC_{\infty,1}` —
+`PadicLFunctions.Coleman.cyclo_mem_cycloTower1` — under the additional
+hypothesis $`a \equiv 1 \bmod p`, since $`c_n(a) \equiv a \bmod \pri_n` is a
+principal unit only then; the principal-unit normalisation for general $`a` is
+part of the next chapter's fundamental exact sequence.) Recall that
 $`\UU_{\infty,1}^+` denotes the group of norm-compatible local units congruent to
 $`1 \bmod p`.
 
-:::definition "zeros-local-cyclotomic-units"
+:::definition "zeros-local-cyclotomic-units" (lean := "PadicLFunctions.Coleman.cycloClosure, PadicLFunctions.Coleman.cycloClosureOne, PadicLFunctions.Coleman.cycloTower1, PadicLFunctions.Coleman.cycloTower1Plus, PadicLFunctions.Coleman.unitsTower1, PadicLFunctions.Coleman.localUnitsOne")
 For $`n \ge 1`, let $`\CC_n` be the $`p`-adic closure of $`\DD_n` inside the local
 units $`\UU_n`, set $`\CC_n^+ = \CC_n \cap \UU_n^+`, and define
 $$`\CC_{n,1} = \CC_n \cap \UU_{n,1}, \qquad \CC_{n,1}^+ = \CC_n^+ \cap \UU_{n,1}.`

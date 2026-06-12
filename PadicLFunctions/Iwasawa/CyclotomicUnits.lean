@@ -228,42 +228,195 @@ noncomputable def cycloClosureOnePlus (n : ℕ) : Subgroup ℂ_[p]ˣ :=
 /-- `𝒞_{∞,1} = lim←_{n≥1} 𝒞_{n,1}` (RJW TeX 3092), as a subgroup of `𝒰_∞`. -/
 noncomputable def cycloTower1 : Subgroup (NormCompatUnits p) where
   carrier := {u | ∀ n, 1 ≤ n → u.elems n ∈ cycloClosureOne p n}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' hu hv n hn := mul_mem (hu n hn) (hv n hn)
+  one_mem' _ _ := one_mem _
+  inv_mem' hu n hn := (cycloClosureOne p n).inv_mem (hu n hn)
 
 /-- `𝒞⁺_{∞,1} = lim←_{n≥1} 𝒞⁺_{n,1}` (RJW TeX 3092). -/
 noncomputable def cycloTower1Plus : Subgroup (NormCompatUnits p) where
   carrier := {u | ∀ n, 1 ≤ n → u.elems n ∈ cycloClosureOnePlus p n}
-  mul_mem' := by sorry
-  one_mem' := by sorry
-  inv_mem' := by sorry
+  mul_mem' hu hv n hn := mul_mem (hu n hn) (hv n hn)
+  one_mem' _ _ := one_mem _
+  inv_mem' hu n hn := (cycloClosureOnePlus p n).inv_mem (hu n hn)
 
-lemma cycloTower1_le_unitsTower1 : cycloTower1 p ≤ unitsTower1 p := by
-  sorry
+lemma cycloTower1_le_unitsTower1 : cycloTower1 p ≤ unitsTower1 p :=
+  fun _ hu n hn => (Subgroup.mem_inf.1 (hu n hn)).2
 
 /-! ## The milestone: the Coleman inputs are global cyclotomic units (RJW TeX 3084)
 
 "The cyclotomic units `c_n(a)`, introduced in §10.2, are naturally elements of
 `𝒟_n`, hence global." -/
 
+/-- `ξ_{p^n}` is integral over `ℤ` (a primitive `p^n`-th root of unity, hence a root
+of unity, hence integral). -/
+private theorem zetaSys_isIntegral (n : ℕ) : IsIntegral ℤ (zetaSys p n) :=
+  (zetaSys_primitiveRoot p n).isIntegral (pow_pos hp.out.pos n)
+
+/-- `c_n(a) = (ξ^a−1)/(ξ−1) = Σ_{i<a} ξ^i`: the cyclotomic unit is the geometric sum.
+Clear the denominator (`ξ−1 ≠ 0` for `n ≥ 1`) and apply `geom_sum_mul`. -/
+private theorem cycloUnit_eq_geomSum {a : ℕ} {n : ℕ} (hn : 1 ≤ n) :
+    cycloUnit p a n = ∑ i ∈ Finset.range a, zetaSys p n ^ i := by
+  have hne : zetaSys p n - 1 ≠ 0 :=
+    sub_ne_zero_of_ne ((zetaSys_primitiveRoot p n).ne_one (one_lt_pow₀ hp.out.one_lt (by omega)))
+  rw [cycloUnit, div_eq_iff hne, geom_sum_mul]
+
 /-- `c_n(a) = 1 + ξ + ⋯ + ξ^{a−1}` is integral over `ℤ` (a `ℤ`-polynomial in the
 `ℤ`-integral `ξ`). -/
-theorem isIntegral_cycloUnit {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {n : ℕ} (hn : 1 ≤ n) :
+theorem isIntegral_cycloUnit {a : ℕ} (_ha : ¬ (p : ℕ) ∣ a) {n : ℕ} (hn : 1 ≤ n) :
     IsIntegral ℤ (cycloUnit p a n) := by
-  sorry
+  rw [cycloUnit_eq_geomSum p hn]
+  exact IsIntegral.sum _ fun i _ => (zetaSys_isIntegral p n).pow i
+
+/-- `orderOf ξ_{p^n} = p^n` (the primitive-root order). -/
+private theorem orderOf_zetaSys (n : ℕ) : orderOf (zetaSys p n) = p ^ n :=
+  ((zetaSys_primitiveRoot p n).eq_orderOf).symm
+
+/-- The inverse `c_n(a)⁻¹ = (ξ−1)/(ξ^a−1) = Σ_{i<a'} (ξ^a)^i` for `a·a' ≡ 1 mod p^n`:
+pick `a'` (`exists_mul_mod_eq_one_of_coprime`), reduce `ξ^{a·a'} = ξ` via
+`pow_mod_orderOf`, then `(ξ^a−1)·Σ_{i<a'}(ξ^a)^i = (ξ^a)^{a'}−1 = ξ−1` (`geom_sum_mul`)
+forces the quotient `c_n(a)⁻¹` to be that sum. -/
+private theorem inv_cycloUnit_eq_geomSum {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {n : ℕ}
+    (hn : 1 ≤ n) :
+    ∃ a' : ℕ, (cycloUnit p a n)⁻¹ = ∑ i ∈ Finset.range a', (zetaSys p n ^ a) ^ i := by
+  -- `a` is coprime to `p^n`
+  have hcop : Nat.Coprime a (p ^ n) :=
+    Nat.Coprime.pow_right _ ((hp.out.coprime_iff_not_dvd).2 ha).symm
+  have hpn1 : 1 < p ^ n := one_lt_pow₀ hp.out.one_lt (by omega)
+  obtain ⟨a', _, haa'⟩ := Nat.exists_mul_mod_eq_one_of_coprime hcop hpn1
+  refine ⟨a', ?_⟩
+  -- `ξ^{a·a'} = ξ`
+  have hpow : zetaSys p n ^ (a * a') = zetaSys p n := by
+    rw [← pow_mod_orderOf, orderOf_zetaSys, haa', pow_one]
+  -- `(ξ^a − 1)·Σ_{i<a'}(ξ^a)^i = ξ − 1`
+  have hgeom : (zetaSys p n ^ a - 1) * ∑ i ∈ Finset.range a', (zetaSys p n ^ a) ^ i
+      = zetaSys p n - 1 := by
+    rw [mul_comm, geom_sum_mul, ← pow_mul, hpow]
+  -- the denominators are nonzero
+  have hden1 : zetaSys p n - 1 ≠ 0 :=
+    sub_ne_zero_of_ne ((zetaSys_primitiveRoot p n).ne_one hpn1)
+  have hden2 : zetaSys p n ^ a - 1 ≠ 0 := by
+    intro h
+    rw [h, zero_mul] at hgeom
+    exact hden1 hgeom.symm
+  -- `c_n(a)⁻¹ = (ξ−1)/(ξ^a−1)` equals the sum
+  rw [cycloUnit, inv_div, div_eq_iff hden2, mul_comm, hgeom]
 
 /-- The inverse `c_n(a)⁻¹ = (ξ−1)/(ξ^a−1) = 1 + ξ^a + ⋯ + ξ^{(a'−1)a}` (for
 `a·a' ≡ 1 mod p^n`) is integral over `ℤ`. -/
 theorem isIntegral_inv_cycloUnit {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {n : ℕ} (hn : 1 ≤ n) :
     IsIntegral ℤ (cycloUnit p a n)⁻¹ := by
-  sorry
+  obtain ⟨a', ha'⟩ := inv_cycloUnit_eq_geomSum p ha hn
+  rw [ha']
+  exact IsIntegral.sum _ fun i _ => ((zetaSys_isIntegral p n).pow a).pow i
 
-/-- `c_n(a)` is `≡ 1 mod 𝔭_n`: `c_n(a) − 1 = Σ_{1≤i<a} (ξ^i − 1)` has norm `< 1`. -/
-theorem norm_cycloUnit_sub_one_lt_one {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {n : ℕ}
-    (hn : 1 ≤ n) :
+/-- The norm of a primitive `p^n`-th root of unity in `ℂ_p` is `1`. (Copied from
+`Coleman/Map.lean`'s private helper for the `‖ξ^i − 1‖ < 1` estimate; dedupe at
+CLEANUP-FINAL.) -/
+private theorem norm_primitiveRoot_eq_one' {n : ℕ} {ξ : ℂ_[p]}
+    (hξ : IsPrimitiveRoot ξ (p ^ n)) : ‖ξ‖ = 1 := by
+  have h1 : ‖ξ‖ ^ (p ^ n) = 1 := by rw [← norm_pow, hξ.pow_eq_one, norm_one]
+  have hne : p ^ n ≠ 0 := (pow_pos hp.out.pos n).ne'
+  refine le_antisymm ?_ ?_
+  · by_contra h; rw [not_le] at h; exact absurd h1 (one_lt_pow₀ h hne).ne'
+  · by_contra h; rw [not_le] at h; exact absurd h1 (pow_lt_one₀ (norm_nonneg ξ) h hne).ne
+
+/-- For a norm-one `ξ`, `‖ξ^c − 1‖ ≤ ‖ξ − 1‖`. (Copied from `Coleman/Map.lean`'s
+private helper; dedupe at CLEANUP-FINAL.) -/
+private theorem norm_pow_sub_one_le' {ξ : ℂ_[p]} (hξ1 : ‖ξ‖ = 1) (c : ℕ) :
+    ‖ξ ^ c - 1‖ ≤ ‖ξ - 1‖ := by
+  rw [show ξ ^ c - 1 = (∑ i ∈ Finset.range c, ξ ^ i) * (ξ - 1) from (geom_sum_mul ξ c).symm,
+    norm_mul]
+  have hgeom : ‖∑ i ∈ Finset.range c, ξ ^ i‖ ≤ 1 :=
+    IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one
+      (fun i _ => by rw [norm_pow, hξ1, one_pow])
+  nlinarith [norm_nonneg (ξ - 1), hgeom]
+
+/-- `‖ξ_{p^n}^i − 1‖ < 1` for every `i`: bound it by `‖ξ_{p^n} − 1‖ = ‖π_n‖ < 1`
+(`norm_pow_sub_one_le'`, `ξ_{p^n}` has norm `1`). -/
+private theorem norm_zetaSys_pow_sub_one_lt_one {n : ℕ} (hn : 1 ≤ n) (i : ℕ) :
+    ‖zetaSys p n ^ i - 1‖ < 1 := by
+  have h1 : ‖zetaSys p n‖ = 1 := norm_primitiveRoot_eq_one' p (zetaSys_primitiveRoot p n)
+  refine lt_of_le_of_lt (norm_pow_sub_one_le' p h1 i) ?_
+  have := norm_pi_lt_one p hn
+  rwa [pi] at this
+
+/-- For `a ≡ 1 (mod p)`, `‖(a : ℂ_[p]) − 1‖ < 1`: `a − 1 = p·k`, so the cast is
+`(p : ℂ_[p])·(k : ℂ_[p])` of norm `≤ p⁻¹·1 < 1`. -/
+private theorem norm_natCast_sub_one_lt_one_of_modEq {a : ℕ} (ha1 : a ≡ 1 [MOD p]) :
+    ‖(a : ℂ_[p]) - 1‖ < 1 := by
+  have hple : 1 ≤ a := by
+    rcases Nat.eq_zero_or_pos a with h0 | h0
+    · subst h0
+      have hdvd : p ∣ 1 := Nat.modEq_zero_iff_dvd.1 ha1.symm
+      exact absurd (Nat.le_of_dvd one_pos hdvd) (by simpa using hp.out.one_lt)
+    · exact h0
+  obtain ⟨k, hk⟩ : p ∣ a - 1 := (Nat.modEq_iff_dvd' hple).1 ha1.symm
+  have hcast : (a : ℂ_[p]) - 1 = (p : ℂ_[p]) * (k : ℂ_[p]) := by
+    have : ((a - 1 : ℕ) : ℂ_[p]) = (a : ℂ_[p]) - 1 := by
+      rw [Nat.cast_sub hple, Nat.cast_one]
+    rw [← this, hk, Nat.cast_mul]
+  have hpnorm : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
+    rw [show ((p : ℂ_[p])) = algebraMap ℚ_[p] ℂ_[p] (p : ℚ_[p]) by rw [map_natCast],
+      norm_algebraMap', Padic.norm_p]
+  rw [hcast, norm_mul, hpnorm]
+  have hk1 : ‖(k : ℂ_[p])‖ ≤ 1 := IsUltrametricDist.norm_natCast_le_one ℂ_[p] k
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
+  calc (p : ℝ)⁻¹ * ‖(k : ℂ_[p])‖ ≤ (p : ℝ)⁻¹ * 1 :=
+        mul_le_mul_of_nonneg_left hk1 (by positivity)
+    _ = (p : ℝ)⁻¹ := mul_one _
+    _ < 1 := by rw [inv_lt_one_iff₀]; right; exact hp1
+
+/-- `c_n(a)` is `≡ 1 mod 𝔭_n` when `a ≡ 1 (mod p)`: `c_n(a) − 1 = Σ_{i<a}(ξ^i − 1)
++ (a − 1)` has norm `< 1`.
+
+Statement note (T1113): hypothesis `a ≡ 1 (mod p)` added — for `a ≢ 1 (mod p)` the
+cyclotomic unit `c_n(a) ≡ a (mod 𝔭_n)` is not a principal unit (`‖c_n(a) − 1‖ = 1`),
+so membership in `𝒞_{n,1}/𝒰_{n,1}` genuinely requires it; RJW glosses this (the §12
+arguments use the principal-unit part); recorded in the b2-protocol log by the
+orchestrator. -/
+theorem norm_cycloUnit_sub_one_lt_one {a : ℕ} (_ha : ¬ (p : ℕ) ∣ a) {n : ℕ}
+    (hn : 1 ≤ n) (ha1 : a ≡ 1 [MOD p]) :
     ‖cycloUnit p a n - 1‖ < 1 := by
-  sorry
+  -- `c_n(a) − a = Σ_{i<a}(ξ^i − 1)`
+  have hca : cycloUnit p a n - (a : ℂ_[p]) = ∑ i ∈ Finset.range a, (zetaSys p n ^ i - 1) := by
+    rw [cycloUnit_eq_geomSum p hn, Finset.sum_sub_distrib, Finset.sum_const,
+      Finset.card_range, nsmul_eq_mul, mul_one]
+  -- `‖Σ_{i<a}(ξ^i − 1)‖ ≤ ‖π_n‖ < 1`
+  have hsum : ‖∑ i ∈ Finset.range a, (zetaSys p n ^ i - 1)‖ < 1 := by
+    refine lt_of_le_of_lt (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+      (norm_nonneg (pi p n)) (fun i _ => ?_)) (norm_pi_lt_one p hn)
+    have h1 : ‖zetaSys p n‖ = 1 := norm_primitiveRoot_eq_one' p (zetaSys_primitiveRoot p n)
+    have := norm_pow_sub_one_le' p h1 i
+    rwa [pi]
+  -- `c_n(a) − 1 = (c_n(a) − a) + (a − 1)`, both norms `< 1`
+  have hsplit : cycloUnit p a n - 1
+      = (cycloUnit p a n - (a : ℂ_[p])) + ((a : ℂ_[p]) - 1) := by ring
+  rw [hsplit]
+  refine lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt ?_ ?_)
+  · rw [hca]; exact hsum
+  · exact norm_natCast_sub_one_lt_one_of_modEq p ha1
+
+/-- `c_n(a) = Σ_{i<a} ξ^i ∈ F_n` (a polynomial in the generator `ξ_{p^n}` of `F_n`). -/
+private theorem cycloUnit_mem_Fglobal {a : ℕ} {n : ℕ} (hn : 1 ≤ n) :
+    cycloUnit p a n ∈ Fglobal p n := by
+  rw [cycloUnit_eq_geomSum p hn]
+  exact sum_mem fun i _ => pow_mem (IntermediateField.mem_adjoin_simple_self ℚ _) i
+
+/-- `c_n(a)` (as a `ℂ_[p]ˣ`) lies in `𝒱_n`: it is in `F_n`, integral over `ℤ`, with
+integral inverse. -/
+private theorem cyclo_elems_mem_globalUnits {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2)
+    {n : ℕ} (hn : 1 ≤ n) :
+    (cyclo p ha hp2).elems n ∈ globalUnits p n := by
+  have hval : ((cyclo p ha hp2).elems n : ℂ_[p]) = cycloUnit p a n := by
+    change ((if hn : 1 ≤ n then Units.mk0 (cycloUnit p a n)
+      (cycloUnit_ne_zero p ha hn) else 1 : ℂ_[p]ˣ) : ℂ_[p]) = _
+    rw [dif_pos hn, Units.val_mk0]
+  have hinv : ((((cyclo p ha hp2).elems n)⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = (cycloUnit p a n)⁻¹ := by
+    rw [Units.val_inv_eq_inv_val, hval]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hval]; exact cycloUnit_mem_Fglobal p hn
+  · rw [hval]; exact isIntegral_cycloUnit p ha hn
+  · rw [hinv]; exact isIntegral_inv_cycloUnit p ha hn
 
 /-- **RJW TeX 3084**: `c_n(a) ∈ 𝒟_n` — membership in the generated subgroup (the
 word `(ξ^a−1)·(ξ−1)⁻¹`, with `a` reduced mod `p^n`) together with global
@@ -271,19 +424,83 @@ integrality. -/
 theorem cyclo_elems_mem_cycloUnits {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2)
     {n : ℕ} (hn : 1 ≤ n) :
     (cyclo p ha hp2).elems n ∈ cycloUnits p n := by
-  sorry
+  rw [cycloUnits, Subgroup.mem_inf]
+  refine ⟨?_, cyclo_elems_mem_globalUnits p ha hp2 hn⟩
+  -- the word `(ξ^{a%p^n}−1)·(ξ−1)⁻¹`
+  have hpn1 : 1 < p ^ n := one_lt_pow₀ hp.out.one_lt (by omega)
+  have hne1 : zetaSys p n - 1 ≠ 0 :=
+    sub_ne_zero_of_ne ((zetaSys_primitiveRoot p n).ne_one hpn1)
+  -- `p^n ∤ a`, so `a % p^n ≠ 0`
+  have hpndvd : ¬ p ^ n ∣ a := fun h => ha (dvd_trans (dvd_pow_self p (by omega)) h)
+  have hmod_pos : 1 ≤ a % p ^ n := by
+    rcases Nat.eq_zero_or_pos (a % p ^ n) with h0 | h0
+    · exact absurd (Nat.dvd_of_mod_eq_zero h0) hpndvd
+    · exact h0
+  have hmodlt0 : a % p ^ n < p ^ n := Nat.mod_lt _ (by positivity)
+  have hmod_lt : a % p ^ n ≤ p ^ n - 1 := by omega
+  have hne2 : zetaSys p n ^ (a % p ^ n) - 1 ≠ 0 := by
+    refine sub_ne_zero_of_ne fun h => ?_
+    have hord : p ^ n ∣ a % p ^ n := by
+      have := orderOf_dvd_of_pow_eq_one h
+      rwa [orderOf_zetaSys] at this
+    exact absurd (Nat.eq_zero_of_dvd_of_lt hord hmodlt0) (by omega)
+  set num : ℂ_[p]ˣ := Units.mk0 (zetaSys p n ^ (a % p ^ n) - 1) hne2 with hnumdef
+  set den : ℂ_[p]ˣ := Units.mk0 (zetaSys p n - 1) hne1 with hdendef
+  have hnummem : num ∈ cycloGenSet p n :=
+    Or.inr (Or.inr ⟨a % p ^ n, hmod_pos, hmod_lt, by rw [hnumdef, Units.val_mk0]⟩)
+  have hdenmem : den ∈ cycloGenSet p n :=
+    Or.inr (Or.inr ⟨1, le_rfl, Nat.le_sub_one_of_lt hpn1,
+      by rw [hdendef, Units.val_mk0, pow_one]⟩)
+  have hpowred : zetaSys p n ^ a = zetaSys p n ^ (a % p ^ n) := by
+    rw [← orderOf_zetaSys p n, pow_mod_orderOf]
+  have hword : (cyclo p ha hp2).elems n = num * den⁻¹ := by
+    refine Units.ext ?_
+    change ((if hn : 1 ≤ n then Units.mk0 (cycloUnit p a n)
+      (cycloUnit_ne_zero p ha hn) else 1 : ℂ_[p]ˣ) : ℂ_[p]) = _
+    rw [dif_pos hn, Units.val_mk0, Units.val_mul,
+      show ((den⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = (zetaSys p n - 1)⁻¹ from rfl, hnumdef, Units.val_mk0,
+      cycloUnit, hpowred, div_eq_mul_inv]
+  rw [hword]
+  exact mul_mem (Subgroup.subset_closure hnummem)
+    (Subgroup.inv_mem _ (Subgroup.subset_closure hdenmem))
 
 /-- **MILESTONE (RJW TeX 3084 + the Definition of TeX 3090–3094)**: the
 norm-compatible system of cyclotomic units — the input of the Coleman map in
 `coleman_to_kl` — lives in `𝒞_{∞,1}`: the global cyclotomic units, closed up
-inside the principal local units, in their norm-compatible tower. -/
-theorem cyclo_mem_cycloTower1 {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2) :
-    cyclo p ha hp2 ∈ cycloTower1 p := by
-  sorry
+inside the principal local units, in their norm-compatible tower.
 
-theorem cyclo_mem_unitsTower1 {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2) :
-    cyclo p ha hp2 ∈ unitsTower1 p := by
-  sorry
+Statement note (T1113): hypothesis `a ≡ 1 (mod p)` added — for `a ≢ 1 (mod p)` the
+cyclotomic unit `c_n(a) ≡ a (mod 𝔭_n)` is not a principal unit, so membership in
+`𝒞_{n,1}` (`= 𝒞_n ∩ 𝒰_{n,1}`) genuinely requires it; RJW glosses this (the §12
+arguments use the principal-unit part); recorded in the b2-protocol log by the
+orchestrator. -/
+theorem cyclo_mem_cycloTower1 {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2)
+    (ha1 : a ≡ 1 [MOD p]) :
+    cyclo p ha hp2 ∈ cycloTower1 p := by
+  intro n hn
+  -- `(cyclo).elems n ∈ 𝒟_n`, hence in its closure and in `𝒰_n`
+  have hmemD : (cyclo p ha hp2).elems n ∈ cycloUnits p n :=
+    cyclo_elems_mem_cycloUnits p ha hp2 hn
+  have hmemloc : (cyclo p ha hp2).elems n ∈ localUnits p n :=
+    globalUnits_le_localUnits p n (cycloUnits_le_globalUnits p n hmemD)
+  -- the underlying value is `c_n(a)`
+  have hval : ((cyclo p ha hp2).elems n : ℂ_[p]) = cycloUnit p a n := by
+    change ((if hn : 1 ≤ n then Units.mk0 (cycloUnit p a n)
+      (cycloUnit_ne_zero p ha hn) else 1 : ℂ_[p]ˣ) : ℂ_[p]) = _
+    rw [dif_pos hn, Units.val_mk0]
+  rw [cycloClosureOne, Subgroup.mem_inf]
+  refine ⟨?_, ?_⟩
+  · rw [cycloClosure, Subgroup.mem_inf]
+    exact ⟨Subgroup.le_topologicalClosure _ hmemD, hmemloc⟩
+  · rw [mem_localUnitsOne_iff]
+    refine ⟨hmemloc, ?_⟩
+    rw [hval]
+    exact norm_cycloUnit_sub_one_lt_one p ha hn ha1
+
+theorem cyclo_mem_unitsTower1 {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2)
+    (ha1 : a ≡ 1 [MOD p]) :
+    cyclo p ha hp2 ∈ unitsTower1 p :=
+  cycloTower1_le_unitsTower1 p (cyclo_mem_cycloTower1 p ha hp2 ha1)
 
 end Coleman
 
