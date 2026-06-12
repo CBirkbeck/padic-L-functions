@@ -3360,3 +3360,56 @@ Algebra.norm + autEquivPow READY; PowerSeries.eval₂ (Evaluation.lean,
 leaf); inverse limits = ad-hoc subtype (standard). MISSING/project:
 Φ_{p^n}-irreducibility over ℚ_p, O_n-monogenicity, the 𝒩-cluster,
 norm-compatible towers.
+
+---
+
+## D61: Thm 6.1(ii) at D = 1 (the deferred §6 debt — errata #6) — planning
+pass 2026-06-12 (T-D61; survey: the Explore agent's feasibility report)
+
+### The gap (recap)
+RJW Thm 6.1(ii) is stated for all non-trivial θ = χη but proved through
+μ_η, which at D = 1 is junk (`muEtaCleared`'s denominators degenerate to
+`Ring.inverse X` = 0; `isUnit_root_mul_one_add_X_sub_one` needs ¬D∣c,
+false at D = 1, c = 0). Every §5/§6 moment theorem in the chain carries
+1 < D (survey table: muEtaCleared_moments, psi/res/twist variants,
+zetaEta_twisted_moments, Lp_interpolation, LpFunction_one).
+
+### Route A (selected — survey-recommended, most economical)
+Pair χ (conductor p^m, m ≥ 1, χ ≠ 1) DIRECTLY against the pseudo-measure
+ζ_p via its ([b]−1)-witnesses — D-independent machinery throughout:
+`padicZeta`/`padicZeta_isPseudoMeasure`/`padicZeta_moments` (ZetaP),
+the §5 p-power twist layer (Twist.lean `twist_res_units` etc.,
+TameConductor's no-D-hypothesis `twist_muA_moments`), mathlib p^n-level
+Gauss sums (`gaussSum_mul_gaussSum_inv`). The χ-twisted-pseudo-measure
+generalisation of §8's unitsTwist (Route C) is NOT needed; fixing
+muEtaCleared at D = 1 (Route B) is more invasive. Expected new-lemma
+count: 2–3 + the value theorem.
+
+### D61 sub-board shape (gated tickets D611–D613 appended to tickets.md)
+- D611: `padicZeta_charTwist_moments` — the witness-encoded twisted
+  moments ∫χ(x)x^k·ζ_p = (b-factor)·(1 − χ(p)p^{k−1})·L(χ,−k)-data, by
+  transporting padicZeta_moments through the χ-twist of the witness
+  (the §5 twist-of-measure layer at the ℤ_p-units level) — the D = 1
+  analogue of zetaEta_twisted_moments.
+- D612: the D = 1 L_p-object aligner: `LpFunctionWild` (or extend
+  LpFunction's junk at D = 1 with an honest definition note): the pairing
+  (χ-twisted ζ_p-witness)-normalised by G(χ⁻¹) at p^m-level (Gauss-unit:
+  the p-power-level analogue of gaussSum_isUnit — survey Q4: mathlib
+  handles G(χ)G(χ⁻¹) = ±p^m natively; unit-ness of G in K needs χ
+  primitive — small lemma).
+- D613 (the value): `LpFunctionWild_one`: L_p(χ,1) =
+  −(1−χ(p)p⁻¹)·G(χ⁻¹)⁻¹·Σ_c χ⁻¹(c)·extLog(1−ε^c) — the §6 c₀-design
+  verbatim at N = p^m (no tame clearing): F̃_χ := the p^m-level
+  logSeriesAt-sum (the T612 layer is N-generic — verify the [NeZero N]
+  + 1 < N hypotheses: 1 < p^m ✓ m ≥ 1!! — NOTE: much of the §6 chain's
+  "1 < N" is SATISFIED at N = p^m even though "1 < D" fails: the
+  load-bearing distinction is tame-vs-wild, and the survey's hD1-table
+  conflates two different hypotheses: AT EXECUTION re-check which §6
+  lemmas need 1 < D (the μ_η-side, unusable) vs 1 < N (fine at p^m):
+  Ftilde/sum_seriesEval_Ftilde/p_mul_constantCoeff_mahlerK_rhoTheta are
+  stated over θ at level N = D·p^n — their D = 1 instantiations may be
+  CLOSER to working than the survey's table suggests; the genuinely
+  D > 1 pieces are the μ_η/rhoTheta-측 constructions, to be replaced by
+  the D611-witness route).
+GATE: the D61 sub-board is 1i-GATED (user review) per T-D61's charter —
+tickets carry "GATED" status; not beastmode-dispatchable until released.

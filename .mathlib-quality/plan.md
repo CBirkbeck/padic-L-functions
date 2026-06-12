@@ -512,3 +512,22 @@ metrizability; uniqueness by mathlib's NEW Weierstrass preparation.
   the §8 twist machinery is the expected key).
 - CLEANUP-FINAL: still blocked on a lean-lsp-MCP-tooled session.
 - LeanModularForms compat branch: tidied + repinned (bc83277) — CLOSED.
+
+## §§9–10 COMPLETE (2026-06-12, /beastmode)
+T901–T912 (+ the spawned T903b/T904b) and all cleanups done in one
+session; project-wide ZERO sorries, axioms standard, blueprint ColemanMap
+chapter fully wired (17 nodes) + site rendered. **Coleman's theorem**
+(`coleman_existsUnique`/`colemanSeries`, the diagonal through the
+compactness extraction) and **ζ_p = −Col(c(a))/θ_a** (`coleman_to_kl` —
+the honest sign; **erratum #12**: the notes' display at TeX 2839 drops
+the minus their own lemma at 2614 carries). Design outcomes: the tower
+inside ℂ_p paid off everywhere (seriesEval evaluation, the spectral-norm
+bridge only at T903b); 𝒩 via the digit-basis determinant avoided all
+field-norm/μ_p-product theory (T907 det-transport; T908(ii) via
+Frobenius-over-𝔽_p; (iii) via `Matrix.det_one_add_smul` + the trace
+identity tr(digitMatrix h) = p·ψ(h) — RJW TeX 2670 realised); Eisenstein
+gave the degree ladder; T903b's orthogonality/value-group joint induction
+replaced monogenicity-by-discriminants. Deferred-debt: the D61 sub-board
+(D611–D613, Route A: χ against ζ_p-witnesses) is written and GATED on its
+own 1i review. Next: §11 (Iwasawa's theorem on the zeros, TeX 2949+) or
+release the D61 gate, or CLEANUP-FINAL in a tooled session.

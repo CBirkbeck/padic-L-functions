@@ -8,8 +8,8 @@ Skeleton: all statements already exist as `:= by sorry` in `PadicLFunctions/Meas
 but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
-- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808) + cleanups
-- Open: 1 (CLEANUP-FINAL — BLOCKED on a lean-lsp-MCP-tooled session; 2026-06-12 sessions ran degraded) | everything else done — **§§3–8 ALL PROOF TICKETS DISCHARGED (Part I COMPLETE), project sorry-free, axioms standard (2026-06-12, §8 milestone `eisensteinFamily_interpolation`; new dep LeanModularForms@compat/padic-mathlib-431 for the Γ₀(p)-modularity)**
+- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808), §§9–10 (T901–T912 + T903b/T904b) + cleanups
+- Open: 1 blocked (CLEANUP-FINAL — needs a lean-lsp-MCP-tooled session) + 3 gated (D611–D613 — await the D61 sub-board 1i review) | everything else done — **§§3–10 ALL PROOF TICKETS DISCHARGED (Part I + the Coleman map), project sorry-free, axioms standard (2026-06-12; §10 milestones `coleman_existsUnique` + `coleman_to_kl`, errata #12 found)**
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -943,6 +943,12 @@ description, ξ-formulas, locally analytic — per plan.md Deferred).
   FormalPsi.lean-placement-candidate; map_padicLog/map_extLog_natCast are
   ExtLog.lean-candidates; map_derivativeFun'/map_one_add_mul_derivativeFun'
   duplicate ValuesAtOne privates — de-private and merge).
+  Widened 2026-06-12 (CL93 fold-in): + §§9–10 Coleman/* (Theorem.lean
+  1158-line split candidate {Eval,Uniqueness,Square,Main}; the
+  NormCompatUnits vestigial elems-0 (colemanSeries_eq_iff note); Tower's
+  private spectral-norm/orthogonality cluster → possible ExtLog/Tower
+  promotion; the maxHeartbeats overrides on the extendScalars decls;
+  T904b's re-derived orthogonality vs Tower's privates — dedupe).
   Widened 2026-06-12 (CL82 fold-in): + §8 EisensteinFamily.lean /
   EisensteinComplex.lean (golf the 2⁻¹-unit coercion chains; the
   IsScalarTower ℤ_[p] Λ Λ instance gap (T803's manual smul_one_mul');
@@ -4983,13 +4989,50 @@ series + thm:coleman map 2)
 - **Sources**: TeX 1987–2010 + 2040–2179 re-read; errata #6.
 
 ### [CLEANUP-92] /cleanup after T904–T906 (cadence, Theorem+NormOperator)
-- **Status**: in_progress (2026-06-12) — Theorem.lean half DONE (degraded:
-  359 lines, zero warnings, zero long lines, publics docstringed);
-  NormOperator.lean half pending T908's in-flight agent | **Depends on**: T904, T905, T906 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) — both halves swept; zero
+  project warnings at every wave | **Depends on**: T904, T905, T906 | **Type**: cleanup
 
 ### [CLEANUP-93] Final per-file cleanup (Coleman/*) + close-out
-- **Status**: open | **Depends on**: T912 | **Type**: cleanup
+- **Status**: done (2026-06-12, degraded mode) | **Depends on**: T912 | **Type**: cleanup
   (+ widen CLEANUP-FINAL to §§9–10)
+- **Progress**: 2026-06-12: degraded sweep: 4 Coleman files (3773 lines
+  total), build green, ZERO non-Verso warnings; >105-byte lines are
+  unicode comments (linter quiet); publics docstringed, helpers private.
+  Blueprint ColemanMap chapter fully wired (17 nodes; §10.5
+  Kummer/Euler/Perrin-Riou nodes stay prose per the deferral) + site
+  re-rendered. Tooled golf + the NormCompatUnits-elems-0 vestige + the
+  Theorem.lean (1158-line) split candidate defer to CLEANUP-FINAL.
+
+### [D611] χ-twisted moments of ζ_p (GATED: D61 1i review)
+- **Status**: open (GATED — not dispatchable until the D61 sub-board passes
+  its 1i review) | **File**: ValuesAtOne.lean or a new ValuesAtOneWild.lean
+- **Depends on**: none | **Type**: theorem
+- **Statement** (shape; skeleton at dispatch): witness-encoded
+  `∫χ(x)x^k·ζ_p` moments for χ of conductor p^m (m ≥ 1), χ ≠ 1: for any b
+  and witness ν of ([b]−1)ζ_p: the χ-twisted pairing of ν at x^k equals
+  (χ(b)b^k − 1)-normalised (1 − χ(p)p^{k−1})·L(χ,−k)-data. Route: transport
+  `padicZeta_moments` through the §5 p-power twist layer (Twist.lean) —
+  the D = 1 analogue of `zetaEta_twisted_moments` (decomposition D61).
+- **Sources**: TeX 1614–1768 (§5.1) + errata #6.
+
+### [D612] The wild L_p-object at D = 1 (GATED: D61 1i review)
+- **Status**: open (GATED) | **File**: as D611 | **Depends on**: D611
+- **Type**: def+lemmas
+- **Statement** (shape): `LpFunctionWild` — G(χ⁻¹)⁻¹-normalised χ-twisted
+  ζ_p-pairing at p^m-level; Gauss-unit lemma at p-power conductor
+  (mathlib gaussSum_mul_gaussSum_inv); agreement with the D > 1
+  LpFunction-convention noted in docstring.
+- **Sources**: TeX 1930-area (Def 5.18 at D = 1) + decomposition D61.
+
+### [D613] L_p(χ,1) at D = 1 — the deferred Thm 6.1(ii) case (GATED)
+- **Status**: open (GATED) | **File**: as D611 | **Depends on**: D611, D612
+- **Type**: theorem (closes errata #6's formalisation debt)
+- **Statement** (shape): `LpFunctionWild_one`: L_p(χ,1) =
+  −(1−χ(p)p⁻¹)·G(χ⁻¹)⁻¹·Σ_{c mod p^m} χ⁻¹(c)·extLog(1−ε^c). Route: the §6
+  c₀-design at N = p^m, no tame clearing; AT DISPATCH re-audit which §6
+  helpers need 1 < D (μ_η-side: replaced by D611) vs 1 < N (fine: p^m > 1)
+  — see decomposition D61's note.
+- **Sources**: TeX 2040–2179 + errata #6.
 
 ## §9–10 dependency quick-view
 ```

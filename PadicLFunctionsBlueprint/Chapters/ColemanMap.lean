@@ -82,7 +82,7 @@ rigid analytic function on $`B(0,1)`, so it produces a sequence
 $`(f(\pi_n))_n` with $`f(\pi_n) \in \cO_{K_n}`. We ask which sequences arise this
 way; Coleman's theorem answers this for norm-compatible systems of units.
 
-:::lemma_ "col-single-level-interp"
+:::lemma_ "col-single-level-interp" (lean := "PadicLFunctions.Coleman.exists_evalPi_eq")
 Let $`u \in \sU_n` be a local unit at level $`n`. There exists a power series
 $`f \in \Zp[[T]]^{\times}` with $`f(\pi_n) = u`.
 :::
@@ -101,7 +101,7 @@ coefficient. Coleman's insight is that imposing the interpolation condition
 *simultaneously for all $`n`* — that is, passing to the tower $`K_\infty` — pins
 down a unique series.
 
-:::theorem "coleman-theorem"
+:::theorem "coleman-theorem" (lean := "PadicLFunctions.Coleman.coleman_existsUnique, PadicLFunctions.Coleman.colemanSeries, PadicLFunctions.Coleman.colemanSeries_mul, PadicLFunctions.Coleman.colemanSeries_eq_iff")
 There is a unique injective homomorphism of multiplicative groups
 $$`\sU_\infty \longrightarrow \Zp[[T]]^{\times}, \qquad u \longmapsto f_u,`
 such that $`f_u(\pi_n) = u_n` for all $`u = (u_n) \in \sU_\infty` and all $`n \ge 1`.
@@ -127,14 +127,14 @@ $`\cN`-invariance of the series. This is made precise in
 The example that motivates everything is the family of cyclotomic units, which we
 shall see is directly linked to $`\zeta_p`.
 
-:::definition "cyclotomic-units"
+:::definition "cyclotomic-units" (lean := "PadicLFunctions.Coleman.cycloUnit, PadicLFunctions.Coleman.norm_cycloUnit")
 Let $`a \in \Z` be prime to $`p`. The *cyclotomic units* are
 $$`c_n(a) := \frac{\xi_{p^n}^a - 1}{\xi_{p^n} - 1} \in \sU_n.`
 This is a genuine unit, since both numerator and denominator are uniformisers of
 $`K_n` (each $`\xi_{p^n}^a - 1` is, as $`a` is prime to $`p`).
 :::
 
-:::lemma_ "col-cyclo-norm-compatible"
+:::lemma_ "col-cyclo-norm-compatible" (lean := "PadicLFunctions.Coleman.cyclo, PadicLFunctions.Coleman.levelNorm_cycloUnit")
 The system $`c(a) := (c_n(a))_n` is norm-compatible, i.e.\ $`c(a) \in \sU_\infty`.
 Its Coleman power series is the polynomial
 $$`f_{c(a)}(T) = \frac{(1+T)^a - 1}{T}.`
@@ -155,7 +155,7 @@ $`c(a)` {uses "cyclotomic-units"}[].
 Recall the operator $`\partial = (1+T)\tfrac{d}{dT}` from the construction of
 $`\zeta_p`, which corresponds to multiplication by $`x` on measures.
 
-:::proposition "col-partiallog-cyclo"
+:::proposition "col-partiallog-cyclo" (lean := "PadicLFunctions.Coleman.one_add_mul_derivative_log_geomSum, PadicLFunctions.Coleman.colemanSeries_cyclo, PadicLFunctions.Coleman.dlog_geomSum")
 We have
 $$`\partial \log f_{c(a)}(T) = a - 1 - F_a(T),`
 where $`F_a(T)` is the power series whose associated measure is $`\mu_a`.
@@ -170,7 +170,7 @@ $$`= a - 1 - \frac1T + \frac{a}{(1+T)^a - 1} = a - 1 - F_a(T),`
 which is exactly the defining expression for $`F_a` {uses "col-cyclo-norm-compatible"}[].
 :::
 
-:::lemma_ "col-relate-cyclo-mua"
+:::lemma_ "col-relate-cyclo-mua" (lean := "PadicLFunctions.Coleman.res_derivative_log_geomSum")
 The restriction to $`\Zpx` of the measure attached to $`\partial \log f_{c(a)}`
 equals minus the restriction of $`\mu_a`:
 $$`\Res_{\Zpx}\big(\mu_{\partial \log f_{c(a)}}\big) = -\Res_{\Zpx}(\mu_a),`
@@ -195,7 +195,7 @@ image as the $`\cN`-invariants, where $`\cN` is a *norm operator* on power serie
 that mirrors the field norm; then a continuity property of $`\cN` lets a diagonal
 argument produce the interpolating series.
 
-:::lemma_ "col-unique-coleman"
+:::lemma_ "col-unique-coleman" (lean := "PadicLFunctions.Coleman.evalPi_injective")
 Suppose $`u = (u_n) \in \sU_\infty` and $`f, g \in \Zp[[T]]^{\times}` both satisfy
 $`f(\pi_n) = g(\pi_n) = u_n` for all $`n \ge 1`. Then $`f = g`.
 :::
@@ -216,7 +216,7 @@ Its measure-theoretic adjoint $`\psi` satisfies
 $`(\varphi\circ\psi)(f)(T) = \tfrac1p\sum_{\eta \in \mu_p} f(\eta(1+T) - 1)`; we call
 $`\psi` the *trace* operator.
 
-:::lemma_ "col-norm-operator"
+:::lemma_ "col-norm-operator" (lean := "PadicLFunctions.Coleman.normOp, PadicLFunctions.Coleman.normOp_mul, PadicLFunctions.Coleman.normOp_eq_det")
 There is a unique multiplicative operator $`\cN` on $`\Zp[[T]]`, the *norm
 operator*, such that
 $$`(\varphi\circ\cN)(f)(T) = \prod_{\eta \in \mu_p} f(\eta(1+T) - 1).`
@@ -237,7 +237,7 @@ Analogously $`\psi = p^{-1}\varphi^{-1}\circ\Tr_{B/A}` is built from the trace o
 $`B/A`, explaining the terminology. The point of $`\cN` is that it mirrors the
 field norm $`N_{n+1,n}` defining $`\sU_\infty`.
 
-:::lemma_ "col-norm-vs-units"
+:::lemma_ "col-norm-vs-units" (lean := "PadicLFunctions.Coleman.evalPi_normOp")
 The square
 $$`\begin{array}{ccc} \Zp[[T]]^{\times} & \xrightarrow{\ f\mapsto f(\pi_{n+1})\ } & \sU_{n+1} \\ \downarrow{\scriptstyle\cN} & & \downarrow{\scriptstyle N_{n+1,n}} \\ \Zp[[T]]^{\times} & \xrightarrow{\ f\mapsto f(\pi_n)\ } & \sU_n \end{array}`
 commutes; i.e.\ $`N_{n+1,n}(f(\pi_{n+1})) = (\cN f)(\pi_n)` for all
@@ -254,7 +254,7 @@ using {uses "col-norm-operator"}[] for the middle equality and
 $`\varphi(g)(\pi_{n+1}) = g(\pi_n)` for the last.
 :::
 
-:::proposition "col-R-injective"
+:::proposition "col-R-injective" (lean := "PadicLFunctions.Coleman.evalPi_mem_O, PadicLFunctions.Coleman.evalPi_injective")
 The map
 $$`R : (\Zp[[T]]^{\times})^{\cN = \mathrm{id}} \hookrightarrow \sU_\infty, \qquad f \mapsto (f(\pi_n))_n`
 is well defined and injective.
@@ -271,7 +271,7 @@ with the same image agree at every $`\pi_n`, hence are equal.
 Surjectivity of $`R` is the crux. It rests on how $`\cN` behaves modulo powers of
 $`p`.
 
-:::lemma_ "col-norm-continuity"
+:::lemma_ "col-norm-continuity" (lean := "PadicLFunctions.Coleman.phi_injective_mod, PadicLFunctions.Coleman.normOp_modEq_self, PadicLFunctions.Coleman.normOp_modEq_one, PadicLFunctions.Coleman.normOp_iterate_modEq")
 Let $`f \in \Zp[[T]]`. Then:
 
 (i) if $`\varphi(f) \equiv 1 \pmod{p^k}` then $`f \equiv 1 \pmod{p^k}`;
@@ -311,7 +311,7 @@ $`\cN^{k_2 - k_1}f/f \equiv 1 \pmod p`, and applying (iii) while iterating $`\cN
 further $`k_1` times upgrades the congruence to modulus $`p^{k_1+1}`.
 :::
 
-:::proposition "col-R-surjective"
+:::proposition "col-R-surjective" (lean := "PadicLFunctions.Coleman.coleman_existsUnique, PadicLFunctions.Coleman.exists_subseq_tendsto")
 The map $`R : (\Zp[[T]]^{\times})^{\cN = \mathrm{id}} \to \sU_\infty` is surjective.
 :::
 
@@ -333,7 +333,7 @@ so $`\cN f_u` and $`f_u` are both Coleman series for $`u`; by
 {uses "col-unique-coleman"}[] they coincide, i.e.\ $`\cN(f_u) = f_u`.
 :::
 
-:::theorem "col-coleman-precise"
+:::theorem "col-coleman-precise" (lean := "PadicLFunctions.Coleman.coleman_existsUnique, PadicLFunctions.Coleman.normOp_colemanSeries, PadicLFunctions.Coleman.evalPi_colemanSeries")
 The map $`R` of {bpref "col-R-injective"}[] is an isomorphism of groups
 $$`R : (\Zp[[T]]^{\times})^{\cN = \mathrm{id}} \xrightarrow{\ \sim\ } \sU_\infty,`
 and its inverse $`u \mapsto f_u` is the unique map with $`f_u(\pi_n) = u_n` for all
@@ -361,7 +361,7 @@ apply $`\partial^{-1}` (multiplication by $`x^{-1}` on measures); (6) invert the
 Mahler transform to land in $`\Lam(\Zpx)`; (7) divide by $`\theta_a`. Abstracting
 steps (2)–(6) gives the following.
 
-:::definition "coleman-map"
+:::definition "coleman-map" (lean := "PadicLFunctions.Coleman.Col, PadicLFunctions.Coleman.dlog")
 The *Coleman map* is the composite
 $$`\Col : \sU_\infty \xrightarrow{\ u\mapsto f_u\ } (\Zp[[T]]^{\times})^{\cN=\mathrm{id}} \xrightarrow{\ \partial\log\ } \Zp[[T]] \xrightarrow{\ 1-\varphi\circ\psi\ } \Zp[[T]]^{\psi=0} \xrightarrow{\ \partial^{-1}\ } \Zp[[T]]^{\psi=0} \xrightarrow{\ \cA^{-1}\ } \Lam(\Zpx),`
 where the first map is Coleman's isomorphism {uses "coleman-theorem"}[], the second
@@ -372,7 +372,7 @@ $`x^{-1}`, and the last $`\cA^{-1}` the inverse Mahler transform
 {uses "iwasawa-algebra"}[].
 :::
 
-:::theorem "col-coleman-to-kl"
+:::theorem "col-coleman-to-kl" (lean := "PadicLFunctions.Coleman.coleman_to_kl, PadicLFunctions.Coleman.Col_cyclo")
 For any topological generator $`a` of $`\Zpx`, the Kubota–Leopoldt $`p`-adic
 $`L`-function is recovered as the pseudo-measure
 $$`\zeta_p = \frac{\Col(c(a))}{\theta_a} \in Q(\Zpx).`
