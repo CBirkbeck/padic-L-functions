@@ -5226,7 +5226,7 @@ continuity fields), `descendEven_mk`, `plusSection` (4 linearity fields),
 - **Sizing**: ~110 LOC.
 
 ### [T1106] ζ_p as a pseudo-measure on 𝒢⁺ (the corollary, RJW TeX 3033)
-- **Status**: in_progress (2026-06-13, beastmode wave 3) | **File**: Iwasawa/ZetaGalois.lean
+- **Status**: done (2026-06-13; agent wave 3: regularity transport via plusSection landing in plusPart ⊓ minusPart = ⊥ + mul_right_mem_nonZeroDivisors_eq_zero_iff; padicZetaPlus denominator via the packed generator; witness compat via IsFractionRing.injective + mk'_spec + IsUnit.mul_left_inj; the COROLLARY isPlusPseudoMeasure_padicZetaPlus via QuotientGroup.mk_surjective. Statements unchanged. Axioms standard at join; build green; 1 show→change lint fixed by orchestrator. Cleanup deferred to CLEANUP-112. | **File**: Iwasawa/ZetaGalois.lean
 - **Depends on**: T1102, T1104, T1105 | **Parallel**: no
 - **Type**: def-fields + lemmas
 #### Statement
@@ -5259,7 +5259,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~140 LOC.
 
 ### [T1107] The ideals I(𝒢)ζ_p and I(𝒢⁺)ζ_p (RJW Proposition, TeX 3052)
-- **Status**: in_progress (2026-06-13, beastmode wave 3) | **File**: Iwasawa/ZetaGalois.lean
+- **Status**: done (2026-06-13; agent wave 3: zetaIdeal/zetaIdealPlus carrier-ideals + Iff.rfl mem-iffs + eq_span antisymmetries via augmentationIdeal(Plus)_eq_span; the 𝒢⁺ principality lifted along projPlus_surjective with deg_projPlus. Axioms standard at join.) | **File**: Iwasawa/ZetaGalois.lean
 - **Depends on**: T1105, T1106 | **Parallel**: no (same file)
 - **Type**: def-fields + lemmas (replan R11.4)
 #### Statement

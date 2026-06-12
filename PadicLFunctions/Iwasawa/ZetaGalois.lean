@@ -144,7 +144,34 @@ theorem dirac_mk_sub_one_mem_nonZeroDivisors (hp2 : p ≠ 2) {a : ℤ_[p]ˣ}
       ∈ nonZeroDivisors (PadicMeasure p ℤ_[p]ˣ)) :
     (dirac p (QuotientGroup.mk a : GPlus p) - 1 : PadicMeasure p (GPlus p))
       ∈ nonZeroDivisors (PadicMeasure p (GPlus p)) := by
-  sorry
+  -- A non-zero-divisor in a `CommRing` is detected by one-sided cancellation.
+  rw [mem_nonZeroDivisors_iff]
+  -- The key elimination: `ν * ([ā]−[1]) = 0 → ν = 0`, lifting `ν` along the section.
+  have key : ∀ ν : PadicMeasure p (GPlus p),
+      ν * (dirac p (QuotientGroup.mk a : GPlus p) - 1) = 0 → ν = 0 := by
+    intro ν hν
+    set μ := plusSection p hp2 ν with hμ
+    -- `π_*(μ · ([a]−[1])) = ν · ([ā]−[1]) = 0`.
+    have hproj : projPlus p (μ * (dirac p a - 1))
+        = ν * (dirac p (QuotientGroup.mk a : GPlus p) - 1) := by
+      rw [map_mul, map_sub, map_one, projPlus_dirac, hμ, projPlus_plusSection p hp2]
+    rw [hν] at hproj
+    -- so `μ · ([a]−[1]) ∈ ker π_* = minusPart`.
+    have hmem_minus : μ * (dirac p a - 1) ∈ minusPart p :=
+      (projPlus_eq_zero_iff p hp2).1 hproj
+    -- and `μ · ([a]−[1]) ∈ plusPart` (μ is even and plusPart is a multiplicative ideal).
+    have hmem_plus : μ * (dirac p a - 1) ∈ plusPart p := by
+      rw [mul_comm]
+      exact mul_mem_plusPart p (plusSection_mem_plusPart p hp2 ν)
+    -- the two parts intersect trivially ⟹ `μ · ([a]−[1]) = 0`.
+    have hzero : μ * (dirac p a - 1) = 0 :=
+      (Submodule.disjoint_def.1 (isCompl_plusPart_minusPart p hp2).disjoint)
+        _ hmem_plus hmem_minus
+    -- `[a]−[1]` is a non-zero-divisor ⟹ `μ = 0` ⟹ `ν = π_* μ = 0`.
+    have hμ0 : μ = 0 := (mul_right_mem_nonZeroDivisors_eq_zero_iff ha).1 hzero
+    rw [← projPlus_plusSection p hp2 ν, ← hμ, hμ0, map_zero]
+  -- in a `CommRing` both cancellation directions follow from `key` via `mul_comm`.
+  exact ⟨fun x hx => key x (by rw [mul_comm x]; exact hx), key⟩
 
 /-- **ζ_p as a pseudo-measure on 𝒢⁺** (the object of RJW's corollary, TeX 3033):
 `ζ_p⁺ := π_*(x⁻¹ Res μ_a) / ([ā]−[1])`, for the same packed integer topological
@@ -154,7 +181,11 @@ def padicZetaPlus (hp2 : p ≠ 2) : QuotientFieldPlus p :=
     (projPlus p (zetaNum p (exists_nat_topological_generator p hp2).choose))
     (⟨dirac p (QuotientGroup.mk
         ((exists_nat_topological_generator p hp2).choose_spec.choose) : GPlus p) - 1,
-      by sorry⟩ : nonZeroDivisors (PadicMeasure p (GPlus p)))
+      dirac_mk_sub_one_mem_nonZeroDivisors p hp2
+        (dirac_sub_one_mem_nonZeroDivisors p
+          (topGen_pow_ne_one p
+            (exists_nat_topological_generator p hp2).choose_spec.choose_spec.2.2))⟩ :
+      nonZeroDivisors (PadicMeasure p (GPlus p)))
 
 /-- Compatibility of the descents: pushing a 𝒢-side witness forward gives the
 𝒢⁺-side witness at the image group element — "ζ_p descends". -/
@@ -164,13 +195,58 @@ theorem projPlus_padicZeta_witness (hp2 : p ≠ 2) (g : ℤ_[p]ˣ)
       = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν) :
     toQPlus p (dirac p (QuotientGroup.mk g : GPlus p) - 1) * padicZetaPlus p hp2
       = toQPlus p (projPlus p ν) := by
-  sorry
+  classical
+  -- destructure the packed integer topological generator (same pack as `padicZeta`).
+  set m := (exists_nat_topological_generator p hp2).choose with hm
+  set u := (exists_nat_topological_generator p hp2).choose_spec.choose with hu
+  -- the defining relation `([u]−1)·ζ_p = zetaNum m` (mirror `padicZeta_moments`).
+  have hspec : algebraMap _ (QuotientField p) (dirac p u - 1) * padicZeta p hp2
+      = algebraMap _ _ (zetaNum p m) := by
+    rw [padicZeta]
+    exact IsLocalization.mk'_spec' (QuotientField p) _ _
+  -- pull the two witness identities back to `Λ(ℤ_p^×)`: `([u]−1)·ν = ([g]−1)·zetaNum m`.
+  have hkey : (dirac p u - 1) * ν = (dirac p g - 1) * zetaNum p m := by
+    apply IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+    rw [map_mul, map_mul, ← hν, ← hspec]
+    ring
+  -- push forward by `π_*` (a ring hom): `([ḡ]−1)·π_*(zetaNum m) = ([ū]−1)·π_*ν`.
+  have hkeyP : (dirac p (QuotientGroup.mk g : GPlus p) - 1)
+        * projPlus p (zetaNum p m)
+      = (dirac p (QuotientGroup.mk u : GPlus p) - 1) * projPlus p ν := by
+    have := congrArg (projPlus p) hkey
+    simp only [map_mul, map_sub, map_one, projPlus_dirac] at this
+    exact this.symm
+  -- conclude in `Q(𝒢⁺)` via the `mk'` algebra and unit-cancellation of the denominator.
+  -- abbreviate the denominator `c = [ū]−1` and its non-zero-divisor witness.
+  set c : nonZeroDivisors (PadicMeasure p (GPlus p)) :=
+    ⟨dirac p (QuotientGroup.mk u : GPlus p) - 1,
+      dirac_mk_sub_one_mem_nonZeroDivisors p hp2
+        (dirac_sub_one_mem_nonZeroDivisors p
+          (topGen_pow_ne_one p
+            (exists_nat_topological_generator p hp2).choose_spec.choose_spec.2.2))⟩ with hc
+  -- `padicZetaPlus` is exactly the `mk'` with this numerator/denominator.
+  have hzp : padicZetaPlus p hp2
+      = IsLocalization.mk' (QuotientFieldPlus p) (projPlus p (zetaNum p m)) c := rfl
+  -- the image of `c` is a unit in the localization.
+  have hcunit : IsUnit (algebraMap (PadicMeasure p (GPlus p)) (QuotientFieldPlus p) (c : _)) :=
+    IsLocalization.map_units (QuotientFieldPlus p) c
+  -- cancel that unit: it suffices to prove the equation multiplied by `algebraMap c`.
+  rw [hzp, toQPlus, ← hcunit.mul_left_inj, mul_assoc, IsLocalization.mk'_spec,
+    ← map_mul, ← map_mul]
+  -- now it is `algebraMap` applied to the pushed-forward 𝒢-side identity (`hkeyP`).
+  congr 1
+  rw [hkeyP]
+  ring
 
 /-- **RJW §11.1, Corollary (TeX 3033–3039)**: the p-adic zeta function is a
 pseudo-measure on `𝒢⁺`. -/
 theorem isPlusPseudoMeasure_padicZetaPlus (hp2 : p ≠ 2) :
     IsPlusPseudoMeasure p (padicZetaPlus p hp2) := by
-  sorry
+  -- every group element of `𝒢⁺` lifts to a unit; transport its 𝒢-side witness forward.
+  intro gPlus
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective gPlus
+  obtain ⟨ν, hν⟩ := padicZeta_isPseudoMeasure p hp2 g
+  exact ⟨projPlus p ν, projPlus_padicZeta_witness p hp2 g hν⟩
 
 /-! ## The ideal generated by ζ_p (RJW §11.2, TeX 3043–3059) -/
 
@@ -182,15 +258,20 @@ def zetaIdeal (hp2 : p ≠ 2) : Ideal (PadicMeasure p ℤ_[p]ˣ) where
   carrier := {x | ∃ l ∈ augmentationIdeal p (G := ℤ_[p]ˣ),
     algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) x
       = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) l * padicZeta p hp2}
-  add_mem' := by sorry
-  zero_mem' := by sorry
-  smul_mem' := by sorry
+  add_mem' := by
+    rintro x y ⟨l₁, hl₁, he₁⟩ ⟨l₂, hl₂, he₂⟩
+    exact ⟨l₁ + l₂, Ideal.add_mem _ hl₁ hl₂, by rw [map_add, he₁, he₂, map_add, add_mul]⟩
+  zero_mem' := ⟨0, Ideal.zero_mem _, by rw [map_zero, zero_mul]⟩
+  smul_mem' := by
+    rintro c x ⟨l, hl, he⟩
+    refine ⟨c • l, Submodule.smul_mem _ _ hl, ?_⟩
+    rw [smul_eq_mul, smul_eq_mul, map_mul, he, map_mul, mul_assoc]
 
 lemma mem_zetaIdeal_iff (hp2 : p ≠ 2) {x : PadicMeasure p ℤ_[p]ˣ} :
     x ∈ zetaIdeal p hp2 ↔ ∃ l ∈ augmentationIdeal p (G := ℤ_[p]ˣ),
       algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) x
-        = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) l * padicZeta p hp2 := by
-  sorry
+        = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) l * padicZeta p hp2 :=
+  Iff.rfl
 
 /-- The computational description: `I(𝒢)ζ_p` is the principal ideal generated by any
 witness of `([b]−[1])·ζ_p` at a topological generator `b` (via the principality
@@ -201,7 +282,23 @@ theorem zetaIdeal_eq_span (hp2 : p ≠ 2) {b : ℤ_[p]ˣ}
     (hν : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) (dirac p b - 1) * padicZeta p hp2
       = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν) :
     zetaIdeal p hp2 = Ideal.span {ν} := by
-  sorry
+  -- `[b]−[1]` lies in the augmentation ideal.
+  have hbmem : (dirac p b - 1 : PadicMeasure p ℤ_[p]ˣ) ∈ augmentationIdeal p := by
+    rw [augmentationIdeal, RingHom.mem_ker, map_sub, map_one,
+      show deg p (dirac p b) = 1 from rfl, sub_self]
+  apply le_antisymm
+  · -- `I(𝒢)ζ_p ⊆ (ν)`: every `x = l·ζ_p` with `l = ([b]−1)·ρ` factors through `ν`.
+    rintro x ⟨l, hl, he⟩
+    rw [augmentationIdeal_eq_span p hb, Ideal.mem_span_singleton] at hl
+    obtain ⟨ρ, rfl⟩ := hl
+    rw [Ideal.mem_span_singleton]
+    -- `x = ρ·ν` after cancelling into the localization.
+    refine ⟨ρ, IsFractionRing.injective (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ?_⟩
+    rw [he, map_mul, map_mul, ← hν]
+    ring
+  · -- `(ν) ⊆ I(𝒢)ζ_p`: `ν` itself is the witness `([b]−1)·ζ_p`.
+    rw [Ideal.span_le, Set.singleton_subset_iff]
+    exact ⟨dirac p b - 1, hbmem, hν.symm⟩
 
 /-- The image `ā` of a topological generator generates the augmentation ideal of
 `Λ(𝒢⁺)`: `I(𝒢⁺) = ([ā]−[1])·Λ(𝒢⁺)` (transport of `augmentationIdeal_eq_span`
@@ -211,7 +308,25 @@ theorem augmentationIdealPlus_eq_span (hp2 : p ≠ 2) {a : ℤ_[p]ˣ}
     augmentationIdeal p (G := GPlus p)
       = Ideal.span {(dirac p (QuotientGroup.mk a : GPlus p) - 1 :
           PadicMeasure p (GPlus p))} := by
-  sorry
+  apply le_antisymm
+  · -- `I(𝒢⁺) ⊆ ([ā]−1)`: lift `y = π_* x`, transfer principality from `Λ(𝒢)`.
+    intro y hy
+    obtain ⟨x, rfl⟩ := projPlus_surjective p hp2 y
+    -- `deg x = deg(π_* x) = 0`, so `x ∈ I(𝒢)`.
+    have hxmem : x ∈ augmentationIdeal p (G := ℤ_[p]ˣ) := by
+      rw [augmentationIdeal, RingHom.mem_ker, ← deg_projPlus p x]
+      exact RingHom.mem_ker.1 hy
+    rw [augmentationIdeal_eq_span p ha, Ideal.mem_span_singleton] at hxmem
+    obtain ⟨ρ, rfl⟩ := hxmem
+    -- `π_*((dirac a−1)·ρ) = ([ā]−1)·π_* ρ ∈ ([ā]−1)`.
+    rw [Ideal.mem_span_singleton]
+    exact ⟨projPlus p ρ, by rw [map_mul, map_sub, map_one, projPlus_dirac]⟩
+  · -- `([ā]−1) ⊆ I(𝒢⁺)`: the generator has degree `1 − 1 = 0`.
+    rw [Ideal.span_le, Set.singleton_subset_iff]
+    change (dirac p (QuotientGroup.mk a : GPlus p) - 1 : PadicMeasure p (GPlus p))
+      ∈ augmentationIdeal p
+    rw [augmentationIdeal, RingHom.mem_ker, map_sub, map_one,
+      show deg p (dirac p (QuotientGroup.mk a : GPlus p)) = 1 from rfl, sub_self]
 
 /-- **`I(𝒢⁺)ζ_p`** (RJW Proposition, TeX 3052, plus half): the corresponding ideal
 of `Λ(𝒢⁺)` — the right-hand side of Iwasawa's theorem (`thm:iwasawa`, stated on the
@@ -219,14 +334,19 @@ of `Λ(𝒢⁺)` — the right-hand side of Iwasawa's theorem (`thm:iwasawa`, st
 def zetaIdealPlus (hp2 : p ≠ 2) : Ideal (PadicMeasure p (GPlus p)) where
   carrier := {x | ∃ l ∈ augmentationIdeal p (G := GPlus p),
     toQPlus p x = toQPlus p l * padicZetaPlus p hp2}
-  add_mem' := by sorry
-  zero_mem' := by sorry
-  smul_mem' := by sorry
+  add_mem' := by
+    rintro x y ⟨l₁, hl₁, he₁⟩ ⟨l₂, hl₂, he₂⟩
+    exact ⟨l₁ + l₂, Ideal.add_mem _ hl₁ hl₂, by rw [map_add, he₁, he₂, map_add, add_mul]⟩
+  zero_mem' := ⟨0, Ideal.zero_mem _, by rw [map_zero, zero_mul]⟩
+  smul_mem' := by
+    rintro c x ⟨l, hl, he⟩
+    refine ⟨c • l, Submodule.smul_mem _ _ hl, ?_⟩
+    rw [smul_eq_mul, smul_eq_mul, map_mul, he, map_mul, mul_assoc]
 
 lemma mem_zetaIdealPlus_iff (hp2 : p ≠ 2) {x : PadicMeasure p (GPlus p)} :
     x ∈ zetaIdealPlus p hp2 ↔ ∃ l ∈ augmentationIdeal p (G := GPlus p),
-      toQPlus p x = toQPlus p l * padicZetaPlus p hp2 := by
-  sorry
+      toQPlus p x = toQPlus p l * padicZetaPlus p hp2 :=
+  Iff.rfl
 
 theorem zetaIdealPlus_eq_span (hp2 : p ≠ 2) {a : ℤ_[p]ˣ}
     (ha : ∀ n : ℕ, Subgroup.zpowers (unitsToZModPow p n a) = ⊤)
@@ -234,6 +354,26 @@ theorem zetaIdealPlus_eq_span (hp2 : p ≠ 2) {a : ℤ_[p]ˣ}
     (hν : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) (dirac p a - 1) * padicZeta p hp2
       = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p) ν) :
     zetaIdealPlus p hp2 = Ideal.span {projPlus p ν} := by
-  sorry
+  -- the 𝒢⁺-side witness identity at `ā` (push `hν` forward).
+  have hwit : toQPlus p (dirac p (QuotientGroup.mk a : GPlus p) - 1) * padicZetaPlus p hp2
+      = toQPlus p (projPlus p ν) := projPlus_padicZeta_witness p hp2 a hν
+  -- `[ā]−1` lies in the augmentation ideal of `Λ(𝒢⁺)`.
+  have hamem : (dirac p (QuotientGroup.mk a : GPlus p) - 1 : PadicMeasure p (GPlus p))
+      ∈ augmentationIdeal p (G := GPlus p) := by
+    rw [augmentationIdeal, RingHom.mem_ker, map_sub, map_one,
+      show deg p (dirac p (QuotientGroup.mk a : GPlus p)) = 1 from rfl, sub_self]
+  apply le_antisymm
+  · -- `I(𝒢⁺)ζ_p ⊆ (π_* ν)`: every `x = l·ζ_p⁺` with `l = ([ā]−1)·ρ` factors through `π_* ν`.
+    rintro x ⟨l, hl, he⟩
+    rw [augmentationIdealPlus_eq_span p hp2 ha, Ideal.mem_span_singleton] at hl
+    obtain ⟨ρ, rfl⟩ := hl
+    rw [Ideal.mem_span_singleton]
+    refine ⟨ρ, IsFractionRing.injective (PadicMeasure p (GPlus p)) (QuotientFieldPlus p) ?_⟩
+    -- `toQPlus = algebraMap`, so the localization injectivity applies to `he`/`hwit`.
+    change toQPlus p x = toQPlus p (projPlus p ν * ρ)
+    rw [he, map_mul, map_mul, mul_right_comm, hwit]
+  · -- `(π_* ν) ⊆ I(𝒢⁺)ζ_p`: `π_* ν` is the witness `([ā]−1)·ζ_p⁺`.
+    rw [Ideal.span_le, Set.singleton_subset_iff]
+    exact ⟨dirac p (QuotientGroup.mk a : GPlus p) - 1, hamem, hwit.symm⟩
 
 end PadicMeasure
