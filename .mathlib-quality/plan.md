@@ -318,3 +318,58 @@ decomposition to be produced by the Phase-1e pass)
 3. Complex side (i): formalise against mathlib's LFunction (preferred,
    mathlib-linking directive) — accept that the bridge LSeries↔our LvalNeg
    conventions may add a leaf or two?
+
+---
+
+# §7 pre-plan addendum (2026-06-12, /develop pass)
+
+## Section map (read in full this session)
+§7 "The residue of ζ_p at s = 1" = TeX 2181–2360. One headline:
+**Theorem 7.1** (`thm:residue`, TeX 2187–2194): (i) ζ_{p,i} analytic at
+s = 1 for i ≠ p−1; (ii) ζ_{p,p−1} has a simple pole at s = 1 with residue
+1 − p⁻¹. Proof: Eqtmp2 (TeX 2199–2215) writes ζ_{p,i}(s) as the
+pseudo-measure quotient with denominator g_{a,i}(s) = ω(a)^i⟨a⟩^{1−s} − 1
+— EXACTLY our `zetaPBranch` definition (T519), so Eqtmp2 is definitional
+for us. Lemma 7.2 (`lem:g p-1`): g-vanishing analysis + the limit
+(s−1)⁻¹g_{a,p−1}(s) → −log_p(a). Then eq:zeta-p-residue reduces (ii) to
+the mass ∫x⁻¹μ_a = ((1−φψ)F̃_a)(0) with F̃_a := log(T/(1+T)·(1+T)^a/((1+T)^a−1))
+(Lemmas 7.3–7.5, TeX 2266–2352): ∂F̃_a = F_a, ℛ⁺-membership (Lemma 7.4 —
+SKIPPED by our distribution-free route, as Lem 6.2 was), and the
+φψ-evaluation via the Eqphipsi ξ-sum with {ξ^a} = μ_p and
+∏(Xξ−1) = X^p−1, giving ((1−φψ)F̃_a)(0) = −(1−p⁻¹)log_p(a).
+
+## Key reuse (the §5/§6 investment pays)
+- "analytic/pole/limit" statements: topological limits in ℤ_p-variable;
+  (ii) as `Tendsto (fun s => (s−1)·zetaPBranch p hp2 (p−1) s) (𝓝[≠] 1)
+  (𝓝 (1−p⁻¹))` — K-FREE final statement (the log_p(a)'s cancel).
+- Lemma 7.2's limit: through the T523 exp/log bridge —
+  ⟨a⟩^{1−s} − 1 = pZpExp((1−s)·pZpLog⟨a⟩) − 1, then the exp-derivative-at-0
+  (‖exp w − 1 − w‖ ≤ p‖w‖², new small lemma) + ‖exp w − 1‖ = ‖w‖. Also
+  yields the Lipschitz bound ‖y^t − 1‖ = ‖t‖·‖y − 1‖ (p odd) powering the
+  continuity of s ↦ zetaPBranch (Thm (i)).
+- The mass computation: the c₀-design VERBATIM (T615-pattern):
+  ρ_a := baseChange of the §4 numerator measure (zetaNum p a is already
+  x⁻¹·Res(μ_a) on units!), ψρ_a = 0, ∂𝓐ρ_a = (1−φψ)F_a-series, the
+  antiderivative/ker-∂ pin, ξ-point evaluation via sum_seriesEval_mahlerK.
+- F̃_a explicit: F̃_a = [−extLog(a) + log(1+T·h)-series] + (a−1)•formalLog
+  with the §4 PropFaT-style h-series; a := the ℕ-generator
+  (exists_nat_topological_generator) so all binomials are integral.
+- ξ-field: the machinery needs μ_p ⊂ K; final statements are ℚ_p-level —
+  compute in K and descend by injectivity. K := ℂ_[p] (mathlib
+  `PadicComplex`: NormedField/IsUltrametricDist/CharZero instances exist;
+  CompleteSpace from completion; NormedAlgebra ℚ_[p] — verify at
+  execution; primitive p-th root from PadicAlgCl mapped in). SURVEY-GATED
+  leaf; fallback: SplittingField + spectralNorm instances.
+
+## New file: PadicLFunctions/ResidueZeta.lean (imports Branches +
+ValuesAtOne); generic exp-facts may migrate to PadicExp.lean at a later
+cleanup (placement note).
+
+## Open risks
+- ℂ_[p]-instance pack completeness (NormedAlgebra ℚ_[p] ℂ_[p] +
+  CompleteSpace + the root) — survey-gated T707a.
+- The §4 PadicMeasure-units ↔ MeasureR-K bridge for zetaNum (baseChange is
+  on ℤ_p-measures; compose with the Measure-level iota).
+- {ξ^a} = μ_p needs gcd(a,p) = 1 — the §4 generator a is coprime to p
+  (topological generator of ℤ_p^× reduces to a generator mod p; extract
+  from the T037 machinery).
