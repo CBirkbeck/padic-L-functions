@@ -5009,7 +5009,7 @@ series + thm:coleman map 2)
   Theorem.lean (1158-line) split candidate defer to CLEANUP-FINAL.
 
 ### [D611] χ-twisted moments of ζ_p (GATED: D61 1i review)
-- **Status**: done (2026-06-13, DEGRADED MODE project sweep: full lake build green, ZERO warnings project-wide, ZERO sorries project-wide, axioms standard on all §11 decls (per-ticket checks logged above). Ordering note: ran after T1113's join due to parallel dispatch (the milestone agent was already in flight when the gate came due); the sweep covers the milestone's output. All golf/dedupe scope folded into CLEANUP-FINAL (lean-lsp-MCP-tooled session).) (GATED — not dispatchable until the D61 sub-board passes
+- **Status**: open (GATED — not dispatchable until the D61 sub-board passes
   its 1i review) | **File**: ValuesAtOne.lean or a new ValuesAtOneWild.lean
 - **Depends on**: none | **Type**: theorem
 - **Statement** (shape; skeleton at dispatch): witness-encoded
@@ -5420,7 +5420,7 @@ membership (its `by sorry` subterm), `projPlus_padicZeta_witness`,
 - **Sizing**: ~60 LOC.
 
 ### [CLEANUP-ALL-6] pre-milestone project sweep
-- **Status**: open | **Depends on**: T1101–T1112 + CLEANUP-111/112/113 done.
+- **Status**: done (2026-06-13, DEGRADED MODE project sweep: full lake build green, ZERO warnings project-wide, ZERO sorries project-wide, axioms standard on all §11 decls (per-ticket checks logged in T1102–T1113). Ran after T1113's join (parallel dispatch had the milestone agent in flight when the gate came due); the sweep covers the milestone output. Golf/dedupe scope folded into CLEANUP-FINAL.) | **Depends on**: T1101–T1112 + CLEANUP-111/112/113 done.
   /cleanup-all (degraded mode acceptable; record). Gate before the milestone
   ticket per the cadence rule.
 
