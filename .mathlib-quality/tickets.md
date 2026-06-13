@@ -5582,7 +5582,7 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
 
 ### [T1203] **E12.2 HARD: thm:log der (Coleman–Coates–Wiles)** (LogDerivative.lean)
-- **Status**: in_progress (2026-06-14, beastmode §12 wave 1) | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
+- **Status**: in_progress (2026-06-14; agent filled 12/15 leaves + 16 reusable helpers (both ψ-subspaces, del_phiHom, rem:ker Δ, lem:A mod p exists_normOp_fixed_lift, lem:rest zp* both halves, normOp_modEq_of_modEq, solCoeff). 3 deep leaves SPAWNED as T1203a (Jacobi/lem:log der 1), T1203b (𝔽_p construction/lem:B mod p 2), T1203c (surjectivity). Real sorry count 3 (lines 102/238/244). Degraded mode.) | **Sub-tickets**: T1203a, T1203b, T1203c | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
 - **Parallel**: yes (vs T1201 — different file, no Galois dep) | **Type**: lemmas (HARD)
 #### Statement (skeleton canonical)
 `psiIdSeries`/`psiZeroSeries` (Submodules); `del_phiHom` (Δ∘φ = p φ∘Δ);
@@ -5703,3 +5703,79 @@ PadicLFunctionsBlueprint` green; re-render via ci-pages.sh.
   (T1206) uses `coleman_to_kl` at the generator a — no a≡1 restriction needed there
   (the ([σ_a]−1)ζ_p image is over ALL a ∈ ℤ_p^×).
 - NO leaf needs the deferred Λ-module structure theorem (that is §13/IMC).
+
+### [T1203a] lem:log der 1 — Δ(𝒲) ⊆ ℤ_p⟦T⟧^{ψ=id} via the Jacobi det-formula
+- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Depends on**: T1203 (the 12 filled leaves + 16 helpers) | **Type**: lemma
+#### Statement
+`dlog_mem_psiIdSeries {f : PowerSeries ℤ_[p]} (hf : IsUnit f) (hN : normOp f = f) :
+dlog p f ∈ psiIdSeries p` (LogDerivative.lean:102).
+#### Proof sketch
+RJW's μ_p-product route `φ(f) = ∏_{η∈μ_p} f((1+T)η−1)` is NOT a formal power-series
+identity (substrate replan R10.4 — the substitution has non-nilpotent constant term).
+The FORMAL substitute (the T1203 agent's characterisation): `normOp f = det (digitMatrix f)`
+(`normOp_eq_det`, NormOperator.lean), so `Δ(normOp f) = Δ(det M) = tr(adjugate(M)·ΔM)/det`
+— Jacobi's log-derivative-of-determinant formula. Steps:
+1. Jacobi: for `M : Matrix (Fin p) (Fin p) (PowerSeries ℤ_[p])` with `IsUnit (det M)`,
+   `Δ(det M) = det M · tr(M⁻¹ · M.map Δ)` (= `tr(adjugate M · M.map Δ)` since
+   `M⁻¹ = (det M)⁻¹ • adjugate M`). Build from `Matrix.det` Leibniz expansion +
+   `derivativeFun` product rule, OR find `Matrix.derivative_det`-style in mathlib
+   (search `Matrix.det` derivative; likely ABSENT → this is the ~100-line sub-development).
+2. `dlog f = Δ f / f`; with `f = normOp f = det M`, `dlog f = Δ(det M)/det M =
+   tr(M⁻¹ · ΔM)`.
+3. Link `tr = p·ψ`: `trace_digitMatrix : tr (digitMatrix h) = p · ψ(h)` (NormOperator,
+   RJW TeX 2670) — generalise to `tr(M⁻¹·ΔM)` form to show `ψ(dlog f) = dlog f`.
+   Concretely `(φ∘Δ)(f) = (φ∘ψ)(Δf)` ⟹ `ψ(Δf) = Δf` by `phiHom` injectivity (the
+   T1203 agent has `del_phiHom`).
+- **Mathlib lemmas**: `Matrix.det`, `Matrix.trace`, `Matrix.adjugate`,
+  `Matrix.mul_adjugate`, `Ring.inverse`; `PowerSeries.derivativeFun` product rule.
+  Project: `normOp_eq_det`, `digitMatrix`, `trace_digitMatrix`, `del_phiHom`,
+  `phiHom` injective.
+- **Sources**: RJW lem:log der 1 (TeX 3292–3306), the Jacobi-formula realisation.
+- **Sizing**: ~120–150 LOC (the Jacobi det-derivative is the bulk; may spawn a
+  `Matrix.derivative_det` sub-lemma).
+
+### [T1203b] lem:B mod p 2 — the 𝔽_p⟦T⟧ construction ("most delicate and technical part")
+- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Depends on**: T1203 | **Type**: lemma (the section's hardest leaf)
+#### Statement (RESTATE to the faithful source form — statement-fix authorised, docstring note)
+Faithful: `𝔽_p⟦T⟧ = Δ(𝔽_p⟦T⟧^×) + (T+1)/T · C` where `C = {Σ_{n≥1} a_n T^{pn}}`. The
+skeleton's `fp_series_eq_dlog_add_frobC` (LogDerivative.lean:238) is a vacuous
+placeholder — replace with: `∀ g : PowerSeries (ZMod p), ∃ (u : PowerSeries (ZMod p))
+(c ∈ ((T+1)/T)·C-submodule), IsUnit u ∧ g = dlogFp u + c` (define the `Δ` over `ZMod p`
+and the `C`-submodule explicitly).
+#### Proof sketch (RJW TeX 3366–3373)
+1. Define `Δ_{𝔽_p}` (= `(1+T)·D·inverse`) over `ZMod p` and the submodule `(T+1)/T·C`.
+2. Write `(T/(T+1))·g = Σ a_n T^n`; set `h = Σ_{(m,p)=1} a_m Σ_{k≥0} T^{m p^k}`.
+3. Inductively choose `α_i ∈ 𝔽_p` so `h_m := (T+1)/T·h − Σ_{i<m} Δ(1−α_iT^i) ∈ T^{m−1}𝔽_p⟦T⟧`,
+   using `Δ(1−α_iT^i) = −(T+1)/T Σ_k i α_i^k T^{ik}`, the invariant `d_n = d_{np}`, and
+   `α_m = −d_m/m` (m prime to p ⟹ invertible in 𝔽_p).
+4. `g_∞ = ∏_{n≥1}(1−α_nT^n)` converges in `𝔽_p⟦T⟧` (the `(1−α_nT^n)` factors → 1 in the
+   T-adic topology); `Δ(g_∞) = (T+1)/T·h`; `(T/(T+1))·g − h ∈ C` closes it.
+- **Mathlib lemmas**: `PowerSeries` T-adic completeness over `ZMod p`; `Finset.prod`
+  convergence; `ZMod p` field inverse. Likely several `coeff`-level sub-lemmas
+  (the `d_n=d_{np}` invariant, the `∏` convergence) → spawn as needed.
+- **Sources**: RJW lem:B mod p 2 (TeX 3359–3373), the delicate induction.
+- **Sizing**: ~200–250 LOC; the deepest leaf. Spawn sub-lemmas freely (the α-induction,
+  the d_n=d_{np} invariant, the ∏-convergence).
+
+### [T1203c] thm:log der — surjectivity of Δ onto ℤ_p⟦T⟧^{ψ=id}
+- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Depends on**: T1203a, T1203b | **Type**: theorem
+#### Statement
+`dlog_surjective_onto_psiId {F : PowerSeries ℤ_[p]} (hF : F ∈ psiIdSeries p) :
+∃ g, IsUnit g ∧ normOp g = g ∧ dlog p g = F` (LogDerivative.lean:244).
+#### Proof sketch (RJW TeX 3308–3333 + 3375–3379)
+1. lem:log der red mod p: A = B (reductions mod p) ⟹ surjective, via successive
+   approximation: build `g_i ∈ 𝒲`, `f_i ∈ ℤ_p⟦T⟧^{ψ=id}` with `Δ(g_i) − f_{i−1} = p f_i`;
+   `h_n = ∏_{k=1}^n g_k^{(−1)^{k−1} p^{k−1}} ∈ 𝒲`, `Δ(h_n) = f_0 + (−1)^{n−1} p^n f_n`;
+   compactness limit `h ∈ 𝒲` with `Δ h = f_0` (the §10 ℤ_p⟦T⟧^× compactness + the
+   T1203-agent's `modEqPow_of_tendsto`/`eq_of_forall_modEqPow` Hausdorff helpers).
+2. A = B: `A = Δ(𝒲) mod p = Δ(𝔽_p⟦T⟧^×)` (lem:A mod p `exists_normOp_fixed_lift` +
+   lem:log der 1 T1203a) and `B = ℤ_p⟦T⟧^{ψ=id} mod p = Δ(𝔽_p⟦T⟧^×)` (lem:B mod p,
+   from T1203b + the ψ-action calc TeX 3352–3356). So A = B.
+- **Mathlib/project**: §10 compactness (CompactSpace/SeqCompactSpace ℤ_p⟦T⟧^×),
+  T1203a, T1203b, the T1203-agent helpers (`normOp_modEq_of_modEq`, `solCoeff`,
+  `modEqPow_of_tendsto`, `eq_of_forall_modEqPow`).
+- **Sources**: RJW lem:log der red mod p + lem:B mod p + thm:log der proof.
+- **Sizing**: ~150 LOC (the successive-approximation + the A=B assembly).
