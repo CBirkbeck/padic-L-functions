@@ -44,6 +44,12 @@ import PadicLFunctions.Iwasawa.PlusPart
 import PadicLFunctions.Iwasawa.ZetaGalois
 import PadicLFunctions.Iwasawa.LocalUnits
 import PadicLFunctions.Iwasawa.CyclotomicUnits
+import PadicLFunctions.IwasawaProof.GaloisAction
+import PadicLFunctions.IwasawaProof.LogDerivative
+import PadicLFunctions.IwasawaProof.Equivariance
+import PadicLFunctions.IwasawaProof.FundamentalSequence
+import PadicLFunctions.IwasawaProof.Generators
+import PadicLFunctions.IwasawaProof.Main
 
 /-!
 # p-adic L-functions

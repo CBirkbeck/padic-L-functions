@@ -695,3 +695,141 @@ handoff**: a topological generator is never ≡ 1 mod p (p > 3), so the
 coleman_to_kl generator's tower is NOT itself in 𝒞_{∞,1}; §12's
 lem:closure / fundamental-exact-sequence layer performs the principal-
 unit normalisation — thread this through the §12 /develop pass.
+
+# §12 pre-plan addendum (2026-06-13, /develop pass) — the proof of Iwasawa's theorem
+
+## Section map (read in full this session: TeX 3113–3616)
+§12 "Proof of Iwasawa's theorem" (`sec:proof Iwasawa`) proves thm:iwasawa
+(stated, unwired, in §11). Five subsections:
+- **12.1 Equivariance of the Coleman map** (3117–3249): equip 𝒰_{∞,1} with
+  a Λ(𝒢)-module structure (compatible ℤ_p- and 𝒢-actions) and show Col is
+  Λ(𝒢)-equivariant. ℤ_p-action: Col restricts ℤ_p-equivariantly to 𝒰_{∞,1}
+  (key: a₀(u) ≡ 1 mod p ⟹ f_u−1 ∈ (p,T) ⟹ f_u^a converges = f_{u^a};
+  ∂log(f_u^a) = a·∂log f_u). 𝒰_∞ = μ_{p−1} × 𝒰_{∞,1} (split SES from
+  reduction mod 𝔭_n); μ_{p−1} killed by Col (constants killed by ∂log).
+  𝒢-action: σ_a(f)(T) = f((1+T)^a−1); Col 𝒢-equivariant (map-by-map:
+  ∂log(σ_a f)=a·σ_a ∂log f; ∂⁻¹∘σ_a = a⁻¹ σ_a∘∂⁻¹). cor:G-eq.
+- **12.2 The fundamental exact sequence** (3261–3441): thm:log der (the CCW
+  short exact sequence 0→μ_{p−1}→(ℤ_p⟦T⟧^×)^{𝒩=id} →[Δ] ℤ_p⟦T⟧^{ψ=id}→0)
+  + lem:rest zp* (0→ℤ_p→ℤ_p⟦T⟧^{ψ=id} →[1−φ] ℤ_p⟦T⟧^{ψ=0}→ℤ_p→0) +
+  def:Zp(1) + thm:fund exact seq (0→μ_{p−1}×ℤ_p(1)→𝒰_∞ →[Col] Λ(𝒢)→ℤ_p(1)→0,
+  restricting to 0→ℤ_p(1)→𝒰_{∞,1}→Λ(𝒢)→ℤ_p(1)→0 as Λ(𝒢)-modules).
+- **12.3 Generators for global cyclotomic units** (3450–3492): γ_{n,a} =
+  ξ^{(1−a)/2}c_n(a) ∈ 𝒟_n^+; lem:cyc units gen (𝒟_n^+ gen by −1 and the
+  γ_{n,a}; 𝒟_n gen by ξ and 𝒟_n^+); cor:cyc units gen 2 (if a generates
+  (ℤ/p^n)^× then γ_{n,a} generates 𝒟_n^+ as a ℤ[𝒢_n^+]-module).
+- **12.4 Generators for local cyclotomic units** (3495–3578): lem:closure
+  (p-adic closure of ⟨g_i⟩_ℤ = ℤ_p-span, for g_i ∈ 𝒰_{n,1}); lem:global
+  generators 2 (wγ_{n,a} ∈ 𝒰_{n,1}, (wγ_{n,a})^{p−1} generates (p−1)𝒟_n^+);
+  LemmaGeneratorCinfty1 (𝒞_{n,1}^+ cyclic ℤ_p[𝒢_n^+]-mod gen by wγ_{n,a};
+  𝒞_{∞,1}^+ cyclic Λ(𝒢^+)-mod gen by (wγ_{n,a})_n).
+- **12.5 End of the proof** (3582–3608): thm:iwasawa 2 — (i) SES
+  0→𝒰_{∞,1}/𝒞_{∞,1}→Λ(𝒢)/I(𝒢)ζ_p→ℤ_p(1)→0; (ii) iso
+  𝒰_{∞,1}^+/𝒞_{∞,1}^+ ≅ Λ(𝒢^+)/I(𝒢^+)ζ_p (the (i)-cokernel ℤ_p(1) dies on
+  the +-part since c acts by −1 and p is odd).
+
+## Substrate (survey 2026-06-13) — §12 rests on §3–§11
+PRESENT and load-bearing: φ/ψ on measures AND series (`phiHom`, `phiSeries`,
+`psiSeries_phi_padicInt` = ψφ=id, `psi`/`phi`/`res_units_eq` = 1−φψ on
+measures); `del` = ∂, `dlog`, `dlog_geomSum`; `normOp` 𝒩 + `ModEqPow` +
+`phi_injective_mod` + `digitBasis` + ℤ_p⟦T⟧^× compactness; `colemanSeries`/
+`coleman_existsUnique`/`Col`/`Col_cyclo`/`coleman_to_kl`; `NormCompatUnits` +
+`levelNorm` + `zpPow` + `localUnitsOneModule` (the ℤ_p-action on 𝒰_{n,1}!) +
+`unitsTower1`/`cycloTower1`/`cycloUnits`/`globalUnits`/`cyclo`; the §11
+Λ(𝒢)/Λ(𝒢⁺) layer (`cAct`/`plusPart`/`minusPart`/`GPlus`/`projPlus`/`plusEquiv`/
+`isCompl_plusPart_minusPart`/`padicZetaPlus`/`zetaIdeal`/`zetaIdealPlus`); the
+Mahler ring-iso `mahlerRingEquiv`.
+
+## The two large NEW sub-developments (the critical path)
+1. **The Galois action on the tower (E12.1) — ABSENT, the linchpin.** Every
+   Λ(𝒢)-equivariance statement rests on a 𝒢-action on 𝒰_∞ by σ_a(ξ_n) =
+   ξ_n^{a mod p^n}. mathlib supplies the ABSTRACT iso
+   `IsCyclotomicExtension.autEquivPow : (K_n ≃ₐ[ℚ_p] K_n) ≃* (ZMod (p^n))ˣ`
+   and `IsPrimitiveRoot.autToPow`/`modularCyclotomicCharacter` (σ ↦ the a with
+   σζ = ζ^a) — and Tower.lean ALREADY has `isCyclotomicExtension_K`
+   ({p^n} ℚ_[p] (K p n)), so `autEquivPow` is available per level. The NEW work
+   is realising the action ON OUR CONCRETE ℂ_p-TOWER, compatibly: (a) for
+   a : ℤ_[p]ˣ and n, the automorphism τ_{a,n} := (autEquivPow …).symm
+   (unitsToZModPow a) of K_n; (b) tower-compatibility τ_{a,n+1}|_{K_n} = τ_{a,n}
+   (so they assemble to an action on 𝒰_∞ = NormCompatUnits); (c) commutation
+   with levelNorm (Galois-equivariance of the field norm — mathlib
+   `Algebra.norm_eq…`/conjugation invariance); (d) σ_a(ξ_n) = ξ_n^{a_n} (the
+   autToPow_spec). The action on power series σ_a(f) = f((1+T)^a−1) and the
+   compatibility f_{σ_a u} = σ_a f_u (interpolation + uniqueness) close the
+   equivariance of the first Coleman-map factor. SIZING: this is its own
+   cluster, ~6–9 leaves, the gating sub-project (a 1–2 page argument in the
+   source spread over 3184–3243 but heavy in our concrete model). Generality
+   note: the action is most naturally `MulDistribMulAction (𝒢_n) (𝒰_n)` /
+   a `ℤ_[p]ˣ`-action on NormCompatUnits; design at decompose time.
+2. **thm:log der — the CCW surjectivity (E12.2) — ABSENT, the hard theorem.**
+   0→μ_{p−1}→𝒲 →[Δ] ℤ_p⟦T⟧^{ψ=id}→0 with 𝒲 = (ℤ_p⟦T⟧^×)^{𝒩=id}. The
+   authors call lem:B mod p 2 "the most delicate and technical part". Sub-leaves
+   (source 3292–3379): lem:log der 1 (Δ𝒲 ⊆ ℤ_p⟦T⟧^{ψ=id}, via Δ∘φ = p·φ∘Δ
+   — a NEW power-series identity — + φ∘𝒩 = ∏_{η∈μ_p} f((1+T)η−1) which is the
+   §10 deferred Eqphipsi at the SERIES level, μ_p ⊂ ℂ_p); lem:log der red mod p
+   (A=B ⟹ surjective, p-adic successive approximation + ℤ_p⟦T⟧^× compactness —
+   the §10 compactness pays again); lem:A mod p (𝒲 mod p = 𝔽_p⟦T⟧^×, via
+   `normOp` mod-p^k continuity (ii)(iv)); lem:B mod p + lem:B mod p 2 (the
+   explicit 𝔽_p⟦T⟧ construction: induction building α_i ∈ 𝔽_p with
+   h_m = (T+1)/T·h − Σ Δ(1−α_iT^i) ∈ T^{m−1}𝔽_p⟦T⟧, using d_n = d_{np} and
+   ψ-fixing of (T+1)/T). SIZING: ~7–10 leaves, several hundred LOC, the
+   hardest mathematics in Part II. The ψ=id/ψ=0 SERIES subspaces (only measure-
+   level so far) must be introduced; the §10 deferred series-φ∘ψ / Eqphipsi
+   comes fully due here.
+
+## Other new pieces (medium/small)
+- ℤ_p(1) = projlim μ_{p^n} (def:Zp(1)): ABSENT in mathlib — construct as a
+  ℤ_p-module with 𝒢-action via χ. In our model it is `{(ξ_n^a)_n : a ∈ ℤ_p}`
+  ⊂ 𝒰_∞ (the image identified in thm:fund exact seq's kernel computation).
+- 𝒰_∞ = μ_{p−1} × 𝒰_{∞,1} (Teichmüller split): ABSENT in mathlib; the
+  reduction-mod-𝔭_n SES `1→𝒰_{n,1}→𝒰_n→μ_{p−1}→1` splits (Teichmüller).
+  We have `localUnitsOne` and the residue machinery; the split is new.
+- lem:rest zp*: 0→ℤ_p→ℤ_p⟦T⟧^{ψ=id}→[1−φ] ℤ_p⟦T⟧^{ψ=0}→ℤ_p→0 — a series-level
+  exactness (Σφ^n convergence + ker(1−φ) = constants), small once the series
+  ψ-subspaces exist.
+- Global generators (12.3): γ_{n,a}, half-power ξ^{(1−a)/2} via (2:ZMod p^n)⁻¹
+  (p odd); cyclicity over ℤ[𝒢_n^+] needs the 𝒢_n^+-action (E12.1's finite
+  level). lem:closure (12.4): p-adic closure = ℤ_p-span (compactness of ℤ_p^r +
+  the zpPow binomial convergence — `zpPow` reused). LemmaGeneratorCinfty1.
+
+## Scope decision (per-section discipline + honesty)
+§12 is the LARGEST and DEEPEST section. The board is STAGED into clusters with
+the two critical-path sub-developments (E12.1 Galois action, E12.2 thm:log der)
+first, since everything downstream needs them. The final assembly (thm:iwasawa 2)
+is the milestone. Two honest risk flags carried into the board:
+- E12.1 requires realising mathlib's abstract `autEquivPow` on our concrete
+  fixed-ξ ℂ_p-tower with tower-compatibility + levelNorm-commutation. If the
+  compatibility proves to need the global number-field reduction (survey
+  caveat), that becomes a sub-cluster — the board notes it.
+- E12.2's lem:B mod p 2 is research-grade; it gets its own sub-leaves and is the
+  expected Tier-A spawn point during execution.
+The §11 statement-fix (a ≡ 1 mod p for principal-unit membership; b2-logged at
+T1113) comes due here: thm:iwasawa 2's image computation uses
+`coleman_to_kl` at the generator a, and the wγ_{n,a} correction (LemmaGenerator-
+Cinfty1, the Teichmüller twist w making wγ_{n,a} ≡ 1 mod 𝔭_n) is EXACTLY the
+principal-unit normalisation the §11 note flagged — §12.4 resolves it natively.
+
+## Files (new directory PadicLFunctions/IwasawaProof/)
+- `IwasawaProof/GaloisAction.lean` — E12.1: τ_{a,n} on K_n, tower-compat,
+  levelNorm-commutation, the 𝒢-action on NormCompatUnits, σ_a on power series,
+  f_{σ_a u} = σ_a f_u, Col 𝒢-equivariance.
+- `IwasawaProof/Equivariance.lean` — 12.1: ℤ_p-equivariance of Col on 𝒰_{∞,1},
+  μ_{p−1} × 𝒰_{∞,1} split, μ_{p−1} killed, the Λ(𝒢)-module structure + cor:G-eq.
+- `IwasawaProof/LogDerivative.lean` — E12.2: thm:log der + all its lemmas; the
+  series ψ=id/ψ=0 subspaces; Δ∘φ = p φ∘Δ; the 𝔽_p⟦T⟧ construction.
+- `IwasawaProof/FundamentalSequence.lean` — 12.2 tail: lem:rest zp*, ℤ_p(1),
+  thm:fund exact seq.
+- `IwasawaProof/Generators.lean` — 12.3 + 12.4: γ_{n,a}, the generator lemmas,
+  lem:closure, LemmaGeneratorCinfty1.
+- `IwasawaProof/Main.lean` — 12.5: thm:iwasawa 2 (the MILESTONE), and wiring
+  thm:iwasawa (§11's unwired node) to it.
+
+## Deferred (§12 update)
+- Full Λ(ℤ_p⟦T⟧)-module structure theorem (pseudo-isomorphism, characteristic
+  ideals): mathlib has Weierstrass preparation only — NOT needed for thm:iwasawa
+  2 (an isomorphism statement, not a structure-theorem application); it is §13
+  (IMC) material. Stays deferred.
+- The global Krull 𝒢 = Gal(F_∞/ℚ) ≅ ℤ_p^×: still the identified side
+  (replan R11.1 continues); §12's "𝒢" is ℤ_[p]ˣ with c = −1, and the LOCAL
+  finite Gal(K_n/ℚ_p) ≅ (ℤ/p^n)^× is realised concretely (E12.1) only as far
+  as the action on the tower needs — no abstract global Galois group is built.

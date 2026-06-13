@@ -8,8 +8,8 @@ Skeleton: all statements already exist as `:= by sorry` in `PadicLFunctions/Meas
 but the skeleton is canonical. `lake build` green at board creation.
 
 ## Summary
-- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808), §§9–10 (T901–T912 + T903b/T904b), **§11 (T1101–T1114 + CLEANUP-111…114 + CLEANUP-ALL-6)** + cleanups
-- Open: 1 blocked (CLEANUP-FINAL — needs a lean-lsp-MCP-tooled session; scope grew with §11 fold-ins) + 3 gated (D611–D613 — await the D61 sub-board 1i review) | everything else done — **§§3–11 ALL PROOF TICKETS DISCHARGED, project sorry-free, axioms standard (2026-06-13; §11 milestone `cyclo_mem_cycloTower1` + corollary `isPlusPseudoMeasure_padicZetaPlus`; T1113 statement-fix b2-logged (a ≡ 1 mod p); blueprint IwasawaZeros wired)**
+- Boards: §3 (T001–T029), §4 (T03x–T1xx), §5 (T5xx), §6 (T601–T618), §7 (T701–T708), §8 (T801–T808), §§9–10 (T901–T912 + T903b/T904b), §11 (T1101–T1114), **§12 (T1201–T1207 + CLEANUP-121…124 + CLEANUP-ALL-7)** + cleanups
+- Open: **the §12 board (T1201–T1207; skeleton landed 2026-06-14 — 6 files under PadicLFunctions/IwasawaProof/, full build green, 37 sorries confined there, no lint warnings — awaiting 1i approval → /beastmode)** + 1 blocked (CLEANUP-FINAL — lean-lsp-MCP session) + 3 gated (D611–D613 — D61 1i review) | §§3–11 ALL PROOF TICKETS DISCHARGED, project compiles, §§3–11 declarations sorry-free + axioms standard (the only sorries are the §12 skeleton's). §11 milestone `cyclo_mem_cycloTower1`; T1113 statement-fix b2-logged
 - Parallel capacity: ~3 workers (per-file chains are sequential; Basic / Toolbox-tail /
   UnitsZp / Fubini chains can overlap once their deps are done)
 - Standing conventions: `μ ν : PadicMeasure p _`; "𝓐" = `mahlerTransform`;
@@ -5505,3 +5505,201 @@ intro. `lake build PadicLFunctionsBlueprint` green; re-render via
   load-bearing data/prop mixes: T1102/T1109/T1110 must replace them with real
   constructions FIRST in their lanes (nothing else may prove THROUGH a sorried
   instance; the axiom check catches leakage via `sorryAx`).
+
+---
+
+# §12 board — Proof of Iwasawa's theorem (TeX 3113–3616)
+
+Decomposition: `.mathlib-quality/decomposition.md` R12 (quotes Q1–Q15, clusters
+E12.1–E12.5). Plan: `plan.md` §12 addendum. Skeleton (canonical): six files under
+`PadicLFunctions/IwasawaProof/` — `lake build PadicLFunctions` GREEN at board creation
+(2026-06-14), 37 sorries confined to the new files, no lint warnings. §12 is the
+LARGEST/DEEPEST section; the board stages the two critical-path sub-developments
+(E12.1 Galois action, E12.2 thm:log der) FIRST. p odd (hp2) throughout. The §11
+b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller correction w).
+
+### [T1201] **E12.1 LINCHPIN: the Galois action on the tower** (GaloisAction.lean)
+- **Status**: open | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
+- **Parallel**: yes (vs T1203 — different file) | **Type**: defs + lemmas
+#### Statement (skeleton canonical)
+`galAut (a : ℤ_[p]ˣ) (n) : K p n ≃ₐ[ℚ_[p]] K p n`; `galAut_zetaSys` (σ_a ξ_n = ξ_n^{a_n});
+`galAut_compat` (tower restriction); `levelNorm_galAut` (norm-equivariance); `galNCU`
+(action on NormCompatUnits); `galSeries` (f ↦ f((1+T)^a−1)); `colemanSeries_galNCU`
+(f_{σ_a u} = σ_a f_u); `Col_galNCU` (Col 𝒢-equivariant).
+#### Proof sketch (decomposition E12.1, source TeX 3182–3236)
+1. FIRST STEP: make Tower's `isCyclotomicExtension_K` PUBLIC (currently `private`) — or
+   re-derive locally. Then `galAut p a n := (IsCyclotomicExtension.autEquivPow (K p n)
+   (cyclotomic_irreducible_Qp hn)).symm (PadicMeasure.unitsToZModPow p n a)`.
+2. `galAut_zetaSys`: `IsPrimitiveRoot.autToPow_spec` + `autEquivPow_symm_apply`.
+3. `galAut_compat`: two autos of K_{n+1} agreeing on ξ_{n+1}↦its char-power and fixing
+   K_n; uniqueness via `IsPrimitiveRoot.autToPow_injective` + the tower
+   `unitsToZModPow_le` compatibility (mod-p^n reduction of a).
+4. `levelNorm_galAut`: `Algebra.norm` is invariant under the Galois action of the bigger
+   field that commutes — concretely, σ_a permutes the K_n-conjugates of x, and
+   `Algebra.norm` is the product over conjugates (`Algebra.norm_eq_prod_embeddings` /
+   conjugation-invariance); careful with the `extendScalars` framing of `levelNorm`.
+5. `galNCU p a u`: elems n := the unit `galAut p a n (u.elems n)`; mem/inv_mem since
+   galAut is a ring auto preserving O_n (it's an isometry of K_n — Galois autos of local
+   fields are isometric); compat by (4).
+6. `galSeries p a f := f.subst ((1+X)^? − 1)` — for a : ℤ_[p]ˣ the exponent is the zpPow
+   binomial `(1+T)^a` (HasSubst since const term 0); for a ∈ ℕ-image, `PowerSeries.subst`.
+7. `colemanSeries_galNCU`: (σ_a f_u)(π_n) = f_u((1+π_n)^a−1) = f_u(ξ_n^a−1) =
+   σ_a(f_u(ξ_n−1)) = σ_a(u_n) = (galNCU a u)_n (TeX 3210–3216); then coleman_existsUnique
+   uniqueness (σ_a f_u is a unit, 𝒩-fixed since 𝒩 commutes with σ_a, interpolates).
+8. `Col_galNCU`: map-by-map (TeX 3217–3234) — ∂log(σ_a f)=a σ_a ∂log f, ∂⁻¹∘σ_a =
+   a⁻¹σ_a∘∂⁻¹, restriction 𝒢-equivariant. FINALISE the σ_a-on-measures RHS form (the
+   skeleton's `unitsCmul p 1` is a placeholder — replace with the genuine σ_a pushforward
+   = `pushforward` along `u ↦ a*u` on ℤ_[p]ˣ).
+- **Mathlib**: `IsCyclotomicExtension.autEquivPow` (Cyclotomic/Gal.lean:77),
+  `IsPrimitiveRoot.autToPow`/`_spec`/`_injective` (RootsOfUnity/PrimitiveRoots.lean:781),
+  `Algebra.norm_eq_prod_embeddings`. Project: `cyclotomic_irreducible_Qp`,
+  `isCyclotomicExtension_K` (Tower, make public), `zpPow` (LocalUnits),
+  `coleman_existsUnique` (Theorem).
+- **Sources**: Q4, Q5 (TeX 3182–3236).
+- **Sizing**: ~250 LOC. RISK: survey caveat (local-field autEquivPow) — mitigated since
+  `isCyclotomicExtension_K` is already proven over ℚ_[p]; if (4) norm-equivariance
+  resists, spawn a Tier-A sub-ticket for the conjugation-invariance of `levelNorm`.
+
+### [T1202] E12.1 tail: ℤ_p-equivariance, Teichmüller split, cor:G-eq (Equivariance.lean)
+- **Status**: open | **File**: IwasawaProof/Equivariance.lean | **Depends on**: T1201
+- **Parallel**: no (needs T1201) | **Type**: lemmas
+#### Statement
+`normCompat_eq_teichmuller_mul_principal` (𝒰_∞ = μ_{p−1} × 𝒰_{∞,1}); `Col_eq_zero_of_torsion`
+(μ_{p−1} killed); `Col_lambdaG_equivariant` (cor:G-eq — already proven via Col_galNCU).
+#### Proof sketch (source TeX 3137–3243)
+1. Teichmüller split: the reduction `𝒰_n → μ_{p−1}` (via the residue field 𝔽_p^×-lift /
+   the §5 Teichmüller `teichmullerZMod`) splits `1→𝒰_{n,1}→𝒰_n→μ_{p−1}→1`; inverse limit.
+   ℤ_p-equivariance of Col on 𝒰_{∞,1}: a₀(f_u) ≡ 1 mod p (f_u(π_n) ≡ 1 mod 𝔭_n + a₀∈ℤ_p)
+   ⟹ f_u−1 ∈ (p,T) ⟹ f_u^a converges = f_{u^a} (coleman_existsUnique) ⟹ ∂log equivariant.
+2. μ_{p−1} killed: f_v = constant v ⟹ ∂log f_v = 0 ⟹ Col v = 0 (rem:ker Δ: 𝒩-fixed
+   constant ⟹ v^p = v).
+3. cor:G-eq: Col_galNCU (T1201) packages the Λ(𝒢)-equivariance.
+- **Mathlib**: reduction-mod-𝔭 / Teichmüller (§5 `teichmullerZMod` port if needed).
+- **Sources**: Q1, Q2, Q3, Q5 (TeX 3130–3243).
+- **Sizing**: ~140 LOC.
+
+### [CLEANUP-121] /cleanup GaloisAction.lean + Equivariance.lean
+- **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
+
+### [T1203] **E12.2 HARD: thm:log der (Coleman–Coates–Wiles)** (LogDerivative.lean)
+- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
+- **Parallel**: yes (vs T1201 — different file, no Galois dep) | **Type**: lemmas (HARD)
+#### Statement (skeleton canonical)
+`psiIdSeries`/`psiZeroSeries` (Submodules); `del_phiHom` (Δ∘φ = p φ∘Δ);
+`dlog_mem_psiIdSeries` (lem:log der 1); `exists_normOp_fixed_lift` (lem:A mod p);
+`fp_series_eq_dlog_add_frobC` (lem:B mod p 2 — THE HARD ONE); `dlog_surjective_onto_psiId`
+(thm:log der surjectivity); `dlog_eq_zero_normOp_fixed` (rem:ker Δ); `one_sub_phi_*`
+(lem:rest zp* halves).
+#### Proof sketch (source TeX 3264–3403; the hardest mathematics in Part II)
+1. ψ-subspaces: Submodule fields via `psiSeries` additivity/C-linearity (NormOperator).
+2. `del_phiHom`: direct coeff computation (φ = subst (1+T)^p−1; del = (1+X)·deriv).
+3. `dlog_mem_psiIdSeries` (lem:log der 1): φ𝒩=∏_{η∈μ_p}f((1+T)η−1) (the §10-DEFERRED
+   series Eqphipsi over ℂ_[p][μ_p] — SPAWN sub-ticket: product collapse ∏(Xη−1)=X^p−1) +
+   del_phiHom + φ injective (phiHom injective — coeff-degree).
+4. `exists_normOp_fixed_lift` (lem:A mod p): 𝒩^k(f̃₀) converges (normOp mod-p^k continuity
+   (ii) `normOp_modEq_self` + (iv) iterate — PARTLY ABSENT, SPAWN sub-tickets for (ii)/(iv)).
+5. `fp_series_eq_dlog_add_frobC` (lem:B mod p 2): the explicit 𝔽_p⟦T⟧ induction (TeX
+   3366–3373) — EXPECTED TIER-A SPAWN: build h, choose α_i = −d_i/i inductively,
+   h_m ∈ T^{m−1}𝔽_p⟦T⟧, g = ∏(1−α_nT^n), Δg = (T+1)/T·h; uses d_n=d_{np}, ψ-fixes (T+1)/T.
+6. `dlog_surjective_onto_psiId` (thm:log der): lem:log der red mod p (A=B ⟹ onto via
+   successive approx h_n = ∏ g_k^{(−1)^{k−1}p^{k−1}} + ℤ_p⟦T⟧^× compactness from §10) +
+   lem:A mod p + lem:B mod p (from lem:B mod p 2 + ψ-action calc).
+7. `dlog_eq_zero_normOp_fixed` (rem:ker Δ): ∂log g=0 ⟹ g constant; 𝒩-fixed ⟹ g^p=g.
+8. lem:rest zp*: Σφ^n convergence + ker(1−φ)=constants + ψ(1+T)=0 + eval-at-0 onto.
+- **Mathlib**: `RootsOfUnity` ∏(Xη−1)=X^p−1; `phiHom` injective. Project: `psiSeries`,
+  `normOp` + `ModEqPow` + `phi_injective_mod` (NormOperator), ℤ_p⟦T⟧^× compactness (§10).
+- **Sources**: Q6, Q7, Q8, Q9 (TeX 3264–3403).
+- **Sizing**: ~400–500 LOC across sub-tickets; the project's hardest. Sub-ticket spawns:
+  the series-Eqphipsi (step 3), normOp continuity (ii)/(iv) (step 4), lem:B mod p 2 (step 5).
+
+### [CLEANUP-122] /cleanup LogDerivative.lean
+- **Status**: open | **Depends on**: T1203.
+
+### [T1204] E12.3: the fundamental exact sequence (FundamentalSequence.lean)
+- **Status**: open | **File**: IwasawaProof/FundamentalSequence.lean | **Depends on**: T1202, T1203
+- **Parallel**: no | **Type**: def + theorems
+#### Statement
+`ZpOne` (ℤ_p(1) ⊂ 𝒰_∞); `mem_ker_Col_iff_mem_ZpOne` (kernel); `range_Col_eq_ker_chiMoment`
+(cokernel via the χ-moment μ ↦ μ(x)).
+#### Proof sketch (source TeX 3407–3441)
+1. `ZpOne`: a ↦ (ξ_n^a)_n via zpPow on ξ (the ker(1−φ)=constants pullback through Δ).
+2. Kernel: compose ker's of the five maps (Col iso ∘ Δ ker μ_{p−1} ∘ (1−φ) ker ℤ_p ∘
+   ∂⁻¹ iso ∘ 𝓐⁻¹ iso); the ℤ_p factor pulls back to ℤ_p(1) (TeX 3429–3431).
+3. Cokernel: the (1−φ) coker is ℤ_p (lem:rest zp*); the last map ∫χμ = μ(unitsPowCM 1).
+4. Λ(𝒢)-exactness: T1201/T1202 equivariance + ∫χ·σμ = χ(σ)∫χμ.
+- **Sources**: Q9, Q10, Q11 (TeX 3382–3441).
+- **Sizing**: ~180 LOC.
+
+### [T1205] E12.4: generators of the cyclotomic units (Generators.lean)
+- **Status**: open | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
+- **Parallel**: yes (vs T1203/T1204 — needs only T1201's finite Galois action) | **Type**: defs + lemmas
+#### Statement
+`gammaUnit` (γ_{n,a}); `gammaUnit_mem_cycloUnitsPlus`; `cycloUnitsPlus_eq_closure_gammas`
+(lem:cyc units gen (i)); `closure_zspan_eq_zpspan` (lem:closure);
+`cycloTower1Plus_cyclic_generator` (LemmaGeneratorCinfty1).
+#### Proof sketch (source TeX 3450–3578)
+1. `gammaUnit a n := zetaSys^{(1−a)/2} · cycloUnit a n`, half-power via (2:ZMod p^n)⁻¹ (p
+   odd); c-fixed (ξ^{a/2}−ξ^{−a/2} form) ⟹ ∈ 𝒟_n^+.
+2. lem:cyc units gen: valuation argument (all v_p(ξ^a−1) equal ⟹ Σe_a=0) + the
+   ξ^{bp^m}−1 = ∏(ξ^{b+jp^{n−m}}−1) reduction; cor:cyc units gen 2 finalised here via the
+   finite 𝒢_n^+-action (T1201) telescoping (the skeleton states lem:cyc units gen (i)).
+3. lem:closure: zpPow binomial convergence (g_i−1 ∈ 𝔭_n) + ℤ_p^r compactness.
+4. lem:global generators 2: γ_{n,a} ≡ a mod 𝔭_n (from f_{c(a)}(0)=a, the §11 b2 note's w
+   = Teichmüller correction making wγ ≡ 1 mod 𝔭_n); (wγ)^{p−1} generates (p−1)𝒟_n^+.
+5. LemmaGeneratorCinfty1: cyclic ℤ_p[𝒢_n^+] (p−1 invertible) → Λ(𝒢^+) in the limit.
+- **Mathlib**: `ZMod.inv`/`unitOfCoprime` (half-powers); `Nat.Coprime` mod-inverse.
+- **Sources**: Q12, Q13, Q14 (TeX 3450–3578).
+- **Sizing**: ~280 LOC.
+
+### [CLEANUP-123] /cleanup FundamentalSequence.lean + Generators.lean
+- **Status**: open | **Depends on**: T1204, T1205.
+
+### [CLEANUP-ALL-7] pre-milestone project sweep
+- **Status**: open | **Depends on**: T1201–T1205 + CLEANUP-121/122/123. /cleanup-all
+  (degraded acceptable). Gate before the milestone per the cadence rule.
+
+### [T1206] **MILESTONE: thm:iwasawa 2** (Main.lean)
+- **Status**: open | **File**: IwasawaProof/Main.lean | **Depends on**: T1204, T1205, CLEANUP-ALL-7
+- **Type**: theorems (MILESTONE)
+#### Statement
+`iwasawa_theorem` (ii): 𝒰_{∞,1}^+/𝒞_{∞,1}^+ ≅ Λ(𝒢^+)/I(𝒢^+)ζ_p (= §11's unwired
+thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p(1).
+#### Proof sketch (source TeX 3597–3608)
+1. (i): thm:fund exact seq (T1204) mod 𝒞_{∞,1}; image of 𝒞_{∞,1} under Col = I(𝒢)ζ_p by
+   `coleman_to_kl`/`Col_cyclo` (§10) at the generators (wγ_{n,a}, T1205 LemmaGenerator-
+   Cinfty1: Col((ξ^b γ_{n,a})_n) = Col(c(a)) = ([σ_a]−1)ζ_p, TeX 3602–3606).
+2. (ii): take ⟨c⟩-invariants (p odd ⟹ exact, the §11 isCompl_plusPart_minusPart); ℤ_p(1)
+   has c acting by −1 so ℤ_p(1)^{⟨c⟩}=0 ⟹ the SES (i)+ collapses to the iso.
+3. FINALISE the module-iso encoding (the skeleton's bare AddEquiv → the Λ(𝒢^+)-linear
+   form once the quotient module structures are wired).
+- **Mathlib**: `MonoidHom`/`QuotientGroup` iso API; `Additive`/module-quotient plumbing.
+- **Sources**: Q15 (TeX 3587–3608) + §10 `coleman_to_kl`, §11 `zetaIdeal(Plus)`.
+- **Sizing**: ~200 LOC.
+
+### [CLEANUP-124] /cleanup Main.lean
+- **Status**: open | **Depends on**: T1206.
+
+### [T1207] Blueprint: wire IwasawaProof + the §11 thm:iwasawa node
+- **Status**: open | **Depends on**: all §12 proof tickets
+- **File**: PadicLFunctionsBlueprint/Chapters/IwasawaProof.lean (+ IwasawaZeros.lean's
+  `iwasawa-zeros-theorem` node, currently prose)
+#### Work
+Wire the §12 nodes (equivariance, thm:log der, fund exact seq, generators) to the
+IwasawaProof decls; **wire IwasawaZeros.lean's `iwasawa-zeros-theorem` node** (the
+§11 prose placeholder) to `iwasawa_theorem` now that it's proven. `lake build
+PadicLFunctionsBlueprint` green; re-render via ci-pages.sh.
+
+## §12 dispatch notes
+- Verification bar per ticket: `lake build` green, zero sorry in the ticket's decls,
+  `#print axioms` ⊆ {propext, Classical.choice, Quot.sound}; record in Progress.
+- Parallel lanes at start: (A) T1201→T1202→CL-121 ; (B) T1203 (independent of Galois)
+  →CL-122 ; (C, after T1201) T1205. Then T1204 (needs T1202+T1203) ; CL-123 ;
+  CLEANUP-ALL-7 ; T1206 (needs T1204+T1205) ; CL-124 ; T1207.
+- Two RISK FLAGS carried from /develop: (1) E12.1's `isCyclotomicExtension_K`-public +
+  tower-compat + levelNorm-conjugation-invariance — if (4) resists, Tier-A spawn; (2)
+  E12.2's lem:B mod p 2 is the EXPECTED Tier-A spawn (the 𝔽_p⟦T⟧ induction) + the
+  §10-deferred series-Eqphipsi (step 3) + normOp continuity (ii)/(iv) (step 4) come due.
+- The §11 b2-logged a≡1-mod-p note resolves in T1205 (the Teichmüller w); thm:iwasawa 2
+  (T1206) uses `coleman_to_kl` at the generator a — no a≡1 restriction needed there
+  (the ([σ_a]−1)ζ_p image is over ALL a ∈ ℤ_p^×).
+- NO leaf needs the deferred Λ-module structure theorem (that is §13/IMC).
