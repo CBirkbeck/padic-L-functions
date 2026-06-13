@@ -5519,7 +5519,7 @@ LARGEST/DEEPEST section; the board stages the two critical-path sub-developments
 b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller correction w).
 
 ### [T1201] **E12.1 LINCHPIN: the Galois action on the tower** (GaloisAction.lean)
-- **Status**: open | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
+- **Status**: in_progress (2026-06-14, beastmode §12 wave 1) | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
 - **Parallel**: yes (vs T1203 — different file) | **Type**: defs + lemmas
 #### Statement (skeleton canonical)
 `galAut (a : ℤ_[p]ˣ) (n) : K p n ≃ₐ[ℚ_[p]] K p n`; `galAut_zetaSys` (σ_a ξ_n = ξ_n^{a_n});
@@ -5582,7 +5582,7 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
 
 ### [T1203] **E12.2 HARD: thm:log der (Coleman–Coates–Wiles)** (LogDerivative.lean)
-- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
+- **Status**: in_progress (2026-06-14, beastmode §12 wave 1) | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
 - **Parallel**: yes (vs T1201 — different file, no Galois dep) | **Type**: lemmas (HARD)
 #### Statement (skeleton canonical)
 `psiIdSeries`/`psiZeroSeries` (Submodules); `del_phiHom` (Δ∘φ = p φ∘Δ);

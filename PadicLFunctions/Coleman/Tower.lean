@@ -190,7 +190,7 @@ private theorem cyclotomic_irreducible_Zp (n : ℕ) :
 `ℤ_p`-irreducibility (`ℤ_p` is an integrally closed domain with fraction field
 `ℚ_p`). This is the key input for the degree ladder and the cyclotomic-extension
 structure of `K_n`. -/
-private theorem cyclotomic_irreducible_Qp {n : ℕ} (hn : 1 ≤ n) :
+theorem cyclotomic_irreducible_Qp {n : ℕ} (hn : 1 ≤ n) :
     Irreducible (cyclotomic (p ^ n) ℚ_[p]) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   rw [← map_cyclotomic (p ^ (m + 1)) (algebraMap ℤ_[p] ℚ_[p])]
@@ -200,7 +200,7 @@ private theorem cyclotomic_irreducible_Qp {n : ℕ} (hn : 1 ≤ n) :
 /-- `K_n = ℚ_p(ξ_{p^n})` is a cyclotomic extension of `ℚ_p`: `ξ_{p^n}` is a
 primitive `p^n`-th root of unity adjoined to `ℚ_p`. (Built from the single-element
 algebraicity of `ξ_{p^n}` since `ℂ_p` is not algebraic over `ℚ_p`.) -/
-private instance isCyclotomicExtension_K {n : ℕ} [NeZero (p ^ n)] :
+instance isCyclotomicExtension_K {n : ℕ} [NeZero (p ^ n)] :
     IsCyclotomicExtension {p ^ n} ℚ_[p] (K p n) := by
   have hζ := zetaSys_primitiveRoot p n
   have hint : IsIntegral ℚ_[p] (zetaSys p n) :=
