@@ -133,33 +133,43 @@ The cyclic-`Λ(𝒢)`-module scaffolding for RJW `LemmaGeneratorCinfty1` is buil
 * `Col_galNCU_eq_dirac_mul` — the generator-image identity `Col(σ_a u) = [a]·Col u` in
   convolution form (`Col_galNCU` + `dirac_mul_eq_pushforward`), i.e. the scalar `[σ_a]`-action
   matching `Col(λ·c) = λ·Col(c)` for the group-element scalars `λ = [σ_a]`.
-With these, the image computation reduces to TWO genuinely-deferred inputs (both needed):
-* **(I) the generator `wγ(a₀) ∈ 𝒞_{∞,1}` with `Col(wγ(a₀)) = ±zetaNum a₀`.** The cyclotomic
-  system `cyclo a₀` has `Col(cyclo a₀) = −zetaNum a₀` (`Col_cyclo`) but is *not* in `𝒞_{∞,1}`:
-  `a₀` (`exists_nat_topological_generator`, a primitive root mod `p²`) is `≢ 1 mod p`, so
-  `c_n(a₀) ≡ a₀ ≢ 1 mod 𝔭_n` is not a principal unit (`cyclo_mem_cycloTower1` needs
-  `a₀ ≡ 1 mod p`). The Teichmüller correction `wγ_{n,a₀} = w·ξ^{(1−a₀)/2}·c_n(a₀)` with
-  `w ∈ μ_{p−1}`, `a₀w ≡ 1`, fixes the residue — but assembling `(wγ_{n,a₀})_n` as a
-  `NormCompatUnits` needs the `𝒪_n`-residue Teichmüller lift `w` (the deferred
-  `normCompat_eq_teichmuller_mul_principal` blocker, `Equivariance.lean`) and the
-  norm-compatibility of the `n`-dependent half-power tower `ξ_n^{halfExp(a₀,n)}`.
-* **(II) the closure-crossing / density.** Even with the generator, both inclusions need to
-  pass from the group-element scalars `[σ_a]` (whose `ℤ_p`-span is *dense* in `Λ(𝒢)`) to all
-  of `Λ(𝒢)`, which requires continuity of `Col` (unavailable) or closedness of `I(𝒢)ζ_p`
-  plus density of the `Λ(𝒢)`-span of `wγ(a₀)` in `𝒞_{∞,1}` (the inverse-limit cyclic-module
-  description, `cycloTower1Plus_cyclic_generator`, TeX 3573–3578, deferred §13). -/
+With these, input **(I)** is now CLOSED and only the closure-crossing **(II)** remains:
+* **(I) the generator `wγ(a₀) ∈ 𝒞_{∞,1}` with `Col(wγ(a₀)) = −zetaNum a₀` — DONE.** The
+  generator `wGamma p hp2` is assembled in `Generators.lean` (`𝒪_n`-residue Teichmüller split
+  `normCompat_eq_teichmuller_mul_principal`), `Col_wGamma : Col(wγ a₀) = −zetaNum a₀`, and
+  `wGamma_mem_cycloTower1 : wγ(a₀) ∈ 𝒞_{∞,1}` (via the §13 `(p−1)`-divisible closure layer
+  `mem_cycloClosureOne_of_pow_mem`, CyclotomicUnits, all sorry-free, axiom-clean).
+* **(II) the closure-crossing / density — the SOLE remaining blocker.** With the generator in
+  hand, both inclusions of `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p` reduce to the `Λ(𝒢)`-linearity of `Col`
+  on the cyclic module `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`, i.e. `Col(r • c) = r · Col c` for
+  *arbitrary* `r ∈ Λ(𝒢)`, not merely the group-element scalars `r = [σ_a]` (where
+  `Col_galNCU_eq_dirac_mul` gives it and `galNCU_*` realise the action). The crossing from the
+  `ℤ_p`-span of `{[σ_a]}` (dense in `Λ(𝒢)`) to all of `Λ(𝒢)` is the genuine §13/IMC core and
+  requires infrastructure ABSENT from the project (verified by exhaustive search):
+  - **continuity route** — a topology on `NormCompatUnits` (the inverse-limit profinite unit
+    group) AND on `PadicMeasure` (a bare `C(X,ℤ_[p]) →ₗ[ℤ_[p]] ℤ_[p]` abbrev with NO topology),
+    plus `Continuous (Col p)` through the whole Coleman construction
+    `unitsCmul ∘ mahler⁻¹ ∘ dlog ∘ colemanSeries` (the Coleman-series inverse-limit factor is
+    READ-ONLY and has no continuity lemma), plus `IsClosed (↑(zetaIdeal p hp2))`; OR
+  - **cyclic-module route** — a convolution `Λ(𝒢)`-module action `μ • u` on the inverse-limit
+    unit tower (no `Module (PadicMeasure …) (NormCompatUnits …)` instance exists) and a proof
+    that `Col` intertwines it (no `Col`-`smul` lemma exists), i.e. the full inverse-limit
+    cyclic-module description `cycloTower1Plus_cyclic_generator`, TeX 3573–3578.
+  Neither is reachable within the file confinement without first building a multi-file §13
+  topology/module layer; left as a single documented blocker below. -/
 theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
     (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
-  -- BLOCKED on the genuine §13/IMC-deferred core `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p`. The §12.4
-  -- cyclic-`Λ(𝒢)`-module scaffolding is built (`Generators.lean`: `galNCU_mul`/`galNCU_one`,
-  -- `galNCU_mem_unitsTower1`, `Col_galNCU_eq_dirac_mul`); see the module note. Two inputs
-  -- remain, BOTH genuinely deferred (neither available in the project):
-  --   (I)  the generator `wγ(a₀) ∈ cycloTower1 p` with `Col (wγ a₀) = ±zetaNum a₀` — needs the
-  --        `𝒪_n`-residue Teichmüller lift `w` (deferred `normCompat_eq_teichmuller_mul_principal`)
-  --        + norm-compatibility of the half-power tower `ξ_n^{halfExp a₀ n}`;
-  --   (II) the closure-crossing: `Continuous (Col p)`, OR `IsClosed (↑(zetaIdeal p hp2))`
-  --        together with density of the `Λ(𝒢)`-span of `wγ(a₀)` in `cycloTower1 p`
-  --        (the inverse-limit cyclic-module description, `cycloTower1Plus_cyclic_generator`).
+  -- BLOCKED: needs the §13 closure-crossing — the `Λ(𝒢)`-linearity of `Col` on the cyclic
+  -- module `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`, `Col(r • c) = r · Col c` for all `r ∈ Λ(𝒢)`.
+  -- Input (I) is now DONE (`wGamma p hp2 ∈ cycloTower1 p` with `Col(wγ a₀) = −zetaNum a₀`,
+  -- `Generators.lean`/`CyclotomicUnits.lean`, axiom-clean). The crossing from the group-element
+  -- scalars `[σ_a]` (`Col_galNCU_eq_dirac_mul`, `ℤ_p`-span dense in `Λ(𝒢)`) to all of `Λ(𝒢)`
+  -- needs EITHER `Continuous (Col p)` for topologies on `NormCompatUnits`/`PadicMeasure` (both
+  -- absent; `PadicMeasure` is a bare `LinearMap`, `Col`'s Coleman-series factor is READ-ONLY
+  -- with no continuity lemma) plus `IsClosed (↑(zetaIdeal p hp2))`, OR the convolution
+  -- `Λ(𝒢)`-module action on the inverse-limit unit tower with `Col`-linearity (no such
+  -- `Module`/`Col_smul` exists). This is the deferred §13/IMC core (multi-file topology/module
+  -- layer); verified by exhaustive search that no project lemma supplies it.
   sorry
 
 theorem col_mem_zetaIdeal_iff_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}

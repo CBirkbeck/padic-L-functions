@@ -1204,19 +1204,19 @@ theorem wGamma_pow_mem_cycloTower1 (hp2 : p ≠ 2) : wGamma p hp2 ^ (p - 1) ∈ 
 cyclotomic generator lies in the cyclotomic tower. This is input (I) of
 `col_image_cycloTower1_eq_zetaIdeal`.
 
-BLOCKED on input (II) (the deferred §13 closure machinery): closing this from the proven
-`wGamma_mem_unitsTower1` (principal) and `wGamma_pow_mem_cycloTower1` (`wγ^{p−1} ∈ 𝒞_{∞,1}`)
-needs the `ℤ_p`-module structure of the closure `𝒞_{n,1} = clos(𝒟_{n,1})` — that it is
-`(p−1)`-divisible (`(p−1)𝒞_{n,1} = 𝒞_{n,1}`, RJW `lem:closure`/`lem:global generators 2`), so
-that the unique `(p−1)`-th root in `𝒰_{n,1}` of the cyclotomic-closure element `wγ^{p−1}` lies
-in `𝒞_{n,1}`. The `ℤ_p`-module/closure layer is the separate serialized §13 pass. -/
+Closed from `wGamma_mem_unitsTower1` (`wγ(a₀) ∈ 𝒰_{∞,1}` principal) and
+`wGamma_pow_mem_cycloTower1` (`wγ(a₀)^{p−1} ∈ 𝒞_{∞,1}`) via the §13 `ℤ_p`-module/closure
+layer `mem_cycloClosureOne_of_pow_mem` (CyclotomicUnits): the closure `𝒞_{n,1}` is
+`zpPow`-closed and `p−1 ∈ ℤ_p^×`, so the unique `(p−1)`-th root `wγ(a₀).elems n` of the
+closure element `(wγ(a₀).elems n)^{p−1}` lies in `𝒞_{n,1}`. -/
 theorem wGamma_mem_cycloTower1 (hp2 : p ≠ 2) : wGamma p hp2 ∈ cycloTower1 p := by
-  -- BLOCKED: needs the ℤ_p-module structure of the closure `cycloClosureOne` — that it is
-  -- `(p−1)`-divisible (`(p−1)𝒞_{n,1} = 𝒞_{n,1}`, RJW `lem:closure`/`lem:global generators 2`,
-  -- the deferred §13 input (II)). Proven here: `wGamma ∈ unitsTower1` (principal,
-  -- `wGamma_mem_unitsTower1`) and `wGamma^{p−1} ∈ cycloTower1` (`wGamma_pow_mem_cycloTower1`);
-  -- the gap is that the unique `(p−1)`-th root in `𝒰_{n,1}` of the cyclotomic-closure element
-  -- `wGamma^{p−1}` lies in `cycloClosureOne`, i.e. the closure is uniquely `(p−1)`-rooted.
-  sorry
+  intro n hn
+  -- `g = wγ(a₀).elems n` is principal (`∈ 𝒰_{n,1}`) and `g^{p−1} ∈ 𝒞_{n,1}`
+  have hg : (wGamma p hp2).elems n ∈ localUnitsOne p n := wGamma_mem_unitsTower1 p hp2 n hn
+  have hgpow : ((wGamma p hp2).elems n) ^ (p - 1) ∈ cycloClosureOne p n := by
+    have := wGamma_pow_mem_cycloTower1 p hp2 n hn
+    rwa [elems_pow' p] at this
+  -- the §13 `(p−1)`-rootedness of the closure
+  exact mem_cycloClosureOne_of_pow_mem p hg hgpow
 
 end PadicLFunctions.Coleman

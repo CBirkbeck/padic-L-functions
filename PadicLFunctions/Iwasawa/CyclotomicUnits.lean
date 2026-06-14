@@ -620,6 +620,93 @@ theorem zpPow_zetaSys_mem_cycloClosureOne {n : ℕ} (hn : 1 ≤ n) (a : ℤ_[p])
   rw [cycloClosureOne, Subgroup.mem_inf, cycloClosure, Subgroup.mem_inf]
   exact ⟨⟨hclos, by rw [hxv]; exact hvmem.1⟩, by rw [hxv]; exact hvmem⟩
 
+/-! ## The closure `𝒞_{n,1}` is a `ℤ_p`-module — the §13 `(p−1)`-rootedness (RJW lem:closure,
+TeX 3503–3505 / lem:global generators 2)
+
+The topological closure `(𝒟_n)⁻` of the cyclotomic units is closed under the binomial
+`ℤ_p`-action `zpPow` on principal units: it is a *closed* subgroup, the unit-power map
+`a ↦ y^a` is continuous and sends the dense naturals into the (sub)group, so the whole
+`ℤ_p`-orbit lands back in the closure. Combined with the invertibility of `p−1 ∈ ℤ_p^×`
+(`p−1 ≡ −1 mod p`, `PadicInt.norm_natCast_p_sub_one`), every principal unit whose
+`(p−1)`-th power lies in `𝒞_{n,1}` lies in `𝒞_{n,1}` itself — the unique `(p−1)`-th root
+`g = (g^{p−1})^{(p−1)⁻¹}` stays in the `zpPow`-closed closure. This is precisely the
+`ℤ_p`-module/closure layer feeding `wGamma_mem_cycloTower1` (RJW LemmaGeneratorCinfty1). -/
+
+/-- **The closure `(𝒟_n)⁻` is `zpPow`-closed** (RJW lem:closure, TeX 3503): if a principal
+unit `y` lies in the topological closure of the cyclotomic units, so does every `ℤ_p`-power
+`y^a = zpPow y a`. Same density argument as `zpPow_zetaSys_mem_cycloClosureOne`: the
+continuous unit-power map `F c = ⟨y^c, y^{−c}⟩` sends the dense naturals to `y^k ∈ (𝒟_n)⁻`
+(a subgroup), so its range lies in the closed `(𝒟_n)⁻`. -/
+theorem zpPow_mem_cycloUnits_topologicalClosure {n : ℕ} {y : ℂ_[p]ˣ}
+    (hyc : ‖(y : ℂ_[p]) - 1‖ < 1) (hyclos : y ∈ (cycloUnits p n).topologicalClosure)
+    (a : ℤ_[p]) {x : ℂ_[p]ˣ} (hx : (x : ℂ_[p]) = zpPow p (y : ℂ_[p]) a) :
+    x ∈ (cycloUnits p n).topologicalClosure := by
+  -- continuity of `c ↦ zpPow y c`
+  have hcont : Continuous (zpPow p (y : ℂ_[p])) := by
+    have h : zpPow p (y : ℂ_[p]) = (PadicInt.addChar_of_value_at_one ((y : ℂ_[p]) - 1)
+        (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hyc) : ℤ_[p] → ℂ_[p]) := by
+      funext c; rw [zpPow, dif_pos (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hyc)]
+    rw [h]; exact PadicInt.continuous_addChar_of_value_at_one _
+  -- continuous unit-power map `F c = ⟨y^c, y^{−c}⟩`
+  set F : ℤ_[p] → ℂ_[p]ˣ := fun c => ⟨zpPow p (y : ℂ_[p]) c, zpPow p (y : ℂ_[p]) (-c),
+    by rw [← zpPow_add p hyc, add_neg_cancel, show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) by norm_cast,
+      zpPow_natCast p hyc, pow_zero],
+    by rw [← zpPow_add p hyc, neg_add_cancel, show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) by norm_cast,
+      zpPow_natCast p hyc, pow_zero]⟩ with hF
+  have hFval : ∀ c, (F c : ℂ_[p]) = zpPow p (y : ℂ_[p]) c := fun _ => rfl
+  have hFcont : Continuous F := Units.continuous_iff.2 ⟨hcont, hcont.comp continuous_neg⟩
+  have hFnat : ∀ k : ℕ, F (k : ℤ_[p]) = y ^ k := by
+    intro k; refine Units.ext ?_
+    rw [hFval, zpPow_natCast p hyc, Units.val_pow_eq_pow_val]
+  have hxF : x = F a := Units.ext (by rw [hFval]; exact hx)
+  -- `range F ⊆ closure ↑(𝒟_n)⁻`: density of `ℕ ↪ ℤ_[p]` and `F(ℕ) ⊆ (𝒟_n)⁻`
+  have hrange : Set.range F ⊆ closure ((cycloUnits p n).topologicalClosure : Set ℂ_[p]ˣ) := by
+    have h1 : Set.range F = F '' (closure (Set.range (Nat.cast : ℕ → ℤ_[p]))) := by
+      rw [PadicInt.denseRange_natCast.closure_range, Set.image_univ]
+    rw [h1]
+    refine (image_closure_subset_closure_image hFcont).trans (closure_mono ?_)
+    rw [← Set.range_comp]
+    rintro _ ⟨k, rfl⟩
+    show (F ∘ Nat.cast) k ∈ ((cycloUnits p n).topologicalClosure : Set ℂ_[p]ˣ)
+    rw [Function.comp_apply, hFnat k]
+    exact pow_mem hyclos k
+  have hxmem : x ∈ closure ((cycloUnits p n).topologicalClosure : Set ℂ_[p]ˣ) := by
+    rw [hxF]; exact hrange ⟨a, rfl⟩
+  rwa [(Subgroup.isClosed_topologicalClosure _).closure_eq, SetLike.mem_coe] at hxmem
+
+/-- **`𝒞_{n,1}` is uniquely `(p−1)`-rooted** (RJW lem:global generators 2): a principal unit
+`g ∈ 𝒰_{n,1}` whose `(p−1)`-th power lies in the closure `𝒞_{n,1}` lies in `𝒞_{n,1}` itself.
+Since `p−1 ∈ ℤ_p^×` (`PadicInt.norm_natCast_p_sub_one`), `g = (g^{p−1})^{(p−1)⁻¹}` is a
+`zpPow`-power of the closure element `g^{p−1}`, hence in the `zpPow`-closed closure component
+(`zpPow_mem_cycloUnits_topologicalClosure`); the local/principal components are inherited from
+`g ∈ 𝒰_{n,1}`. This is the `ℤ_p`-module/closure layer of `wGamma_mem_cycloTower1`. -/
+theorem mem_cycloClosureOne_of_pow_mem {n : ℕ} {g : ℂ_[p]ˣ}
+    (hg : g ∈ localUnitsOne p n) (hgpow : g ^ (p - 1) ∈ cycloClosureOne p n) :
+    g ∈ cycloClosureOne p n := by
+  have hgc : ‖(g : ℂ_[p]) - 1‖ < 1 := ((mem_localUnitsOne_iff p).1 hg).2
+  -- `g^{p−1} ∈ (𝒟_n)⁻`
+  have hgpowclos : g ^ (p - 1) ∈ (cycloUnits p n).topologicalClosure := by
+    rw [cycloClosureOne, Subgroup.mem_inf, cycloClosure, Subgroup.mem_inf] at hgpow
+    exact hgpow.1.1
+  -- `p−1 ∈ ℤ_p^×`; `c` its inverse
+  have hunit : IsUnit ((p - 1 : ℕ) : ℤ_[p]) :=
+    PadicInt.isUnit_iff.mpr PadicInt.norm_natCast_p_sub_one
+  obtain ⟨c, hc⟩ := hunit.exists_left_inv
+  -- `g = zpPow (g^{p−1}) c` (the unique `(p−1)`-th root via the binomial action)
+  have hgeq : (g : ℂ_[p]) = zpPow p ((g ^ (p - 1) : ℂ_[p]ˣ) : ℂ_[p]) c := by
+    rw [Units.val_pow_eq_pow_val]
+    have hpow : (g : ℂ_[p]) ^ (p - 1) = zpPow p (g : ℂ_[p]) ((p - 1 : ℕ) : ℤ_[p]) :=
+      (zpPow_natCast p hgc (p - 1)).symm
+    rw [hpow, ← zpPow_mul p hgc, mul_comm, hc,
+      show (1 : ℤ_[p]) = ((1 : ℕ) : ℤ_[p]) by norm_cast, zpPow_natCast p hgc, pow_one]
+  have hypowc : ‖((g ^ (p - 1) : ℂ_[p]ˣ) : ℂ_[p]) - 1‖ < 1 := by
+    rw [Units.val_pow_eq_pow_val, ← zpPow_natCast p hgc]
+    exact norm_zpPow_sub_one_lt_one p hgc _
+  -- `g` is in each of the three components of `𝒞_{n,1}`
+  rw [cycloClosureOne, Subgroup.mem_inf, cycloClosure, Subgroup.mem_inf]
+  exact ⟨⟨zpPow_mem_cycloUnits_topologicalClosure p hypowc hgpowclos c hgeq,
+    ((mem_localUnitsOne_iff p).1 hg).1⟩, hg⟩
+
 end Coleman
 
 end PadicLFunctions
