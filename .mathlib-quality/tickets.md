@@ -5602,7 +5602,7 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 - **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
 
 ### [T1203] **E12.2 HARD: thm:log der (Coleman–Coates–Wiles)** (LogDerivative.lean)
-- **Status**: in_progress (2026-06-14 wave 3). 13/15 leaves done. **T1203a DONE** (lem:log der 1, ξ-free Jacobi route). 2 sorries remain (LogDerivative.lean:606/676): T1203b (lem:B mod p 2, the 𝔽_p⟦T⟧ α-filtration — buildable, NOT Eqphipsi-dependent; dispatched) and T1203c (surjectivity — needs T1203b + dlog-continuity in the Pi topology [buildable, §10-substrate gap] + "ψ fixes (T+1)/T" which RJW prove via the **deferred series-Eqphipsi**; ξ-free route under investigation in FormalPsi.lean). Per plan §12 this is "the hardest mathematics in Part II"; the plan anticipated the Eqphipsi due-date here. | **Sub-tickets**: T1203a (done), T1203b, T1203c | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
+- **Status**: **done** (2026-06-14, beastmode §12 wave 4). LogDerivative.lean sorry-free; clean `lake build` (no errors/warnings); all of `dlog_mem_psiIdSeries`/`fp_series_eq_dlog_add_frobC`/`dlog_surjective_onto_psiId` (+ the ψ-subspaces, `del_phiHom`, `exists_normOp_fixed_lift`, `dlog_eq_zero_normOp_fixed`, lem:rest zp* halves, `dlog_*` homomorphism layer) axiom-clean. "The hardest mathematics in Part II" — DONE, and **entirely ξ-free**: the §10-deferred series-Eqphipsi was AVOIDED via (a) T1203a's Jacobi/trace route for lem:log der 1, and (b) T1203c's honest-`ψ`-over-𝔽_p projection formula for lem:B mod p. Sub-tickets T1203a/b/c all done. | **Sub-tickets**: T1203a (done), T1203b (done), T1203c (done) | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
 - **Parallel**: yes (vs T1201 — different file, no Galois dep) | **Type**: lemmas (HARD)
 #### Statement (skeleton canonical)
 `psiIdSeries`/`psiZeroSeries` (Submodules); `del_phiHom` (Δ∘φ = p φ∘Δ);
@@ -5813,8 +5813,8 @@ and the `C`-submodule explicitly).
   the d_n=d_{np} invariant, the ∏-convergence).
 
 ### [T1203c] thm:log der — surjectivity of Δ onto ℤ_p⟦T⟧^{ψ=id}
-- **Status**: open (gate RESOLVED ξ-free — see note; waiting on T1203b to free LogDerivative.lean) | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
-- **Depends on**: T1203a (done), T1203b | **Type**: theorem
+- **Status**: **done** (2026-06-14, agent abd388). `dlog_surjective_onto_psiId` (the Coleman–Coates–Wiles theorem) sorry-free; clean `lake build` (no errors/warnings); `#print axioms` = {propext, Classical.choice, Quot.sound}. Closed ξ-free as planned: built honest `ψ` over `𝔽_p⟦T⟧` (digit-uniqueness via the `θ=(1+T)∂` eigenvalue + Lagrange argument — new substrate), the projection formula `ψ(φd·F)=d·ψF` over 𝔽_p replacing RJW's Eqphipsi-based "ψ fixes (T+1)/T" (the `b̄=0` step `psiId_one_add_X_div_X_phi_eq_zero` via a `PowerSeries.order` kill), then successive approximation `hₙ=∏gₖ^{(−1)^{k−1}pᵏ⁻¹}` + compact limit using `𝒩`-continuity (`= det∘digitMatrix`, homeomorphic digit-assembly) and the cleared form `(1+T)∂h=F·h` to pass `Δ` through the limit (avoiding inverse-continuity). ~40 private helpers. | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Depends on**: T1203a (done), T1203b (done) | **Type**: theorem
 - **ξ-free route note (2026-06-14, orchestrator)**: the T1203 agent flagged the `B ⊆ A`
   step's "ψ fixes `(T+1)/T`" as the deferred Eqphipsi. NOT a wall: RJW's `LemmaPsiInvariant`
   (ψμ_a=μ_a, the measure analog) is ALREADY proven ξ-free in the project (`psi_muA`,

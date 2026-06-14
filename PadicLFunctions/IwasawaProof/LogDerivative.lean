@@ -804,35 +804,762 @@ theorem dlog_pow {g : PowerSeries ℤ_[p]} (hg : IsUnit g) (n : ℕ) :
   | zero => simp [dlog_one]
   | succ m ih => rw [pow_succ, dlog_mul p (hg.pow m) hg, ih]; push_cast; ring
 
+/-! ### Honest `ψ` over `𝔽_p⟦T⟧` (for `lem:B mod p`)
+
+The trace operator `ψ` is junk-totalised off `integerRing K`/`ℤ_[p]` (FormalPsi.lean): it is
+honest exactly where the digit decomposition `F = Σ_{i<p} (1+T)^i·φ(G_i)` is unique. The
+`lem:B mod p` argument needs `ψ` honest over `𝔽_p⟦T⟧`, so we establish the missing
+uniqueness over `ZMod p` directly (existence transports by lifting to `ℤ_[p]`).
+
+Over `ZMod p`, `φ(G) = G^p` (`phiSeries_eq_pow_zmod`) and `(1+T)^p − 1 = T^p`, so a digit
+decomposition reads `F = Σ_i (1+T)^i G_i^p`. Uniqueness is the freeness of `𝔽_p⟦T⟧` over
+its Frobenius image with basis `(1+T)^i`: the operator `θ = (1+T)∂` acts as the scalar `i`
+on `(1+T)^i·ker(∂)` (and `ker(∂) ⊇ range(φ)` over char `p`), so the `p` distinct eigenvalues
+`0, …, p−1` separate the summands (Lagrange interpolation `y^{p−1} = [y ≠ 0]`). -/
+
+/-- `∂((1+T)^i) = i·(1+T)^{i−1}` over `ZMod p`. -/
+private theorem derivativeFun_one_add_X_pow_zmod (i : ℕ) :
+    derivativeFun ((1 + PowerSeries.X : PowerSeries (ZMod p)) ^ i)
+      = (i : PowerSeries (ZMod p)) * (1 + PowerSeries.X) ^ (i - 1) := by
+  have h1 : derivativeFun (1 + PowerSeries.X : PowerSeries (ZMod p)) = 1 := by
+    rw [derivativeFun_add, derivativeFun_one, zero_add]; exact derivative_X
+  rw [show derivativeFun ((1 + PowerSeries.X : PowerSeries (ZMod p)) ^ i)
+      = d⁄dX (ZMod p) ((1 + PowerSeries.X) ^ i) from rfl, derivative_pow,
+    show d⁄dX (ZMod p) (1 + PowerSeries.X : PowerSeries (ZMod p))
+      = derivativeFun (1 + PowerSeries.X) from rfl, h1, mul_one]
+
+/-- A `p`-th power has zero derivative over `ZMod p` (`∂(g^p) = p·g^{p−1}·g′ = 0`). -/
+private theorem derivativeFun_pow_p_zmod (g : PowerSeries (ZMod p)) :
+    derivativeFun (g ^ p) = 0 := by
+  rw [show derivativeFun (g ^ p) = d⁄dX (ZMod p) (g ^ p) from rfl, derivative_pow,
+    show ((p : ℕ) : PowerSeries (ZMod p)) = PowerSeries.C (R := ZMod p) (p : ZMod p) from by
+      rw [map_natCast], show (p : ZMod p) = 0 from by exact_mod_cast (ZMod.natCast_self p),
+    map_zero, zero_mul, zero_mul]
+
+/-- The `θ = (1+T)∂` eigen-identity: `θ(C c·(1+T)^i·E) = C(i·c)·(1+T)^i·E` whenever
+`∂ E = 0` (so `E` is in the `θ`-eigenspace for eigenvalue `i`). -/
+private theorem theta_smul_eigen {E : PowerSeries (ZMod p)} (hE : derivativeFun E = 0)
+    (i : ℕ) (c : ZMod p) :
+    (1 + PowerSeries.X) * derivativeFun
+        (PowerSeries.C c * ((1 + PowerSeries.X) ^ i * E))
+      = PowerSeries.C ((i : ZMod p) * c) * ((1 + PowerSeries.X) ^ i * E) := by
+  have hd : derivativeFun (PowerSeries.C c * ((1 + PowerSeries.X) ^ i * E))
+      = PowerSeries.C c * ((i : PowerSeries (ZMod p)) * (1 + PowerSeries.X) ^ (i - 1) * E) := by
+    rw [show PowerSeries.C c * ((1 + PowerSeries.X) ^ i * E)
+        = (PowerSeries.C c * (1 + PowerSeries.X) ^ i) * E from by ring, derivativeFun_mul,
+      derivativeFun_mul, derivativeFun_C, hE, smul_zero, smul_zero, zero_add, add_zero,
+      smul_eq_mul, derivativeFun_one_add_X_pow_zmod]
+    ring
+  rw [hd, map_mul, show ((i : ℕ) : PowerSeries (ZMod p)) = PowerSeries.C ((i : ℕ) : ZMod p) from
+    (map_natCast _ _).symm]
+  rcases Nat.eq_zero_or_pos i with hi | hi
+  · subst hi; simp
+  · have hpow : (1 + PowerSeries.X : PowerSeries (ZMod p)) ^ i
+        = (1 + PowerSeries.X) * (1 + PowerSeries.X) ^ (i - 1) := by
+      rw [← pow_succ']; congr 1; omega
+    rw [hpow]; ring
+
+/-- The power-sum identity driving uniqueness: if `Σ_i (1+T)^i E_i = 0` with each `∂ E_i = 0`,
+then `Σ_i C(iᵏ)·(1+T)^i E_i = 0` for every `k` (apply `θ` `k` times). -/
+private theorem sum_pow_smul_eq_zero {E : Fin p → PowerSeries (ZMod p)}
+    (hE : ∀ i, derivativeFun (E i) = 0)
+    (hsum : ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * E i = 0) (k : ℕ) :
+    ∑ i : Fin p, PowerSeries.C ((i : ZMod p) ^ k) * ((1 + PowerSeries.X) ^ (i : ℕ) * E i)
+      = 0 := by
+  induction k with
+  | zero => simpa using hsum
+  | succ m ih =>
+    have hstep : (1 + PowerSeries.X) * derivativeFun
+        (∑ i : Fin p, PowerSeries.C ((i : ZMod p) ^ m) * ((1 + PowerSeries.X) ^ (i : ℕ) * E i))
+        = 0 := by
+      rw [ih, show derivativeFun (0 : PowerSeries (ZMod p)) = 0 from
+        map_zero (derivative (ZMod p)), mul_zero]
+    rw [show derivativeFun
+          (∑ i : Fin p, PowerSeries.C ((i : ZMod p) ^ m) * ((1 + PowerSeries.X) ^ (i : ℕ) * E i))
+        = ∑ i : Fin p, derivativeFun
+          (PowerSeries.C ((i : ZMod p) ^ m) * ((1 + PowerSeries.X) ^ (i : ℕ) * E i)) from
+        map_sum (derivative (ZMod p)) _ _, Finset.mul_sum] at hstep
+    rw [← hstep]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [theta_smul_eigen p (hE i) (i : ℕ) ((i : ZMod p) ^ m), pow_succ,
+      mul_comm ((i : ZMod p) ^ m) (i : ZMod p), map_mul]
+
+/-- Polynomial-evaluation form of the power-sum identity: `Σ_i C(P(i))·(1+T)^i E_i = 0` for
+any `P : 𝔽_p[X]` (linear-combine the `k`-th power sums). -/
+private theorem sum_polyEval_smul_eq_zero {E : Fin p → PowerSeries (ZMod p)}
+    (hE : ∀ i, derivativeFun (E i) = 0)
+    (hsum : ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * E i = 0) (P : Polynomial (ZMod p)) :
+    ∑ i : Fin p, PowerSeries.C (P.eval (i : ZMod p)) * ((1 + PowerSeries.X) ^ (i : ℕ) * E i)
+      = 0 := by
+  induction P using Polynomial.induction_on' with
+  | add P Q hP hQ =>
+    simp only [Polynomial.eval_add, map_add, add_mul]
+    rw [Finset.sum_add_distrib, hP, hQ, add_zero]
+  | monomial n c =>
+    simp only [Polynomial.eval_monomial]
+    rw [show (∑ i : Fin p, PowerSeries.C (c * (i : ZMod p) ^ n)
+          * ((1 + PowerSeries.X) ^ (i : ℕ) * E i))
+        = PowerSeries.C c * ∑ i : Fin p, PowerSeries.C ((i : ZMod p) ^ n)
+          * ((1 + PowerSeries.X) ^ (i : ℕ) * E i) from by
+      rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => ?_; rw [map_mul]; ring]
+    rw [sum_pow_smul_eq_zero p hE hsum n, mul_zero]
+
+/-- The Lagrange `δ`-indicator over `𝔽_p`: `1 − (i − j)^{p−1} = [i = j]` (Fermat
+`y^{p−1} = [y ≠ 0]`), for `i, j : Fin p`. -/
+private theorem lagrange_delta_eval (i j : Fin p) :
+    (1 - (Polynomial.X - Polynomial.C ((j : ℕ) : ZMod p)) ^ (p - 1)).eval (((i : ℕ)) : ZMod p)
+      = if i = j then 1 else 0 := by
+  rw [Polynomial.eval_sub, Polynomial.eval_one, Polynomial.eval_pow, Polynomial.eval_sub,
+    Polynomial.eval_X, Polynomial.eval_C]
+  rcases eq_or_ne i j with h | h
+  · subst h; simp [ZMod.pow_card_sub_one]
+  · have hij : ((i : ℕ) : ZMod p) ≠ ((j : ℕ) : ZMod p) := by
+      intro hc
+      rw [ZMod.natCast_eq_natCast_iff, Nat.ModEq, Nat.mod_eq_of_lt i.2,
+        Nat.mod_eq_of_lt j.2] at hc
+      exact h (Fin.ext hc)
+    rw [ZMod.pow_card_sub_one_eq_one (sub_ne_zero.mpr hij), sub_self, if_neg h]
+
+/-- **Digit-decomposition uniqueness over `𝔽_p⟦T⟧`**: `Σ_i (1+T)^i φ(G_i) = Σ_i (1+T)^i φ(H_i)`
+forces `G_i = H_i`. (The `θ`-eigenvalue/Lagrange argument: the differences `E_i = φ(G_i−H_i)`
+lie in `ker ∂` and are separated by the `p` distinct eigenvalues of `θ = (1+T)∂`.) -/
+private theorem digits_unique_zmod {G H : Fin p → PowerSeries (ZMod p)}
+    (heq : ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (G i)
+      = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (H i)) :
+    G = H := by
+  set E : Fin p → PowerSeries (ZMod p) := fun i => phiSeries p (G i) - phiSeries p (H i) with hE
+  have hEval : ∀ i, E i = phiSeries p (G i) - phiSeries p (H i) := fun i => rfl
+  have hEzero : ∀ i, derivativeFun (E i) = 0 := fun i => by
+    rw [hEval, phiSeries_eq_pow_zmod, phiSeries_eq_pow_zmod,
+      show derivativeFun ((G i) ^ p - (H i) ^ p)
+        = derivativeFun ((G i) ^ p) - derivativeFun ((H i) ^ p) from
+        map_sub (derivative (ZMod p)) _ _, derivativeFun_pow_p_zmod, derivativeFun_pow_p_zmod,
+      sub_zero]
+  have hsum : ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * E i = 0 := by
+    simp only [hEval, mul_sub]
+    rw [Finset.sum_sub_distrib, heq, sub_self]
+  funext j
+  -- the Lagrange combination isolates the `j`-th summand
+  have hisolate := sum_polyEval_smul_eq_zero p hEzero hsum
+    (1 - (Polynomial.X - Polynomial.C ((j : ℕ) : ZMod p)) ^ (p - 1))
+  rw [Finset.sum_eq_single j (fun i _ hij => by
+      rw [lagrange_delta_eval p i j, if_neg hij, map_zero, zero_mul])
+    (fun h => absurd (Finset.mem_univ j) h), lagrange_delta_eval p j j, if_pos rfl, map_one,
+    one_mul] at hisolate
+  -- `(1+T)^j E_j = 0` and `1+T` a unit give `E_j = 0`, i.e. `φ(G_j) = φ(H_j)`
+  have hunit : IsUnit ((1 + PowerSeries.X : PowerSeries (ZMod p)) ^ (j : ℕ)) := by
+    refine IsUnit.pow _ ?_; rw [PowerSeries.isUnit_iff_constantCoeff]; simp
+  have hEj : E j = 0 := by
+    have h2 := congrArg (Ring.inverse ((1 + PowerSeries.X) ^ (j : ℕ)) * ·) hisolate
+    simpa only [mul_zero, ← mul_assoc, Ring.inverse_mul_cancel _ hunit, one_mul] using h2
+  have hphi : phiSeries p (G j) = phiSeries p (H j) := sub_eq_zero.1 (hEval j ▸ hEj)
+  -- `φ` is injective over `ZMod p` (it is the Frobenius `g ↦ g^p`)
+  haveI : CharP (PowerSeries (ZMod p)) p := charP_of_injective_algebraMap' (ZMod p) p
+  rw [phiSeries_eq_pow_zmod, phiSeries_eq_pow_zmod] at hphi
+  exact frobenius_inj (PowerSeries (ZMod p)) p (by rw [frobenius_def, frobenius_def]; exact hphi)
+
+/-- **Existence-uniqueness of digits over `𝔽_p⟦T⟧`**: every `F̄ ∈ 𝔽_p⟦T⟧` has a unique digit
+family. Existence by lifting to `ℤ_[p]` (`existsUnique_digits_padicInt` + `isDigitDecomp_map`),
+uniqueness `digits_unique_zmod`. This makes `psiSeries` honest over `ZMod p`. -/
+private theorem existsUnique_digits_zmod (F : PowerSeries (ZMod p)) :
+    ∃! G : Fin p → PowerSeries (ZMod p), IsDigitDecomp p F G := by
+  obtain ⟨Flift, hFlift⟩ :=
+    PowerSeries.map_surjective _ (ZMod.ringHom_surjective PadicInt.toZMod) F
+  obtain ⟨G, hG, -⟩ := existsUnique_digits_padicInt p Flift
+  refine ⟨fun i => PowerSeries.map PadicInt.toZMod (G i), ?_, ?_⟩
+  · have := isDigitDecomp_map p (PadicInt.toZMod : ℤ_[p] →+* ZMod p) hG
+    rwa [hFlift] at this
+  · intro H hH
+    exact digits_unique_zmod p (by
+      rw [← hH]
+      have := isDigitDecomp_map p (PadicInt.toZMod : ℤ_[p] →+* ZMod p) hG
+      rw [hFlift] at this; exact this)
+
+/-- Over `ZMod p`, `psiSeries` is the `0`-th digit of any digit decomposition. -/
+private theorem psiSeries_eq_of_isDigitDecomp_zmod {F : PowerSeries (ZMod p)}
+    {G : Fin p → PowerSeries (ZMod p)} (hG : IsDigitDecomp p F G) :
+    psiSeries p F = G 0 :=
+  psiSeries_eq_of_unique p (existsUnique_digits_zmod p F) hG
+
+/-- `φ` fixes constants over `ZMod p`. -/
+private theorem phiSeries_C_zmod (a : ZMod p) :
+    phiSeries p (PowerSeries.C a : PowerSeries (ZMod p)) = PowerSeries.C a := by
+  rw [phiSeries]; exact subst_C a
+
+/-- `ψ ∘ φ = id` over `ZMod p`. -/
+private theorem psiSeries_phi_zmod (G : PowerSeries (ZMod p)) :
+    psiSeries p (phiSeries p G) = G := by
+  refine psiSeries_eq_of_isDigitDecomp_zmod p
+    (G := fun i => if i = 0 then G else (0 : PowerSeries (ZMod p))) ?_
+  change phiSeries p G = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ)
+      * phiSeries p (if i = 0 then G else 0)
+  rw [Finset.sum_eq_single (0 : Fin p)]
+  · simp
+  · intro i _ hi0; rw [if_neg hi0, phiSeries_zero, mul_zero]
+  · intro h; exact absurd (Finset.mem_univ (0 : Fin p)) h
+
+/-- **The series projection formula over `ZMod p`** (`ψ(φd·F) = d·ψF`, the ξ-free substitute
+for RJW's `Eqphipsi`-based "ψ fixes `(T+1)/T`"; mirror of `psi_phi_mul`/the `ℤ_[p]` form). -/
+private theorem psiSeries_phiSeries_mul_zmod (d F : PowerSeries (ZMod p)) :
+    psiSeries p (phiSeries p d * F) = d * psiSeries p F := by
+  obtain ⟨GF, hGF, -⟩ := existsUnique_digits_zmod p F
+  rw [psiSeries_eq_of_isDigitDecomp_zmod p hGF]
+  refine psiSeries_eq_of_isDigitDecomp_zmod p (G := fun i => d * GF i) ?_
+  change phiSeries p d * F = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ)
+      * phiSeries p (d * GF i)
+  rw [hGF, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [phiSeries, phiSeries, phiSeries,
+    PowerSeries.subst_mul (hasSubst_one_add_X_pow_sub_one p)]
+  ring
+
+/-- `ψ` commutes with reduction `map_toZMod` (digit families reduce; `ψ` is the `0`-th). -/
+private theorem map_toZMod_psiSeries (F : PowerSeries ℤ_[p]) :
+    PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) (psiSeries p F)
+      = psiSeries p (PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) F) := by
+  obtain ⟨GF, hGF, -⟩ := existsUnique_digits_padicInt p F
+  rw [psiSeries_eq_of_isDigitDecomp_padicInt hGF,
+    psiSeries_eq_of_isDigitDecomp_zmod p (isDigitDecomp_map p _ hGF)]
+
+/-- `ψ(Tʲ) = (−1)ʲ` (constant) for `j < p`: from the digit family of `Tʲ` whose `0`-th
+digit is the constant `binom(j,0)(−1)ʲ = (−1)ʲ` (binomial expansion `Tʲ = ((1+T)−1)ʲ`). -/
+private theorem psiSeries_X_pow_lt {j : ℕ} (hj : j < p) :
+    psiSeries p ((PowerSeries.X : PowerSeries (ZMod p)) ^ j) = PowerSeries.C ((-1) ^ j) := by
+  have hdecomp : IsDigitDecomp p ((PowerSeries.X : PowerSeries (ZMod p)) ^ j)
+      (fun l => PowerSeries.C ((Nat.choose j (l : ℕ) : ZMod p) * (-1) ^ (j - (l : ℕ)))) := by
+    rw [IsDigitDecomp, Finset.sum_congr rfl (fun l _ => by rw [phiSeries_C_zmod p])]
+    conv_lhs => rw [show (PowerSeries.X : PowerSeries (ZMod p)) = (1 + PowerSeries.X) - 1 from by
+      ring, sub_eq_add_neg, add_pow]
+    rw [Fin.sum_univ_eq_sum_range (fun l => (1 + PowerSeries.X : PowerSeries (ZMod p)) ^ l
+        * PowerSeries.C ((Nat.choose j l : ZMod p) * (-1) ^ (j - l))) p,
+      ← Finset.sum_range_add_sum_Ico _ (Nat.succ_le_of_lt hj : j + 1 ≤ p),
+      show (∑ l ∈ Finset.Ico (j + 1) p, (1 + PowerSeries.X : PowerSeries (ZMod p)) ^ l
+          * PowerSeries.C ((Nat.choose j l : ZMod p) * (-1) ^ (j - l))) = 0 from by
+        refine Finset.sum_eq_zero fun l hl => ?_
+        rw [Nat.choose_eq_zero_of_lt (by simp only [Finset.mem_Ico] at hl; omega)]
+        simp, add_zero]
+    refine Finset.sum_congr rfl fun l hl => ?_
+    rw [map_mul, map_pow, map_neg, map_one, map_natCast]; ring
+  rw [psiSeries_eq_of_isDigitDecomp_zmod p hdecomp]
+  simp
+
+/-- `ψ` is additive over `ZMod p`. -/
+private theorem psiSeries_add_zmod (F G : PowerSeries (ZMod p)) :
+    psiSeries p (F + G) = psiSeries p F + psiSeries p G := by
+  obtain ⟨GF, hGF, -⟩ := existsUnique_digits_zmod p F
+  obtain ⟨GG, hGG, -⟩ := existsUnique_digits_zmod p G
+  rw [psiSeries_eq_of_isDigitDecomp_zmod p hGF, psiSeries_eq_of_isDigitDecomp_zmod p hGG]
+  refine psiSeries_eq_of_isDigitDecomp_zmod p (G := fun i => GF i + GG i) ?_
+  change F + G = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (GF i + GG i)
+  rw [hGF, hGG, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [phiSeries, phiSeries, phiSeries,
+    PowerSeries.subst_add (hasSubst_one_add_X_pow_sub_one p), mul_add]
+
+/-- `X^p = X·X^{p−1}` over `ZMod p`. -/
+private theorem X_pow_eq_X_mul (p : ℕ) [Fact p.Prime] :
+    (PowerSeries.X : PowerSeries (ZMod p)) ^ p = PowerSeries.X * PowerSeries.X ^ (p - 1) := by
+  rw [← pow_succ', Nat.sub_add_cancel (Fact.out (p := p.Prime)).one_le]
+
+/-- `ψ((1+T)·T^{p−1}) = 1 + T` over `ZMod p` (`= ψ(T^{p−1}) + ψ(φ(T))`, with
+`ψ(T^{p−1}) = C((−1)^{p−1}) = 1` by Fermat and `ψ(φ(T)) = T`). -/
+private theorem psiSeries_one_add_X_mul_X_pow :
+    psiSeries p ((1 + PowerSeries.X) * PowerSeries.X ^ (p - 1))
+      = (1 + PowerSeries.X : PowerSeries (ZMod p)) := by
+  have hphiX : phiSeries p (PowerSeries.X : PowerSeries (ZMod p)) = PowerSeries.X ^ p :=
+    phiSeries_eq_pow_zmod PowerSeries.X
+  have hexpand : (1 + PowerSeries.X : PowerSeries (ZMod p)) * PowerSeries.X ^ (p - 1)
+      = PowerSeries.X ^ (p - 1) + phiSeries p PowerSeries.X := by
+    rw [hphiX, add_mul, one_mul, X_pow_eq_X_mul p]
+  rw [hexpand, psiSeries_add_zmod, psiSeries_X_pow_lt p (by have := hp.out.two_le; omega),
+    psiSeries_phi_zmod,
+    show ((-1) ^ (p - 1) : ZMod p) = 1 from ZMod.pow_card_sub_one_eq_one (by
+      intro hc; rw [neg_eq_zero] at hc; exact one_ne_zero hc), map_one]
+
+/-- The order argument: `e = T^{p−1}·e^p` over `𝔽_p⟦T⟧` forces `e = 0` (else
+`ord e = (p−1) + p·ord e`, impossible for `p ≥ 2`). -/
+private theorem eq_zero_of_eq_X_pow_mul_pow {e : PowerSeries (ZMod p)}
+    (h : e = PowerSeries.X ^ (p - 1) * e ^ p) : e = 0 := by
+  by_contra hne
+  have hord : e.order = (PowerSeries.X ^ (p - 1) * e ^ p : PowerSeries (ZMod p)).order :=
+    congrArg PowerSeries.order h
+  rw [PowerSeries.order_mul, PowerSeries.order_X_pow, PowerSeries.order_pow e p] at hord
+  rw [← PowerSeries.order_eq_top] at hne
+  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 hne
+  rw [← hm, nsmul_eq_mul, ← Nat.cast_mul, ← Nat.cast_add, Nat.cast_inj] at hord
+  have hp2 : 2 ≤ p := hp.out.two_le
+  have hmm : m ≤ p * m := Nat.le_mul_of_pos_left m (by omega)
+  omega
+
+/-- **`lem:B mod p`'s ψ-killing step (TeX 3352–3356)**: the `(T+1)/T·C` component is killed
+by `ψ = id`. Formally: if `ψ b = b`, `X·b = (1+X)·c` and `c ∈ range φ` over `𝔽_p⟦T⟧`, then
+`b = 0`. (Write `c = φ(X·e) = T^p·φ(e)`, so `b = (1+T)·T^{p−1}·φ(e)`; the projection formula
+gives `ψ b = e·ψ((1+T)T^{p−1}) = e·(1+T)`, and `ψ b = b` reduces to `e = T^{p−1}·e^p`, which
+forces `e = 0` by the order argument — RJW's `d_n = d_{np}` invariant collapse.) -/
+private theorem psiId_one_add_X_div_X_phi_eq_zero {b c : PowerSeries (ZMod p)}
+    (hpsi : psiSeries p b = b) (hXb : PowerSeries.X * b = (1 + PowerSeries.X) * c)
+    (hc : c ∈ Set.range (phiSeries p (R := ZMod p))) : b = 0 := by
+  obtain ⟨d, hd⟩ := hc
+  -- `c(0) = 0` (from `X·b`), so `d(0) = 0`, so `X | d`
+  have hc0 : PowerSeries.constantCoeff (R := ZMod p) c = 0 := by
+    have h1 : PowerSeries.constantCoeff (R := ZMod p) (PowerSeries.X * b) = 0 := by
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_zero_X_mul]
+    rwa [hXb, map_mul, map_add, map_one, PowerSeries.constantCoeff_X, add_zero, one_mul] at h1
+  have hd0 : PowerSeries.constantCoeff (R := ZMod p) d = 0 := by
+    rw [← hd, constantCoeff_phiSeries] at hc0; exact hc0
+  obtain ⟨e, he⟩ := (PowerSeries.X_dvd_iff (φ := d)).2 hd0
+  -- `c = X^p·φ(e)`, hence `b = (1+X)·X^{p−1}·φ(e)`
+  have hphiX : phiSeries p (PowerSeries.X : PowerSeries (ZMod p)) = PowerSeries.X ^ p :=
+    phiSeries_eq_pow_zmod PowerSeries.X
+  have hcform : c = PowerSeries.X ^ p * phiSeries p e := by
+    rw [← hd, he, show phiSeries p (PowerSeries.X * e)
+        = phiSeries p PowerSeries.X * phiSeries p e from by
+      rw [phiSeries, phiSeries, phiSeries,
+        PowerSeries.subst_mul (hasSubst_one_add_X_pow_sub_one p)], hphiX]
+  have hbform : b = (1 + PowerSeries.X) * PowerSeries.X ^ (p - 1) * phiSeries p e := by
+    have hXb' : PowerSeries.X * b
+        = PowerSeries.X * ((1 + PowerSeries.X) * PowerSeries.X ^ (p - 1) * phiSeries p e) := by
+      rw [hXb, hcform, X_pow_eq_X_mul p]; ring
+    ext n
+    have := congrArg (PowerSeries.coeff (n + 1)) hXb'
+    rwa [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul] at this
+  -- `ψ b = e·ψ((1+X)X^{p−1}) = e·(1+X)`, while `ψ b = b = (1+X)X^{p−1}φ(e)`
+  have hpsib : psiSeries p b = e * (1 + PowerSeries.X) := by
+    rw [hbform, show (1 + PowerSeries.X) * PowerSeries.X ^ (p - 1) * phiSeries p e
+        = phiSeries p e * ((1 + PowerSeries.X) * PowerSeries.X ^ (p - 1)) from by ring,
+      psiSeries_phiSeries_mul_zmod, psiSeries_one_add_X_mul_X_pow]
+  rw [hpsi] at hpsib
+  -- cancel the unit `(1+X)`: `e = X^{p−1}·φ(e) = X^{p−1}·e^p`
+  have hunit : IsUnit (1 + PowerSeries.X : PowerSeries (ZMod p)) := by
+    rw [PowerSeries.isUnit_iff_constantCoeff]; simp
+  -- `e·(1+X) = (1+X)·X^{p−1}·φ(e)`, cancel `(1+X)` (a unit)
+  have heq2 : e * (1 + PowerSeries.X)
+      = (1 + PowerSeries.X) * (PowerSeries.X ^ (p - 1) * phiSeries p e) := by
+    rw [← hpsib, hbform]; ring
+  rcases hunit.exists_left_inv with ⟨u, hu⟩
+  have hecancel : e = PowerSeries.X ^ (p - 1) * phiSeries p e := by
+    calc e = u * (1 + PowerSeries.X) * e := by rw [hu, one_mul]
+      _ = u * (e * (1 + PowerSeries.X)) := by ring
+      _ = u * ((1 + PowerSeries.X) * (PowerSeries.X ^ (p - 1) * phiSeries p e)) := by rw [heq2]
+      _ = u * (1 + PowerSeries.X) * (PowerSeries.X ^ (p - 1) * phiSeries p e) := by ring
+      _ = PowerSeries.X ^ (p - 1) * phiSeries p e := by rw [hu, one_mul]
+  have he0 : e = 0 :=
+    eq_zero_of_eq_X_pow_mul_pow p (hecancel.trans (by rw [phiSeries_eq_pow_zmod]))
+  -- `e = 0 ⟹ d = 0 ⟹ c = 0 ⟹ b = 0`
+  rw [hbform, he0, phiSeries_zero, mul_zero]
+
+/-! ### `B ⊆ A` modulo `p` (`lem:B mod p`, the surjectivity-mod-`p` input) -/
+
+/-- `Δ = dlog` commutes with reduction `map_toZMod` on units (the `𝔽_p` log-derivative is the
+reduction of the `ℤ_[p]` one): `derivativeFun` and `Ring.inverse` (on units) reduce. -/
+private theorem map_toZMod_dlog {g : PowerSeries ℤ_[p]} (hg : IsUnit g) :
+    PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) (dlog p g)
+      = (1 + PowerSeries.X) * derivativeFun
+          (PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) g)
+        * Ring.inverse (PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) g) := by
+  have hmapderiv : ∀ f : PowerSeries ℤ_[p],
+      PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) (derivativeFun f)
+        = derivativeFun (PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) f) := fun f => by
+    ext n
+    rw [PowerSeries.coeff_map, coeff_derivativeFun, coeff_derivativeFun, PowerSeries.coeff_map,
+      map_mul, map_add, map_natCast, map_one]
+  have hmapinv : PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) (Ring.inverse g)
+      = Ring.inverse (PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) g) := by
+    symm
+    rw [← mul_one (Ring.inverse _),
+      Ring.inverse_mul_eq_iff_eq_mul _ _ _ (hg.map (PowerSeries.map _)),
+      ← map_mul, Ring.mul_inverse_cancel _ hg, map_one]
+  rw [dlog, map_mul, map_mul, hmapinv, hmapderiv, map_add, map_one, PowerSeries.map_X]
+
+/-- Every `𝔽_p`-unit power series lifts to a `ℤ_[p]`-unit with the same reduction (the
+constant coefficient, a unit mod `p`, is not in the maximal ideal, hence a unit). -/
+private theorem exists_unit_lift_zmod {a : PowerSeries (ZMod p)} (ha : IsUnit a) :
+    ∃ A : PowerSeries ℤ_[p], IsUnit A ∧
+      PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) A = a := by
+  obtain ⟨A, hA⟩ := PowerSeries.map_surjective _ (ZMod.ringHom_surjective PadicInt.toZMod) a
+  refine ⟨A, ?_, hA⟩
+  have ha0 : PowerSeries.constantCoeff (R := ZMod p) a ≠ 0 :=
+    (PowerSeries.isUnit_iff_constantCoeff.1 ha).ne_zero
+  rw [PowerSeries.isUnit_iff_constantCoeff, ← IsLocalRing.notMem_maximalIdeal,
+    ← PadicInt.ker_toZMod, RingHom.mem_ker,
+    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, ← PowerSeries.coeff_map, hA,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  exact ha0
+
+/-- **`B ⊆ A` mod `p` (RJW `lem:B mod p`, TeX 3346–3357)**: every `ψ`-fixed series is, mod `p`,
+the logarithmic derivative of a `𝒩`-fixed unit. Apply `lem:B mod p 2`
+(`fp_series_eq_dlog_add_frobC`) to `f̄`, lift the unit part `ā` to `g ∈ 𝒲` (`lem:A mod p`),
+and kill the residual `(T+1)/T·C` part via the ψ-fixedness (`psiId_one_add_X_div_X_phi_eq_zero`,
+since `f − Δg` is `ψ`-fixed over `ℤ_[p]`, hence its reduction is `ψ`-fixed). -/
+private theorem exists_normOp_dlog_modEq {f : PowerSeries ℤ_[p]} (hf : psiSeries p f = f) :
+    ∃ g : PowerSeries ℤ_[p], IsUnit g ∧ normOp g = g ∧ ModEqPow p 1 (dlog p g) f := by
+  set F := PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) f with hF
+  obtain ⟨a, b, c, ha, hc, hXb, hdecomp⟩ := fp_series_eq_dlog_add_frobC p F
+  obtain ⟨A, hAunit, hAmap⟩ := exists_unit_lift_zmod p ha
+  obtain ⟨g, hgunit, hgN, hgmod⟩ := exists_normOp_fixed_lift p A hAunit
+  have hgmapa : PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) g = a := by
+    rw [← hAmap]; exact (modEqPow_one_iff_map_toZMod (p := p)).1 hgmod
+  have hmapdlog : PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) (dlog p g)
+      = (1 + PowerSeries.X) * derivativeFun a * Ring.inverse a := by
+    rw [map_toZMod_dlog p hgunit, hgmapa]
+  -- `b = (f − Δg) mod p`, and `f − Δg` is `ψ`-fixed (so `ψ b = b`)
+  have hbmap : b = PowerSeries.map (PadicInt.toZMod : ℤ_[p] →+* ZMod p) (f - dlog p g) := by
+    rw [map_sub, hmapdlog, ← hF, hdecomp]; ring
+  have hpsib : psiSeries p b = b := by
+    rw [hbmap, ← map_toZMod_psiSeries]
+    congr 1
+    rw [psiSeries_sub p, hf, dlog_mem_psiIdSeries p hgunit hgN]
+  have hb0 : b = 0 := psiId_one_add_X_div_X_phi_eq_zero p hpsib hXb hc
+  refine ⟨g, hgunit, hgN, ?_⟩
+  rw [modEqPow_one_iff_map_toZMod, hmapdlog, ← hF, hdecomp, hb0, add_zero]
+
+/-! ### Successive approximation and the compact limit (`lem:log der red mod p`) -/
+
+/-- The one-step refinement (`lem:log der red mod p`, TeX 3318–3322): a `ψ`-fixed `f` admits
+`g ∈ 𝒲` and a `ψ`-fixed `f'` with `Δg = f + p·f'`. (From `exists_normOp_dlog_modEq`,
+`Δg ≡ f mod p`, write the difference `C(p)·f'`; `f'` is `ψ`-fixed since `Δg − f` is and
+`ℤ_[p]⟦T⟧` is `p`-torsion-free.) -/
+private theorem exists_approx_step {f : PowerSeries ℤ_[p]} (hf : psiSeries p f = f) :
+    ∃ (g f' : PowerSeries ℤ_[p]), IsUnit g ∧ normOp g = g ∧ psiSeries p f' = f' ∧
+      dlog p g = f + PowerSeries.C (p : ℤ_[p]) * f' := by
+  obtain ⟨g, hgunit, hgN, hgmod⟩ := exists_normOp_dlog_modEq p hf
+  obtain ⟨f', hf'⟩ := modEqPow_iff_exists_C_mul.1 hgmod
+  rw [pow_one] at hf'
+  -- `Δg = f + C(p)·f'`
+  have hdlogeq : dlog p g = f + PowerSeries.C (p : ℤ_[p]) * f' := by
+    linear_combination hf'
+  refine ⟨g, f', hgunit, hgN, ?_, hdlogeq⟩
+  -- `ψ f' = f'`: apply `ψ` to `C(p)·f' = Δg − f`, both `ψ`-fixed; cancel `p`
+  have hψC : psiSeries p (PowerSeries.C (p : ℤ_[p]) * f')
+      = PowerSeries.C (p : ℤ_[p]) * psiSeries p f' := psiSeries_C_mul_padicInt _ _
+  have hdiff : psiSeries p (PowerSeries.C (p : ℤ_[p]) * f')
+      = PowerSeries.C (p : ℤ_[p]) * f' := by
+    rw [← hf', psiSeries_sub p, dlog_mem_psiIdSeries p hgunit hgN, hf]
+  rw [hψC] at hdiff
+  -- `C(p)·(ψ f' − f') = 0`, and `C(p)` is a non-zero-divisor, so `ψ f' = f'`
+  have hpz : PowerSeries.C (p : ℤ_[p]) * (psiSeries p f' - f') = 0 := by
+    rw [mul_sub, hdiff, sub_self]
+  have hpne : (PowerSeries.C (p : ℤ_[p]) : PowerSeries ℤ_[p]) ≠ 0 := by
+    rw [Ne, ← map_zero (PowerSeries.C (R := ℤ_[p]))]
+    exact fun h => (Nat.cast_ne_zero.mpr hp.out.ne_zero) (PowerSeries.C_injective h)
+  rcases mul_eq_zero.1 hpz with h | h
+  · exact absurd h hpne
+  · exact sub_eq_zero.1 h
+
+/-- The successive-approximation sequences (`lem:log der red mod p`): `gₙ ∈ 𝒲`, `fₙ ∈ (ψ=id)`,
+`f₀ = F`, and `Δ(g_{n+1}) = f_n + p·f_{n+1}` for all `n`. -/
+private theorem exists_approx_seq {F : PowerSeries ℤ_[p]} (hF : psiSeries p F = F) :
+    ∃ (gseq fseq : ℕ → PowerSeries ℤ_[p]), fseq 0 = F ∧ (∀ n, psiSeries p (fseq n) = fseq n) ∧
+      (∀ n, IsUnit (gseq n)) ∧ (∀ n, normOp (gseq n) = gseq n) ∧
+      (∀ n, dlog p (gseq (n + 1)) = fseq n + PowerSeries.C (p : ℤ_[p]) * fseq (n + 1)) := by
+  classical
+  set Q := {f : PowerSeries ℤ_[p] // psiSeries p f = f} with hQ
+  -- the recursion data: `(gₙ, fₙ)` with `fₙ : Q`
+  let stepG : Q → PowerSeries ℤ_[p] := fun q => (exists_approx_step p q.2).choose
+  let stepF : Q → Q := fun q =>
+    ⟨(exists_approx_step p q.2).choose_spec.choose,
+      (exists_approx_step p q.2).choose_spec.choose_spec.2.2.1⟩
+  let aux : ℕ → PowerSeries ℤ_[p] × Q := fun n => Nat.rec ((1 : PowerSeries ℤ_[p]), ⟨F, hF⟩)
+    (fun _ pr => (stepG pr.2, stepF pr.2)) n
+  refine ⟨fun n => (aux n).1, fun n => ((aux n).2 : PowerSeries ℤ_[p]), rfl,
+    fun n => (aux n).2.2, ?_, ?_, ?_⟩
+  · -- units: `gₙ = 1` at `n = 0`, else from the step
+    intro n
+    cases n with
+    | zero => change IsUnit (1 : PowerSeries ℤ_[p]); exact isUnit_one
+    | succ m => exact (exists_approx_step p (aux m).2.2).choose_spec.choose_spec.1
+  · intro n
+    cases n with
+    | zero => change normOp (1 : PowerSeries ℤ_[p]) = 1; exact normOp_one
+    | succ m => exact (exists_approx_step p (aux m).2.2).choose_spec.choose_spec.2.1
+  · intro n
+    exact (exists_approx_step p (aux n).2.2).choose_spec.choose_spec.2.2.2
+
+/-- `𝒩(gⁿ) = gⁿ` for a `𝒩`-fixed `g` (`𝒩` is multiplicative). -/
+private theorem normOp_pow {g : PowerSeries ℤ_[p]} (h : normOp g = g) (n : ℕ) :
+    normOp (g ^ n) = g ^ n := by
+  rw [← normOpHom_apply, map_pow, normOpHom_apply, h]
+
+/-- `𝒩(g⁻¹) = g⁻¹` for a `𝒩`-fixed unit `g`. -/
+private theorem normOp_inverse {g : PowerSeries ℤ_[p]} (hg : IsUnit g) (h : normOp g = g) :
+    normOp (Ring.inverse g) = Ring.inverse g := by
+  have hu : normOp (Ring.inverse g) * g = 1 := by
+    have h1 : normOp (Ring.inverse g) * normOp g = 1 := by
+      rw [← normOp_mul, Ring.inverse_mul_cancel _ hg, normOp_one]
+    rwa [h] at h1
+  calc normOp (Ring.inverse g) = normOp (Ring.inverse g) * (g * Ring.inverse g) := by
+          rw [Ring.mul_inverse_cancel _ hg, mul_one]
+    _ = (normOp (Ring.inverse g) * g) * Ring.inverse g := by ring
+    _ = Ring.inverse g := by rw [hu, one_mul]
+
+/-- The `n`-th factor `g_{n+1}^{(−1)ⁿ pⁿ}` of `hₙ = ∏_{k=1}^n g_k^{(−1)^{k−1}p^{k−1}}`
+(the negative-sign factors realised by `Ring.inverse`). -/
+private def approxFactor (gseq : ℕ → PowerSeries ℤ_[p]) (n : ℕ) : PowerSeries ℤ_[p] :=
+  if Even n then gseq (n + 1) ^ (p ^ n) else Ring.inverse (gseq (n + 1) ^ (p ^ n))
+
+/-- The partial products `hₙ = ∏_{k=1}^n g_k^{(−1)^{k−1}p^{k−1}}` (built recursively). -/
+private def approxProd (gseq : ℕ → PowerSeries ℤ_[p]) : ℕ → PowerSeries ℤ_[p]
+  | 0 => 1
+  | n + 1 => approxProd gseq n * approxFactor p gseq n
+
+private theorem approxFactor_isUnit {gseq : ℕ → PowerSeries ℤ_[p]} (hg : ∀ n, IsUnit (gseq n))
+    (n : ℕ) : IsUnit (approxFactor p gseq n) := by
+  rw [approxFactor]
+  by_cases hev : Even n
+  · rw [if_pos hev]; exact (hg (n + 1)).pow _
+  · rw [if_neg hev]; exact isUnit_ringInverse.mpr ((hg (n + 1)).pow _)
+
+private theorem approxProd_isUnit {gseq : ℕ → PowerSeries ℤ_[p]} (hg : ∀ n, IsUnit (gseq n))
+    (n : ℕ) : IsUnit (approxProd p gseq n) := by
+  induction n with
+  | zero => exact isUnit_one
+  | succ m ih => exact ih.mul (approxFactor_isUnit p hg m)
+
+private theorem approxProd_normOp {gseq : ℕ → PowerSeries ℤ_[p]} (hg : ∀ n, IsUnit (gseq n))
+    (hN : ∀ n, normOp (gseq n) = gseq n) (n : ℕ) :
+    normOp (approxProd p gseq n) = approxProd p gseq n := by
+  induction n with
+  | zero => exact normOp_one
+  | succ m ih =>
+    have hfac : normOp (approxFactor p gseq m) = approxFactor p gseq m := by
+      rw [approxFactor]
+      by_cases hev : Even m
+      · rw [if_pos hev, normOp_pow p (hN (m + 1))]
+      · rw [if_neg hev, normOp_inverse p ((hg (m + 1)).pow _) (normOp_pow p (hN (m + 1)) _)]
+    rw [approxProd, normOp_mul, ih, hfac]
+
+/-- `Δ(approxFactor n) = (−C p)ⁿ·(f_n + p·f_{n+1})` (the `n`-th summand of the telescope). -/
+private theorem dlog_approxFactor {gseq fseq : ℕ → PowerSeries ℤ_[p]} (hg : ∀ n, IsUnit (gseq n))
+    (hstep : ∀ n, dlog p (gseq (n + 1)) = fseq n + PowerSeries.C (p : ℤ_[p]) * fseq (n + 1))
+    (n : ℕ) :
+    dlog p (approxFactor p gseq n)
+      = (- PowerSeries.C (p : ℤ_[p])) ^ n
+        * (fseq n + PowerSeries.C (p : ℤ_[p]) * fseq (n + 1)) := by
+  have hpow : dlog p (gseq (n + 1) ^ (p ^ n))
+      = PowerSeries.C (p : ℤ_[p]) ^ n * dlog p (gseq (n + 1)) := by
+    rw [dlog_pow p (hg (n + 1)), zsmul_eq_mul, Int.cast_natCast, Nat.cast_pow,
+      show ((p : ℕ) : PowerSeries ℤ_[p]) = PowerSeries.C (p : ℤ_[p]) from (map_natCast _ _).symm]
+  rw [approxFactor]
+  by_cases hev : Even n
+  · rw [if_pos hev, hpow, hstep, neg_pow, Even.neg_one_pow hev, one_mul]
+  · rw [if_neg hev, dlog_inverse p ((hg (n + 1)).pow _), hpow, hstep, neg_pow,
+      Odd.neg_one_pow (Nat.not_even_iff_odd.1 hev), neg_one_mul, neg_mul]
+
+/-- **The telescoping identity** (`lem:log der red mod p`, TeX 3324–3328):
+`Δ hₙ = f₀ − (−p)ⁿ·f_n`. -/
+private theorem dlog_approxProd {gseq fseq : ℕ → PowerSeries ℤ_[p]} (hg : ∀ n, IsUnit (gseq n))
+    (hstep : ∀ n, dlog p (gseq (n + 1)) = fseq n + PowerSeries.C (p : ℤ_[p]) * fseq (n + 1))
+    (n : ℕ) :
+    dlog p (approxProd p gseq n)
+      = fseq 0 - (- PowerSeries.C (p : ℤ_[p])) ^ n * fseq n := by
+  induction n with
+  | zero => rw [approxProd, dlog_one]; simp
+  | succ m ih =>
+    rw [approxProd, dlog_mul p (approxProd_isUnit p hg m) (approxFactor_isUnit p hg m), ih,
+      dlog_approxFactor p hg hstep, pow_succ]
+    ring
+
+/-! ### Continuity of `𝒩` (for `𝒲` closed under the compact limit)
+
+`𝒲 = (ℤ_p⟦T⟧^×)^{𝒩=id}` is closed in the coefficientwise topology because `𝒩` is continuous
+there. `𝒩 = det ∘ digitMatrix`, `det` is a polynomial in the entries, and `digitMatrix` is
+continuous as the (coordinatewise) inverse of the continuous digit-assembly map
+`G ↦ Σ_i (1+T)^i φ(G_i)` — a continuous bijection of the compact Hausdorff `ℤ_p⟦T⟧`, hence a
+homeomorphism. (This is the analytic input RJW package as "`𝒲` is compact".) -/
+
+section Continuity
+open scoped PowerSeries.WithPiTopology
+
+variable {p}
+
+/-- A map into `ℤ_p⟦T⟧` is continuous iff continuous in every coefficient
+(`tendsto_iff_coeff_tendsto`). -/
+private theorem continuous_of_coeff {X : Type*} [TopologicalSpace X]
+    (g : X → PowerSeries ℤ_[p]) (h : ∀ n, Continuous (fun x => PowerSeries.coeff n (g x))) :
+    Continuous g := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  rw [ContinuousAt, PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
+  exact fun d => (h d).continuousAt
+
+/-- `coeff n (φ G) = Σ_{d ≤ n} G_d · coeff n (S^d)` (the finite substitution-coefficient
+formula; `S = (1+T)^p − 1` has order `1`). -/
+private theorem coeff_phiSeries_finite (G : PowerSeries ℤ_[p]) (n : ℕ) :
+    PowerSeries.coeff n (phiSeries p G)
+      = ∑ d ∈ Finset.range (n + 1), (PowerSeries.coeff d G) •
+          PowerSeries.coeff n (((1 + PowerSeries.X) ^ p - 1 : PowerSeries ℤ_[p]) ^ d) := by
+  rw [phiSeries, PowerSeries.coeff_subst' (hasSubst_one_add_X_pow_sub_one p)]
+  refine finsum_eq_finsetSum_of_support_subset _ (fun d hd => ?_)
+  simp only [Function.mem_support] at hd
+  rw [Finset.coe_range, Set.mem_Iio]
+  by_contra hcon
+  push Not at hcon
+  refine hd ?_
+  obtain ⟨U, hU⟩ := (PowerSeries.X_dvd_iff
+    (φ := ((1 + PowerSeries.X) ^ p - 1 : PowerSeries ℤ_[p]))).2 (by simp)
+  rw [show PowerSeries.coeff n (((1 + PowerSeries.X) ^ p - 1 : PowerSeries ℤ_[p]) ^ d) = 0 from by
+    rw [hU, mul_pow, PowerSeries.coeff_X_pow_mul', if_neg (by omega)], smul_zero]
+
+/-- `φ = subst((1+T)^p−1)` is continuous (each output coefficient is a finite `ℤ_[p]`-linear
+combination of input coefficients). -/
+private theorem phiSeries_continuous :
+    Continuous (phiSeries p : PowerSeries ℤ_[p] → PowerSeries ℤ_[p]) := by
+  refine continuous_of_coeff _ (fun n => ?_)
+  simp_rw [coeff_phiSeries_finite]
+  refine continuous_finsetSum _ (fun d _ => ?_)
+  rw [show (fun x : PowerSeries ℤ_[p] => (PowerSeries.coeff d x) •
+      PowerSeries.coeff n (((1 + PowerSeries.X) ^ p - 1 : PowerSeries ℤ_[p]) ^ d))
+      = fun x => PowerSeries.coeff n (((1 + PowerSeries.X) ^ p - 1 : PowerSeries ℤ_[p]) ^ d)
+        • PowerSeries.coeff d x from by funext x; rw [smul_eq_mul, smul_eq_mul, mul_comm]]
+  exact (PowerSeries.WithPiTopology.continuous_coeff ℤ_[p] d).const_smul _
+
+variable (p)
+
+/-- The digit-assembly bijection `(G_i) ↦ Σ_i (1+T)^i φ(G_i)` (bijective by
+`existsUnique_digits_padicInt`). -/
+private def digitAssembly : (Fin p → PowerSeries ℤ_[p]) ≃ PowerSeries ℤ_[p] where
+  toFun G := ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (G i)
+  invFun F := (existsUnique_digits_padicInt p F).choose
+  left_inv G := (((existsUnique_digits_padicInt p
+    (∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (G i))).choose_spec.2 G rfl)).symm
+  right_inv F := ((existsUnique_digits_padicInt p F).choose_spec.1).symm
+
+private theorem digitAssembly_continuous : Continuous (digitAssembly p) := by
+  change Continuous (fun G : Fin p → PowerSeries ℤ_[p] =>
+    ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ) * phiSeries p (G i))
+  exact continuous_finsetSum _ (fun i _ =>
+    continuous_const.mul (phiSeries_continuous.comp (continuous_apply i)))
+
+/-- The digit map is a homeomorphism (continuous bijection of compact Hausdorff spaces). -/
+private noncomputable def digitHomeo : (Fin p → PowerSeries ℤ_[p]) ≃ₜ PowerSeries ℤ_[p] :=
+  Continuous.homeoOfEquivCompactToT2 (f := digitAssembly p) (digitAssembly_continuous p)
+
+/-- `digitMatrix f (·) j = digitHomeo.symm (f·(1+T)^j)` (the `j`-th column is the digit family
+of `f·(1+T)^j`, `digitMatrix_col_isDigitDecomp`). -/
+private theorem digitMatrix_eq_symm (f : PowerSeries ℤ_[p]) (j : Fin p) :
+    (fun i => digitMatrix f i j) = (digitHomeo p).symm (f * (1 + PowerSeries.X) ^ (j : ℕ)) := by
+  refine (existsUnique_digits_padicInt p (f * (1 + PowerSeries.X) ^ (j : ℕ))).unique
+    (digitMatrix_col_isDigitDecomp (p := p) f j) ?_
+  exact ((digitHomeo p).apply_symm_apply (f * (1 + PowerSeries.X) ^ (j : ℕ))).symm
+
+private theorem digitMatrix_continuous (i j : Fin p) :
+    Continuous (fun f : PowerSeries ℤ_[p] => digitMatrix f i j) := by
+  rw [show (fun f : PowerSeries ℤ_[p] => digitMatrix f i j)
+      = fun f => (digitHomeo p).symm (f * (1 + PowerSeries.X) ^ (j : ℕ)) i from by
+    funext f; rw [show digitMatrix f i j = (fun i => digitMatrix f i j) i from rfl,
+      digitMatrix_eq_symm p f j]]
+  exact (continuous_apply i).comp ((digitHomeo p).symm.continuous.comp
+    (continuous_id.mul continuous_const))
+
+/-- **`𝒩` is continuous** for the coefficientwise topology (`det` of the continuous
+`digitMatrix`). -/
+private theorem normOp_continuous : Continuous (normOp (p := p)) := by
+  rw [show (normOp (p := p)) = fun f => Matrix.det (digitMatrix f) from by
+    funext f; exact normOp_eq_det f]
+  simp_rw [Matrix.det_apply]
+  exact continuous_finsetSum _ (fun σ _ =>
+    (continuous_finsetProd _ (fun i _ => digitMatrix_continuous p (σ i) i)).const_smul _)
+
+end Continuity
+
+open scoped PowerSeries.WithPiTopology in
 /-- **RJW thm:log der (TeX 3280–3285) — the Coleman–Coates–Wiles short exact sequence.**
 Surjectivity half: every `ψ`-fixed series is the logarithmic derivative of a `𝒩`-fixed
 unit. (The kernel half is `rem:ker Δ`: `μ_{p−1}`.)
 
-Roadmap and obstacle note (T1203c). RJW reduce surjectivity (`lem:log der red mod p`,
-TeX 3315–3332) to the mod-`p` identity `A = B` (`A = Δ(𝒲) mod p`, `B = (ψ=id) mod p`):
-* `A ⊆ B` mod `p` is `dlog_mem_psiIdSeries` (now proven) reduced mod `p`, plus
-  `lem:A mod p` (`exists_normOp_fixed_lift`).
-* `B ⊆ A` mod `p` (`lem:B mod p`) needs `fp_series_eq_dlog_add_frobC` (`lem:B mod p 2`,
-  below) **and** the `ψ`-action computation that the `(T+1)/T·C` component is killed —
-  which (TeX 3352–3356) uses `ψ(g·φ(f)) = ψ(g)·f` and "`ψ` fixes `(T+1)/T`". The latter is
-  proved in RJW (`LemmaPsiInvariant`, TeX 1521) by the **partial-fraction `μ_p`-sum
-  `(φ∘ψ)(1/T) = p⁻¹ ∑_ξ 1/((1+T)ξ−1)`** — an instance of the deferred non-formal
-  `Eqphipsi` (FormalPsi.lean; the substitution has non-nilpotent constant term for `ξ ≠ 1`).
-* The reduction itself then builds `g_i ∈ 𝒲`, `f_i ∈ (ψ=id)` with `Δ(g_i) − f_{i−1} = p f_i`,
-  sets `h_n = ∏_{k=1}^n g_k^{(−1)^{k−1} p^{k−1}}` (so `Δ h_n = f_0 + (−1)^{n−1} p^n f_n`,
-  via `dlog_mul`/`dlog_pow` above), and takes a convergent subsequence in the compact
-  `ℤ_p⟦T⟧^×` (§10 `SeqCompactSpace`, `exists_subseq_tendsto`) with limit `h`, `Δ h = F`,
-  `𝒩 h = h` (`modEqPow_of_tendsto`/`eq_of_forall_modEqPow`). This last analytic step also
-  needs **continuity of `Δ = dlog`** (`(1+T)·∂·(·)⁻¹`) in the coefficientwise topology —
-  continuity of `derivativeFun` and of `Ring.inverse` on units — which is not yet in the
-  §10 substrate.
-
-The blocking inputs (`fp_series_eq_dlog_add_frobC` and the `Eqphipsi`-based `ψ`-fixedness of
-`(T+1)/T`) live in / depend on modules outside this file's edit scope or on the deferred
-`Eqphipsi`. The `dlog`-homomorphism layer above is the reusable formal half of the
-reduction. -/
+Proof (T1203c, CLOSED via the `ξ`-free route). RJW reduce surjectivity (`lem:log der red
+mod p`, TeX 3315–3332) to the mod-`p` identity `A = B` (`A = Δ(𝒲) mod p`, `B = (ψ=id) mod p`):
+* `A ⊆ B` mod `p` is `dlog_mem_psiIdSeries` reduced mod `p` (used inside the step lemma).
+* `B ⊆ A` mod `p` (`lem:B mod p`) is `exists_normOp_dlog_modEq`: `lem:B mod p 2`
+  (`fp_series_eq_dlog_add_frobC`) writes `f̄ = Δā + b̄`; lift `ā` to `g ∈ 𝒲` (`lem:A mod p`);
+  the residual `(T+1)/T·C`-part `b̄` is killed by `psiId_one_add_X_div_X_phi_eq_zero`. The
+  `ψ`-fixedness of `(T+1)/T` (RJW's `Eqphipsi`-based `LemmaPsiInvariant`, TeX 1521) is
+  replaced by the **`ξ`-free series projection formula** `ψ(φd·F) = d·ψF`
+  (`psiSeries_phiSeries_mul_zmod`) together with honest `ψ` over `𝔽_p⟦T⟧`
+  (`existsUnique_digits_zmod`, via the `θ = (1+T)∂` eigenvalue argument) and `ψ(T^{p−1}) = 1`.
+* The reduction (here) iterates the step (`exists_approx_seq`) to `g_i ∈ 𝒲`, `f_i ∈ (ψ=id)`
+  with `Δ(g_i) − f_{i−1} = p f_i`, forms `h_n = ∏_{k=1}^n g_k^{(−1)^{k−1} p^{k−1}}`
+  (`approxProd`), so `Δ h_n = f_0 − (−p)^n f_n` (`dlog_approxProd`), and takes a convergent
+  subsequence in the compact `ℤ_p⟦T⟧^×` (`exists_subseq_tendsto`) with limit `h ∈ 𝒲`. The
+  `Δ`-limit is passed through the **cleared** form `(1+T)·∂h = f_0·h` (avoiding
+  inverse-continuity): `(1+T)·∂(h_{φj})` converges both to `(1+T)·∂h` (continuity of `∂`)
+  and to `f_0·h` (the `(−p)^{φj}f_{φj}` term `→ 0`), so by limit uniqueness they agree. -/
 theorem dlog_surjective_onto_psiId {F : PowerSeries ℤ_[p]} (hF : F ∈ psiIdSeries p) :
-    ∃ g : PowerSeries ℤ_[p], IsUnit g ∧ normOp g = g ∧ dlog p g = F := sorry
+    ∃ g : PowerSeries ℤ_[p], IsUnit g ∧ normOp g = g ∧ dlog p g = F := by
+  have hFpsi : psiSeries p F = F := hF
+  obtain ⟨gseq, fseq, hf0, hfψ, hgu, hgN, hstep⟩ := exists_approx_seq p hFpsi
+  -- the partial products `hₙ` and their `Δ`
+  set hseq := approxProd p gseq with hhseq
+  have hhseqU : ∀ n, IsUnit (hseq n) := fun n => approxProd_isUnit p hgu n
+  have hhseqN : ∀ n, normOp (hseq n) = hseq n := fun n => approxProd_normOp p hgu hgN n
+  have hdlogh : ∀ n, dlog p (hseq n)
+      = F - (- PowerSeries.C (p : ℤ_[p])) ^ n * fseq n := fun n => by
+    rw [hhseq, dlog_approxProd p hgu hstep n, hf0]
+  -- the cleared form `(1+T)·∂(hₙ) = (F − (−p)ⁿ fₙ)·hₙ`
+  have hcleared : ∀ n, (1 + PowerSeries.X) * derivativeFun (hseq n)
+      = (F - (- PowerSeries.C (p : ℤ_[p])) ^ n * fseq n) * hseq n := fun n => by
+    have h1 : dlog p (hseq n) * hseq n = (1 + PowerSeries.X) * derivativeFun (hseq n) := by
+      rw [dlog, mul_assoc, Ring.inverse_mul_cancel _ (hhseqU n), mul_one]
+    rw [← h1, hdlogh n]
+  -- compactness: a convergent subsequence `h_{φ j} → h`
+  obtain ⟨h, φ, hφmono, hconv⟩ := exists_subseq_tendsto hseq
+  refine ⟨h, ?_, ?_, ?_⟩
+  · -- `h` a unit (limit of units)
+    refine (isClosed_isUnit (p := p)).mem_of_tendsto hconv ?_
+    filter_upwards with j using hhseqU (φ j)
+  · -- `𝒩 h = h`: `𝒩(h_{φj}) = h_{φj} → h` and `𝒩(h_{φj}) → 𝒩 h` (continuity), so equal
+    have h1 : Filter.Tendsto (fun j => normOp (hseq (φ j))) Filter.atTop (nhds (normOp h)) :=
+      ((normOp_continuous p).tendsto h).comp hconv
+    have h2 : Filter.Tendsto (fun j => normOp (hseq (φ j))) Filter.atTop (nhds h) := by
+      simp_rw [hhseqN]; exact hconv
+    exact tendsto_nhds_unique h1 h2
+  · -- `Δ h = F`: pass the cleared form through the limit
+    have hLHS : Filter.Tendsto (fun j => (1 + PowerSeries.X) * derivativeFun (hseq (φ j)))
+        Filter.atTop (nhds ((1 + PowerSeries.X) * derivativeFun h)) := by
+      have hderiv : Filter.Tendsto (fun j => derivativeFun (hseq (φ j))) Filter.atTop
+          (nhds (derivativeFun h)) := by
+        rw [PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
+        intro m
+        simp_rw [coeff_derivativeFun]
+        exact (tendsto_coeff hconv (m + 1)).mul_const _
+      exact Filter.Tendsto.const_mul _ hderiv
+    have hWzero : Filter.Tendsto (fun j => (- PowerSeries.C (p : ℤ_[p])) ^ (φ j) * fseq (φ j))
+        Filter.atTop (nhds 0) := by
+      rw [PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
+      intro m
+      rw [map_zero]
+      have hcoeff : ∀ j, PowerSeries.coeff m
+          ((- PowerSeries.C (p : ℤ_[p])) ^ (φ j) * fseq (φ j))
+          = (-(p : ℤ_[p])) ^ (φ j) * PowerSeries.coeff m (fseq (φ j)) := fun j => by
+        rw [show (- PowerSeries.C (p : ℤ_[p])) ^ (φ j)
+            = PowerSeries.C ((-(p : ℤ_[p])) ^ (φ j)) from by rw [map_pow, map_neg],
+          PowerSeries.coeff_C_mul]
+      simp_rw [hcoeff]
+      rw [tendsto_zero_iff_norm_tendsto_zero]
+      refine squeeze_zero (fun j => norm_nonneg _) (fun j => ?_)
+        (g := fun j => ((p : ℝ)⁻¹) ^ (φ j)) ?_
+      · rw [norm_mul, norm_pow, norm_neg, PadicInt.norm_p]
+        calc (p : ℝ)⁻¹ ^ (φ j) * ‖PowerSeries.coeff m (fseq (φ j))‖
+            ≤ (p : ℝ)⁻¹ ^ (φ j) * 1 := by gcongr; exact PadicInt.norm_le_one _
+          _ = (p : ℝ)⁻¹ ^ (φ j) := mul_one _
+      · exact (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity)
+          (inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.out.one_lt))).comp hφmono.tendsto_atTop
+    -- RHS `(F − (−p)^{φj} f_{φj})·h_{φj} → F·h`
+    have hRHS : Filter.Tendsto
+        (fun j => (F - (- PowerSeries.C (p : ℤ_[p])) ^ (φ j) * fseq (φ j)) * hseq (φ j))
+        Filter.atTop (nhds (F * h)) := by
+      have hFW : Filter.Tendsto (fun j => F - (- PowerSeries.C (p : ℤ_[p])) ^ (φ j) * fseq (φ j))
+          Filter.atTop (nhds F) := by
+        have := tendsto_const_nhds (x := F) (f := Filter.atTop (α := ℕ)) |>.sub hWzero
+        simpa using this
+      exact hFW.mul hconv
+    -- `(1+T)·∂h = F·h` by limit uniqueness; then `Δ h = F`
+    have hkey : (1 + PowerSeries.X) * derivativeFun h = F * h :=
+      tendsto_nhds_unique (by simpa only [hcleared] using hLHS) hRHS
+    have hdh : dlog p h = (1 + PowerSeries.X) * derivativeFun h * Ring.inverse h := rfl
+    rw [hdh, hkey, mul_assoc, Ring.mul_inverse_cancel _
+      ((isClosed_isUnit (p := p)).mem_of_tendsto hconv (by
+        filter_upwards with j using hhseqU (φ j))), mul_one]
 
 /-- A power series with vanishing formal derivative is its constant coefficient. -/
 private theorem eq_C_constantCoeff_of_derivativeFun_zero (g : PowerSeries ℤ_[p])
