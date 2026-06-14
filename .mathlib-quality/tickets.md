@@ -5582,7 +5582,7 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
 
 ### [T1203] **E12.2 HARD: thm:log der (Coleman–Coates–Wiles)** (LogDerivative.lean)
-- **Status**: in_progress (2026-06-14; agent filled 12/15 leaves + 16 reusable helpers (both ψ-subspaces, del_phiHom, rem:ker Δ, lem:A mod p exists_normOp_fixed_lift, lem:rest zp* both halves, normOp_modEq_of_modEq, solCoeff). 3 deep leaves SPAWNED as T1203a (Jacobi/lem:log der 1), T1203b (𝔽_p construction/lem:B mod p 2), T1203c (surjectivity). Real sorry count 3 (lines 102/238/244). Degraded mode.) | **Sub-tickets**: T1203a, T1203b, T1203c | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
+- **Status**: in_progress (2026-06-14 wave 3). 13/15 leaves done. **T1203a DONE** (lem:log der 1, ξ-free Jacobi route). 2 sorries remain (LogDerivative.lean:606/676): T1203b (lem:B mod p 2, the 𝔽_p⟦T⟧ α-filtration — buildable, NOT Eqphipsi-dependent; dispatched) and T1203c (surjectivity — needs T1203b + dlog-continuity in the Pi topology [buildable, §10-substrate gap] + "ψ fixes (T+1)/T" which RJW prove via the **deferred series-Eqphipsi**; ξ-free route under investigation in FormalPsi.lean). Per plan §12 this is "the hardest mathematics in Part II"; the plan anticipated the Eqphipsi due-date here. | **Sub-tickets**: T1203a (done), T1203b, T1203c | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
 - **Parallel**: yes (vs T1201 — different file, no Galois dep) | **Type**: lemmas (HARD)
 #### Statement (skeleton canonical)
 `psiIdSeries`/`psiZeroSeries` (Submodules); `del_phiHom` (Δ∘φ = p φ∘Δ);
@@ -5738,7 +5738,7 @@ PadicLFunctionsBlueprint` green; re-render via ci-pages.sh.
 - NO leaf needs the deferred Λ-module structure theorem (that is §13/IMC).
 
 ### [T1203a] lem:log der 1 — Δ(𝒲) ⊆ ℤ_p⟦T⟧^{ψ=id} via the Jacobi det-formula
-- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Status**: **done** (2026-06-14, agent a808a4). `dlog_mem_psiIdSeries` sorry-free; `#print axioms` = {propext, Classical.choice, Quot.sound}. Closed via the ξ-free Jacobi/trace route (sidesteps the deferred series-Eqphipsi μ_p-product that the plan flagged for this leaf): identity K `digitMatrix_del` `(digitMatrix Δf)_{ij}=(i−j)M_{ij}+pΔ(M_{ij})` + `trace_digitMatrix h = pψ(h)` + Jacobi `del_det_eq_smul_trace` + `adjugate M = f•M⁻¹`, giving `pψ(dlog f)=p·dlog f`, cancel p. Reusable helpers banked: `derivation_det` (Jacobi's formula, absent from mathlib), full Δ-Leibniz API, and the `dlog_mul`/`dlog_one`/`dlog_inverse`/`dlog_pow` homomorphism layer. | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
 - **Depends on**: T1203 (the 12 filled leaves + 16 helpers) | **Type**: lemma
 #### Statement
 `dlog_mem_psiIdSeries {f : PowerSeries ℤ_[p]} (hf : IsUnit f) (hN : normOp f = f) :
