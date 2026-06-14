@@ -459,6 +459,180 @@ theorem continuous_colemanPipe2 :
   rw [hval]
   exact (continuous_ofPowerSeries_apply p _).comp hseries
 
+/-! ## Continuity of `colemanSeries` and of `Col` (ST2)
+
+The bottleneck for `Col '' 𝒞_{∞,1} ⊆ I(𝒢)ζ_p` is the continuity of the Coleman map, which
+factors as `Col = colemanPipe2 ∘ (colemanSeries, Ring.inverse ∘ colemanSeries)` with
+`continuous_colemanPipe2` already in hand; the hard factor is `colemanSeries : 𝒰_∞ →
+ℤ_p⟦T⟧`. Prior agents read `colemanSeries` as an *opaque* `Classical.choose` subsequential
+limit. It is in fact the *unique* solution of `coleman_existsUnique` (the `𝒩`-fixed unit
+interpolating `u`), and that uniqueness — not the diagonal construction — is what makes it
+continuous, via a clean compactness argument that sidesteps the opacity entirely:
+
+* `𝒲ˣ := {f | IsUnit f ∧ 𝒩 f = f}` is **compact** (a closed subset of the compact
+  `ℤ_p⟦T⟧`, `isClosed_isUnit` + `normOp_continuous`);
+* the evaluation `E : 𝒲ˣ → 𝒰_∞`, `f ↦ invColeman f` (the banked inverse, `colemanSeries
+  (invColeman f) = f`) is **continuous + injective**, hence a closed embedding
+  (`Continuous.isClosedEmbedding`, compact→T2), so it is an *embedding*;
+* therefore the section `colSec u := ⟨colemanSeries u, …⟩ : 𝒲ˣ` is continuous **iff**
+  `E ∘ colSec` is (`IsEmbedding.continuous_iff`), and `(E (colSec u)).elems n = u.elems n`
+  for `n ≥ 1` (by `evalPi_colemanSeries`), constant `1` at level `0` — so `E ∘ colSec` is
+  continuous by `continuous_iff_elems` + `continuous_elems`. No `Classical.choose`
+  discontinuity ever appears: uniqueness collapses the whole construction to a homeomorphism.
+
+`colemanSeries = Subtype.val ∘ colSec` is then continuous, and `Col` follows by composing
+with `continuous_colemanPipe2` (the `Ring.inverse` factor is `colemanSeries (·⁻¹)`, continuous
+since inversion is continuous on `𝒰_∞`). -/
+
+/-- The `𝒩`-fixed unit power series `𝒲ˣ = {f | IsUnit f ∧ 𝒩 f = f}` (the image of
+`colemanSeries`). -/
+def normFixedUnits : Set (PowerSeries ℤ_[p]) := {f | IsUnit f ∧ normOp f = f}
+
+/-- `𝒲ˣ` is closed in `ℤ_p⟦T⟧`: `{IsUnit}` is closed (`isClosed_isUnit`) and `{𝒩 f = f}` is
+closed (`normOp_continuous`). -/
+theorem isClosed_normFixedUnits : IsClosed (normFixedUnits p) := by
+  have hset : normFixedUnits p = {f : PowerSeries ℤ_[p] | IsUnit f} ∩ {f | normOp f = f} := by
+    ext; simp [normFixedUnits, Set.mem_inter_iff]
+  rw [hset]
+  exact isClosed_isUnit.inter (isClosed_eq (normOp_continuous p) continuous_id)
+
+/-- **`𝒲ˣ` is compact**: a closed subset of the (Tychonoff-)compact `ℤ_p⟦T⟧`
+(`Coleman.instCompactSpace`). -/
+instance instCompactSpace_normFixedUnits : CompactSpace (normFixedUnits p) := by
+  rw [← isCompact_iff_compactSpace]
+  exact (isClosed_normFixedUnits p).isCompact
+
+/-- The evaluation `E : 𝒲ˣ → 𝒰_∞`, `f ↦ invColeman f`: a `𝒩`-fixed unit gives the
+norm-compatible system of its values `(f(π_n))_n` (the banked `invColeman`, with
+`colemanSeries (invColeman f) = f`). -/
+def colEval (f : normFixedUnits p) : NormCompatUnits p :=
+  invColeman p f.1 f.2.1 f.2.2
+
+/-- `colemanSeries (E f) = f` (the banked `colemanSeries_invColeman`: `E` is a section of the
+forgetful direction, and `colemanSeries` undoes it). -/
+theorem colemanSeries_colEval (f : normFixedUnits p) :
+    colemanSeries p (colEval p f) = (f : PowerSeries ℤ_[p]) :=
+  colemanSeries_invColeman p f.1 f.2.1 f.2.2
+
+/-- **`E` is continuous**: by `continuous_iff_elems`, each level coordinate `f ↦ (E f).elems n`
+is continuous. For `n ≥ 1` it is `f ↦ f(π_n) = evalPi f n` (`continuous_evalPi`); at level `0`
+it is the constant `1`. -/
+theorem continuous_colEval : Continuous (colEval p) := by
+  rw [continuous_iff_elems]
+  intro n
+  by_cases hn : 1 ≤ n
+  · have heq : (fun f : normFixedUnits p => (((colEval p f).elems n : ℂ_[p]ˣ) : ℂ_[p]))
+        = fun f : normFixedUnits p => evalPi p (f : PowerSeries ℤ_[p]) n := by
+      funext f; simp only [colEval, invColeman, dif_pos hn, Units.val_mk0]
+    rw [heq]
+    exact (continuous_evalPi p hn).comp continuous_subtype_val
+  · have heq : (fun f : normFixedUnits p => (((colEval p f).elems n : ℂ_[p]ˣ) : ℂ_[p]))
+        = fun _ : normFixedUnits p => (1 : ℂ_[p]) := by
+      funext f; simp only [colEval, invColeman, dif_neg hn, Units.val_one]
+    rw [heq]; exact continuous_const
+
+/-- **`E` is injective**: if `invColeman f = invColeman g`, their level values agree, so
+`f = colemanSeries (E f) = colemanSeries (E g) = g` (`colemanSeries_colEval`,
+`evalPi_injective`). -/
+theorem injective_colEval : Function.Injective (colEval p) := by
+  intro f g hfg
+  apply Subtype.ext
+  refine evalPi_injective p (fun n hn => ?_)
+  rw [← colemanSeries_colEval p f, ← colemanSeries_colEval p g, hfg]
+
+/-- The section `u ↦ colemanSeries u` packaged into `𝒲ˣ` (`colemanSeries` lands in the
+`𝒩`-fixed units, `colemanSeries_isUnit` + `normOp_colemanSeries`). -/
+def colSec (u : NormCompatUnits p) : normFixedUnits p :=
+  ⟨colemanSeries p u, colemanSeries_isUnit p u, normOp_colemanSeries p u⟩
+
+/-- **The section `colSec` is continuous.** `E` is a closed embedding (`continuous_colEval` +
+`injective_colEval`, compact→T2 `Continuous.isClosedEmbedding`), hence an embedding, so
+`colSec` is continuous iff `E ∘ colSec` is (`IsEmbedding.continuous_iff`). And `(E (colSec
+u)).elems n = u.elems n` for `n ≥ 1` (`evalPi_colemanSeries`: `colemanSeries u (π_n) = u_n`),
+constant `1` at level `0` — continuous by `continuous_iff_elems` + `continuous_elems`. -/
+theorem continuous_colSec : Continuous (colSec p) := by
+  have hemb : Topology.IsEmbedding (colEval p) :=
+    ((continuous_colEval p).isClosedEmbedding (injective_colEval p)).isEmbedding
+  rw [hemb.continuous_iff, continuous_iff_elems]
+  intro n
+  by_cases hn : 1 ≤ n
+  · have heq : (fun u : NormCompatUnits p =>
+        ((((colEval p ∘ colSec p) u).elems n : ℂ_[p]ˣ) : ℂ_[p]))
+        = fun u => ((u.elems n : ℂ_[p]ˣ) : ℂ_[p]) := by
+      funext u
+      change (((colEval p (colSec p u)).elems n : ℂ_[p]ˣ) : ℂ_[p]) = _
+      simp only [colEval, colSec, invColeman, dif_pos hn, Units.val_mk0]
+      exact evalPi_colemanSeries p u hn
+    rw [heq]; exact continuous_elems p n
+  · have heq : (fun u : NormCompatUnits p =>
+        ((((colEval p ∘ colSec p) u).elems n : ℂ_[p]ˣ) : ℂ_[p]))
+        = fun _ : NormCompatUnits p => (1 : ℂ_[p]) := by
+      funext u
+      change (((colEval p (colSec p u)).elems n : ℂ_[p]ˣ) : ℂ_[p]) = _
+      simp only [colEval, colSec, invColeman, dif_neg hn, Units.val_one]
+    rw [heq]; exact continuous_const
+
+/-- **`colemanSeries : 𝒰_∞ → ℤ_p⟦T⟧` is continuous** (coefficientwise/`WithPiTopology`). It is
+`Subtype.val ∘ colSec` with `colSec` continuous (`continuous_colSec`). The opacity of the
+`Classical.choose` construction is irrelevant: `colemanSeries` is pinned by `coleman_existsUnique`
+and recovered as the inverse of the embedding `E`, a genuine continuous function. -/
+theorem continuous_colemanSeries : Continuous (colemanSeries p) :=
+  continuous_subtype_val.comp (continuous_colSec p)
+
+/-- `colemanSeries 1 = 1` (the trivial system maps to the unit series; both are `𝒩`-fixed units
+interpolating `1`, so equal by `coleman_existsUnique`). -/
+theorem colemanSeries_one' : colemanSeries p (1 : NormCompatUnits p) = 1 := by
+  refine (coleman_existsUnique p 1).unique (coleman_existsUnique p 1).choose_spec.1
+    ⟨isUnit_one, normOp_one, fun n hn => ?_⟩
+  rw [evalPi_one]; rfl
+
+/-- `Ring.inverse (colemanSeries u) = colemanSeries u⁻¹`: from multiplicativity
+(`colemanSeries_mul`, `colemanSeries_one'`) `colemanSeries u · colemanSeries u⁻¹ = 1`, so
+`colemanSeries u⁻¹` is the (two-sided) inverse of the unit `colemanSeries u`. This identifies
+the `Ring.inverse` factor of `Col` with a continuous function, sidestepping its general
+discontinuity. -/
+theorem inverse_colemanSeries (u : NormCompatUnits p) :
+    Ring.inverse (colemanSeries p u) = colemanSeries p u⁻¹ := by
+  have hmul : colemanSeries p u * colemanSeries p u⁻¹ = 1 := by
+    rw [← colemanSeries_mul p, mul_inv_cancel, colemanSeries_one' p]
+  calc Ring.inverse (colemanSeries p u)
+      = Ring.inverse (colemanSeries p u) * (colemanSeries p u * colemanSeries p u⁻¹) := by
+        rw [hmul, mul_one]
+    _ = (Ring.inverse (colemanSeries p u) * colemanSeries p u) * colemanSeries p u⁻¹ := by
+        rw [mul_assoc]
+    _ = colemanSeries p u⁻¹ := by
+        rw [Ring.inverse_mul_cancel _ (colemanSeries_isUnit p u), one_mul]
+
+/-- **Inversion `u ↦ u⁻¹` is continuous on `𝒰_∞`** (it is a `CommGroup` with pointwise inverse).
+By `continuous_iff_elems`, each level coordinate is `u ↦ (u.elems n)⁻¹ : ℂ_[p]`, continuous as
+`val ∘ inv` of the continuous unit coordinate `continuous_elemsUnits` (`ℂ_[p]ˣ` a topological
+group). -/
+theorem continuous_inv_NCU : Continuous (fun u : NormCompatUnits p => u⁻¹) := by
+  rw [continuous_iff_elems]
+  intro n
+  exact Units.continuous_val.comp (continuous_inv.comp (continuous_elemsUnits p n))
+
+/-- **`Col` is continuous** (ST2), w.r.t. the inverse-limit topology on `𝒰_∞` (ST1) and the
+weak-* topology on `Λ(ℤ_p^×)`. Write `Col = colemanPipe2 ∘ (colemanSeries, Ring.inverse ∘
+colemanSeries)` (`colemanPipe2_eq_Col`): the pairing is continuous — `colemanSeries` by
+`continuous_colemanSeries`, and `Ring.inverse ∘ colemanSeries = colemanSeries ∘ (·⁻¹)`
+(`inverse_colemanSeries`) by `continuous_colemanSeries` ∘ `continuous_inv_NCU` — and
+`colemanPipe2` is jointly continuous (`continuous_colemanPipe2`). -/
+theorem continuous_Col : Continuous (Col p) := by
+  have hpair : Continuous (fun u : NormCompatUnits p =>
+      (colemanSeries p u, Ring.inverse (colemanSeries p u))) := by
+    refine (continuous_colemanSeries p).prodMk ?_
+    have heq : (fun u : NormCompatUnits p => Ring.inverse (colemanSeries p u))
+        = fun u => colemanSeries p u⁻¹ := by funext u; exact inverse_colemanSeries p u
+    rw [heq]
+    exact (continuous_colemanSeries p).comp (continuous_inv_NCU p)
+  have hcol : (Col p) = (Function.uncurry (colemanPipe2 p)) ∘
+      (fun u : NormCompatUnits p => (colemanSeries p u, Ring.inverse (colemanSeries p u))) := by
+    funext u
+    rw [Function.comp_apply, Function.uncurry_apply_pair, colemanPipe2_eq_Col]
+  rw [hcol]
+  exact (continuous_colemanPipe2 p).comp hpair
+
 /-! ## Closedness of the cyclotomic-closure value sets and of `Col '' 𝒞_{∞,1}` -/
 
 /-- `K p n` is closed in `ℂ_[p]` (re-derived; the `Theorem.lean` version is private): a
