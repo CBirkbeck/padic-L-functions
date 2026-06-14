@@ -1758,4 +1758,75 @@ theorem galNCU_wGamma_mem_cycloTower1 (a : ℤ_[p]ˣ) (hp2 : p ≠ 2) :
   exact ⟨⟨Subgroup.le_topologicalClosure _ hgalcyc,
     ((mem_localUnitsOne_iff p).1 hgprin).1⟩, hgprin⟩
 
+/-! ## The `wγ(a₀)`↔`c_n(a₀)` bridge and level-`n` cyclicity at `a₀` (RJW LemmaGeneratorCinfty1
+step (A)/(B))
+
+These lemmas relate the *abstract* Teichmüller-corrected generator `wγ(a₀)` (defined via the
+`splitCyclo` Teichmüller section) to the *explicit* cyclotomic units `c_n(a₀)` (`cycloUnit`),
+and assemble the banked level-`n` single-generator cyclicity `cor:cyc units gen 2`
+(`cycloUnit_mem_cycloTranslateSubgroup`) at the canonical topological generator `a₀`. They are
+the honest, axiom-clean fragments of LemmaGeneratorCinfty1 (TeX 3553–3578) provable without the
+deferred §13 inverse-limit `Λ(𝒢)`-module structure on the unit tower. -/
+
+/-- **(A) The `wγ(a₀)`↔`c_n(a₀)` level bridge**: the `(p−1)`-power of `wγ(a₀)`'s level-`n`
+coordinate is exactly `c_n(a₀)^{p−1}`. The Teichmüller factor `v = ω(b)` of the split
+`cyclo a₀ = v·wγ(a₀)` is `(p−1)`-torsion (`wGammaTeich_torsion`), so it cancels in the
+`(p−1)`-power, exposing the explicit cyclotomic content of the abstract `wγ(a₀)`. This is the
+levelwise form of `wGamma_pow_eq_cyclo_pow`. -/
+theorem wGamma_elems_pow_eq_cycloUnit_pow (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    ((wGamma p hp2).elems n : ℂ_[p]) ^ (p - 1) = cycloUnit p (a0 p hp2) n ^ (p - 1) := by
+  have h := congrArg (fun u : NormCompatUnits p => ((u.elems n : ℂ_[p]ˣ) : ℂ_[p]))
+    (wGamma_pow_eq_cyclo_pow p hp2)
+  simp only [elems_pow' p, Units.val_pow_eq_pow_val] at h
+  rw [h]
+  -- `(cyclo a₀).elems n = c_n(a₀)` for `n ≥ 1`
+  change (((cyclo p (a0_not_dvd p hp2) hp2).elems n : ℂ_[p]ˣ) : ℂ_[p]) ^ (p - 1) = _
+  rw [show (cyclo p (a0_not_dvd p hp2) hp2).elems n
+      = Units.mk0 (cycloUnit p (a0 p hp2) n) (cycloUnit_ne_zero p (a0_not_dvd p hp2) hn) from by
+    change (if h : 1 ≤ n then Units.mk0 (cycloUnit p (a0 p hp2) n) _ else 1) = _
+    rw [dif_pos hn], Units.val_mk0]
+
+/-- **(B) Level-`n` single-generator cyclicity at `a₀`** (RJW `cor:cyc units gen 2`, TeX
+3484–3486, specialised to the canonical topological generator `a₀`): every cyclotomic unit
+`c_n(b')` with `p ∤ b'` lies in the `𝒢_n`-translate subgroup of the single generator `c_n(a₀)`.
+The canonical `a₀` (`exists_nat_topological_generator`) reduces to a *generator* of `(ℤ/p^nℤ)^×`
+at every level `n ≥ 1` (`hgen`), so every `p`-coprime residue `b' mod p^n` is a power
+`(a₀)^r`; the explicit telescoping `c_n(b') = ∏_{i<r} σ_{a₀^i}(c_n(a₀))`
+(`cycloUnit_mem_cycloTranslateSubgroup`) then exhibits `c_n(b')` as a product of `σ`-translates
+of `c_n(a₀)`. This is the level-`n` algebraic content of LemmaGeneratorCinfty1; its lift to the
+inverse limit is the deferred §13 `Λ(𝒢)`-module input. -/
+theorem cycloUnitU_a0_generates (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n)
+    {b' : ℕ} (hb' : ¬ (p : ℕ) ∣ b') :
+    cycloUnitU p hb' hn
+      ∈ cycloTranslateSubgroup p n (cycloUnitU p (a0_not_dvd p hp2) hn) := by
+  -- the canonical unit `u₀` with `(u₀ : ℤ_p) = a₀` and `⟨unitsToZModPow n u₀⟩ = ⊤` at all `n`
+  set u₀ : ℤ_[p]ˣ := (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose
+    with hu₀
+  have hu₀spec := (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec
+  -- the residue of `a₀` mod `p^n` matches that of `u₀` (since `(u₀ : ℤ_p) = (a₀ : ℤ_p)`)
+  have hval : (u₀ : ℤ_[p]) = (a0 p hp2 : ℤ_[p]) := hu₀spec.2.1
+  have hres : ((a0 p hp2 : ℕ) : ZMod (p ^ n))
+      = (PadicMeasure.unitsToZModPow p n u₀ : (ZMod (p ^ n))ˣ) := by
+    rw [PadicMeasure.unitsToZModPow_coe, hval, map_natCast]
+  -- `b' ≡ a₀^r (mod p^n)` for some `r`, since `a₀` generates `(ℤ/p^nℤ)^×`
+  have hgen : Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u₀) = ⊤ := hu₀spec.2.2 n
+  haveI : NeZero (p ^ n) := ⟨(pow_pos hp.out.pos n).ne'⟩
+  -- `b'` is a unit mod `p^n` (coprime to `p`, hence to `p^n`)
+  have hb'unit : IsUnit ((b' : ℕ) : ZMod (p ^ n)) := by
+    rw [ZMod.isUnit_iff_coprime]
+    exact hp.out.coprime_pow_of_not_dvd (m := n) hb'
+  -- the residue of `b'` as a unit of the *finite* `(ℤ/p^nℤ)^×` is a `ℕ`-power of the generator
+  obtain ⟨r', hr'⟩ : ∃ r' : ℕ,
+      (PadicMeasure.unitsToZModPow p n u₀) ^ r' = hb'unit.unit := by
+    have hmem : hb'unit.unit ∈ Subgroup.zpowers (PadicMeasure.unitsToZModPow p n u₀) :=
+      hgen ▸ Subgroup.mem_top _
+    rwa [← mem_powers_iff_mem_zpowers] at hmem
+  -- pull the unit-power identity to the residue equation `b' ≡ a₀^{r'} (mod p^n)`
+  have hbb' : ((b' : ℕ) : ZMod (p ^ n)) = ((a0 p hp2 : ℕ) : ZMod (p ^ n)) ^ r' := by
+    rw [hres]
+    have := congrArg (fun x : (ZMod (p ^ n))ˣ => (x : ZMod (p ^ n))) hr'
+    simp only [Units.val_pow_eq_pow_val, IsUnit.unit_spec] at this
+    rw [← this]
+  exact cycloUnit_mem_cycloTranslateSubgroup p u₀ hn (a0_not_dvd p hp2) hres hb' hbb'
+
 end PadicLFunctions.Coleman
