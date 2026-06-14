@@ -5724,8 +5724,17 @@ The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (
 - **Status**: open | **Depends on**: T1204, T1205.
 
 ### [CLEANUP-ALL-7] pre-milestone project sweep
-- **Status**: open | **Depends on**: T1201–T1205 + CLEANUP-121/122/123. /cleanup-all
-  (degraded acceptable). Gate before the milestone per the cadence rule.
+- **Status**: **done (degraded)** (2026-06-14, orchestrator). Degraded /cleanup-all
+  per the standing allowance (orchestrator context lacks lean-lsp MCP). The §12 files
+  were each per-ticket cleaned at proof time (show→change conversions, golfing — see
+  T1201b/T1203a-c/T1204/T1205 progress notes). Pre-milestone sweep: full
+  `lake build PadicLFunctions.IwasawaProof.FundamentalSequence` (3711 jobs) surfaced
+  exactly ONE lint issue across the §12 dependency tree — the
+  `AddSubmonoidClass.coe_finset_sum` deprecation (GaloisAction.lean:757) — now fixed to
+  `coe_finsetSum` (build re-verified clean, 3708 jobs). Linter is green; the only build
+  `sorry` is the deferred Equivariance.lean:159 (T1202a, gated). Deeper structural golf
+  deferred to CLEANUP-FINAL (a lean-lsp-MCP-tooled session). | **Depends on**:
+  T1201–T1205 + CLEANUP-121/122/123.
 
 ### [T1206] **MILESTONE: thm:iwasawa 2** (Main.lean)
 - **Status**: open | **File**: IwasawaProof/Main.lean | **Depends on**: T1204, T1205, CLEANUP-ALL-7

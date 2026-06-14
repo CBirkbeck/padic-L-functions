@@ -754,7 +754,7 @@ private theorem galAut_evalPi (a : ℤ_[p]ˣ) (f : PowerSeries ℤ_[p]) {n : ℕ
   have hgalS : ∀ m, (galAut p a n (S m) : ℂ_[p])
       = ∑ k ∈ Finset.range m, c k * (zetaSys p n ^ t - 1) ^ k := by
     intro m
-    rw [hS, map_sum, AddSubmonoidClass.coe_finset_sum]
+    rw [hS, map_sum, AddSubmonoidClass.coe_finsetSum]
     refine Finset.sum_congr rfl fun k _ => ?_
     rw [map_mul, map_pow, IntermediateField.coe_mul, IntermediateField.coe_pow, hgalc k,
       show (galAut p a n ⟨pi p n, pi_mem_K p n⟩ : ℂ_[p]) = zetaSys p n ^ t - 1 from hσπ]
