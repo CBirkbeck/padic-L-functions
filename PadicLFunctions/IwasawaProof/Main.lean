@@ -90,6 +90,53 @@ theorem ZpOne_le_cycloTower1 : ZpOne p ≤ cycloTower1 p := by
   obtain ⟨a, ha⟩ := hu
   exact zpPow_zetaSys_mem_cycloClosureOne p hn a (ha n hn)
 
+/-! ## The `Λ(𝒢)`-scalar action on `𝒞_{∞,1}` at the group-element level (RJW TeX 3582–3608)
+
+The dense facet of the image computation `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p`: as `a` ranges over
+`ℤ_p^×`, the group-element scalars `[σ_a]` act on the generator `wγ(a₀)⁻¹` (with
+`Col(wγ(a₀)⁻¹) = ζ_p`-numerator) by `σ_a`, landing inside `𝒞_{∞,1}`
+(`galNCU_wGamma_mem_cycloTower1`), and `Col(σ_a · wγ(a₀)⁻¹) = [a]·zetaNum a₀`
+(`Col_galNCU_eq_dirac_mul`). So the `ℤ_p`-span of `{[σ_a]·zetaNum a₀}` — dense in `I(𝒢)ζ_p`
+— lies in the additive subgroup `Col '' 𝒞_{∞,1}`. This is the §12.4-realised content; the
+remaining density-crossing to all of `Λ(𝒢)` is the §13/IMC core isolated below. -/
+
+/-- `σ_a(wγ(a₀)⁻¹) ∈ 𝒞_{∞,1}`: the `𝒢`-translate of the (inverse) cyclotomic generator stays in
+the cyclotomic tower (`galNCU` is a group hom, `cycloTower1` a subgroup,
+`galNCU_wGamma_mem_cycloTower1`). -/
+theorem galNCU_wGamma_inv_mem_cycloTower1 (a : ℤ_[p]ˣ) (hp2 : p ≠ 2) :
+    galNCU p a (wGamma p hp2)⁻¹ ∈ cycloTower1 p := by
+  rw [galNCU_inv p a (wGamma p hp2)]
+  exact (cycloTower1 p).inv_mem (galNCU_wGamma_mem_cycloTower1 p a hp2)
+
+/-- **The group-element image identity** `Col(σ_a · wγ(a₀)⁻¹) = [a]·zetaNum a₀`: combines
+`Col_galNCU_eq_dirac_mul` (`Col(σ_a u) = [a]·Col u`) with `Col(wγ(a₀)⁻¹) = −Col(wγ(a₀)) =
+zetaNum a₀` (`Col_wGamma`, `Col`-homomorphism). As `a` ranges over `ℤ_p^×`, the RHS ranges over
+the group-element multiples of `zetaNum a₀`. -/
+theorem Col_galNCU_wGamma_inv (a : ℤ_[p]ˣ) (hp2 : p ≠ 2) :
+    Col p (galNCU p a (wGamma p hp2)⁻¹)
+      = (PadicMeasure.dirac p a) * PadicMeasure.zetaNum p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose := by
+  -- `Col(wγ⁻¹) = −Col(wγ) = zetaNum a₀`
+  have hinv : Col p (wGamma p hp2)⁻¹
+      = PadicMeasure.zetaNum p
+          (PadicMeasure.exists_nat_topological_generator p hp2).choose := by
+    have h := Col_add p (wGamma p hp2) (wGamma p hp2)⁻¹
+    rw [mul_inv_cancel, Col_one] at h
+    rw [show Col p (wGamma p hp2)⁻¹ = -Col p (wGamma p hp2) from by linear_combination -h,
+      Col_wGamma_choose, neg_neg]
+  rw [Col_galNCU_eq_dirac_mul, hinv]
+
+/-- **The group-element scalar multiples lie in `Col '' 𝒞_{∞,1}`** (the dense facet of the image
+identity): for every `a ∈ ℤ_p^×`, `[a]·zetaNum a₀ ∈ Col '' 𝒞_{∞,1}`, witnessed by the tower
+element `σ_a(wγ(a₀)⁻¹) ∈ 𝒞_{∞,1}` (`galNCU_wGamma_inv_mem_cycloTower1`, `Col_galNCU_wGamma_inv`).
+The `ℤ_p`-span of these is dense in `I(𝒢)ζ_p = (zetaNum a₀)`. -/
+theorem dirac_mul_zetaNum_mem_col_image (a : ℤ_[p]ˣ) (hp2 : p ≠ 2) :
+    (PadicMeasure.dirac p a) * PadicMeasure.zetaNum p
+        (PadicMeasure.exists_nat_topological_generator p hp2).choose
+      ∈ Col p '' (cycloTower1 p : Set (NormCompatUnits p)) :=
+  ⟨galNCU p a (wGamma p hp2)⁻¹, galNCU_wGamma_inv_mem_cycloTower1 p a hp2,
+    Col_galNCU_wGamma_inv p a hp2⟩
+
 /-- **DEFERRED (RJW §12.5, TeX 3582–3608 — the image computation):** the Coleman-map image
 characterisation `image(Col|_{𝒞_{∞,1}}) = I(𝒢)ζ_p`, in the form that drives both milestones:
 for a principal-unit tower `u ∈ 𝒰_{∞,1}`, `Col u ∈ I(𝒢)ζ_p` *iff* `u ∈ 𝒞_{∞,1}`.
@@ -159,17 +206,25 @@ With these, input **(I)** is now CLOSED and only the closure-crossing **(II)** r
   topology/module layer; left as a single documented blocker below. -/
 theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
     (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
-  -- BLOCKED: needs the §13 closure-crossing — the `Λ(𝒢)`-linearity of `Col` on the cyclic
-  -- module `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`, `Col(r • c) = r · Col c` for all `r ∈ Λ(𝒢)`.
-  -- Input (I) is now DONE (`wGamma p hp2 ∈ cycloTower1 p` with `Col(wγ a₀) = −zetaNum a₀`,
-  -- `Generators.lean`/`CyclotomicUnits.lean`, axiom-clean). The crossing from the group-element
-  -- scalars `[σ_a]` (`Col_galNCU_eq_dirac_mul`, `ℤ_p`-span dense in `Λ(𝒢)`) to all of `Λ(𝒢)`
-  -- needs EITHER `Continuous (Col p)` for topologies on `NormCompatUnits`/`PadicMeasure` (both
-  -- absent; `PadicMeasure` is a bare `LinearMap`, `Col`'s Coleman-series factor is READ-ONLY
-  -- with no continuity lemma) plus `IsClosed (↑(zetaIdeal p hp2))`, OR the convolution
-  -- `Λ(𝒢)`-module action on the inverse-limit unit tower with `Col`-linearity (no such
-  -- `Module`/`Col_smul` exists). This is the deferred §13/IMC core (multi-file topology/module
-  -- layer); verified by exhaustive search that no project lemma supplies it.
+  -- BLOCKED on the §13/IMC density-crossing alone. State of the reduction (all verified):
+  -- • `Col '' 𝒞_{∞,1}` is an additive subgroup (`cycloTower1` a subgroup, `Col` a hom via
+  --   `Col_add`/`Col_one`).
+  -- • Input (I) DONE: `wγ(a₀) ∈ 𝒞_{∞,1}`, `Col(wγ a₀) = −zetaNum a₀` (axiom-clean).
+  -- • Group-element scalar action DONE (this file): `σ_a(wγ(a₀)⁻¹) ∈ 𝒞_{∞,1}`
+  --   (`galNCU_wGamma_inv_mem_cycloTower1`, from the §12.4 `σ_a`-stability
+  --   `galNCU_wGamma_mem_cycloTower1`) with `Col(σ_a·wγ(a₀)⁻¹) = [a]·zetaNum a₀`
+  --   (`Col_galNCU_wGamma_inv`), so `dirac_mul_zetaNum_mem_col_image`:
+  --   `{[a]·zetaNum a₀ : a ∈ ℤ_p^×} ⊆ Col '' 𝒞_{∞,1}`.
+  -- • `zetaIdeal = span{zetaNum a₀}` (`zetaIdeal_eq_span` at the canonical generator).
+  -- The SOLE remaining gap is the crossing from the `ℤ_p`-span of `{[σ_a]}` (DENSE in `Λ(𝒢)`)
+  -- to all of `Λ(𝒢)`: i.e. `Col '' 𝒞_{∞,1}` is *closed* under the full `Λ(𝒢) = lim ℤ_p[𝒢_n]`
+  -- action, equivalently `Col` is `Λ(𝒢)`-linear on the cyclic module `𝒞_{∞,1} =
+  -- closure(Λ(𝒢)·wγ(a₀))`. This needs `Continuous (Col p)` for a weak-* topology on
+  -- `PadicMeasure` and the inverse-limit topology on `NormCompatUnits`, whose hard factor is
+  -- coefficient-continuity of `colemanSeries` (defined as `Classical.choose` of the
+  -- interpolation `∃!`, with NO explicit coefficient formula in the project) — verified absent
+  -- by exhaustive search. This is the deferred §13/IMC core; left as the single documented
+  -- residual. The dense facet `dirac_mul_zetaNum_mem_col_image` is the maximal in-file fragment.
   sorry
 
 theorem col_mem_zetaIdeal_iff_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}

@@ -685,20 +685,20 @@ private theorem isUnit_mkK {n : ℕ} (v : ℂ_[p]ˣ) (hv : (v : ℂ_[p]) ∈ K p
 /-- The unit `σ_a u_n` of `K_n` from a unit `u_n` whose value lies in `K_n`:
 `galAut` is a ring auto, so it maps the `K_n`-unit `⟨u_n, _⟩` to a unit, embedded back into
 `ℂ_[p]ˣ` via `K_n ↪ ℂ_p`. -/
-private noncomputable def galAutUnit (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
+noncomputable def galAutUnit (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
     (hv : (v : ℂ_[p]) ∈ K p n) : ℂ_[p]ˣ :=
   Units.map ((K p n).val.toMonoidHom.comp (galAut p a n).toAlgHom.toMonoidHom)
     (isUnit_mkK p v hv).unit
 
 @[simp]
-private theorem galAutUnit_val (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ) (hv : (v : ℂ_[p]) ∈ K p n) :
+theorem galAutUnit_val (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ) (hv : (v : ℂ_[p]) ∈ K p n) :
     ((galAutUnit p a v hv : ℂ_[p]ˣ) : ℂ_[p]) = (galAut p a n ⟨(v : ℂ_[p]), hv⟩ : ℂ_[p]) := by
   rw [galAutUnit]
   change ((K p n).val ((galAut p a n) ((isUnit_mkK p v hv).unit : K p n)) : ℂ_[p]) = _
   rw [IsUnit.unit_spec]; rfl
 
 @[simp]
-private theorem galAutUnit_inv_val (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
+theorem galAutUnit_inv_val (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
     (hv : (v : ℂ_[p]) ∈ K p n) :
     (((galAutUnit p a v hv)⁻¹ : ℂ_[p]ˣ) : ℂ_[p])
       = (galAut p a n ⟨((v : ℂ_[p]))⁻¹, (K p n).inv_mem hv⟩ : ℂ_[p]) := by
@@ -711,7 +711,7 @@ private theorem galAutUnit_inv_val (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
   rw [map_inv₀, IntermediateField.coe_inv]
 
 @[simp]
-private theorem galAutUnit_inv_val' (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
+theorem galAutUnit_inv_val' (a : ℤ_[p]ˣ) {n : ℕ} (v : ℂ_[p]ˣ)
     (hv : (v : ℂ_[p]) ∈ K p n) :
     (((galAutUnit p a v hv : ℂ_[p]ˣ) : ℂ_[p]))⁻¹
       = (galAut p a n ⟨((v : ℂ_[p]))⁻¹, (K p n).inv_mem hv⟩ : ℂ_[p]) := by
