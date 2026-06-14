@@ -224,6 +224,75 @@ theorem mul_mem_of_dirac_mul_mem {H : AddSubgroup (PadicMeasure p ℤ_[p]ˣ)}
     mem_closure_of_tendsto htend (Filter.Eventually.of_forall hstep)
   rwa [hH.closure_eq, SetLike.mem_coe] at hmem
 
+/-! ### Compactness of `Λ(ℤ_p^×)` and closedness of the ζ-ideal -/
+
+/-- The coercion `DFunLike.coe : Λ(ℤ_p^×) → (C(ℤ_p^×,ℤ_[p]) → ℤ_[p])` has *closed* range:
+its image is exactly the functionals satisfying additivity and `ℤ_[p]`-homogeneity, two
+closed conditions (each is an intersection of equalities of weak-* continuous evaluations). -/
+theorem isClosed_range_coe :
+    IsClosed (Set.range (DFunLike.coe :
+      PadicMeasure p ℤ_[p]ˣ → (C(ℤ_[p]ˣ, ℤ_[p]) → ℤ_[p]))) := by
+  have hset : Set.range (DFunLike.coe :
+        PadicMeasure p ℤ_[p]ˣ → (C(ℤ_[p]ˣ, ℤ_[p]) → ℤ_[p]))
+      = {F | (∀ a b, F (a + b) = F a + F b)} ∩ {F | ∀ (c : ℤ_[p]) a, F (c • a) = c • F a} := by
+    ext F
+    simp only [Set.mem_range, Set.mem_inter_iff, Set.mem_setOf_eq]
+    constructor
+    · rintro ⟨μ, rfl⟩; exact ⟨fun a b => map_add μ a b, fun c a => map_smul μ c a⟩
+    · rintro ⟨hadd, hsmul⟩; exact ⟨{ toFun := F, map_add' := hadd, map_smul' := hsmul }, rfl⟩
+  rw [hset]
+  apply IsClosed.inter
+  · rw [Set.setOf_forall]; refine isClosed_iInter fun a => ?_
+    rw [Set.setOf_forall]; refine isClosed_iInter fun b => ?_
+    exact isClosed_eq (continuous_apply (a + b)) ((continuous_apply a).add (continuous_apply b))
+  · rw [Set.setOf_forall]; refine isClosed_iInter fun c => ?_
+    rw [Set.setOf_forall]; refine isClosed_iInter fun a => ?_
+    exact isClosed_eq (continuous_apply (c • a)) ((continuous_apply a).const_smul c)
+
+/-- **`Λ(ℤ_p^×)` is weak-* compact** (a p-adic Banach–Alaoglu). The coercion is inducing onto
+the compact product `∏_f ℤ_[p]` (Tychonoff: `ℤ_[p]` compact) with *closed* range
+(`isClosed_range_coe`), so `Λ(ℤ_p^×)` is a closed subspace of a compact space. -/
+instance instCompactSpace : CompactSpace (PadicMeasure p ℤ_[p]ˣ) := by
+  rw [← isCompact_univ_iff]
+  have hind : Topology.IsInducing
+      (DFunLike.coe : PadicMeasure p ℤ_[p]ˣ → _) := ⟨rfl⟩
+  rw [hind.isCompact_iff, Set.image_univ]
+  exact (isClosed_range_coe p).isCompact
+
+/-- **Every principal ideal `(ν)` of `Λ(ℤ_p^×)` is weak-* closed**: it is the image of the
+compact space `Λ` under the continuous map `r ↦ r·ν` (`continuous_mul_right`), hence compact,
+hence closed (`Λ` is Hausdorff). -/
+theorem isClosed_span_singleton (ν : PadicMeasure p ℤ_[p]ˣ) :
+    IsClosed ((Ideal.span {ν} : Ideal (PadicMeasure p ℤ_[p]ˣ)) :
+      Set (PadicMeasure p ℤ_[p]ˣ)) := by
+  have hrange : ((Ideal.span {ν} : Ideal (PadicMeasure p ℤ_[p]ˣ)) :
+        Set (PadicMeasure p ℤ_[p]ˣ)) = Set.range (fun r => r * ν) := by
+    ext x
+    simp only [SetLike.mem_coe, Ideal.mem_span_singleton, Set.mem_range]
+    exact ⟨fun ⟨r, hr⟩ => ⟨r, by rw [hr, mul_comm]⟩, fun ⟨r, hr⟩ => ⟨r, by rw [← hr, mul_comm]⟩⟩
+  rw [hrange, ← Set.image_univ]
+  exact (isCompact_univ.image (continuous_mul_right p ν)).isClosed
+
+/-- **`I(𝒢)ζ_p` is weak-* closed.** By the principal description `I(𝒢)ζ_p = (zetaNum a₀)`
+(`zetaIdeal_eq_span`, the `([a₀]−1)·ζ_p`-witness at the topological generator `a₀`), it is a
+principal ideal, hence closed by `isClosed_span_singleton` (compactness of `Λ`). This supplies
+the *closedness* half of the `⊆` direction of the §12.5 image computation — independently of the
+image identity itself, so it is not circular. -/
+theorem isClosed_zetaIdeal (hp2 : p ≠ 2) :
+    IsClosed ((zetaIdeal p hp2 : Ideal (PadicMeasure p ℤ_[p]ˣ)) :
+      Set (PadicMeasure p ℤ_[p]ˣ)) := by
+  have hb_gen : ∀ n : ℕ, Subgroup.zpowers (unitsToZModPow p n
+        (exists_nat_topological_generator p hp2).choose_spec.choose) = ⊤ :=
+    (exists_nat_topological_generator p hp2).choose_spec.choose_spec.2.2
+  have hνeq : algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+        (dirac p (exists_nat_topological_generator p hp2).choose_spec.choose - 1)
+        * padicZeta p hp2
+      = algebraMap (PadicMeasure p ℤ_[p]ˣ) (QuotientField p)
+          (zetaNum p (exists_nat_topological_generator p hp2).choose) := by
+    rw [padicZeta]; exact IsLocalization.mk'_spec' (QuotientField p) _ _
+  rw [zetaIdeal_eq_span p hp2 hb_gen hνeq]
+  exact isClosed_span_singleton p _
+
 end PadicMeasure
 
 /-! ## Continuity of evaluation at `π_n` -/

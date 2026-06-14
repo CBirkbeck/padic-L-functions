@@ -276,24 +276,42 @@ theorem zetaIdeal_le_col_image (hp2 : p ≠ 2) :
   exact PadicMeasure.mul_mem_of_dirac_mul_mem p hHclosed hHdirac r
 
 /-- **The §12.5 image computation** `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p` (RJW thm:iwasawa 2, the image
-identity). The `⊇` inclusion is the genuine density-crossing `zetaIdeal_le_col_image` (now
-proved via the §13 continuity layer `Coleman/ColContinuity.lean`: `Col '' 𝒞_{∞,1}` is closed and
-the Dirac span is dense). The `⊆` inclusion (well-definedness) reduces to the deferred
-cyclic-module density `𝒞_{∞,1} ⊆ closure(Λ(𝒢)·wγ(a₀))` — equivalently `Col '' 𝒞_{∞,1} ⊆
-closure(ℤ_p·{[σ_a]·ζ_num a₀})`, the RJW LemmaGeneratorCinfty1 inverse-limit module statement
-(TeX 3573–3578) — which the continuity layer alone does not supply. -/
+identity). The `⊇` inclusion is the genuine density-crossing `zetaIdeal_le_col_image` (proved
+via the §13 continuity layer `Coleman/ColContinuity.lean`: `Col '' 𝒞_{∞,1}` is closed and the
+Dirac span is dense).
+
+The `⊆` inclusion (well-definedness) is the single remaining input. Its *closedness* half is
+now banked: `I(𝒢)ζ_p` is weak-* closed (`PadicMeasure.isClosed_zetaIdeal`, from the p-adic
+Banach–Alaoglu compactness `PadicMeasure.instCompactSpace` of `Λ(ℤ_p^×)` — non-circular, it
+does not use the image identity). So `⊆` reduces *exactly* to the algebraic cyclic-module
+density `Col '' 𝒞_{∞,1} ⊆ closure(ℤ_p·{[σ_a]·ζ_num a₀})` (equivalently `𝒞_{∞,1} ⊆
+closure(Λ(𝒢)·wγ(a₀))`, RJW LemmaGeneratorCinfty1, TeX 3573–3578): every cyclotomic-tower
+unit is a `Λ(𝒢)`-limit of `σ_a`-translates of `wγ(a₀)`. This last density is the genuine
+deferred tower-level Iwasawa-module input and is NOT supplied by any available layer — it
+needs either the inverse-limit cyclic-`Λ(𝒢)`-module structure on the unit tower (no
+`Module (PadicMeasure …) (NormCompatUnits …)` and no `Col`-`smul` intertwining for arbitrary
+scalars exist; the latter is equivalent to the absent `Continuous (Col)`) or, on the
+power-series side `Col '' 𝒞_{∞,1} = colemanPipe2 '' colemanPairSet`, the density of the
+cyclotomic pairs in `colemanPairSet` (whose level-`n` constraints `f(π_n) ∈ val '' 𝒞_{n,1}`
+are themselves the closures `clos(𝒟_{n,1})`, tied across levels only by the same module
+structure). The level-`n` single-generator cyclicity `cor:cyc units gen 2` (the `σ_a`-action
+closed form on the `c_n(b)`) is likewise not banked — `galAutValU_mem_cycloUnits` is only a
+*membership-preservation* fact, not the generation relation. -/
 theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
     (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
   apply le_antisymm
-  · -- BLOCKED: `Col '' 𝒞_{∞,1} ⊆ I(𝒢)ζ_p` (well-definedness). The continuity layer makes
-    -- `Col '' 𝒞_{∞,1}` a closed subgroup, but this inclusion needs the cyclic-module density
-    -- `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))` (RJW LemmaGeneratorCinfty1, TeX 3573–3578): every
-    -- cyclotomic-tower unit is a `Λ(𝒢)`-limit of `σ_a`-translates of `wγ(a₀)`, so its `Col`
-    -- lands in `closure(ℤ_p·{[σ_a]ζ_num a₀}) = I(𝒢)ζ_p`. That tower-level density (the
-    -- inverse-limit module description) is the genuine deferred §13 input, not eliminated by
-    -- the continuity of `Col`. The `⊇` direction (the density-crossing facet) is proved below.
+  · -- BLOCKED: `Col '' 𝒞_{∞,1} ⊆ I(𝒢)ζ_p`. Its closedness half is banked
+    -- (`PadicMeasure.isClosed_zetaIdeal p hp2`, from `PadicMeasure.instCompactSpace`), so this
+    -- inclusion now reduces *exactly* to the algebraic cyclic-module density
+    -- `Col '' 𝒞_{∞,1} ⊆ closure(ℤ_p·{[σ_a]·ζ_num a₀})` — `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`,
+    -- RJW LemmaGeneratorCinfty1, TeX 3573–3578. That tower-level inverse-limit module density
+    -- is the genuine deferred §13 input: there is no `Λ(𝒢)`-module action on `NormCompatUnits`,
+    -- no `Col(λ•u) = λ·Col u` intertwining for arbitrary `λ` (≡ the absent `Continuous (Col)`),
+    -- and the level-`n` single-generator cyclicity (`cor:cyc units gen 2`, the `σ_a`-action on
+    -- the `c_n(b)`) is not banked. The `⊇` direction (the density-crossing facet) is proved
+    -- below. (See the docstring for the precise residual sub-lemma and what is banked.)
     sorry
-  · -- `I(𝒢)ζ_p ⊆ Col '' 𝒞_{∞,1}`: the density-crossing, now PROVED (`zetaIdeal_le_col_image`).
+  · -- `I(𝒢)ζ_p ⊆ Col '' 𝒞_{∞,1}`: the density-crossing, PROVED (`zetaIdeal_le_col_image`).
     exact zetaIdeal_le_col_image p hp2
 
 /-- **`Col u ∈ I(𝒢)ζ_p ⟹ u ∈ 𝒞_{∞,1}`** (RJW §12.5, the injectivity corollary).

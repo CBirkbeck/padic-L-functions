@@ -5904,7 +5904,21 @@ thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p
     `projPlus_eq_zero_iff` (482) = minusPart; `ker_projPlus` (505) = `span{dirac(−1)−1}`.
 
 ### [T1206c] col_image ⊆: the cyclic-module density `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`
-- **Status**: **OPEN — spawned 2026-06-14** (Tier-A from T1206; the §13 *continuity* route is
+- **Status**: **OPEN — closedness half BANKED, residual = level-n cyclic generation (2026-06-14, agent
+  a4573cd + on-disk verify)**. NEW axiom-clean in ColContinuity.lean: `isClosed_zetaIdeal` (proved
+  INDEPENDENTLY of the image identity via p-adic Banach–Alaoglu: `instCompactSpace (PadicMeasure ℤ_p^×)`
+  = weak-* coercion induces onto the compact Tychonoff product `∏_f ℤ_[p]` with closed range
+  `isClosed_range_coe`; then `isClosed_span_singleton` ⇒ `zetaIdeal=span{zetaNum a₀}` closed). This
+  REMOVES the closedness half of the ⊆ obstruction (the file comment's `IsClosed ↑zetaIdeal` requirement).
+  On-disk verified: build green (3842 jobs); these 4 = {propext,Classical.choice,Quot.sound}; iwasawa_theorem
+  still +sorryAx. **The ⊆ now reduces to EXACTLY ONE thing**: the algebraic level-n single-generator
+  cyclicity **`cor:cyc units gen 2`** (TeX 3484–3486) — `𝒟_{n,1}^+` is generated over `ℤ[𝒢_n^+]` by one
+  `γ_{a₀}` (a₀ generating `(ℤ/p^nℤ)^×`), needing a CLOSED FORM for the σ_a-action on `c_n(b)` (`σ_{a₀}(c_n(b))
+  = (ξ^{a₀b}−1)/(ξ^{a₀}−1)`) + the telescoping `γ_{n,b}=∏(γ_{n,a₀})^{σ_{a₀}^i}` + (p−1)-invertibility
+  descent + Λ(𝒢^+) inverse-limit assembly. SECOND deep agent converged here (a7cc206 continuity + a4573cd
+  algebraic). a4573cd was a SHORT run (133k tok) that IDENTIFIED but did not deeply attack `cor:cyc units
+  gen 2` in isolation → spawn a focused narrow agent on JUST that level-n generation. Committed+pushed.
+- **(prior status)**: **OPEN — spawned 2026-06-14** (Tier-A from T1206; the §13 *continuity* route is
   EXHAUSTED for this half — agent a7cc206 proved continuity gives only ⊇ + `isClosed_col_image`, and
   ⊆ provably needs this algebraic density or `IsClosed zetaIdeal`≡full-equality). Attack via the
   ALGEBRAIC inverse-limit cyclic-module description, NOT continuity.
