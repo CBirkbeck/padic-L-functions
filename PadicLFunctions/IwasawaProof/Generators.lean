@@ -26,42 +26,478 @@ namespace PadicLFunctions.Coleman
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
+/-! ## Half-powers of `ξ_{p^n}` (the `ξ^{c/2}` arithmetic, `p` odd)
+
+The exponents `(1−a)/2`, `a/2`, `1/2` of RJW TeX 3458 are read in `ZMod (p^n)` (`p`
+odd ⟹ `2` invertible), realised concretely as `ξ_{p^n}^{(c : ZMod (p^n)).val}`. The
+`modEq`-engine `zetaSys_pow_eq_pow_of_modEq` (GaloisAction) turns the exponent ring
+arithmetic into root-of-unity identities. -/
+
+/-- `ξ_{p^n}^{(c : ZMod (p^n)).val}` — the root of unity with exponent the `ZMod`
+element `c` (a total realisation of `ξ^c` for `c ∈ ZMod (p^n)`). -/
+def zhp {n : ℕ} (c : ZMod (p ^ n)) : ℂ_[p] := zetaSys p n ^ c.val
+
+/-- `zhp` on a natural cast is the plain power `ξ^k` (the `.val` differs by a
+multiple of `p^n`, killed by `zetaSys_pow_eq_pow_of_modEq`). -/
+theorem zhp_natCast {n : ℕ} (k : ℕ) : zhp p (k : ZMod (p ^ n)) = zetaSys p n ^ k := by
+  rw [zhp]
+  refine zetaSys_pow_eq_pow_of_modEq p ?_
+  rw [← ZMod.natCast_eq_natCast_iff, ZMod.natCast_val, ZMod.cast_id]
+
+/-- `zhp` is additive in the exponent: `zhp (c + d) = zhp c · zhp d`. -/
+theorem zhp_add {n : ℕ} (c d : ZMod (p ^ n)) : zhp p (c + d) = zhp p c * zhp p d := by
+  rw [zhp, zhp, zhp, ← pow_add]
+  refine zetaSys_pow_eq_pow_of_modEq p ?_
+  rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_add, ZMod.natCast_val, ZMod.natCast_val,
+    ZMod.natCast_val, ZMod.cast_id, ZMod.cast_id, ZMod.cast_id]
+
+/-- `zhp 0 = 1`. -/
+@[simp] theorem zhp_zero {n : ℕ} : zhp p (0 : ZMod (p ^ n)) = 1 := by
+  rw [show (0 : ZMod (p ^ n)) = ((0 : ℕ) : ZMod (p ^ n)) by norm_cast, zhp_natCast, pow_zero]
+
+/-- `zhp c · zhp (−c) = 1`. -/
+theorem zhp_mul_neg {n : ℕ} (c : ZMod (p ^ n)) : zhp p c * zhp p (-c) = 1 := by
+  rw [← zhp_add, add_neg_cancel, zhp_zero]
+
+/-- `zhp c ≠ 0` (it is a power of the nonzero `ξ`). -/
+theorem zhp_ne_zero {n : ℕ} (c : ZMod (p ^ n)) : zhp p c ≠ 0 := by
+  intro h
+  have := zhp_mul_neg p c
+  rw [h, zero_mul] at this
+  exact one_ne_zero this.symm
+
+/-- `‖zhp c‖ = 1` (`ξ` has norm `1`). -/
+theorem norm_zhp {n : ℕ} (c : ZMod (p ^ n)) : ‖zhp p c‖ = 1 := by
+  have hξ : ‖zetaSys p n‖ = 1 := by
+    have h1 : ‖zetaSys p n‖ ^ (p ^ n) = 1 := by
+      rw [← norm_pow, (zetaSys_primitiveRoot p n).pow_eq_one, norm_one]
+    have hne : p ^ n ≠ 0 := (pow_pos hp.out.pos n).ne'
+    refine le_antisymm ?_ ?_
+    · by_contra h; rw [not_le] at h; exact absurd h1 (one_lt_pow₀ h hne).ne'
+    · by_contra h; rw [not_le] at h
+      exact absurd h1 (pow_lt_one₀ (norm_nonneg _) h hne).ne
+  rw [zhp, norm_pow, hξ, one_pow]
+
+/-- The half-power exponent `(1−a)/2 ∈ ZMod (p^n)` of `γ_{n,a}` (RJW TeX 3458). -/
+def halfExp (a n : ℕ) : ZMod (p ^ n) := (1 - (a : ZMod (p ^ n))) * (2 : ZMod (p ^ n))⁻¹
+
 /-- **RJW TeX 3458**: the conjugation-fixed cyclotomic unit
 `γ_{n,a} = ξ_{p^n}^{(1−a)/2} c_n(a)` (half-power via `(2 : ZMod (p^n))⁻¹`, `p` odd). -/
-def gammaUnit (a n : ℕ) : ℂ_[p] := sorry
+def gammaUnit (a n : ℕ) : ℂ_[p] := zhp p (halfExp p a n) * cycloUnit p a n
+
+/-! ## The real subfield `F_n⁺` membership (the `ξ^m + ξ^{−m}` Chebyshev tower)
+
+`F_n⁺ = ℚ(ξ + ξ⁻¹)` contains every "cosine power" `ξ^m + ξ^{−m}` (a `ℤ`-polynomial in
+the generator `ξ + ξ⁻¹` by the Chebyshev recurrence). This is the concrete route to
+the conjugation-fixedness `γ_{n,a} ∈ 𝒟_n^+` (RJW TeX 3459): `γ_{n,a}` is the
+geometric sum `∑_{i<a} ξ^{(1−a)/2+i}`, symmetric under `i ↦ a−1−i`, hence a sum of
+half the `cosPow` terms `ξ^j + ξ^{−j}`. -/
+
+/-- `ξ_{p^n} + ξ_{p^n}⁻¹` lies in `F_n⁺` (it is the chosen generator). -/
+private theorem zetaSys_add_inv_mem_FglobalPlus (n : ℕ) :
+    zetaSys p n + (zetaSys p n)⁻¹ ∈ FglobalPlus p n :=
+  IntermediateField.mem_adjoin_simple_self ℚ _
+
+/-- `ξ_{p^n}^m + (ξ_{p^n}^m)⁻¹ ∈ F_n⁺` for every `m` (Chebyshev recurrence
+`c_{m+2} = c_1·c_{m+1} − c_m`). -/
+private theorem cosPow_mem_FglobalPlus (n : ℕ) (m : ℕ) :
+    zetaSys p n ^ m + (zetaSys p n ^ m)⁻¹ ∈ FglobalPlus p n := by
+  have hξ0 : zetaSys p n ≠ 0 := by
+    have : ‖zetaSys p n‖ = 1 := by rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
+        rw [show (1 : ZMod (p ^ n)) = ((1 : ℕ) : ZMod (p ^ n)) by norm_cast, zhp_natCast,
+          pow_one], norm_zhp]
+    exact norm_ne_zero_iff.mp (by rw [this]; exact one_ne_zero)
+  induction m using Nat.twoStepInduction with
+  | zero => simpa using (FglobalPlus p n).add_mem (one_mem _) (one_mem _)
+  | one => simpa using zetaSys_add_inv_mem_FglobalPlus p n
+  | more m ih1 ih2 =>
+    -- `c_{m+2} = c_1·c_{m+1} − c_m`
+    have hrec : zetaSys p n ^ (m + 2) + (zetaSys p n ^ (m + 2))⁻¹
+        = (zetaSys p n + (zetaSys p n)⁻¹)
+            * (zetaSys p n ^ (m + 1) + (zetaSys p n ^ (m + 1))⁻¹)
+          - (zetaSys p n ^ m + (zetaSys p n ^ m)⁻¹) := by
+      field_simp
+      ring
+    rw [hrec]
+    exact sub_mem (mul_mem (zetaSys_add_inv_mem_FglobalPlus p n) ih2) ih1
+
+/-- `γ_{n,a}` as a geometric sum of half-power roots:
+`γ_{n,a} = ∑_{i<a} ξ^{(1−a)/2 + i}` (`= zhp(halfExp + i)`). -/
+private theorem cycloUnit_eq_geomSum {a : ℕ} {n : ℕ} (hn : 1 ≤ n) :
+    cycloUnit p a n = ∑ i ∈ Finset.range a, zetaSys p n ^ i := by
+  have hne : zetaSys p n - 1 ≠ 0 :=
+    sub_ne_zero_of_ne ((zetaSys_primitiveRoot p n).ne_one (one_lt_pow₀ hp.out.one_lt (by omega)))
+  rw [cycloUnit, div_eq_iff hne, geom_sum_mul]
+
+private theorem gammaUnit_eq_sum (a : ℕ) {n : ℕ} (hn : 1 ≤ n) :
+    gammaUnit p a n = ∑ i ∈ Finset.range a, zhp p (halfExp p a n + (i : ZMod (p ^ n))) := by
+  rw [gammaUnit, cycloUnit_eq_geomSum p hn, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [zhp_add, zhp_natCast]
+
+/-- `2` is a unit of `ZMod (p^n)` for `p` odd (`p` coprime to `2`, so `p^n` is). -/
+private theorem isUnit_two_zmod (hp2 : p ≠ 2) (n : ℕ) : IsUnit (2 : ZMod (p ^ n)) := by
+  rw [show (2 : ZMod (p ^ n)) = ((2 : ℕ) : ZMod (p ^ n)) by norm_cast, ZMod.isUnit_iff_coprime]
+  refine Nat.Coprime.pow_right _ ?_
+  rw [Nat.coprime_comm]
+  exact (Nat.coprime_primes hp.out Nat.prime_two).2 hp2
+
+/-- `2 · 2⁻¹ = 1` in `ZMod (p^n)` (`p` odd). -/
+private theorem two_mul_inv_two (hp2 : p ≠ 2) (n : ℕ) :
+    (2 : ZMod (p ^ n)) * (2 : ZMod (p ^ n))⁻¹ = 1 :=
+  ZMod.mul_inv_of_unit _ (isUnit_two_zmod p hp2 n)
+
+/-- The reindexing symmetry of the half-exponents: `halfExp a n + (a−1−i)
+= −(halfExp a n + i)` (the sum `γ_{n,a}` is invariant under `i ↦ a−1−i`). -/
+private theorem halfExp_add_symm (hp2 : p ≠ 2) {a : ℕ} (n : ℕ) {i : ℕ}
+    (hi : i < a) :
+    halfExp p a n + ((a - 1 - i : ℕ) : ZMod (p ^ n))
+      = -(halfExp p a n + (i : ZMod (p ^ n))) := by
+  -- `(a−1−i : ℕ) = (a−1 : ℕ) − i` as `ZMod`-casts (since `i ≤ a−1`)
+  have hcast : ((a - 1 - i : ℕ) : ZMod (p ^ n))
+      = ((a - 1 : ℕ) : ZMod (p ^ n)) - (i : ZMod (p ^ n)) := by
+    rw [Nat.cast_sub (by omega : i ≤ a - 1)]
+  -- `2·halfExp = 1 − a` (cancel `2·2⁻¹ = 1`)
+  have htwo : (2 : ZMod (p ^ n)) * halfExp p a n = 1 - (a : ZMod (p ^ n)) := by
+    rw [halfExp, ← mul_assoc, mul_comm (2 : ZMod (p ^ n)) (1 - (a : ZMod (p ^ n))),
+      mul_assoc, two_mul_inv_two p hp2 n, mul_one]
+  have ha1 : ((a - 1 : ℕ) : ZMod (p ^ n)) = (a : ZMod (p ^ n)) - 1 := by
+    rw [Nat.cast_sub (by omega : 1 ≤ a), Nat.cast_one]
+  rw [hcast, ha1]
+  -- now a pure `ZMod`-equation; clear via `2·(LHS) = 2·(RHS)` using `2` a unit, or `linear`
+  have hgoal : halfExp p a n + ((a : ZMod (p ^ n)) - 1 - (i : ZMod (p ^ n)))
+      = -(halfExp p a n + (i : ZMod (p ^ n))) ↔
+      (2 : ZMod (p ^ n)) * (halfExp p a n + ((a : ZMod (p ^ n)) - 1 - (i : ZMod (p ^ n))))
+      = (2 : ZMod (p ^ n)) * -(halfExp p a n + (i : ZMod (p ^ n))) :=
+    ⟨fun h => by rw [h], fun h => (isUnit_two_zmod p hp2 n).mul_left_cancel h⟩
+  rw [hgoal]
+  rw [mul_add, mul_neg, mul_add, htwo]
+  ring
+
+/-- `zhp (−c) = (zhp c)⁻¹` (the inverse half-power). -/
+private theorem zhp_neg {n : ℕ} (c : ZMod (p ^ n)) : zhp p (-c) = (zhp p c)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [mul_comm]; exact zhp_mul_neg p c)
+
+/-- **The conjugation-fixedness `γ_{n,a} ∈ F_n⁺`** (RJW TeX 3459): `γ_{n,a}` is the
+symmetric geometric sum `∑_{i<a} ξ^{(1−a)/2+i}`; reflecting `i ↦ a−1−i` and averaging
+expresses `2γ_{n,a}` as a sum of `cosPow` terms `ξ^j + ξ^{−j} ∈ F_n⁺`. -/
+private theorem gammaUnit_mem_FglobalPlus {a : ℕ} (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    gammaUnit p a n ∈ FglobalPlus p n := by
+  set S : ℂ_[p] := ∑ i ∈ Finset.range a, zhp p (halfExp p a n + (i : ZMod (p ^ n))) with hS
+  have hγS : gammaUnit p a n = S := gammaUnit_eq_sum p a hn
+  -- the reflected sum equals `S`
+  have hrefl : S = ∑ i ∈ Finset.range a, zhp p (-(halfExp p a n + (i : ZMod (p ^ n)))) := by
+    rw [hS, ← Finset.sum_range_reflect
+      (fun i => zhp p (halfExp p a n + (i : ZMod (p ^ n)))) a]
+    refine Finset.sum_congr rfl fun i hi => ?_
+    rw [Finset.mem_range] at hi
+    congr 1
+    exact halfExp_add_symm p hp2 n hi
+  -- `2S = ∑ (zhp c + zhp (−c))`, each summand a `cosPow ∈ F_n⁺`
+  have h2S : (2 : ℂ_[p]) * S
+      = ∑ i ∈ Finset.range a, (zhp p (halfExp p a n + (i : ZMod (p ^ n)))
+          + (zhp p (halfExp p a n + (i : ZMod (p ^ n))))⁻¹) := by
+    rw [two_mul]
+    nth_rewrite 2 [hrefl]
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ => by rw [zhp_neg]
+  have h2Smem : (2 : ℂ_[p]) * S ∈ FglobalPlus p n := by
+    rw [h2S]
+    refine sum_mem fun i _ => ?_
+    rw [zhp, show (zetaSys p n ^ (halfExp p a n + (i : ZMod (p ^ n))).val)⁻¹
+        = ((zetaSys p n) ^ (halfExp p a n + (i : ZMod (p ^ n))).val)⁻¹ from rfl]
+    exact cosPow_mem_FglobalPlus p n _
+  -- `γ = 2⁻¹·(2S) ∈ F_n⁺` (`2⁻¹ ∈ ℚ ⊆ F_n⁺`)
+  rw [hγS, show S = (2 : ℂ_[p])⁻¹ * ((2 : ℂ_[p]) * S) by
+    rw [← mul_assoc, inv_mul_cancel₀ two_ne_zero, one_mul]]
+  refine mul_mem ?_ h2Smem
+  rw [show ((2 : ℂ_[p])⁻¹) = ((2⁻¹ : ℚ) : ℂ_[p]) by push_cast; ring]
+  exact SubfieldClass.ratCast_mem (FglobalPlus p n) (2⁻¹ : ℚ)
 
 /-- `γ_{n,a} ∈ 𝒟_n^+` (conjugation-fixed, RJW TeX 3458–3459). -/
 theorem gammaUnit_mem_cycloUnitsPlus {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2)
     {n : ℕ} (hn : 1 ≤ n) :
-    ∃ g : ℂ_[p]ˣ, (g : ℂ_[p]) = gammaUnit p a n ∧ g ∈ cycloUnitsPlus p n := sorry
+    ∃ g : ℂ_[p]ˣ, (g : ℂ_[p]) = gammaUnit p a n ∧ g ∈ cycloUnitsPlus p n := by
+  -- `γ ≠ 0` (product of nonzero `zhp` and the nonzero `cycloUnit`)
+  have hγ0 : gammaUnit p a n ≠ 0 := by
+    rw [gammaUnit]
+    exact mul_ne_zero (zhp_ne_zero p _) (cycloUnit_ne_zero p ha hn)
+  refine ⟨Units.mk0 (gammaUnit p a n) hγ0, Units.val_mk0 _, ?_, ?_⟩
+  · -- membership in `𝒟_n = closure(cycloGenSet) ⊓ globalUnits`
+    rw [cycloUnits, Subgroup.mem_inf]
+    -- `c_n(a) ∈ 𝒟_n` (the existing milestone)
+    have hcD := cyclo_elems_mem_cycloUnits p ha hp2 hn
+    have hcval : ((cyclo p ha hp2).elems n : ℂ_[p]) = cycloUnit p a n := by
+      change ((if hn : 1 ≤ n then Units.mk0 (cycloUnit p a n)
+        (cycloUnit_ne_zero p ha hn) else 1 : ℂ_[p]ˣ) : ℂ_[p]) = _
+      rw [dif_pos hn, Units.val_mk0]
+    rw [cycloUnits, Subgroup.mem_inf] at hcD
+    obtain ⟨hcClosure, hcGlobal⟩ := hcD
+    -- the `ξ`-power half-factor as a unit in the closure: `zhp (halfExp) = ξ^{val}`
+    set ζu : ℂ_[p]ˣ := Units.mk0 (zetaSys p n) (by
+      have hξ1 : ‖zetaSys p n‖ = 1 := by
+        rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
+          rw [show (1 : ZMod (p ^ n)) = ((1:ℕ):ZMod (p^n)) by norm_cast, zhp_natCast, pow_one],
+          norm_zhp]
+      exact norm_ne_zero_iff.mp (by rw [hξ1]; exact one_ne_zero)) with hζu
+    have hζuGen : ζu ∈ cycloGenSet p n := Or.inl (Units.val_mk0 _)
+    -- `zhp (halfExp) = ζu ^ (halfExp.val)` as a unit
+    set hu : ℂ_[p]ˣ := ζu ^ (halfExp p a n).val with hhu
+    have hhuval : (hu : ℂ_[p]) = zhp p (halfExp p a n) := by
+      rw [hhu, Units.val_pow_eq_pow_val, hζu, Units.val_mk0, zhp]
+    refine ⟨?_, ?_⟩
+    · -- closure membership: `γ = hu * (cyclo).elems n`
+      have hword : Units.mk0 (gammaUnit p a n) hγ0 = hu * (cyclo p ha hp2).elems n := by
+        refine Units.ext ?_
+        rw [Units.val_mk0, Units.val_mul, hhuval, hcval, gammaUnit]
+      rw [hword]
+      exact mul_mem (pow_mem (Subgroup.subset_closure hζuGen) _) hcClosure
+    · -- global-unit membership: `γ ∈ F_n`, integral with integral inverse
+      have hγF : gammaUnit p a n ∈ Fglobal p n := by
+        rw [gammaUnit]
+        refine mul_mem ?_ ?_
+        · rw [zhp]; exact pow_mem (IntermediateField.mem_adjoin_simple_self ℚ _) _
+        · rw [cycloUnit_eq_geomSum p hn]
+          exact sum_mem fun i _ =>
+            pow_mem (IntermediateField.mem_adjoin_simple_self ℚ _) i
+      refine ⟨?_, ?_, ?_⟩
+      · rw [Units.val_mk0]; exact hγF
+      · rw [Units.val_mk0, gammaUnit]
+        refine (?_ : IsIntegral ℤ (zhp p (halfExp p a n))).mul ?_
+        · rw [zhp]
+          exact ((zetaSys_primitiveRoot p n).isIntegral (pow_pos hp.out.pos n)).pow _
+        · exact isIntegral_cycloUnit p ha hn
+      · rw [show (((Units.mk0 (gammaUnit p a n) hγ0)⁻¹ : ℂ_[p]ˣ) : ℂ_[p])
+            = (gammaUnit p a n)⁻¹ from rfl, gammaUnit, mul_inv]
+        refine (?_ : IsIntegral ℤ (zhp p (halfExp p a n))⁻¹).mul ?_
+        · rw [← zhp_neg]; rw [zhp]
+          exact ((zetaSys_primitiveRoot p n).isIntegral (pow_pos hp.out.pos n)).pow _
+        · exact isIntegral_inv_cycloUnit p ha hn
+  · -- `γ ∈ F_n⁺`
+    rw [Units.val_mk0]; exact gammaUnit_mem_FglobalPlus p hp2 hn
+
+/-- `−1` (as a unit) lies in `𝒟_n^+`: it is `(−ξ)·ξ⁻¹ ∈ closure(cycloGenSet)`, a global
+unit (root of unity), and rational hence in `F_n⁺`. -/
+private theorem neg_one_mem_cycloUnitsPlus {n : ℕ} :
+    (-1 : ℂ_[p]ˣ) ∈ cycloUnitsPlus p n := by
+  refine ⟨?_, ?_⟩
+  · -- `−1 ∈ 𝒟_n = closure(cycloGenSet) ⊓ globalUnits`
+    rw [cycloUnits, Subgroup.mem_inf]
+    have hξ0 : zetaSys p n ≠ 0 := by
+      have hξ1 : ‖zetaSys p n‖ = 1 := by
+        rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
+          rw [show (1 : ZMod (p ^ n)) = ((1:ℕ):ZMod (p^n)) by norm_cast, zhp_natCast, pow_one],
+          norm_zhp]
+      exact norm_ne_zero_iff.mp (by rw [hξ1]; exact one_ne_zero)
+    set ζu : ℂ_[p]ˣ := Units.mk0 (zetaSys p n) hξ0 with hζu
+    set negζu : ℂ_[p]ˣ := Units.mk0 (-zetaSys p n) (neg_ne_zero.mpr hξ0) with hnegζu
+    refine ⟨?_, ?_⟩
+    · -- `−1 = (−ξ)·ξ⁻¹` lies in `closure(cycloGenSet)`
+      have hword : (-1 : ℂ_[p]ˣ) = negζu * ζu⁻¹ := by
+        refine Units.ext ?_
+        rw [Units.val_mul, hnegζu, Units.val_mk0,
+          show ((ζu⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = (zetaSys p n)⁻¹ from by rw [hζu]; rfl,
+          Units.val_neg, Units.val_one]
+        field_simp
+      rw [hword]
+      exact mul_mem (Subgroup.subset_closure (Or.inr (Or.inl (by rw [hnegζu, Units.val_mk0]))))
+        (Subgroup.inv_mem _ (Subgroup.subset_closure (Or.inl (by rw [hζu, Units.val_mk0]))))
+    · -- `−1 ∈ 𝒱_n` (rational, integral both ways)
+      refine ⟨?_, ?_, ?_⟩
+      · rw [Units.val_neg, Units.val_one]
+        exact neg_mem (one_mem _)
+      · rw [Units.val_neg, Units.val_one]; exact (isIntegral_one).neg
+      · rw [show (((-1 : ℂ_[p]ˣ)⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = -1 from by simp]
+        exact (isIntegral_one).neg
+  · -- `−1 ∈ F_n⁺` (rational)
+    rw [Units.val_neg, Units.val_one]
+    exact neg_mem (one_mem _)
 
 /-- **RJW lem:cyc units gen (i) (TeX 3461–3482)**: `𝒟_n^+` is generated by `−1` and the
 `γ_{n,a}` with `(a,p)=1`. (`cor:cyc units gen 2`, TeX 3484–3486: a single `γ_{n,a}` with
 `a` generating `(ℤ/p^nℤ)^×` suffices as a `ℤ[𝒢_n^+]`-module generator — its statement
-needs the finite Galois action on units and is finalised in E12.4 at execution.) -/
+needs the finite Galois action on units and is finalised in E12.4 at execution.)
+
+Statement note (T1205): the reverse inclusion `⊇` (every generator `γ_b`, `−1` lies in
+`𝒟_n^+`) is proven in full. The forward inclusion `⊆` is RJW's valuation/`Σe_a = 0`
+normal-form argument (TeX 3470–3482): writing an element as `±ξ^d ∏(ξ^a−1)^{e_a}`,
+the equal valuations `v_p(ξ^a−1)` force `Σe_a = 0` (unit), and reality forces the
+`ξ`-power exponent `e = 0`. Formalising it needs a normal-form decomposition of
+`closure(cycloGenSet)` plus the `v_p`-theory of the `ξ^a−1` (independent generators of
+the cyclotomic-unit group), infrastructure not yet in the project; recorded here as the
+single deferred step of E12.4. -/
 theorem cycloUnitsPlus_eq_closure_gammas (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
     cycloUnitsPlus p n = Subgroup.closure
       ({g : ℂ_[p]ˣ | ∃ b : ℕ, ¬ (p : ℕ) ∣ b ∧ (g : ℂ_[p]) = gammaUnit p b n} ∪
-        {g : ℂ_[p]ˣ | (g : ℂ_[p]) = -1}) := sorry
+        {g : ℂ_[p]ˣ | (g : ℂ_[p]) = -1}) := by
+  refine le_antisymm ?_ ?_
+  · -- `⊆`: the deferred valuation/reality normal-form direction (see statement note)
+    sorry
+  · -- `⊇`: every generator lies in `𝒟_n^+`
+    rw [Subgroup.closure_le]
+    rintro g (⟨b, hb, hval⟩ | hval)
+    · -- `γ_b ∈ 𝒟_n^+`
+      obtain ⟨g', hg'val, hg'mem⟩ := gammaUnit_mem_cycloUnitsPlus p hb hp2 hn
+      rw [show g = g' from Units.ext (by rw [hval, hg'val])]
+      exact hg'mem
+    · -- `−1 ∈ 𝒟_n^+`
+      rw [show g = (-1 : ℂ_[p]ˣ) from Units.ext (by rw [hval]; simp)]
+      exact neg_one_mem_cycloUnitsPlus p
+
+/-- `zpPow y 0 = 1` (the `n = 0` natural power). -/
+private theorem zpPow_zero' {y : ℂ_[p]} (hy : ‖y - 1‖ < 1) : zpPow p y 0 = 1 := by
+  rw [show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) by norm_cast, zpPow_natCast p hy, pow_zero]
+
+/-- `zpPow y (−a) = (zpPow y a)⁻¹`. -/
+private theorem zpPow_neg' {y : ℂ_[p]} (hy : ‖y - 1‖ < 1) (a : ℤ_[p]) :
+    zpPow p y (-a) = (zpPow p y a)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← zpPow_add p hy, neg_add_cancel, zpPow_zero' p hy])
+
+/-- `zpPow y (k : ℤ_[p]) = y ^ k` for integer `k` (matching the multiplicative
+`ℤ`-action on the `1`-unit `y`). -/
+private theorem zpPow_intCast {y : ℂ_[p]} (hy : ‖y - 1‖ < 1) (k : ℤ) :
+    zpPow p y ((k : ℤ_[p])) = y ^ k := by
+  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg k
+  · rw [Int.cast_natCast, zpPow_natCast p hy, zpow_natCast]
+  · rw [Int.cast_neg, Int.cast_natCast, zpPow_neg' p hy, zpPow_natCast p hy, zpow_neg,
+      zpow_natCast]
 
 /-- **RJW lem:closure (TeX 3503–3505)**: for `g_1,…,g_r ∈ 𝒰_{n,1}`, the p-adic closure of
 the multiplicative `ℤ`-span `⟨g_i⟩` is the `ℤ_p`-span (the `zpPow` binomial converges,
-`ℤ_p^r` compact). Stated for a single generator `g` (the case used downstream). -/
+`ℤ_p^r` compact). Stated for a single generator `g` (the case used downstream).
+
+Proof: the set `T = {y | ↑y ∈ range (zpPow ↑g)}` is closed (`range (zpPow ↑g)` is the
+continuous image of the compact `ℤ_p`, hence closed) and contains `⟨g⟩_ℤ`
+(`zpPow_intCast`); the closure is therefore contained in `T`. -/
 theorem closure_zspan_eq_zpspan {n : ℕ} (hn : 1 ≤ n) {g : ℂ_[p]ˣ}
     (hg : g ∈ localUnitsOne p n)
     (x : ℂ_[p]ˣ) (hx : x ∈ (Subgroup.zpowers g).topologicalClosure) :
-    ∃ a : ℤ_[p], (x : ℂ_[p]) = zpPow p (g : ℂ_[p]) a := sorry
+    ∃ a : ℤ_[p], (x : ℂ_[p]) = zpPow p (g : ℂ_[p]) a := by
+  have hgnorm : ‖(g : ℂ_[p]) - 1‖ < 1 := ((mem_localUnitsOne_iff p).1 hg).2
+  -- continuity of `c ↦ zpPow ↑g c` on `ℤ_p`
+  have hcont : Continuous (zpPow p (g : ℂ_[p])) := by
+    have h : zpPow p (g : ℂ_[p]) = (PadicInt.addChar_of_value_at_one ((g : ℂ_[p]) - 1)
+        (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hgnorm) : ℤ_[p] → ℂ_[p]) := by
+      funext c
+      rw [zpPow, dif_pos (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hgnorm)]
+    rw [h]; exact PadicInt.continuous_addChar_of_value_at_one _
+  -- the target set `T`, closed (compact range of `zpPow`) and containing `⟨g⟩_ℤ`
+  set T : Set ℂ_[p]ˣ := {y : ℂ_[p]ˣ | ∃ a : ℤ_[p], (y : ℂ_[p]) = zpPow p (g : ℂ_[p]) a}
+    with hT
+  have hTeq : T = (Units.val ⁻¹' (Set.range (zpPow p (g : ℂ_[p])))) := by
+    ext y; rw [hT]; constructor
+    · rintro ⟨a, ha⟩; exact ⟨a, ha.symm⟩
+    · rintro ⟨a, ha⟩; exact ⟨a, ha.symm⟩
+  have hrangeClosed : IsClosed (Set.range (zpPow p (g : ℂ_[p]))) :=
+    (isCompact_range hcont).isClosed
+  have hTclosed : IsClosed T := by
+    rw [hTeq]; exact hrangeClosed.preimage Units.continuous_val
+  -- `⟨g⟩_ℤ ⊆ T`
+  have hsub : (Subgroup.zpowers g : Set ℂ_[p]ˣ) ⊆ T := by
+    rintro y ⟨k, rfl⟩
+    refine ⟨(k : ℤ_[p]), ?_⟩
+    rw [zpPow_intCast p hgnorm k, Units.val_zpow_eq_zpow_val]
+  -- the closure of `⟨g⟩_ℤ` is contained in `T`
+  have hclosure : closure (Subgroup.zpowers g : Set ℂ_[p]ˣ) ⊆ T :=
+    hTclosed.closure_subset_iff.mpr hsub
+  exact hclosure hx
+
+/-- `‖ξ_{p^n}^k − 1‖ < 1` for every `k` (a conjugate uniformiser, dominated by
+`‖π_n‖ < 1`). -/
+private theorem norm_zetaSys_pow_sub_one_lt {n : ℕ} (hn : 1 ≤ n) (k : ℕ) :
+    ‖zetaSys p n ^ k - 1‖ < 1 := by
+  have hξ1 : ‖zetaSys p n‖ = 1 := by
+    rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
+      rw [show (1 : ZMod (p ^ n)) = ((1:ℕ):ZMod (p^n)) by norm_cast, zhp_natCast, pow_one],
+      norm_zhp]
+  have hbound : ‖zetaSys p n ^ k - 1‖ ≤ ‖zetaSys p n - 1‖ := by
+    rw [show zetaSys p n ^ k - 1
+        = (∑ i ∈ Finset.range k, zetaSys p n ^ i) * (zetaSys p n - 1) from
+      (geom_sum_mul _ k).symm, norm_mul]
+    have hgeom : ‖∑ i ∈ Finset.range k, zetaSys p n ^ i‖ ≤ 1 :=
+      IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one
+        (fun i _ => by rw [norm_pow, hξ1, one_pow])
+    nlinarith [norm_nonneg (zetaSys p n - 1), hgeom]
+  refine lt_of_le_of_lt hbound ?_
+  have := norm_pi_lt_one p hn
+  rwa [pi] at this
+
+/-- `‖zhp c − 1‖ < 1` (a half-power root of unity is a principal unit). -/
+private theorem norm_zhp_sub_one_lt {n : ℕ} (hn : 1 ≤ n) (c : ZMod (p ^ n)) :
+    ‖zhp p c - 1‖ < 1 := by
+  rw [zhp]; exact norm_zetaSys_pow_sub_one_lt p hn c.val
+
+/-- `‖c_n(a) − a‖ < 1`: `c_n(a) − a = ∑_{i<a}(ξ^i − 1)`, an ultrametric sum of
+principal terms (unconditional in `a`; the §11 T1113 hypothesis `a ≡ 1 mod p` is only
+needed for `‖c_n(a)−1‖ < 1`, not this). -/
+private theorem norm_cycloUnit_sub_natCast_lt {a : ℕ} {n : ℕ} (hn : 1 ≤ n) :
+    ‖cycloUnit p a n - (a : ℂ_[p])‖ < 1 := by
+  have hca : cycloUnit p a n - (a : ℂ_[p])
+      = ∑ i ∈ Finset.range a, (zetaSys p n ^ i - 1) := by
+    rw [cycloUnit_eq_geomSum p hn, Finset.sum_sub_distrib, Finset.sum_const,
+      Finset.card_range, nsmul_eq_mul, mul_one]
+  rw [hca]
+  rcases Nat.eq_zero_or_pos a with ha0 | ha0
+  · subst ha0; simp
+  refine lt_of_le_of_lt (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+    (norm_nonneg (pi p n)) (fun i _ => ?_)) (by rw [pi]; exact norm_pi_lt_one p hn)
+  have := (norm_zetaSys_pow_sub_one_lt p hn i).le
+  rw [pi]
+  calc ‖zetaSys p n ^ i - 1‖ ≤ ‖zetaSys p n - 1‖ := by
+        rw [show zetaSys p n ^ i - 1
+            = (∑ j ∈ Finset.range i, zetaSys p n ^ j) * (zetaSys p n - 1) from
+          (geom_sum_mul _ i).symm, norm_mul]
+        have hξ1 : ‖zetaSys p n‖ = 1 := by
+          rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
+            rw [show (1 : ZMod (p ^ n)) = ((1:ℕ):ZMod (p^n)) by norm_cast, zhp_natCast,
+              pow_one], norm_zhp]
+        have hgeom : ‖∑ j ∈ Finset.range i, zetaSys p n ^ j‖ ≤ 1 :=
+          IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one
+            (fun j _ => by rw [norm_pow, hξ1, one_pow])
+        nlinarith [norm_nonneg (zetaSys p n - 1), hgeom]
+    _ = ‖zetaSys p n - 1‖ := rfl
+
+/-- **The §11 b2-note resolved (RJW TeX 3567)**: `γ_{n,a} ≡ a (mod 𝔭_n)`, i.e.
+`‖γ_{n,a} − a‖ < 1`. From `γ = ξ^{(1−a)/2} c_n(a)`: the half-power
+`ξ^{(1−a)/2} ≡ 1` (`norm_zhp_sub_one_lt`) and `c_n(a) ≡ a`
+(`norm_cycloUnit_sub_natCast_lt`), so `γ − a = (ξ^{(1−a)/2}−1) c_n(a) + (c_n(a)−a)`
+has norm `< 1`. This is the fact making the Teichmüller correction
+`w` (with `aw ≡ 1`) yield `wγ_{n,a} ≡ 1 mod 𝔭_n ∈ 𝒰_{n,1}`. -/
+theorem gammaUnit_congr_natCast {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) {n : ℕ} (hn : 1 ≤ n) :
+    ‖gammaUnit p a n - (a : ℂ_[p])‖ < 1 := by
+  -- `c_n(a)` has norm `1`
+  have hcnorm : ‖cycloUnit p a n‖ = 1 := norm_cycloUnit p ha hn
+  -- `γ − a = (ξ^{(1−a)/2}−1)·c_n(a) + (c_n(a)−a)`
+  have hsplit : gammaUnit p a n - (a : ℂ_[p])
+      = (zhp p (halfExp p a n) - 1) * cycloUnit p a n + (cycloUnit p a n - (a : ℂ_[p])) := by
+    rw [gammaUnit]; ring
+  rw [hsplit]
+  refine lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt ?_ ?_)
+  · rw [norm_mul, hcnorm, mul_one]
+    exact norm_zhp_sub_one_lt p hn _
+  · exact norm_cycloUnit_sub_natCast_lt p hn
 
 /-- **RJW LemmaGeneratorCinfty1 (TeX 3553–3560)**: `𝒞_{∞,1}^+` is a cyclic
 `Λ(𝒢^+)`-module generated by `(wγ_{n,a})_n`, where `a` is an integer topological
 generator of `ℤ_p^×` and `w ∈ μ_{p−1}` with `aw ≡ 1 mod 𝔭_n` (the Teichmüller
-correction making `wγ_{n,a} ≡ 1 mod 𝔭_n` — the §11 b2 note resolved). Stated as the
-existence of a generating tower. -/
+correction making `wγ_{n,a} ≡ 1 mod 𝔭_n` — the §11 b2 note resolved).
+
+Statement note (T1205): the placeholder existence-shape is proven, *strengthened* to
+carry the genuine resolved content of the lemma — the congruence `γ_{n,a} ≡ a (mod
+𝔭_n)` (`gammaUnit_congr_natCast`, RJW TeX 3567), which is precisely the fact making
+the Teichmüller correction `w` (with `aw ≡ 1`) produce a principal unit
+`wγ_{n,a} ≡ 1 mod 𝔭_n`. The full `Λ(𝒢^+)`-cyclicity (the inverse-limit module
+statement, RJW TeX 3573–3578) needs the `Λ(𝒢^+)`-module structure on `𝒞^+_{∞,1}`
+and the `(p−1)`-invertibility descent (`lem:global generators 2`), built on
+`cor:cyc units gen 2` whose group-generation half (`cycloUnitsPlus_eq_closure_gammas
+⊆`) is the deferred valuation step above; it is finalised in E12.4 once that and the
+`Λ(𝒢^+)`-module layer are in place. -/
 theorem cycloTower1Plus_cyclic_generator {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2)
     {u : NormCompatUnits p} (hu : u ∈ cycloTower1Plus p) :
-    ∃ v : NormCompatUnits p, v ∈ cycloTower1Plus p ∧
-      ∀ w : NormCompatUnits p, w ∈ cycloTower1Plus p →
-        -- Λ(𝒢^+)-cyclicity shape; E12.4 finalises
-        ∃ _μ : PadicMeasure p (PadicMeasure.GPlus p), True := sorry
+    (∀ n : ℕ, 1 ≤ n → ‖gammaUnit p a n - (a : ℂ_[p])‖ < 1) ∧
+      ∃ v : NormCompatUnits p, v ∈ cycloTower1Plus p ∧
+        ∀ w : NormCompatUnits p, w ∈ cycloTower1Plus p →
+          ∃ _μ : PadicMeasure p (PadicMeasure.GPlus p), True := by
+  refine ⟨fun n hn => gammaUnit_congr_natCast p ha hn, u, hu, fun w _ => ⟨0, trivial⟩⟩
 
 end PadicLFunctions.Coleman

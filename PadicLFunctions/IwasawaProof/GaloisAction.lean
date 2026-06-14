@@ -831,6 +831,226 @@ theorem colemanSeries_galNCU (a : ℤ_[p]ˣ) (u : NormCompatUnits p) :
 def unitsMulLeftCM (a : ℤ_[p]ˣ) : C(ℤ_[p]ˣ, ℤ_[p]ˣ) :=
   ⟨fun v => a * v, continuous_const.mul continuous_id⟩
 
+/-! ### The measure-side derivation of `Col_galNCU`
+
+The proof reduces to four algebraic facts (RJW TeX 3217–3234):
+* the binomial-series derivative identity `(1+T)·(binomialSeries r)' = r·binomialSeries r`
+  (`one_add_X_mul_derivative_binomialSeries`);
+* the `∂log` chain rule under `σ_a`, `∂log(σ_a f) = a·σ_a(∂log f)`
+  (`dlog_galSeries`, for `f` a unit);
+* the inverse Mahler bridge `𝒜⁻¹(σ_a g) = sigma a (𝒜⁻¹ g)` (`mahlerSymm_galSeries`);
+* the `a`/`a⁻¹` cancellation in the units-multiplication step (inside `Col_galNCU`). -/
+
+/-- The descending-Pochhammer recursion for `Ring.choose` over `ℤ_[p]`:
+`(n+1)·binom(r, n+1) = (r − n)·binom(r, n)`. Engine for the binomial-series derivative
+identity. -/
+private theorem succ_mul_ringChoose (r : ℤ_[p]) (n : ℕ) :
+    ((n : ℤ_[p]) + 1) * Ring.choose r (n + 1) = (r - (n : ℤ_[p])) * Ring.choose r n := by
+  -- clear factorials: `(n+1)!·choose r (n+1) = (n!·choose r n)·(r − n)`
+  have h1 : (descPochhammer ℤ (n + 1)).smeval r
+      = ((n + 1).factorial : ℤ_[p]) * Ring.choose r (n + 1) := by
+    rw [Ring.descPochhammer_eq_factorial_smul_choose r (n + 1), nsmul_eq_mul]
+  have h2 : (descPochhammer ℤ n).smeval r = (n.factorial : ℤ_[p]) * Ring.choose r n := by
+    rw [Ring.descPochhammer_eq_factorial_smul_choose r n, nsmul_eq_mul]
+  have hX : ((Polynomial.X : Polynomial ℤ) - (n : Polynomial ℤ)).smeval r
+      = r - (n : ℤ_[p]) := by
+    rw [Polynomial.smeval_sub, Polynomial.smeval_X, Polynomial.smeval_natCast, pow_one,
+      pow_zero, nsmul_eq_mul, mul_one]
+  have hkey : ((n + 1).factorial : ℤ_[p]) * Ring.choose r (n + 1)
+      = ((n.factorial : ℤ_[p]) * Ring.choose r n) * (r - (n : ℤ_[p])) := by
+    rw [← h1, descPochhammer_succ_right, Polynomial.smeval_mul, h2, hX]
+  -- cancel `n!`: `(n+1)·n!·choose r (n+1) = n!·choose r n·(r−n)`, divide by the non-zero `n!`
+  rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one] at hkey
+  have hfac : (n.factorial : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero n)
+  refine mul_left_cancel₀ hfac ?_
+  linear_combination hkey
+
+/-- `coeff k (binomialSeries r) = binom(r, k)` over `ℤ_[p]` (the `• 1` smul is plain
+multiplication on `ℤ_[p]`). -/
+private theorem coeff_binomialSeries' (r : ℤ_[p]) (k : ℕ) :
+    PowerSeries.coeff k (PowerSeries.binomialSeries ℤ_[p] r) = Ring.choose r k := by
+  rw [PowerSeries.binomialSeries_coeff, smul_eq_mul, mul_one]
+
+/-- **The binomial-series derivative identity** (RJW TeX 3223, the engine of `σ_a`):
+`(1+T)·(binomialSeries r)′ = r·binomialSeries r`, i.e. `(1+T)·((1+T)^r)′ = r·(1+T)^r`
+formally. Proved coefficientwise from the `Ring.choose` recursion `succ_mul_ringChoose`. -/
+private theorem one_add_X_mul_derivative_binomialSeries (r : ℤ_[p]) :
+    (1 + PowerSeries.X) * PowerSeries.derivativeFun (PowerSeries.binomialSeries ℤ_[p] r)
+      = r • PowerSeries.binomialSeries ℤ_[p] r := by
+  set B : PowerSeries ℤ_[p] := PowerSeries.binomialSeries ℤ_[p] r with hB
+  ext n
+  rw [add_mul, one_mul, map_add, PowerSeries.smul_eq_C_mul, PowerSeries.coeff_C_mul,
+    coeff_binomialSeries']
+  rw [PowerSeries.coeff_derivativeFun, hB, coeff_binomialSeries']
+  cases n with
+  | zero =>
+    -- `coeff 0 ((1+X)·B') = coeff 0 B' = choose r 1 = r·choose r 0 = coeff 0 (r·B)`
+    rw [PowerSeries.coeff_zero_X_mul, add_zero, Ring.choose_one_right, Ring.choose_zero_right,
+      mul_one]
+    push_cast
+    ring
+  | succ m =>
+    -- `coeff (m+1) B' + coeff (m+1) (X·B') = (m+2)·choose r (m+2) + (m+1)·choose r (m+1)`
+    rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_derivativeFun, coeff_binomialSeries']
+    -- target: `(m+2)·choose r (m+2) + (m+1)·choose r (m+1) = r·choose r (m+1)`
+    have h : ((m : ℤ_[p]) + 1 + 1) * Ring.choose r (m + 1 + 1)
+        = (r - ((m : ℤ_[p]) + 1)) * Ring.choose r (m + 1) := by
+      have := succ_mul_ringChoose p r (m + 1)
+      rwa [Nat.cast_add, Nat.cast_one] at this
+    push_cast
+    linear_combination h
+
+/-- `Ring.inverse` commutes with substitution of a valid substituend, for a *unit*
+argument: `(Ring.inverse f).subst G = Ring.inverse (f.subst G)` (substitution is a ring
+hom, so it sends the unit `f` and its inverse to inverse units). -/
+private theorem subst_inverse_of_isUnit {f G : PowerSeries ℤ_[p]} (hf : IsUnit f)
+    (hg : PowerSeries.HasSubst G) :
+    (Ring.inverse f).subst G = Ring.inverse (f.subst G) := by
+  obtain ⟨v, rfl⟩ := hf
+  -- `f.subst G = ↑(Units.map φ v)` is a unit, with inverse `↑(v⁻¹).subst G`
+  set φ : PowerSeries ℤ_[p] →* PowerSeries ℤ_[p] :=
+    ((PowerSeries.substAlgHom hg : PowerSeries ℤ_[p] →ₐ[ℤ_[p]] PowerSeries ℤ_[p]) :
+      PowerSeries ℤ_[p] →+* PowerSeries ℤ_[p]).toMonoidHom with hφ
+  have hval : ∀ w : PowerSeries ℤ_[p], (w.subst G) = φ w := fun w => by
+    rw [hφ, ← PowerSeries.coe_substAlgHom hg]; rfl
+  rw [Ring.inverse_unit, hval, hval, ← Units.coe_map φ v,
+    show φ ((v⁻¹ : (PowerSeries ℤ_[p])ˣ) : PowerSeries ℤ_[p])
+        = ((Units.map φ v)⁻¹ : (PowerSeries ℤ_[p])ˣ) by rw [← Units.coe_map, ← map_inv],
+    Ring.inverse_unit]
+
+/-- **The `∂log` chain rule under `σ_a`** (RJW TeX 3223): for a unit `f`,
+`∂log(σ_a f) = a·σ_a(∂log f)`, i.e. `∂log(f((1+T)^a−1)) = a·(∂log f)((1+T)^a−1)`.
+The chain rule (`derivative_subst`) feeds the binomial-derivative identity
+`(1+T)·((1+T)^a−1)′ = a·(1+T)^a`, and substitution being a ring hom moves the `1+T`,
+the inverse, and the `(1+T)^a` factors through. -/
+private theorem dlog_galSeries (a : ℤ_[p]ˣ) {f : PowerSeries ℤ_[p]} (hf : IsUnit f) :
+    dlog p (galSeries p a f) = (a : ℤ_[p]) • galSeries p a (dlog p f) := by
+  classical
+  set G : PowerSeries ℤ_[p] := galSubstend p a with hG
+  have hg : PowerSeries.HasSubst G := hasSubst_galSubstend p a
+  -- `(1+T)·G′ = a·(1+T+G−... )` : the binomial identity, `1+G = binomialSeries a`
+  have hBG : (1 : PowerSeries ℤ_[p]) + G = PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p]) := by
+    rw [hG, galSubstend, add_sub_cancel]
+  have hGderiv : (1 + PowerSeries.X) * PowerSeries.derivativeFun G
+      = (a : ℤ_[p]) • PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p]) := by
+    have hdG : PowerSeries.derivativeFun G
+        = PowerSeries.derivativeFun (PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p])) := by
+      rw [hG, galSubstend,
+        show (PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p]) - 1)
+            = PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p]) + (-1 : PowerSeries ℤ_[p]) by ring,
+        PowerSeries.derivativeFun_add,
+        show (-1 : PowerSeries ℤ_[p]) = PowerSeries.C (-1 : ℤ_[p]) by simp,
+        PowerSeries.derivativeFun_C, add_zero]
+    rw [hdG, one_add_X_mul_derivative_binomialSeries p (a : ℤ_[p])]
+  -- chain rule for the derivative of `f.subst G` (`d⁄dX` is defeq to `derivativeFun`)
+  have hchain : PowerSeries.derivativeFun (f.subst G)
+      = (PowerSeries.derivativeFun f).subst G * PowerSeries.derivativeFun G :=
+    PowerSeries.derivative_subst ℤ_[p] hg
+  have hsubstX : (1 + PowerSeries.X : PowerSeries ℤ_[p]).subst G = 1 + G := by
+    rw [PowerSeries.subst_add hg, PowerSeries.subst_X hg,
+      ← PowerSeries.coe_substAlgHom hg, map_one]
+  -- abbreviations: `D := f'.subst G`, `I := inv(f.subst G)`
+  set D : PowerSeries ℤ_[p] := (PowerSeries.derivativeFun f).subst G with hD
+  set I : PowerSeries ℤ_[p] := Ring.inverse (f.subst G) with hI
+  -- LHS `= (1+X)·(D·G')·I`; reduce `(1+X)·G' = a•binomialSeries a`
+  have hLHS : dlog p (galSeries p a f)
+      = ((a : ℤ_[p]) • PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p])) * D * I := by
+    rw [dlog, galSeries, hchain]
+    rw [show (1 + PowerSeries.X) * (D * PowerSeries.derivativeFun G) * I
+        = ((1 + PowerSeries.X) * PowerSeries.derivativeFun G) * D * I by ring, hGderiv]
+  -- RHS `= a•((1+X)·f'·inv f).subst G = a•((1+G)·D·inv(f.subst G))`
+  have hRHS : (a : ℤ_[p]) • galSeries p a (dlog p f)
+      = ((a : ℤ_[p]) • PowerSeries.binomialSeries ℤ_[p] (a : ℤ_[p])) * D * I := by
+    rw [dlog, galSeries, PowerSeries.subst_mul hg, PowerSeries.subst_mul hg, hsubstX,
+      subst_inverse_of_isUnit p hf hg, hBG, ← hD, ← hI, PowerSeries.smul_eq_C_mul,
+      PowerSeries.smul_eq_C_mul]
+    ring
+  rw [hLHS, hRHS]
+
+/-- **The inverse Mahler bridge** `𝒜⁻¹(σ_a g) = sigma a (𝒜⁻¹ g)` (RJW §3.5.5, TeX 1138,
+transported to `𝒜⁻¹`): `galSeries a = subst((1+T)^a−1)` is exactly the `z`-twist of the
+Mahler transform `mahlerTransform_sigma`, inverted via `mahlerLinearEquiv`. -/
+private theorem mahlerSymm_galSeries (a : ℤ_[p]ˣ) (g : PowerSeries ℤ_[p]) :
+    (PadicMeasure.mahlerLinearEquiv p).symm (galSeries p a g)
+      = PadicMeasure.sigma p a ((PadicMeasure.mahlerLinearEquiv p).symm g) := by
+  set μ : PadicMeasure p ℤ_[p] := (PadicMeasure.mahlerLinearEquiv p).symm g with hμ
+  -- `𝒜(σ_a μ) = galSeries a (𝒜 μ)`, and `𝒜 μ = g`
+  have hmt : PadicMeasure.mahlerTransform p (PadicMeasure.sigma p a μ)
+      = galSeries p a g := by
+    rw [PadicMeasure.mahlerTransform_sigma, galSeries, galSubstend]
+    congr 1
+    rw [hμ, ← PadicMeasure.mahlerLinearEquiv_apply, LinearEquiv.apply_symm_apply]
+  -- apply `𝒜⁻¹` to both sides
+  rw [← hmt, ← PadicMeasure.mahlerLinearEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- **The `a`/`a⁻¹` cancellation** at the level of test functions (RJW TeX 3223): for
+`f : C(ℤ_[p]ˣ, ℤ_[p])`, the function `a • ((x⁻¹·f) ∘ extendByZero) ∘ (mult-a)` equals
+`(x⁻¹·(f ∘ mult-a)) ∘ extendByZero` on `ℤ_[p]`. On units `w`: LHS `= a·(a·w)⁻¹·f(a·w)
+= w⁻¹·f(a·w)` = RHS (the `x⁻¹` swallows the `a`); off the units both sides vanish
+(`a·x` is a unit iff `x` is). -/
+private theorem cancel_a_extendByZero (a : ℤ_[p]ˣ) (f : C(ℤ_[p]ˣ, ℤ_[p])) :
+    (a : ℤ_[p]) • ((PadicMeasure.extendByZero p (PadicMeasure.invCM p * f)).comp
+        (PadicMeasure.mulCM p (a : ℤ_[p])))
+      = PadicMeasure.extendByZero p (PadicMeasure.invCM p * f.comp (unitsMulLeftCM p a)) := by
+  classical
+  ext x
+  simp only [ContinuousMap.smul_apply, ContinuousMap.comp_apply, smul_eq_mul]
+  -- `mulCM a x = a·x`
+  change (a : ℤ_[p]) * PadicMeasure.extendByZero p (PadicMeasure.invCM p * f) ((a : ℤ_[p]) * x)
+      = PadicMeasure.extendByZero p (PadicMeasure.invCM p * f.comp (unitsMulLeftCM p a)) x
+  by_cases hx : IsUnit x
+  · -- `x = ↑hx.unit`; `a·x = ↑(a * hx.unit)`, both units
+    obtain ⟨w, rfl⟩ := hx
+    have hax : ((a : ℤ_[p]) * (w : ℤ_[p])) = ((a * w : ℤ_[p]ˣ) : ℤ_[p]) := by
+      rw [Units.val_mul]
+    rw [hax, PadicMeasure.extendByZero_coe_unit, PadicMeasure.extendByZero_coe_unit]
+    -- `a · ((a*w)⁻¹ · f(a*w)) = w⁻¹ · f(a*w)`
+    simp only [ContinuousMap.mul_apply, ContinuousMap.comp_apply]
+    have hfa : f (unitsMulLeftCM p a w) = f (a * w) := rfl
+    have hinvaw : PadicMeasure.invCM p (a * w) = (((a * w)⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := rfl
+    have hinvw : PadicMeasure.invCM p w = (((w⁻¹ : ℤ_[p]ˣ) : ℤ_[p])) := rfl
+    have haa : (a : ℤ_[p]) * ((a⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) = 1 := by
+      rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
+    rw [hfa, hinvaw, hinvw, mul_inv_rev, Units.val_mul]
+    rw [show (a : ℤ_[p]) * ((((w⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * ((a⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
+          * f (a * w))
+        = (((w⁻¹ : ℤ_[p]ˣ) : ℤ_[p])) * ((a : ℤ_[p]) * ((a⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
+          * f (a * w) by ring, haa, mul_one]
+  · -- `a·x` not a unit (else `x = a⁻¹·(a·x)` would be); both `extendByZero`s vanish
+    have hax : ¬ IsUnit ((a : ℤ_[p]) * x) := by
+      intro h
+      refine hx ?_
+      have := (a⁻¹ : ℤ_[p]ˣ).isUnit.mul h
+      rwa [← mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mul] at this
+    have hz0 : PadicMeasure.extendByZero p (PadicMeasure.invCM p * f) ((a : ℤ_[p]) * x) = 0 := by
+      change (if h : IsUnit ((a : ℤ_[p]) * x) then _ else (0 : ℤ_[p])) = 0
+      rw [dif_neg hax]
+    have hz1 : PadicMeasure.extendByZero p
+        (PadicMeasure.invCM p * f.comp (unitsMulLeftCM p a)) x = 0 := by
+      change (if h : IsUnit x then _ else (0 : ℤ_[p])) = 0
+      rw [dif_neg hx]
+    rw [hz0, hz1, mul_zero]
+
+/-- The μ-generic measure identity behind `Col_galNCU` (RJW TeX 3217–3234): after the
+`∂log`/Mahler reductions, `Col(σ_a u)` and `σ_a·Col(u)` both reduce to
+`x⁻¹·Res(a•σ_a μ)` resp. `pushforward (mult-a) (x⁻¹·Res μ)` with `μ = 𝒜⁻¹(∂log f_u)`;
+they agree by the `a`/`a⁻¹` cancellation `cancel_a_extendByZero`. -/
+private theorem unitsCmul_smul_sigma_eq_pushforward (a : ℤ_[p]ˣ)
+    (μ : PadicMeasure p ℤ_[p]) :
+    PadicMeasure.unitsCmul p (PadicMeasure.invCM p)
+        (((a : ℤ_[p]) • PadicMeasure.sigma p a μ).comp (PadicMeasure.extendByZero p))
+      = PadicMeasure.pushforward p (unitsMulLeftCM p a) (PadicMeasure.unitsCmul p
+          (PadicMeasure.invCM p) (μ.comp (PadicMeasure.extendByZero p))) := by
+  refine LinearMap.ext fun f => ?_
+  rw [PadicMeasure.pushforward_apply, PadicMeasure.unitsCmul_apply, PadicMeasure.unitsCmul_apply]
+  -- LHS `= ((a•σ_a μ).comp E)(invCM·f) = a·μ((E(invCM·f)).comp(mulCM a))`
+  change ((a : ℤ_[p]) • PadicMeasure.sigma p a μ)
+      (PadicMeasure.extendByZero p (PadicMeasure.invCM p * f))
+    = μ (PadicMeasure.extendByZero p
+        (PadicMeasure.invCM p * (f.comp (unitsMulLeftCM p a))))
+  rw [LinearMap.smul_apply, PadicMeasure.sigma, PadicMeasure.pushforward_apply,
+    ← cancel_a_extendByZero p a f, map_smul]
+
 /-- **RJW §12.1 Proposition (TeX 3193–3236)**: the Coleman map is `𝒢`-equivariant.
 Here `σ_a` acts on `Λ(ℤ_[p]ˣ)` by the pushforward along multiplication by `a`.
 
@@ -841,6 +1061,12 @@ Statement note (T1201): the RHS is finalised to the genuine `σ_a` pushforward
 action is pushforward along `v ↦ a·v`). -/
 theorem Col_galNCU (a : ℤ_[p]ˣ) (u : NormCompatUnits p) :
     Col p (galNCU p a u)
-      = PadicMeasure.pushforward p (unitsMulLeftCM p a) (Col p u) := sorry
+      = PadicMeasure.pushforward p (unitsMulLeftCM p a) (Col p u) := by
+  -- unfold `Col`, intertwine the Coleman series, apply the `∂log` chain rule + Mahler bridge
+  rw [Col, Col, colemanSeries_galNCU p a u,
+    dlog_galSeries p a (colemanSeries_isUnit p u), map_smul, mahlerSymm_galSeries p a]
+  -- reduce to the μ-generic measure identity with `μ = 𝒜⁻¹(∂log f_u)`
+  exact unitsCmul_smul_sigma_eq_pushforward p a
+    ((PadicMeasure.mahlerLinearEquiv p).symm (dlog p (colemanSeries p u)))
 
 end PadicLFunctions.Coleman

@@ -5519,7 +5519,7 @@ LARGEST/DEEPEST section; the board stages the two critical-path sub-developments
 b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller correction w).
 
 ### [T1201] **E12.1 LINCHPIN: the Galois action on the tower** (GaloisAction.lean)
-- **Status**: in_progress (2026-06-14; agent filled 8/9 — galAut via autEquivPow + autToPow_zetaSys_eq root-independence bridge; levelNorm_galAut (the RISK-flagged norm-equivariance) via Algebra.norm_eq_of_equiv_equiv; THE LINCHPIN colemanSeries_galNCU via seriesEval_subst + zpPow_zetaSys + galAut_evalPi; galNCU/galSeries; ~25 helpers; norm_galAut isometry. All 8 axiom-clean (propext/Classical.choice/Quot.sound). 4 show→change lints fixed. Remaining: Col_galNCU SPAWNED as T1201b (measure-side σ_a-equivariance, key bridge mahlerTransform_sigma exists).) | **Sub-tickets**: T1201b | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
+- **Status**: **done** (2026-06-14, beastmode §12 wave 2). GaloisAction.lean sorry-free; `lake build PadicLFunctions.IwasawaProof.GaloisAction` ✓; `#print axioms` on Col_galNCU/colemanSeries_galNCU/levelNorm_galAut/galNCU/galAut_compat = {propext, Classical.choice, Quot.sound}. Sub-ticket T1201b (Col_galNCU) closed by agent ad3ada. | **Sub-tickets**: T1201b (done) | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
 - **Parallel**: yes (vs T1203 — different file) | **Type**: defs + lemmas
 #### Statement (skeleton canonical)
 `galAut (a : ℤ_[p]ˣ) (n) : K p n ≃ₐ[ℚ_[p]] K p n`; `galAut_zetaSys` (σ_a ξ_n = ξ_n^{a_n});
@@ -5631,7 +5631,8 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Sizing**: ~180 LOC.
 
 ### [T1205] E12.4: generators of the cyclotomic units (Generators.lean)
-- **Status**: in_progress (2026-06-14, beastmode §12 wave 2 — galAut ready) | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
+- **Status**: in_progress (2026-06-14, beastmode §12 wave 2 — 4/5 sorry-free; ⊆ of `cycloUnitsPlus_eq_closure_gammas` spawned as T1205a) | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
+- **Progress (2026-06-14)**: agent aeb98 closed `gammaUnit`, `gammaUnit_mem_cycloUnitsPlus`, `closure_zspan_eq_zpspan`, `cycloTower1Plus_cyclic_generator` (strengthened to the proven congruence `γ_{n,a} ≡ a mod 𝔭_n` = §11 b2-note), and the `⊇` direction of `cycloUnitsPlus_eq_closure_gammas`. The single remaining sorry is the `⊆` direction (Generators.lean:335) → T1205a.
 - **Parallel**: yes (vs T1203/T1204 — needs only T1201's finite Galois action) | **Type**: defs + lemmas
 #### Statement
 `gammaUnit` (γ_{n,a}); `gammaUnit_mem_cycloUnitsPlus`; `cycloUnitsPlus_eq_closure_gammas`
@@ -5650,6 +5651,38 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Mathlib**: `ZMod.inv`/`unitOfCoprime` (half-powers); `Nat.Coprime` mod-inverse.
 - **Sources**: Q12, Q13, Q14 (TeX 3450–3578).
 - **Sizing**: ~280 LOC.
+
+### [T1205a] lem:cyc units gen (i) `⊆` — the valuation/reality normal-form direction
+- **Status**: open | **File**: IwasawaProof/Generators.lean | **Parent**: T1205 | **Type**: theorem
+- **Depends on**: T1205 (⊇ done; `gammaUnit`, `gammaUnit_mem_cycloUnitsPlus`, `neg_one_mem_cycloUnitsPlus` available)
+#### Statement (the `⊆` half of `cycloUnitsPlus_eq_closure_gammas`, Generators.lean:333–335)
+`cycloUnitsPlus p n ≤ Subgroup.closure ({g | ∃ b, ¬p∣b ∧ (g:ℂ_[p]) = gammaUnit p b n} ∪ {g | (g:ℂ_[p]) = -1})`.
+#### Proof sketch (source TeX 3470–3482; Lean-friendly route)
+The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (valuation) ⟹ rewrite via
+`γ_{n,a}` ⟹ reality kills the ξ-power. Decompose into three in-file lemmas (spawn as helpers):
+1. **Normal form (A)**: `cycloGenSet = {ζ, −ζ} ∪ {ξ^a−1}`; `ℂ_[p]ˣ` is a `CommGroup`, so
+   `g ∈ closure(cycloGenSet)` ⟹ `g = (±1)·ζ^d·∏_{a∈s}(ξ^a−1)^{e_a}` for some `d:ℤ`,
+   `e : ℕ →₀ ℤ`, sign `±`. Route: `Subgroup.closure_induction` accumulating a finsupp word,
+   OR mathlib's comm-group `closure` = `zpowers`-product form. (−ζ folds into sign·ζ^d.)
+2. **Valuation (B) — the shortcut**: `v_p(ξ^a−1)=v_p(ξ−1)` for `(a,p)=1` is FREE: the project
+   already has `isIntegral_cycloUnit` + `isIntegral_inv_cycloUnit` (CyclotomicUnits.lean:265,306),
+   i.e. `c_n(a)=(ξ^a−1)/(ξ−1)` is a global unit ⟹ `‖ξ^a−1‖=‖ξ−1‖`. Plus `‖ξ−1‖<1`
+   (`norm_zetaSys_pow_sub_one_lt`, Generators) and `‖ζ‖=1` (`norm_zhp`). The additive valuation
+   `V(u) = -Real.log ‖(u:ℂ_[p])‖` is a `→+` hom on `ℂ_[p]ˣ`; `V(g)=0` (global unit, integral both
+   ways ⟹ `‖g‖=1`) forces `(Σ_{(a,p)=1} e_a)·V(ξ−1)=0`, and `V(ξ−1)>0` ⟹ `Σe_a=0`.
+   (Reduce all `ξ^a−1` to `(a,p)=1, 1≤a<p^n/2` via `ξ^{bp^m}−1=∏_j(ξ^{b+jp^{n−m}}−1)` and
+   `ξ^a−1=−ξ^a(ξ^{−a}−1)` — both pure ℂ_[p] identities.)
+3. **Rewrite + reality (C)**: `Σe_a=0` ⟹ `∏(ξ^a−1)^{e_a}=∏c_n(a)^{e_a}=ζ^{−½Σe_a(a−1)}∏γ_{n,a}^{e_a}`,
+   so `g=±ζ^e∏γ_{n,a}^{e_a}` with `e=d+½Σe_a(a−1)`. Each `γ_{n,a}` real (`gammaUnit_mem_FglobalPlus`).
+   `g∈cycloUnitsPlus` ⟹ `g` real ⟹ `±ζ^e` real ⟹ `ζ^{2e}=1` ⟹ `2e≡0 mod p^n` ⟹ `e=0` (p odd).
+   Then `g=±∏γ_{n,a}^{e_a}∈closure({γ_b}∪{−1})`.
+- **Mathlib**: `Subgroup.closure_induction`, `Real.log` hom facts, comm-group closure normal form.
+- **Project**: `isIntegral_cycloUnit`/`isIntegral_inv_cycloUnit`, `cycloUnit_eq_geomSum`,
+  `norm_zetaSys_pow_sub_one_lt`, `norm_zhp`, `gammaUnit_mem_FglobalPlus`, `zetaSys_primitiveRoot`.
+- **Sources**: Q12 (TeX 3470–3482).
+- **Sizing**: ~150–250 LOC (the normal form (A) is the long pole; (B) inputs all exist).
+- **Note**: currently a leaf — nothing else in IwasawaProof consumes it yet; on the eventual
+  critical path to T1206 via the cyclic Λ(𝒢⁺)-module (`cor:cyc units gen 2`).
 
 ### [CLEANUP-123] /cleanup FundamentalSequence.lean + Generators.lean
 - **Status**: open | **Depends on**: T1204, T1205.
@@ -5781,7 +5814,7 @@ and the `C`-submodule explicitly).
 - **Sizing**: ~150 LOC (the successive-approximation + the A=B assembly).
 
 ### [T1201b] Col_galNCU — measure-side σ_a-equivariance of the Coleman map
-- **Status**: open | **File**: IwasawaProof/GaloisAction.lean | **Parent**: T1201
+- **Status**: **done** (2026-06-14, agent ad3ada). 6 in-file private helpers (succ_mul_ringChoose, coeff_binomialSeries', one_add_X_mul_derivative_binomialSeries, subst_inverse_of_isUnit, dlog_galSeries, mahlerSymm_galSeries) + unitsMulLeftCM-pushforward assembly; axiom-clean; statement unchanged. GaloisAction.lean sorry-free. | **File**: IwasawaProof/GaloisAction.lean | **Parent**: T1201
 - **Depends on**: T1201 (8/9 done — galAut/galNCU/galSeries/colemanSeries_galNCU + ~25 helpers) | **Type**: theorem
 #### Statement (finalized by T1201, authorised statement-fix)
 `Col_galNCU (a : ℤ_[p]ˣ) (u : NormCompatUnits p) : Col p (galNCU p a u)
