@@ -457,7 +457,7 @@ private theorem finiteDimensional_K (n : ℕ) : FiniteDimensional ℚ_[p] (K p n
 
 /-- A primitive `p^{n+1}`-th root of unity `w ∈ K_{n+1}` is *not* in `K_n`: it
 would force `φ(p^{n+1}) = [ℚ_p(w):ℚ_p] ≤ [K_n:ℚ_p] = φ(p^n)`, false for `n ≥ 1`. -/
-private theorem primitiveRoot_notMem_K {n : ℕ} (hn : 1 ≤ n) {w : ℂ_[p]}
+theorem primitiveRoot_notMem_K {n : ℕ} (hn : 1 ≤ n) {w : ℂ_[p]}
     (hw : IsPrimitiveRoot w (p ^ (n + 1))) : w ∉ K p n := by
   haveI := finiteDimensional_K p n
   intro hwK
@@ -478,7 +478,7 @@ set_option synthInstance.maxHeartbeats 1000000 in
 /-- If the `ℂ_p`-value of `V : extendScalars (K_n ≤ K_{n+1})` is not in `K_n`,
 then `V` generates `K_{n+1}` over `K_n` (the step has prime degree `p`, so the
 proper subextension `K_n` is the only one below). -/
-private theorem extendScalars_adjoin_eq_top {n : ℕ} (hn : 1 ≤ n)
+theorem extendScalars_adjoin_eq_top {n : ℕ} (hn : 1 ≤ n)
     {V : IntermediateField.extendScalars (K_le_succ p n)}
     (hbot : (V : ℂ_[p]) ∉ K p n) : (K p n)⟮V⟯ = ⊤ := by
   haveI := finiteDimensional_K p n
@@ -565,7 +565,7 @@ set_option maxHeartbeats 1000000 in
 /-- The minimal polynomial over `K_n` of the extendScalars element `W` whose
 value is a primitive `p^{n+1}`-th root `w` (with `w^p = (c : ℂ_p)`, `c ∈ K_n`)
 is `X^p − C c` (RJW TeX 2685). Degree `p = [K_{n+1}:K_n]` from `W` generating. -/
-private theorem minpoly_extendScalars_of_pow {n : ℕ} (hn : 1 ≤ n)
+theorem minpoly_extendScalars_of_pow {n : ℕ} (hn : 1 ≤ n)
     {W : IntermediateField.extendScalars (K_le_succ p n)} {c : K p n}
     (hWc : W ^ p = algebraMap (K p n) (IntermediateField.extendScalars (K_le_succ p n)) c)
     (htop : (K p n)⟮W⟯ = ⊤) :
