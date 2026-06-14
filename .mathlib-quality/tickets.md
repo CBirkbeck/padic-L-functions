@@ -5579,7 +5579,7 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Sizing**: ~140 LOC.
 
 ### [T1202a] Teichmüller split `𝒰_∞ = μ_{p−1} × 𝒰_{∞,1}` (Equivariance.lean)
-- **Status**: open (OFF the T1206 critical path — see note) | **File**: IwasawaProof/Equivariance.lean | **Parent**: T1202 | **Type**: lemma + residue-field sub-development
+- **Status**: **DEFERRED** (2026-06-14, agent a708d3). OFF the T1206 critical path (T1204/Main work on `unitsTower1`). The reusable arithmetic half is CLOSED: `levelNorm_const_eq_pow` (`N_{n+1,n}(c)=c^p` for base constants `c∈K_n`, via `Algebra.norm_algebraMap` + `finrank_K_succ`; axiom-clean) — this discharges norm-compatibility of a constant `μ_{p−1}` system (`ζ^{p−1}=1 ⟹ N(ζ)=ζ`). `normCompat_eq_teichmuller_mul_principal` itself stays a single DOCUMENTED sorry (Equivariance.lean:159): the genuine blocker is an exported residue hom `O_n^× → 𝔽_p^×` + Teichmüller section `ω : O_n^× → μ_{p−1}` + norm-residue compatibility — a dedicated local-CFT pass (the project has only `private exists_residue_pi`, existence-only). Recorded as deferred to a residue-field-of-`O_n` pass (cf. rule #6's O_L dedicated-pass discipline); blueprint node stays unwired. The sorryAx is contained — nothing references this theorem, so it does NOT pollute the T1206 milestone. | **File**: IwasawaProof/Equivariance.lean | **Parent**: T1202 | **Type**: lemma + residue-field sub-development (deferred)
 #### Statement (Equivariance.lean:~122, unchanged)
 `normCompat_eq_teichmuller_mul_principal (u : NormCompatUnits p) : ∃ v w, w ∈ unitsTower1 p ∧ (∀ n, (v.elems n)^(p−1) = 1) ∧ u = v * w`.
 #### Obstacle (agent a9db35) + plan

@@ -91,6 +91,36 @@ private theorem zsmul_powerSeries_eq_zero {g : PowerSeries ℤ_[p]} {k : ℕ} (h
   rw [map_zero]
   exact (smul_eq_zero.mp hcoef).resolve_left (by exact_mod_cast hk)
 
+set_option synthInstance.maxHeartbeats 1000000 in
+-- the `Algebra.norm_algebraMap`/`finrank` computation runs through the nested
+-- `IntermediateField (K p n) (extendScalars …)` layer; instance synthesis exceeds defaults
+set_option maxHeartbeats 1000000 in
+/-- **The level norm of a base constant is its `p`-th power** (RJW §12.1 norm-compatibility
+helper, the `N(ζ) = ζ^p` step): for `c ∈ K_n` with `n ≥ 1`, viewing `c ∈ K_{n+1}` through
+the inclusion, `N_{n+1,n}(c) = c^p`. The step `K_{n+1}/K_n` has degree `p`
+(`finrank_K_succ`, `n ≥ 1`), and the level norm of a `K_n`-constant is
+`Algebra.norm (K_n) (algebraMap c) = c ^ [K_{n+1}:K_n]` (`Algebra.norm_algebraMap`).
+
+This discharges the *norm-compatibility half* of the constant Teichmüller system in the
+split below: a `(p−1)`-th root of unity `ζ ∈ μ_{p−1} ⊂ ℤ_p^× ⊂ K_n^×` satisfies
+`N_{n+1,n}(ζ) = ζ^p = ζ` since `ζ^{p−1} = 1`. -/
+theorem levelNorm_const_eq_pow {n : ℕ} (hn : 1 ≤ n) {c : ℂ_[p]} (hc : c ∈ K p n) :
+    levelNorm p n c = c ^ p := by
+  have hcsucc : c ∈ K p (n + 1) := K_le_succ p n hc
+  haveI : NeZero (p ^ (n + 1)) := ⟨(pow_pos hp.out.pos (n + 1)).ne'⟩
+  haveI : FiniteDimensional ℚ_[p] (IntermediateField.extendScalars (K_le_succ p n)) :=
+    IsCyclotomicExtension.finiteDimensional {p ^ (n + 1)} ℚ_[p] (K p (n + 1))
+  haveI : FiniteDimensional (K p n) (IntermediateField.extendScalars (K_le_succ p n)) :=
+    FiniteDimensional.right ℚ_[p] (K p n) _
+  rw [levelNorm_apply p n hcsucc]
+  have hval : (⟨c, (IntermediateField.mem_extendScalars (K_le_succ p n)).2 hcsucc⟩ :
+        IntermediateField.extendScalars (K_le_succ p n))
+      = algebraMap (K p n) (IntermediateField.extendScalars (K_le_succ p n)) ⟨c, hc⟩ :=
+    Subtype.ext rfl
+  rw [hval, Algebra.norm_algebraMap, finrank_K_succ p hn]
+  push_cast
+  rfl
+
 /-- **RJW §12.1 Lemma (TeX 3159–3168)**: `𝒰_∞ = μ_{p−1} × 𝒰_{∞,1}` (Teichmüller split of
 the reduction-mod-`𝔭_n` SES `1 → 𝒰_{n,1} → 𝒰_n → μ_{p−1} → 1`). Stated as: every tower
 unit splits as a `(p−1)`-torsion part times a principal-unit part.
@@ -98,27 +128,34 @@ unit splits as a `(p−1)`-torsion part times a principal-unit part.
 OBSTACLE (single documented `sorry`, T1201/§12.1). The split needs the **residue
 section** of `O_n` that the project does not yet provide:
 
-* Missing step 1 — residue homomorphism `O_n^× → 𝔽_p^×`. `K_n/ℚ_p` is totally ramified
-  (TeX 3162: unique prime `𝔭_n`, residue field `𝔽_p`), so reduction mod `𝔭_n` lands in
-  `𝔽_p`. The project only has the *existence* approximation
-  `∀ x ∈ O_n, ∃ a : ℤ_p, ‖x − a‖ ≤ ‖π_n‖` (`exists_residue_pi`, `Coleman/Theorem.lean`),
-  and that lemma is `private` — there is no exported residue ring/group homomorphism, so
-  `v.elems n = ω(u.elems n)` cannot be defined.
+* Missing step 1 (the genuine blocker) — residue homomorphism `O_n^× → 𝔽_p^×` and its
+  Teichmüller section. `K_n/ℚ_p` is totally ramified (TeX 3162: unique prime `𝔭_n`,
+  residue field `𝔽_p`), so reduction mod `𝔭_n` lands in `𝔽_p`. The project only has the
+  *existence* approximation `∀ x ∈ O_n, ∃ a : ℤ_p, ‖x − a‖ ≤ ‖π_n‖` (`exists_residue_pi`,
+  `Coleman/Theorem.lean`), and that lemma is `private` and `n ≥ 1`-only — there is no
+  exported residue ring/group homomorphism `O_n^× → 𝔽_p^×`, no proof that the `(p−1)`-th
+  roots of unity in `O_n` are exactly `μ_{p−1} ⊂ ℤ_p^×`, and no Teichmüller section
+  picking `ω(x) ∈ μ_{p−1}` with `ω(x) ≡ x mod 𝔭_n`. So `v.elems n = ω(u.elems n)` cannot
+  even be *defined* as a `ℂ_[p]ˣ`.
 * Missing step 2 — norm/residue compatibility. For the constant Teichmüller system
   `v.elems n = ζ ∈ μ_{p−1} ⊂ ℤ_p^×` to be a `NormCompatUnits`, one needs
-  `N_{n+1,n}(ζ) = ζ` for `ζ ∈ μ_{p−1}`: the step has degree `p` (`finrank_K_succ`), so
-  `N_{n+1,n}(ζ) = ζ^p = ζ` since `ζ^{p−1} = 1`. There is no `levelNorm`-on-constants
-  lemma (`levelNorm p n (toCp p c) = c ^ p`) to discharge this, nor a norm-residue
-  compatibility lemma forcing the residues of `u.elems n` to be constant across `n`.
+  `N_{n+1,n}(ζ) = ζ` for `ζ ∈ μ_{p−1}`. The **norm half is now available**:
+  `levelNorm_const_eq_pow` gives `N_{n+1,n}(ζ) = ζ^p` (degree `p`), and `ζ^{p−1} = 1`
+  forces `ζ^p = ζ`. What is still missing is the *residue half* — a norm-residue
+  compatibility lemma forcing the residues `ω(u.elems n)` to be constant across `n` (i.e.
+  that the Teichmüller parts of a norm-compatible system themselves form one), which again
+  reduces to step 1's residue section.
 * Missing step 3 — principality of `w = u · v⁻¹`: `‖w.elems n − 1‖ < 1`
   (i.e. `w.elems n ≡ 1 mod 𝔭_n`) follows from `u.elems n ≡ ω(u.elems n) mod 𝔭_n`, which
   again requires the residue section of step 1.
 
 Closing this needs a dedicated residue-field-of-`O_n` infrastructure pass (residue
-homomorphism, its norm-compatibility, Teichmüller lift into `μ_{p−1} ⊂ ℤ_p^×`), parallel
-to the `ℤ_[p]` Teichmüller character already in `Interpolation/Branches.lean`
-(`teichmullerZMod`, `teichmullerFun`) but for the ramified `O_n`. It is a multi-lemma
-build, deferred per the §12 execution plan. -/
+homomorphism `O_n^× → 𝔽_p^×`, identification of its `(p−1)`-torsion with `μ_{p−1} ⊂ ℤ_p^×`,
+the Teichmüller section, and norm-residue compatibility), parallel to the `ℤ_[p]`
+Teichmüller character already in `Interpolation/Branches.lean` (`teichmullerZMod`,
+`teichmullerFun`) but for the ramified `O_n`. With `levelNorm_const_eq_pow` in place the
+norm-compatibility arithmetic is no longer a blocker; the residue map / Teichmüller lift
+is. It is a multi-lemma build, deferred per the §12 execution plan. -/
 theorem normCompat_eq_teichmuller_mul_principal (u : NormCompatUnits p) :
     ∃ v w : NormCompatUnits p, w ∈ unitsTower1 p ∧
       (∀ n, (v.elems n) ^ (p - 1) = 1) ∧ u = v * w := sorry
