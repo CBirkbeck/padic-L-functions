@@ -5,6 +5,8 @@ Authors: Chris Birkbeck
 -/
 import PadicLFunctions.IwasawaProof.FundamentalSequence
 import PadicLFunctions.IwasawaProof.Generators
+import Mathlib.Analysis.Normed.Algebra.Basic
+import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
 # Continuity of the Coleman map (RJW §13 / IMC analytic core)
@@ -313,6 +315,89 @@ theorem continuous_evalPi {n : ℕ} (hn : 1 ≤ n) :
     Continuous (fun f : PowerSeries ℤ_[p] => evalPi p f n) := by
   refine SeqContinuous.continuous (fun {g h} hg => ?_)
   exact tendsto_evalPi_of_tendsto p hg hn
+
+/-! ## Continuity of the level norm `N_{n+1,n}` (ST3a, the tower-descent gateway)
+
+In the inverse-limit topology a global `m ∈ NormCompatUnits` approximating `u` at the top
+level `N` approximates it at every lower level `k < N` *for free*, because both are
+norm-compatible: `u.elems k = N_{k+1,k}(N_{k+2,k+1}(⋯ u.elems N))` and likewise for `m`. This
+free propagation is exactly the continuity of the level norm `N_{n+1,n} = Algebra.norm (K_n)`
+on the finite extension `K_{n+1}/K_n`: `Algebra.norm = det ∘ lmul`, and on the
+finite-dimensional `K_n`-algebra `K_{n+1}` both `lmul` (continuous bilinear,
+`ContinuousLinearMap.mul`) and `det` (`ContinuousLinearMap.continuous_det`) are continuous.
+The `K_n`-subspace topology on `K_{n+1}` matches its finite-dimensional module topology, so the
+continuity transfers to the `ℂ_[p]`-coordinate form used in the tower assembly. -/
+
+/-- `ℂ_[p]` is a normed `K_n`-algebra (`K_n ⊆ ℂ_[p]` carries the restricted norm, and the
+algebra scalar action is multiplication, so `‖r • x‖ = ‖(r : ℂ_[p])‖ · ‖x‖`). The
+`NormedAlgebra (subfield) (ambient)` instance is not provided by mathlib, so we supply it
+locally for the level-norm continuity argument. -/
+local instance instNormedAlgebra_K_Cp (n : ℕ) : NormedAlgebra (K p n) ℂ_[p] where
+  norm_smul_le r x := by rw [Algebra.smul_def, norm_mul]; rfl
+
+/-- The relative extension `K_{n+1} = extendScalars (K_n ≤ K_{n+1})` is a nontrivially normed
+field for the `K_n`-structure (the same `ℂ_[p]`-subspace norm as for the `ℚ_[p]`-structure).
+Supplied locally because the abstract `IntermediateField (K_n) ℂ_[p]` instance does not fire
+through the nested-subfield coercion. -/
+local instance instNNF_extendScalars (n : ℕ) :
+    NontriviallyNormedField (IntermediateField.extendScalars (K_le_succ p n)) where
+  __ := SubfieldClass.toNormedField (IntermediateField.extendScalars (K_le_succ p n))
+  non_trivial := by
+    obtain ⟨k, hk⟩ := @NontriviallyNormedField.non_trivial (K p n) _
+    exact ⟨algebraMap (K p n) (IntermediateField.extendScalars (K_le_succ p n)) k,
+      by simpa using hk⟩
+
+/-- `K_{n+1} = extendScalars (K_n ≤ K_{n+1})` is a normed `K_n`-space (restricted `ℂ_[p]`
+norm; scalar action is multiplication). -/
+local instance instNS_extendScalars (n : ℕ) :
+    NormedSpace (K p n) (IntermediateField.extendScalars (K_le_succ p n)) where
+  norm_smul_le r x := by
+    change ‖(r • x : IntermediateField.extendScalars (K_le_succ p n))‖ ≤ _
+    rw [Algebra.smul_def, norm_mul]; rfl
+
+/-- `K_n` is complete (finite-dimensional over the complete `ℚ_[p]`). -/
+local instance instComplete_K (n : ℕ) : CompleteSpace (K p n) := by
+  haveI : NeZero (p ^ n) := ⟨(pow_pos hp.out.pos n).ne'⟩
+  haveI : FiniteDimensional ℚ_[p] (K p n) :=
+    IsCyclotomicExtension.finiteDimensional {p ^ n} ℚ_[p] (K p n)
+  exact FiniteDimensional.complete ℚ_[p] (K p n)
+
+set_option synthInstance.maxHeartbeats 1000000 in
+-- the `det ∘ lmul` continuity runs through the nested `IntermediateField (K p n) (extendScalars …)`
+-- layer (`finrank`/instance synthesis on the relative extension); both bumps exceed the defaults
+set_option maxHeartbeats 1000000 in
+/-- **ST3a — the level norm is continuous** (RJW §12.5 tower-descent gateway): the map
+`x ↦ (N_{n+1,n}(x) : ℂ_[p])` is continuous on `K_{n+1}` (with the `ℂ_[p]`-subspace topology).
+`N_{n+1,n} = Algebra.norm (K_n) = det ∘ lmul` on the finite extension `K_{n+1}/K_n`; both
+`lmul` (`ContinuousLinearMap.mul`) and `det` (`ContinuousLinearMap.continuous_det`) are
+continuous, and the inclusion `K_{n+1} ↪ ℂ_[p]` and projection `K_n ↪ ℂ_[p]` are continuous.
+This propagates a top-level approximation down the norm-compatible tower (ST3c). -/
+theorem continuous_levelNorm (n : ℕ) :
+    Continuous (fun x : K p (n + 1) => (levelNorm p n (x : ℂ_[p]) : ℂ_[p])) := by
+  haveI : NeZero (p ^ (n + 1)) := ⟨(pow_pos hp.out.pos (n + 1)).ne'⟩
+  haveI : FiniteDimensional ℚ_[p] (IntermediateField.extendScalars (K_le_succ p n)) :=
+    IsCyclotomicExtension.finiteDimensional {p ^ (n + 1)} ℚ_[p] (K p (n + 1))
+  haveI : FiniteDimensional (K p n) (IntermediateField.extendScalars (K_le_succ p n)) :=
+    FiniteDimensional.right ℚ_[p] (K p n) _
+  set E := IntermediateField.extendScalars (K_le_succ p n) with hE
+  -- the carrier-identity map `K_{n+1} → E` is continuous (subspace topology, `val`-compatible)
+  have hmemE : ∀ x : K p (n + 1), (x : ℂ_[p]) ∈ E := fun x =>
+    (IntermediateField.mem_extendScalars (K_le_succ p n)).2 x.2
+  have htoE : Continuous (fun x : K p (n + 1) => (⟨(x : ℂ_[p]), hmemE x⟩ : E)) := by
+    rw [continuous_induced_rng]; exact continuous_induced_dom
+  -- `Algebra.norm (K_n) = det ∘ lmul` is continuous on the finite `K_n`-algebra `E`
+  have hnorm : Continuous (fun y : E => Algebra.norm (K p n) y) := by
+    simp_rw [Algebra.norm_apply]
+    exact (ContinuousLinearMap.continuous_det (𝕜 := K p n) (E := E)).comp
+      (ContinuousLinearMap.mul (K p n) E).continuous
+  -- coercion `K_n ↪ ℂ_[p]` is continuous (subspace topology)
+  have hcoe : Continuous (fun z : K p n => (z : ℂ_[p])) := continuous_induced_dom
+  have heq : (fun x : K p (n + 1) => (levelNorm p n (x : ℂ_[p]) : ℂ_[p]))
+      = fun x : K p (n + 1) =>
+        ((Algebra.norm (K p n) (⟨(x : ℂ_[p]), hmemE x⟩ : E) : K p n) : ℂ_[p]) := by
+    funext x; rw [levelNorm_apply p n x.2]
+  rw [heq]
+  exact hcoe.comp (hnorm.comp htoE)
 
 /-! ## The inverse-limit topology on `NormCompatUnits` (the source side, ST1)
 
