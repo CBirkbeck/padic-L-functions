@@ -5599,7 +5599,12 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
   survey's global-number-field caveat).
 
 ### [CLEANUP-121] /cleanup GaloisAction.lean + Equivariance.lean
-- **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
+- **Status**: **done (degraded)** (2026-06-14, orchestrator). GaloisAction.lean + Equivariance.lean
+  build green (`lake build PadicLFunctions` 3840 jobs, no lint warnings; the only sorry is the
+  deferred Equivariance.lean:159 T1202a). Per-ticket cleaned at proof time (T1201/T1201b show→change,
+  golf) + the a8699e Galois-fixed-field lemmas + a7678f/a820a4 galNCU infra written clean (≤100 cols,
+  axiom-clean). Degraded bar met (orchestrator lacks lean-lsp MCP); deep structural golf deferred to
+  CLEANUP-FINAL (the lean-lsp-MCP-tooled session). | **Depends on**: T1201, T1202.
 
 ### [T1203] **E12.2 HARD: thm:log der (Coleman–Coates–Wiles)** (LogDerivative.lean)
 - **Status**: **done** (2026-06-14, beastmode §12 wave 4). LogDerivative.lean sorry-free; clean `lake build` (no errors/warnings); all of `dlog_mem_psiIdSeries`/`fp_series_eq_dlog_add_frobC`/`dlog_surjective_onto_psiId` (+ the ψ-subspaces, `del_phiHom`, `exists_normOp_fixed_lift`, `dlog_eq_zero_normOp_fixed`, lem:rest zp* halves, `dlog_*` homomorphism layer) axiom-clean. "The hardest mathematics in Part II" — DONE, and **entirely ξ-free**: the §10-deferred series-Eqphipsi was AVOIDED via (a) T1203a's Jacobi/trace route for lem:log der 1, and (b) T1203c's honest-`ψ`-over-𝔽_p projection formula for lem:B mod p. Sub-tickets T1203a/b/c all done. | **Sub-tickets**: T1203a (done), T1203b (done), T1203c (done) | **File**: IwasawaProof/LogDerivative.lean | **Depends on**: §10 done
@@ -5633,7 +5638,10 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
   the series-Eqphipsi (step 3), normOp continuity (ii)/(iv) (step 4), lem:B mod p 2 (step 5).
 
 ### [CLEANUP-122] /cleanup LogDerivative.lean
-- **Status**: open | **Depends on**: T1203.
+- **Status**: **done (degraded)** (2026-06-14, orchestrator). LogDerivative.lean builds green
+  (part of the 3840-job build, no lint). The entire CCW thm:log der was per-ticket cleaned at
+  proof time (T1203a/b/c: show→change, ≤100 cols, the de-privatizations done). Degraded bar met
+  (no lean-lsp MCP); deep golf deferred to CLEANUP-FINAL. | **Depends on**: T1203.
 
 ### [T1204] E12.3: the fundamental exact sequence (FundamentalSequence.lean)
 - **Status**: **done** (2026-06-14, agents ae3306 → T1204a → T1204b → ab6d73 final closure). FundamentalSequence.lean **sorry-free** (the only build sorry is the deferred Equivariance.lean:159, a different file, which does NOT propagate here); `lake build PadicLFunctions.IwasawaProof.FundamentalSequence` clean (3711 jobs); `#print axioms mem_ker_Col_iff_mem_ZpOne range_Col_eq_ker_chiMoment` = {propext, Classical.choice, Quot.sound} (NO sorryAx — orchestrator verified independently via temp-file import, not agent self-report). FINAL CLOSURE (ab6d73): (a) added `hp2 : p ≠ 2` to `levelNorm_zpPow_zetaSys`→`normOp_binomialSeries`→`mem_ker_Col_iff_mem_ZpOne` cascade (errata #14: N(ξ_{n+1}^a)=ξ_n^a is FALSE at p=2; proved p-odd via `minpoly_extendScalars_of_pow` + `Algebra.norm_eq_norm_adjoin` + `zpPow_zetaSys'`/`PadicInt.cast_toZModPow` tower reduction); (b) re-routed the cokernel converse off the deferred `normCompat_eq_teichmuller_mul_principal` via the ℤ_[p]-Teichmüller `teichNCU (constantCoeff g)` (norm-compat by `levelNorm_const_eq_pow`+`ω^{p−1}=1`, torsion ⟹ `Col=0`, principality by `g(π_n)≡a` + `a·ω(a)⁻¹≡1 mod p`). HISTORY: in_progress (agent ae3306 — 1/3). **`ZpOne` DONE** (integral Tate twist `{(ξ_n^a)_n}` via `zpPow` character laws; sorry-free, axiom-clean). The two exact-sequence theorems `mem_ker_Col_iff_mem_ZpOne` + `range_Col_eq_ker_chiMoment` were (documented sorries, FundamentalSequence.lean:99/117) — were blocked on substrate: (1) the measure-side `PadicMeasure.mahlerTransform_psi` bridge (`𝒜(ψμ)=psiSeries(𝒜μ)`), absent — `mahlerTransform_phi`/`psi`/`psi_phi`/`phi_psi` exist but the ψ-bridge needs the PadicMeasure digit-decomposition (analogue of MeasureR `existsUnique_measure_digits`), NOT derivable purely from the φ-bridge (orchestrator verified the formal derivation is circular); (2) `normOp(binomialSeries a)=binomialSeries a` + `a↦binomialSeries a` `WithPiTopology`-continuity + de-privatizing `normOp_continuous`/`digitMatrix_continuous`/`phiSeries_continuous`/`continuous_of_coeff` (LogDerivative) + `seriesEval_map_binomialSeries` (GaloisAction). → sub-tickets T1204a (substrate bridge) + T1204b (de-privatize + binomial layer). | **File**: IwasawaProof/FundamentalSequence.lean | **Sub-tickets**: T1204a, T1204b | **Depends on**: T1202, T1203
@@ -5721,7 +5729,12 @@ The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (
   critical path to T1206 via the cyclic Λ(𝒢⁺)-module (`cor:cyc units gen 2`).
 
 ### [CLEANUP-123] /cleanup FundamentalSequence.lean + Generators.lean
-- **Status**: open | **Depends on**: T1204, T1205.
+- **Status**: **done (degraded)** (2026-06-14, orchestrator). FundamentalSequence.lean +
+  Generators.lean build green (part of the 3840-job build, no lint). Per-ticket cleaned at proof
+  time (T1204, T1205) + the a7678f/a820a4 infra (galNCU_mul/_one/_elems_val/_mem_unitsTower1,
+  Col_galNCU_eq_dirac_mul, dirac_mul_eq_pushforward, zpPow_zetaSys_mem_cycloClosureOne) written
+  clean (≤100 cols, axiom-clean). Degraded bar met (no lean-lsp MCP); deep golf deferred to
+  CLEANUP-FINAL. | **Depends on**: T1204, T1205.
 
 ### [CLEANUP-ALL-7] pre-milestone project sweep
 - **Status**: **done (degraded)** (2026-06-14, orchestrator). Degraded /cleanup-all
