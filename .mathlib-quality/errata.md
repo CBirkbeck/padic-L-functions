@@ -89,6 +89,25 @@ formalisation had to make explicit).
    (which mathlib lacked; formalised as `tendsto_LSeries_pow_boundary`).
    Standard, but a genuine analytic step, not a substitution.
 
+14. **TeX 2581–2585 / 3407–3418 (§9 norm collapse, §12.2.2 ℤ_p(1)) — the
+    `pow`-norm and the ℤ_p(1) Tate-twist tower require `p` odd.** The §9
+    minimal-polynomial computation gives `N_{n+1,n}(ξ_{p^{n+1}}^k) =
+    (−1)^{[K_{n+1}:K_n]}·(−ξ_{p^n}^k) = (−1)^{p+1}·ξ_{p^n}^k`, which is
+    `ξ_{p^n}^k` only for **p odd** (p+1 even); for `p = 2` and `k` odd it is
+    `−ξ_{p^n}^k` (concretely `N_{ℚ₂(i)/ℚ₂}(i) = i·(−i) = 1 ≠ −1 = ξ_1`). Hence
+    the norm-compatibility of the integral Tate twist `ℤ_p(1) = {(ξ_n^a)_n}`
+    (RJW def:Zp(1), the claim `N_{n+1,n}(ξ_{n+1}^a) = ξ_n^a`) is **false at
+    p = 2**, matching §9/§12's standing "p odd" (TeX 2470). The notes never
+    flag this hypothesis on the twist tower itself. Formalisation: the project
+    threads `hp2 : p ≠ 2` as an explicit hypothesis everywhere in §9/§12 (e.g.
+    `levelNorm_zetaSys_pow_sub_one`); the substrate
+    `levelNorm_zpPow_zetaSys` in `IwasawaProof/FundamentalSequence.lean` is
+    *missing* this `hp2` and is therefore unprovable as currently stated (its
+    forward consumers `normOp_binomialSeries` / `mem_ker_Col_iff_mem_ZpOne` are
+    correspondingly false at p = 2). Redraft note: `levelNorm_zpPow_zetaSys`,
+    `normOp_binomialSeries`, `colemanSeries_eq_binomialSeries_of_mem_ZpOne`'s
+    consumer `mem_ker_Col_iff_mem_ZpOne` should all carry `hp2 : p ≠ 2`.
+
 ## Subtleties surfaced by formalisation
 
 8. **Eqphipsi on unbounded series (used at TeX 2128–2134)** — the formula

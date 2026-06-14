@@ -10,7 +10,16 @@ import PadicLFunctions.IwasawaProof.Equivariance
 # The fundamental exact sequence (RJW §12.2.2, TeX 3382–3441) — E12.3
 
 `def:Zp(1)`, `lem:rest zp*` (already partly in `LogDerivative`), and `thm:fund exact seq`:
-`0 → ℤ_p(1) → 𝒰_{∞,1} →[Col] Λ(𝒢) → ℤ_p(1) → 0` as `Λ(𝒢)`-modules. Skeleton.
+`0 → ℤ_p(1) → 𝒰_{∞,1} →[Col] Λ(𝒢) → ℤ_p(1) → 0` as `Λ(𝒢)`-modules.
+
+Status: left-exactness `ker Col = ℤ_p(1)` (`mem_ker_Col_iff_mem_ZpOne`) and right-exactness
+`image Col = ker(χ-moment)` (`range_Col_eq_ker_chiMoment`) are both assembled; the cokernel
+converse uses the inverse Coleman map `invColeman`/`exists_invColeman_Col_eq` (sorry-free) and
+reduces principality to the project's one deferred §12 sorry
+`normCompat_eq_teichmuller_mul_principal`. The substrate `levelNorm_zpPow_zetaSys` (cyclotomic
+norm of the Tate twist) carries the only documented `sorry` here: it is *false as stated for
+p = 2* and needs `hp2 : p ≠ 2` (errata #14), a header redraft cascading into
+`normOp_binomialSeries`/`mem_ker_Col_iff_mem_ZpOne` (out of scope for this pass).
 -/
 
 open PadicLFunctions PadicLFunctions.Coleman
@@ -215,17 +224,25 @@ theorem evalPi_binomialSeries (a : ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
 `ℤ_p`-exponents): for `n ≥ 1`, `N_{n+1,n}(ξ_{n+1}^a) = ξ_n^a`, the norm-compatibility of the
 Tate-twist tower `(ξ_n^a)_n`.
 
-OBSTACLE (single documented `sorry`, T-E12.3-II). For `a = b ∈ ℕ` with `p ∤ b` this is the
-`X^p − ξ_n^b` minimal-polynomial / constant-term computation (`p` odd), exactly the public
-`levelNorm_zetaSys_pow_sub_one` *without* the `−1` translate; for `p ∣ b` it is
-`N(x) = x^p` on the base `ξ_{n+1}^b ∈ K_n` (`levelNorm_const_eq_pow`); the general `a : ℤ_p`
-follows by `WithPiTopology`-continuity of both sides and density of `ℕ`. The integer case
-needs the `X^p − C c` norm value, which rests on the `private` Tower helpers
-`primitiveRoot_notMem_K`, `extendScalars_adjoin_eq_top`, `minpoly_extendScalars_of_pow`
-(all `private` to `Coleman/Tower.lean`, inaccessible from this file), plus the
-`WithPiTopology`-continuity of `a ↦ levelNorm (zpPow ξ a)` (the `Algebra.norm` continuity on
-the finite extension `K_{n+1}/ℚ_p`, not yet exposed). Exposing those Tower helpers (or adding
-a public `levelNorm_zetaSys_pow`) is a dedicated `Coleman/Tower.lean` pass; deferred. -/
+OBSTACLE (single documented `sorry`, T-E12.3-II) — **the statement is FALSE for `p = 2` and
+is missing `hp2 : p ≠ 2`** (errata #14). The intended (`p`-odd) proof: for `a = b ∈ ℕ` with
+`p ∤ b`, `N_{n+1,n}(ξ_{n+1}^b)` is the `(−1)^p·(−ξ_n^b)` minpoly/constant-term value of the
+generator of `K_{n+1}/K_n` with minimal polynomial `X^p − C(ξ_n^b)` (the public
+`minpoly_extendScalars_of_pow` + `Algebra.norm_eq_norm_adjoin`, the `pow`-analogue of
+`levelNorm_zetaSys_pow_sub_one`); `(−1)^{p+1} = 1` for `p` odd gives `ξ_n^b`. For `p ∣ b`,
+`ξ_{n+1}^b ∈ K_n` (`zetaSys_pow_p`) and `N(x) = x^p`. The general `a : ℤ_p` reduces to the
+`ℕ`-power case by `ξ_{n+1}^{(toZModPow…).val}` (`zpPow_zetaSys`-style, GaloisAction.lean) plus
+`p^n`-periodicity (`zetaSys_pow_eq_pow_of_modEq`) — no `Algebra.norm` continuity needed.
+
+But at `p = 2` with odd `b`, `N_{n+1,n}(ξ_{n+1}^b) = (−1)^{2+1}·ξ_n^b = −ξ_n^b ≠ ξ_n^b`
+(concretely `N_{ℚ₂(i)/ℚ₂}(i) = 1 ≠ −1 = ξ_1`), so the claim is genuinely false for `p = 2`.
+The project follows §9/§12's standing "p odd" (TeX 2470) by threading `hp2 : p ≠ 2`
+everywhere (cf. `levelNorm_zetaSys_pow_sub_one`); this substrate `private` lemma is *missing*
+that hypothesis, and so are its (internal-only) consumers `normOp_binomialSeries` /
+`mem_ker_Col_iff_mem_ZpOne`. Closing it requires REDRAFTING those signatures to carry
+`hp2 : p ≠ 2` (a coordinated header change, including the already-green
+`mem_ker_Col_iff_mem_ZpOne` — out of scope for this pass); the `p`-odd proof itself is then
+the ~80-line minpoly + periodicity argument sketched above. Recorded as errata #14. -/
 private theorem levelNorm_zpPow_zetaSys (a : ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
     levelNorm p n (zpPow p (zetaSys p (n + 1)) a) = zpPow p (zetaSys p n) a := by
   sorry
@@ -796,31 +813,170 @@ theorem Col_apply_unitsPowCM_one_eq_zero (u : NormCompatUnits p) :
     dlog_mem_psiIdSeries p (colemanSeries_isUnit p u) (normOp_colemanSeries p u)
   rw [hFpsi, sub_self]
 
+/-! ## The inverse Coleman map (core): a `𝒩`-fixed unit gives a `NormCompatUnits`
+
+The heart of the right-exactness/cokernel converse is the *surjectivity of* `colemanSeries`:
+every `𝒩`-fixed unit power series `g` is `colemanSeries u` for some norm-compatible system
+`u ∈ 𝒰_∞`. We build that `u` here (`invColeman`): the level-`n` unit is the evaluation
+`g(π_n) = evalPi g n` (a unit of `𝒪_n`, `evalPi_mem_O` + the ring-hom inverse), and
+norm-compatibility `N_{n+1,n}(g(π_{n+1})) = g(π_n)` is exactly `evalPi_normOp` together with
+`𝒩 g = g`. Coleman uniqueness (`evalPi_injective`) then gives `colemanSeries (invColeman g) = g`
+(`colemanSeries_invColeman`). This is the converse of `coleman_existsUnique` for the existence
+clause, with no `p`-odd hypothesis (the `evalPi_normOp` bridge is `p`-uniform). -/
+
+/-- `g(π_n) = evalPi g n ≠ 0` for a unit series `g` and `n ≥ 1`: `evalPi (·) n` is a ring
+homomorphism (`evalPiHom`), so it sends the unit `g` to a unit of `ℂ_[p]`, hence nonzero. -/
+private theorem evalPi_unit_ne_zero {g : PowerSeries ℤ_[p]} (hg : IsUnit g) {n : ℕ}
+    (hn : 1 ≤ n) : evalPi p g n ≠ 0 := by
+  obtain ⟨v, rfl⟩ := hg
+  have hmul : evalPi p (v : PowerSeries ℤ_[p]) n * evalPi p (↑v⁻¹) n = 1 := by
+    rw [← evalPi_mul p _ _ hn, ← Units.val_mul, mul_inv_cancel, Units.val_one, evalPi_one]
+  intro h0; rw [h0, zero_mul] at hmul; exact zero_ne_one hmul
+
+/-- **The inverse Coleman map (core construction)**: from a `𝒩`-fixed unit power series `g`,
+the norm-compatible system of units `u` with `u_n = g(π_n)` (`evalPi g n`) for `n ≥ 1`
+(junk `1` at level `0`). `mem`/`inv_mem` are `evalPi_mem_O` (the value and, via the ring-hom
+inverse, its inverse lie in `𝒪_n`); `compat` is `evalPi_normOp` + `𝒩 g = g`. -/
+def invColeman (g : PowerSeries ℤ_[p]) (hg : IsUnit g) (hN : normOp g = g) :
+    NormCompatUnits p where
+  elems n := if hn : 1 ≤ n then Units.mk0 (evalPi p g n) (evalPi_unit_ne_zero p hg hn) else 1
+  mem n := by
+    by_cases hn : 1 ≤ n
+    · rw [dif_pos hn]; exact evalPi_mem_O p g hn
+    · rw [dif_neg hn]; exact one_mem _
+  inv_mem n := by
+    by_cases hn : 1 ≤ n
+    · rw [dif_pos hn]
+      obtain ⟨v, hv⟩ := id hg
+      rw [show ((Units.mk0 (evalPi p g n) (evalPi_unit_ne_zero p hg hn))⁻¹ : ℂ_[p])
+          = evalPi p (↑v⁻¹) n from ?_]
+      · exact evalPi_mem_O p _ hn
+      · rw [Units.val_mk0]
+        refine inv_eq_of_mul_eq_one_right ?_
+        rw [← evalPi_mul p _ _ hn,
+          show (g * ↑v⁻¹ : PowerSeries ℤ_[p]) = 1 from by
+            rw [← hv, ← Units.val_mul, mul_inv_cancel, Units.val_one], evalPi_one]
+    · rw [dif_neg hn]; simp [one_mem (O p _)]
+  compat n hn := by
+    rw [dif_pos (by omega : 1 ≤ n + 1), dif_pos hn, Units.val_mk0, Units.val_mk0,
+      ← evalPi_normOp g hn, hN]
+
+/-- `colemanSeries (invColeman g) = g`: both `g` and `colemanSeries (invColeman g)` are
+`𝒩`-fixed units interpolating `invColeman g` (the latter by definition, `g` by construction
+of `invColeman`), so they agree by Coleman uniqueness (`evalPi_injective`). The surjectivity
+of `colemanSeries` onto the `𝒩`-fixed units. -/
+theorem colemanSeries_invColeman (g : PowerSeries ℤ_[p]) (hg : IsUnit g) (hN : normOp g = g) :
+    colemanSeries p (invColeman p g hg hN) = g := by
+  refine evalPi_injective p (fun n hn => ?_)
+  rw [evalPi_colemanSeries p (invColeman p g hg hN) hn]
+  show ((if hn' : 1 ≤ n then Units.mk0 (evalPi p g n) (evalPi_unit_ne_zero p hg hn') else 1 :
+      ℂ_[p]ˣ) : ℂ_[p]) = evalPi p g n
+  rw [dif_pos hn, Units.val_mk0]
+
+/-- `unitsCmul g` is additive in the measure argument (it is `μ ↦ μ ∘ (g·)`, `μ`-linear). -/
+private theorem unitsCmul_add (g : C(ℤ_[p]ˣ, ℤ_[p])) (μ ν : PadicMeasure p ℤ_[p]ˣ) :
+    PadicMeasure.unitsCmul p g (μ + ν)
+      = PadicMeasure.unitsCmul p g μ + PadicMeasure.unitsCmul p g ν :=
+  LinearMap.ext fun f => by
+    rw [PadicMeasure.unitsCmul_apply, LinearMap.add_apply, LinearMap.add_apply,
+      PadicMeasure.unitsCmul_apply, PadicMeasure.unitsCmul_apply]
+
+/-- **`Col` is a homomorphism** `(𝒰_∞, ·) → (Λ(ℤ_p^×), +)`: `Col (u·v) = Col u + Col v`.
+`colemanSeries` is multiplicative (`colemanSeries_mul`), `∂log` turns the product into a sum
+(`dlog_mul`), and the tail `𝒜⁻¹ ∘ (·).comp extendByZero ∘ unitsCmul invCM` is additive. -/
+theorem Col_add (u v : NormCompatUnits p) :
+    Col p (u * v) = Col p u + Col p v := by
+  rw [Col, Col, Col, colemanSeries_mul p,
+    dlog_mul p (colemanSeries_isUnit p u) (colemanSeries_isUnit p v), map_add,
+    LinearMap.add_comp, ← unitsCmul_add]
+
+/-- **The measure-inversion step of the cokernel converse**: every `μ` killed by the
+`χ`-moment (`μ(unitsPowCM 1) = 0`) is `Col (invColeman g)` for a `𝒩`-fixed unit `g`.
+Construction: set `μ'' = (unitsPowCM 1)·μ` and `H = 𝒜(ι μ'')`. Then `H ∈ ℤ_p⟦T⟧^{ψ=0}`
+(`ι μ''` is unit-supported, `res_iota` + `isSupportedOn_units_iff_psi_eq_zero`, transported
+by `mahlerTransform_psi`) with `H(0) = (ι μ'')(1) = μ(unitsPowCM 1) = 0`; so
+`exists_one_sub_phi_eq` gives a `ψ=id` series `F₀` with `(1−φ)F₀ = H`, and
+`dlog_surjective_onto_psiId` a `𝒩`-fixed unit `g` with `∂log g = F₀`. Reversing the transport
+(`iota_comp_extendByZero`, `mahlerTransform_res_units`, `𝒜` injective) gives
+`(𝒜⁻¹ F₀).comp extendByZero = μ''`, and `unitsCmul invCM` undoes the `(unitsPowCM 1)·`,
+so `Col (invColeman g) = μ`. No `p`-odd hypothesis. -/
+theorem exists_invColeman_Col_eq (μ : PadicMeasure p ℤ_[p]ˣ)
+    (hμ : μ (PadicMeasure.unitsPowCM p 1) = 0) :
+    ∃ (g : PowerSeries ℤ_[p]) (hg : IsUnit g) (hN : normOp g = g),
+      Col p (invColeman p g hg hN) = μ := by
+  set μ'' : PadicMeasure p ℤ_[p]ˣ := PadicMeasure.unitsCmul p (PadicMeasure.unitsPowCM p 1) μ
+    with hμ''
+  set H : PowerSeries ℤ_[p] := PadicMeasure.mahlerTransform p (PadicMeasure.iota p μ'') with hH
+  -- `H ∈ ψ=0`: `ι μ''` is unit-supported, so `ψ(ι μ'') = 0`, hence `ψ-series H = 0`
+  have hpsiiota : PadicMeasure.psi p (PadicMeasure.iota p μ'') = 0 :=
+    (PadicMeasure.isSupportedOn_units_iff_psi_eq_zero p _).1 (PadicMeasure.res_iota p μ'')
+  have hHmem : H ∈ psiZeroSeries p := by
+    change psiSeries p H = 0
+    rw [hH, ← mahlerTransform_psi, hpsiiota, PadicMeasure.mahlerTransform_zero]
+  -- `H(0) = (ι μ'')(1) = μ(unitsPowCM 1) = 0`
+  have hHcc : PowerSeries.constantCoeff H = 0 := by
+    rw [hH, ← PowerSeries.coeff_zero_eq_constantCoeff, PadicMeasure.coeff_mahlerTransform,
+      mahler_zero_eq_one, PadicMeasure.iota, PadicMeasure.pushforward_apply,
+      show (1 : C(ℤ_[p], ℤ_[p])).comp (PadicMeasure.unitsValCM p) = 1 from by ext; rfl,
+      hμ'', PadicMeasure.unitsCmul_apply, mul_one]
+    exact hμ
+  -- `ψ=id` series `F₀` with `(1−φ)F₀ = H`, then a `𝒩`-fixed unit `g` with `∂log g = F₀`
+  obtain ⟨F₀, hF₀mem, hF₀eq⟩ := exists_one_sub_phi_eq p hHmem hHcc
+  obtain ⟨g, hgu, hgN, hgdlog⟩ := dlog_surjective_onto_psiId p hF₀mem
+  refine ⟨g, hgu, hgN, ?_⟩
+  -- `(𝒜⁻¹ F₀).comp extendByZero = μ''` (reverse the restriction transport)
+  have hρ : ((PadicMeasure.mahlerLinearEquiv p).symm F₀).comp (PadicMeasure.extendByZero p)
+      = μ'' := by
+    refine PadicMeasure.iota_injective p ?_
+    rw [iota_comp_extendByZero]
+    refine PadicMeasure.mahlerTransform_injective p ?_
+    rw [mahlerTransform_res_units, PadicMeasure.mahlerLinearEquiv_symm_apply,
+      PadicMeasure.mahlerTransform_ofPowerSeries, show psiSeries p F₀ = F₀ from hF₀mem, ← hH,
+      show phiSeries p F₀ = phiHom p F₀ from (phiHom_apply p F₀).symm]
+    linear_combination (norm := ring_nf) hF₀eq
+  -- `unitsCmul invCM` undoes the `(unitsPowCM 1)·`
+  rw [Col, colemanSeries_invColeman p g hgu hgN, hgdlog, hρ]
+  refine LinearMap.ext fun f => ?_
+  rw [PadicMeasure.unitsCmul_apply, hμ'', PadicMeasure.unitsCmul_apply, ← mul_assoc,
+    show PadicMeasure.unitsPowCM p 1 * PadicMeasure.invCM p = 1 from by
+      rw [mul_comm]; exact invCM_mul_unitsPowCM_one p, one_mul]
+
 /-- **RJW thm:fund exact seq, right-exactness / cokernel**: the image of `Col` on
 `𝒰_{∞,1}` is the kernel of the `χ`-moment `μ ↦ ∫_𝒢 χ·μ = μ(x)` (cokernel `ℤ_p(1)`).
 
-The forward inclusion `image(Col) ⊆ ker(χ-moment)` is PROVED (`Col_apply_unitsPowCM_one_eq_zero`
-below): `Col u (unitsPowCM 1) = constantCoeff((1−φψ)(∂log f_u)) = 0`, since `φ` and `ψ` both
-fix the constant coefficient (`∂log f_u ∈ ψ=id`). The converse `ker ⊆ image` reads
-`image(Col) = ker(χ-moment)` off the diagram `ℤ_p⟦T⟧^{ψ=id} →[1−φ] ℤ_p⟦T⟧^{ψ=0} → ℤ_p`
-(`exists_one_sub_phi_eq` + `dlog_surjective_onto_psiId`, transported by `mahlerTransform_psi`)
-and produces a `𝒩`-fixed unit `g` with the right `∂log`; the final step needs the **inverse
-Coleman map** — a construction of `u ∈ 𝒰_{∞,1}` with `colemanSeries u = g` from a `𝒩`-fixed
-unit `g` whose values `g(π_n)` are principal units (the surjectivity of `colemanSeries`, the
-converse of `coleman_existsUnique`). That construction (building the `NormCompatUnits`
-structure: `compat` from `evalPi_normOp`, `mem` from `evalPi_mem_O`, and the `localUnitsOne`
-1-unit condition) is genuinely absent from the project and is a dedicated pass.
+The forward inclusion `image(Col) ⊆ ker(χ-moment)` is `Col_apply_unitsPowCM_one_eq_zero`:
+`Col u (unitsPowCM 1) = constantCoeff((1−φψ)(∂log f_u)) = 0`, since `φ` and `ψ` both fix the
+constant coefficient (`∂log f_u ∈ ψ=id`).
 
-OBSTACLE (one documented `sorry`, T-E12.3b, converse only): the inverse Coleman map (above),
-plus the same substrate sorry `levelNorm_zpPow_zetaSys`. -/
+The converse `ker ⊆ image` is now assembled from three pieces. (1) The **inverse Coleman map**
+`invColeman` (above) realises any `𝒩`-fixed unit `g` as `colemanSeries (invColeman g)`
+(`colemanSeries_invColeman`), with `compat` from `evalPi_normOp`. (2) `exists_invColeman_Col_eq`
+solves `Col (invColeman g) = μ` for such a `g` by inverting the measure transport off the
+diagram `ℤ_p⟦T⟧^{ψ=id} →[1−φ] ℤ_p⟦T⟧^{ψ=0} → ℤ_p` (`exists_one_sub_phi_eq` +
+`dlog_surjective_onto_psiId`, `mahlerTransform_psi`/`_res_units`, `iota_comp_extendByZero`),
+the `μ(unitsPowCM 1)=0` condition feeding the `F(0)=0` hypothesis. (3) The resulting
+`u₀ = invColeman g` need not be *principal*; `normCompat_eq_teichmuller_mul_principal`
+(`Equivariance.lean`) writes `u₀ = v·w` with `w ∈ 𝒰_{∞,1}` and `v` a `(p−1)`-torsion
+(Teichmüller) system, and `Col v = 0` (`Col_eq_zero_of_torsion`), so by `Col_add`
+`Col w = Col u₀ = μ` with `w ∈ 𝒰_{∞,1}` the required preimage.
+
+Note: this `←` direction is sorry-free *here*, but transitively depends on the project's one
+deferred §12 sorry `normCompat_eq_teichmuller_mul_principal` (the `𝒪_n`-residue/Teichmüller
+infrastructure pass). No `p`-odd hypothesis enters the converse. -/
 theorem range_Col_eq_ker_chiMoment (μ : PadicMeasure p ℤ_[p]ˣ) :
     (∃ u ∈ unitsTower1 p, Col p u = μ) ↔ μ (PadicMeasure.unitsPowCM p 1) = 0 := by
   constructor
   · -- forward: `Col u = μ ⟹ μ(unitsPowCM 1) = Col u (unitsPowCM 1) = 0`
     rintro ⟨u, -, rfl⟩
     exact Col_apply_unitsPowCM_one_eq_zero p u
-  · -- converse: the inverse Coleman map (documented obstacle)
-    intro _hμ
-    sorry
+  · -- converse: inverse Coleman map (`exists_invColeman_Col_eq`) + Teichmüller/principal split
+    intro hμ
+    obtain ⟨g, hgu, hgN, hCol⟩ := exists_invColeman_Col_eq p μ hμ
+    obtain ⟨v, w, hw, htor, huvw⟩ :=
+      normCompat_eq_teichmuller_mul_principal p (invColeman p g hgu hgN)
+    refine ⟨w, hw, ?_⟩
+    have hsplit : Col p (invColeman p g hgu hgN) = Col p v + Col p w := by rw [huvw, Col_add]
+    rw [Col_eq_zero_of_torsion p v htor, zero_add] at hsplit
+    rw [← hsplit, hCol]
 
 end PadicLFunctions.Coleman
