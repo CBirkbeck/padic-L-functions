@@ -5789,7 +5789,7 @@ The FORMAL substitute (the T1203 agent's characterisation): `normOp f = det (dig
   `Matrix.derivative_det` sub-lemma).
 
 ### [T1203b] lem:B mod p 2 — the 𝔽_p⟦T⟧ construction ("most delicate and technical part")
-- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Status**: **done** (2026-06-14, agent a8234d). `fp_series_eq_dlog_add_frobC` sorry-free; clean build (`lake build PadicLFunctions.IwasawaProof.LogDerivative` ✓, only line-834 T1203c sorry remains); `#print axioms` = {propext, Classical.choice, Quot.sound}. Closed via a NOVEL topology-free route (avoided the planned infinite-product/multipliability): a direct coefficient recursion `AWfp` with `n·aₙ = wₙ + Σ_{j<n} a_{n−j}wⱼ` (the `T·a′ = a·w` identity), `c := H − w` supported on `pℕ` ⟹ ∈ range φ (`phiSeries = expand` over 𝔽_p). 13 private helpers banked. | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
 - **Depends on**: T1203 | **Type**: lemma (the section's hardest leaf)
 #### Statement (RESTATE to the faithful source form — statement-fix authorised, docstring note)
 Faithful: `𝔽_p⟦T⟧ = Δ(𝔽_p⟦T⟧^×) + (T+1)/T · C` where `C = {Σ_{n≥1} a_n T^{pn}}`. The
@@ -5824,8 +5824,32 @@ and the `C`-submodule explicitly).
   provable from the unique digit decomposition like its measure cousin; FormalPsi.lean has
   `psiSeries_phi`/`_C`/`_add`/`_C_mul`, NormOperator has `psiSeries_phi_padicInt`). Build that
   helper, then "ψ fixes `(T+1)/T`" / "ψ b = b" follows ξ-free, mirroring the T1203a Jacobi win.
-  Second buildable input: dlog-continuity in the Pi topology (`derivativeFun` + `Ring.inverse`
-  on units continuous) — a §10-substrate addition, not deferred. So T1206 stays reachable.
+  COMPILE-VERIFIED helper (orchestrator ran `lake env lean`, exit 0, 0 errors — paste verbatim
+  into LogDerivative.lean, which already imports the NormOperator API; names resolve under
+  `open PadicLFunctions PadicLFunctions.Coleman PowerSeries`):
+  ```
+  theorem psiSeries_phiSeries_mul (d F : PowerSeries ℤ_[p]) :
+      psiSeries p (phiSeries p d * F) = d * psiSeries p F := by
+    obtain ⟨GF, hGF, -⟩ := existsUnique_digits_padicInt p F
+    rw [psiSeries_eq_of_isDigitDecomp_padicInt hGF]
+    refine psiSeries_eq_of_isDigitDecomp_padicInt (G := fun i => d * GF i) ?_
+    change phiSeries p d * F = ∑ i : Fin p, (1 + PowerSeries.X) ^ (i : ℕ)
+        * phiSeries p (d * GF i)
+    rw [hGF, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [phiSeries, phiSeries, phiSeries,
+      PowerSeries.subst_mul (hasSubst_one_add_X_pow_sub_one p)]
+    ring
+  ```
+  This `ψ(φd·F) = d·ψF` (digit-shift projection formula) is the ξ-free substitute for RJW's
+  Eqphipsi-based "ψ fixes `(T+1)/T`"; "ψ b = b" for the `(T+1)/T·C` part follows from it.
+  Second buildable input (passing Δ through the compactness limit): you likely do NOT need full
+  Pi-topology continuity of `dlog`. The cleaner route mirrors the file's existing limit arguments:
+  prove `dlog_modEq_of_modEq` (for units `f ≡ g mod p^{k+1} ⟹ dlog f ≡ dlog g mod p^{k+1}` —
+  elementary, since `derivativeFun` and `Ring.inverse` on units both preserve mod-`p^{k}`
+  congruence; parallels the existing `normOp_modEq_of_modEq`), then pass `Δ` through the
+  convergent subsequence with the already-present `modEqPow_of_tendsto` + `eq_of_forall_modEqPow`
+  Hausdorff helpers. This avoids a WithPiTopology rabbit hole. So T1206 stays reachable.
 #### Statement
 `dlog_surjective_onto_psiId {F : PowerSeries ℤ_[p]} (hF : F ∈ psiIdSeries p) :
 ∃ g, IsUnit g ∧ normOp g = g ∧ dlog p g = F` (LogDerivative.lean:244).

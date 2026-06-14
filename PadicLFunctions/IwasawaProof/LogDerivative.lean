@@ -580,6 +580,121 @@ theorem exists_normOp_fixed_lift (f : PowerSeries ℤ_[p]) (hf : IsUnit f) :
     refine modEqPow_of_tendsto p hconv ?_
     filter_upwards with j using normOp_iterate_modEq_self f (φ j)
 
+/-! ### `lem:B mod p 2`: the topology-free coefficient construction over `𝔽_p`
+
+The helpers below realise the `𝔽_p⟦T⟧ = Δ(𝔽_p⟦T⟧^×) + (T+1)/T·C` decomposition by a direct
+coefficient recursion (no infinite product). See the theorem's docstring for the strategy. -/
+
+/-- Over `𝔽_p`, a series supported only on multiples of `p` is a `p`-th power, hence in
+`range φ` (`φ(d) = d^p`, `phiSeries_eq_pow_zmod`; the `p`-th root is the de-`expand`
+`d = ∑ c_{pk} T^k`). -/
+private theorem mem_range_phiSeries_of_dvd {c : PowerSeries (ZMod p)}
+    (hc : ∀ n, ¬ p ∣ n → PowerSeries.coeff n c = 0) :
+    c ∈ Set.range (phiSeries p (R := ZMod p)) := by
+  haveI : CharP (PowerSeries (ZMod p)) p := charP_of_injective_algebraMap' (ZMod p) p
+  refine ⟨PowerSeries.mk (fun k => PowerSeries.coeff (p * k) c), ?_⟩
+  have hexp : phiSeries p (PowerSeries.mk (fun k => PowerSeries.coeff (p * k) c))
+      = PowerSeries.expand p hp.out.pos.ne' (PowerSeries.mk (fun k => PowerSeries.coeff (p * k) c))
+      := by
+    have hsub : ((1 + PowerSeries.X) ^ p - 1 : PowerSeries (ZMod p)) = PowerSeries.X ^ p := by
+      rw [add_pow_char, one_pow, add_sub_cancel_left]
+    rw [phiSeries, hsub, PowerSeries.expand_apply]
+  rw [hexp]
+  ext m
+  rcases em (p ∣ m) with ⟨k, rfl⟩ | hndvd
+  · rw [PowerSeries.coeff_expand_mul, PowerSeries.coeff_mk]
+  · rw [PowerSeries.coeff_expand p hp.out.pos.ne', if_neg hndvd, hc m hndvd]
+
+/-- The joint coefficient recursion for `(a, w)` solving `T·a′ = a·w` over `𝔽_p` against a
+target `H`: `(a_0, w_0) = (1, 0)`; for `n ≥ 1`, with `S = ∑_{j=1}^{n−1} a_{n−j}·w_j`, set
+`(a_n, w_n) = (0, −S)` if `p ∣ n` and `(n⁻¹(H_n + S), H_n)` otherwise. -/
+private def AWfp (H : PowerSeries (ZMod p)) : ℕ → ZMod p × ZMod p
+  | n =>
+    if n = 0 then (1, 0)
+    else
+      let S : ZMod p := ∑ k ∈ (Finset.Ico 1 n).attach,
+        (AWfp H k.1).1 * (AWfp H (n - k.1)).2
+      if p ∣ n then (0, -S)
+      else ((n : ZMod p)⁻¹ * (PowerSeries.coeff n H + S), PowerSeries.coeff n H)
+  decreasing_by
+    · exact (Finset.mem_Ico.1 k.2).2
+    · have := (Finset.mem_Ico.1 k.2).1; omega
+
+/-- The `a`-coefficients (`= (AWfp H n).1`). -/
+private def AfpCoe (H : PowerSeries (ZMod p)) (n : ℕ) : ZMod p := (AWfp p H n).1
+/-- The `w`-coefficients (`= (AWfp H n).2`). -/
+private def WfpCoe (H : PowerSeries (ZMod p)) (n : ℕ) : ZMod p := (AWfp p H n).2
+/-- The partial sum `S_n = ∑_{j=1}^{n−1} a_{n−j}·w_j` driving the recursion. -/
+private def SfpSum (H : PowerSeries (ZMod p)) (n : ℕ) : ZMod p :=
+  ∑ k ∈ Finset.Ico 1 n, AfpCoe p H k * WfpCoe p H (n - k)
+
+private theorem Sfp_attach_eq (H : PowerSeries (ZMod p)) (n : ℕ) :
+    (∑ k ∈ (Finset.Ico 1 n).attach, (AWfp p H k.1).1 * (AWfp p H (n - k.1)).2)
+      = SfpSum p H n := by
+  rw [SfpSum, ← Finset.sum_attach (Finset.Ico 1 n)
+    (fun k => AfpCoe p H k * WfpCoe p H (n - k))]; rfl
+
+private theorem AWfp_dvd (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) (hd : p ∣ n) :
+    AWfp p H n = (0, -SfpSum p H n) := by
+  conv_lhs => rw [AWfp]
+  rw [if_neg hn]; simp only [Sfp_attach_eq]; rw [if_pos hd]
+
+private theorem AWfp_ndvd (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) (hd : ¬ p ∣ n) :
+    AWfp p H n
+      = ((n : ZMod p)⁻¹ * (PowerSeries.coeff n H + SfpSum p H n), PowerSeries.coeff n H) := by
+  conv_lhs => rw [AWfp]
+  rw [if_neg hn]; simp only [Sfp_attach_eq]; rw [if_neg hd]
+
+private theorem AfpCoe_zero (H : PowerSeries (ZMod p)) : AfpCoe p H 0 = 1 := by
+  rw [AfpCoe, AWfp, if_pos rfl]
+private theorem WfpCoe_zero (H : PowerSeries (ZMod p)) : WfpCoe p H 0 = 0 := by
+  rw [WfpCoe, AWfp, if_pos rfl]
+private theorem WfpCoe_ndvd (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) (hd : ¬ p ∣ n) :
+    WfpCoe p H n = PowerSeries.coeff n H := by rw [WfpCoe, AWfp_ndvd p H hn hd]
+private theorem AfpCoe_ndvd (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) (hd : ¬ p ∣ n) :
+    AfpCoe p H n = (n : ZMod p)⁻¹ * (PowerSeries.coeff n H + SfpSum p H n) := by
+  rw [AfpCoe, AWfp_ndvd p H hn hd]
+private theorem WfpCoe_dvd (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) (hd : p ∣ n) :
+    WfpCoe p H n = - SfpSum p H n := by rw [WfpCoe, AWfp_dvd p H hn hd]
+private theorem AfpCoe_dvd (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) (hd : p ∣ n) :
+    AfpCoe p H n = 0 := by rw [AfpCoe, AWfp_dvd p H hn hd]
+
+/-- `[Tⁿ](a·w) = w_n + S_n` for `n ≥ 1` (where `a = mk a_•`, `w = mk w_•`, `a_0 = 1`,
+`w_0 = 0`): the convolution splits off its `j = 0` end (`a_n·w_0 = 0`) and `j = n` end
+(`a_0·w_n = w_n`), the middle being `S_n`. -/
+private theorem coeff_afp_mul_wfp (H : PowerSeries (ZMod p)) {n : ℕ} (hn : n ≠ 0) :
+    PowerSeries.coeff n (PowerSeries.mk (AfpCoe p H) * PowerSeries.mk (WfpCoe p H))
+      = WfpCoe p H n + SfpSum p H n := by
+  rw [PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  simp only [PowerSeries.coeff_mk]
+  rw [Finset.sum_range_succ, Nat.sub_self, WfpCoe_zero, mul_zero, add_zero]
+  have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.2 hn
+  rw [Finset.range_eq_Ico, ← Finset.sum_Ico_consecutive _ (Nat.zero_le 1) hn1,
+    Finset.sum_Ico_eq_sum_range]
+  simp only [Nat.sub_zero, Finset.sum_range_one, Nat.add_zero, AfpCoe_zero, one_mul]
+  rw [SfpSum]
+
+/-- The defining identity `T·a′ = a·w` of the recursion (`a = mk a_•`, `w = mk w_•`):
+coefficientwise, `n·a_n = w_n + S_n`, which the recursion makes hold in both the `p∤n`
+branch (`n` invertible) and the `p∣n` branch (both sides `0`). -/
+private theorem X_deriv_eq_aw (H : PowerSeries (ZMod p)) :
+    PowerSeries.X * PowerSeries.derivativeFun (PowerSeries.mk (AfpCoe p H))
+      = PowerSeries.mk (AfpCoe p H) * PowerSeries.mk (WfpCoe p H) := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_mul, Finset.Nat.antidiagonal_zero,
+      Finset.sum_singleton, PowerSeries.coeff_mk, PowerSeries.coeff_mk, WfpCoe_zero, mul_zero]
+  · obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+    rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_derivativeFun, PowerSeries.coeff_mk,
+      coeff_afp_mul_wfp p H hn]
+    by_cases hd : p ∣ (m + 1)
+    · rw [AfpCoe_dvd p H hn hd, WfpCoe_dvd p H hn hd, zero_mul, neg_add_cancel]
+    · rw [AfpCoe_ndvd p H hn hd, WfpCoe_ndvd p H hn hd]
+      have hne : ((m + 1 : ℕ) : ZMod p) ≠ 0 := by
+        rw [Ne, ZMod.natCast_eq_zero_iff]; exact hd
+      rw [show ((m : ZMod p) + 1) = ((m + 1 : ℕ) : ZMod p) by push_cast; ring,
+        mul_comm, ← mul_assoc, mul_inv_cancel₀ hne, one_mul]
+
 /-- **RJW lem:B mod p 2 (TeX 3359–3373) — "the most delicate and technical part"**: the
 `𝔽_p⟦T⟧` decomposition `𝔽_p⟦T⟧ = Δ(𝔽_p⟦T⟧^×) + (T+1)/T·C` with
 `C = {∑_{n≥1} a_n T^{pn}}`.
@@ -592,22 +707,65 @@ factor cleared of its `1/T` pole (`T·b = (T+1)·c`, i.e. `X·b = (1+X)·c`), is
 (so `c = ∑ a_n T^{pn} ∈ C`, using `φ(T^m) = T^{pm}` over `𝔽_p`, `phiSeries_eq_pow_zmod`).
 This is the precise form `lem:B mod p` consumes: it kills the `b`-part using `ψ b = b`.
 
-Obstacle note (T1203b). RJW's construction (TeX 3366–3373) is the inductive
-`α`-filtration: with `(T/(T+1))·g = ∑ a_n T^n` and `h = ∑_{(m,p)=1} a_m ∑_k T^{m p^k}`,
-choose `α_i ∈ 𝔽_p` inductively so that
-`h_m := (T+1)/T·h − ∑_{i<m} Δ(1−α_i T^i) ∈ T^{m−1}𝔽_p⟦T⟧`, using
-`Δ(1−α_i T^i) = −(T+1)/T·∑_k i α_i^k T^{ik}` and the invariant `d_n = d_{np}`,
-`α_m = −d_m/m`; then `g_∞ = ∏(1−α_n T^n)` (T-adically convergent, mathlib hook
-`PowerSeries.multipliable_of_…` via `order → ∞`, PiTopology.lean) satisfies
-`Δ g_∞ = (T+1)/T·h`. This is ~200+ LOC of `𝔽_p`-combinatorics with a coefficientwise
-induction and a T-adic infinite product; it is laborious but standard. It is left here
-with a precise `sorry` pending a dedicated pass (the `dlog` homomorphism layer and the
-Jacobi machinery in this file are the reusable parts already in place). -/
+Proof note (T1203b, CLOSED). RJW's route (TeX 3366–3373) builds `α_i` so that the unit
+`a = ∏(1−α_n T^n)` (a T-adic infinite product, needing `multipliable` + `Δ`-continuity)
+has `Δ a = (T+1)/T·h`. We take a topology-free coefficient recursion (the same pattern as
+`solCoeff`), building `a` and `w := T·a′·a⁻¹` *directly* by their coefficients rather than
+as a product. Write `u = 1+T` (a unit over `𝔽_p`), `H := T·g·u⁻¹`. The map `a ↦ T·a′·a⁻¹`
+sends a unit `a` with `a(0)=1` to a series `w` with `w(0)=0` whose `n`-th coefficient
+satisfies `n·a_n = w_n + ∑_{j=1}^{n−1} a_{n−j}·w_j` (clear `T·a′ = a·w`). For `(n,p)=1`
+the leading `n·a_n` is invertible so `a_n` is determined by a chosen `w_n`; for `p∣n` the
+LHS vanishes (`n=0` in `𝔽_p`), forcing `w_n` and freeing `a_n`. So we jointly recurse
+(`AWfp`): set `w_n := H_n`, `a_n := n⁻¹(H_n + S_n)` when `(n,p)=1`; `a_n := 0`,
+`w_n := −S_n` when `p∣n` (`S_n` the partial sum). Then `T·a′ = a·w` (`X_deriv_eq_aw`),
+`a` is a unit (`a(0)=1`), `w = T·a′·a⁻¹`, and `w` agrees with `H` off multiples of `p`, so
+`c := H − w` is supported on `pℕ`, hence a `p`-th power `= φ(d)` (over `𝔽_p`,
+`range φ = {p-th powers}`; `mem_range_phiSeries_of_dvd`). Finally `b := g − Δa` gives
+`X·b = u·c` by `X·Δa = u·w` and `u·H = T·g`, and `g = Δa + b` trivially. No infinite
+product, no `Δ`-continuity. -/
 theorem fp_series_eq_dlog_add_frobC (g : PowerSeries (ZMod p)) :
     ∃ (a : PowerSeries (ZMod p)) (b : PowerSeries (ZMod p)) (c : PowerSeries (ZMod p)),
       IsUnit a ∧ c ∈ Set.range (phiSeries p (R := ZMod p)) ∧
         PowerSeries.X * b = (1 + PowerSeries.X) * c ∧
-        g = (1 + PowerSeries.X) * PowerSeries.derivativeFun a * Ring.inverse a + b := sorry
+        g = (1 + PowerSeries.X) * PowerSeries.derivativeFun a * Ring.inverse a + b := by
+  -- `u = 1+T` (a unit), `H = T·g·u⁻¹`, and the recursion's `a = mk a_•`, `w = mk w_•`
+  have hu : IsUnit (1 + PowerSeries.X : PowerSeries (ZMod p)) := by
+    rw [PowerSeries.isUnit_iff_constantCoeff]; simp
+  set H : PowerSeries (ZMod p) :=
+    PowerSeries.X * g * Ring.inverse (1 + PowerSeries.X) with hHdef
+  set a : PowerSeries (ZMod p) := PowerSeries.mk (AfpCoe p H) with hadef
+  set w : PowerSeries (ZMod p) := PowerSeries.mk (WfpCoe p H) with hwdef
+  -- `a` is a unit (`a(0) = 1`)
+  have ha : IsUnit a := by
+    rw [hadef, PowerSeries.isUnit_iff_constantCoeff,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_mk, AfpCoe_zero]
+    exact isUnit_one
+  have haa : a * Ring.inverse a = 1 := Ring.mul_inverse_cancel _ ha
+  have huu : (1 + PowerSeries.X : PowerSeries (ZMod p)) * Ring.inverse (1 + PowerSeries.X) = 1 :=
+    Ring.mul_inverse_cancel _ hu
+  -- `w = T·a′·a⁻¹` from the recursion's defining identity `T·a′ = a·w`
+  have hkey : PowerSeries.X * PowerSeries.derivativeFun a = a * w := X_deriv_eq_aw p H
+  have hw : w = PowerSeries.X * PowerSeries.derivativeFun a * Ring.inverse a := by
+    have h2 := congrArg (· * Ring.inverse a) hkey
+    rw [mul_assoc a w (Ring.inverse a), mul_comm w (Ring.inverse a), ← mul_assoc,
+      mul_comm a (Ring.inverse a), Ring.inverse_mul_cancel _ ha, one_mul] at h2
+    rw [← h2]
+  refine ⟨a, g - (1 + PowerSeries.X) * PowerSeries.derivativeFun a * Ring.inverse a, H - w,
+    ha, ?_, ?_, by ring⟩
+  · -- `c = H − w ∈ range φ`: supported on multiples of `p` (agrees with `H` off `pℕ`)
+    refine mem_range_phiSeries_of_dvd p (fun n hd => ?_)
+    rcases eq_or_ne n 0 with rfl | hn
+    · rw [map_sub, hHdef, mul_assoc, PowerSeries.coeff_zero_X_mul, hwdef,
+        PowerSeries.coeff_mk, WfpCoe_zero, sub_zero]
+    · rw [map_sub, hwdef, PowerSeries.coeff_mk, WfpCoe_ndvd p H hn hd, sub_self]
+  · -- `X·b = u·c`: `X·Δa = u·w` and `u·H = T·g`
+    rw [hw]
+    have hcancel : (1 + PowerSeries.X : PowerSeries (ZMod p)) * H = PowerSeries.X * g := by
+      rw [hHdef, show (1 + PowerSeries.X : PowerSeries (ZMod p))
+          * (PowerSeries.X * g * Ring.inverse (1 + PowerSeries.X))
+        = PowerSeries.X * g * ((1 + PowerSeries.X) * Ring.inverse (1 + PowerSeries.X)) by ring,
+        huu, mul_one]
+    rw [mul_sub, mul_sub, hcancel]; ring
 
 /-! ### `Δ = dlog` turns products into sums (for `lem:log der red mod p`)
 
