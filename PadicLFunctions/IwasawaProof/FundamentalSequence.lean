@@ -12,17 +12,21 @@ import PadicLFunctions.IwasawaProof.Equivariance
 `def:Zp(1)`, `lem:rest zp*` (already partly in `LogDerivative`), and `thm:fund exact seq`:
 `0 → ℤ_p(1) → 𝒰_{∞,1} →[Col] Λ(𝒢) → ℤ_p(1) → 0` as `Λ(𝒢)`-modules.
 
-Status: left-exactness `ker Col = ℤ_p(1)` (`mem_ker_Col_iff_mem_ZpOne`) and right-exactness
-`image Col = ker(χ-moment)` (`range_Col_eq_ker_chiMoment`) are both assembled; the cokernel
-converse uses the inverse Coleman map `invColeman`/`exists_invColeman_Col_eq` (sorry-free) and
-reduces principality to the project's one deferred §12 sorry
-`normCompat_eq_teichmuller_mul_principal`. The substrate `levelNorm_zpPow_zetaSys` (cyclotomic
-norm of the Tate twist) carries the only documented `sorry` here: it is *false as stated for
-p = 2* and needs `hp2 : p ≠ 2` (errata #14), a header redraft cascading into
-`normOp_binomialSeries`/`mem_ker_Col_iff_mem_ZpOne` (out of scope for this pass).
+Status: **sorry-free**. Left-exactness `ker Col = ℤ_p(1)` (`mem_ker_Col_iff_mem_ZpOne`) and
+right-exactness `image Col = ker(χ-moment)` (`range_Col_eq_ker_chiMoment`) are both complete.
+The substrate `levelNorm_zpPow_zetaSys` (cyclotomic norm of the Tate twist) is proved for `p`
+odd via the un-translated minpoly `X^p − C(ξ_n)` (`levelNorm_zetaSys`) extended to `ℤ_p`
+exponents by the `ξ_n^{(toZModPow…).val}` representation (`zpPow_zetaSys'`); it is *false for
+p = 2* so carries `hp2 : p ≠ 2` (errata #14), threaded through `normOp_binomialSeries` and
+`mem_ker_Col_iff_mem_ZpOne`. The cokernel converse uses the inverse Coleman map
+`invColeman`/`exists_invColeman_Col_eq` and divides off the **constant `ℤ_[p]`-Teichmüller
+system** (`teichNCU`, from `Interpolation/Branches.lean`'s `teichmullerFun`) for the principal
+split — so it no longer depends on the deferred `normCompat_eq_teichmuller_mul_principal`.
 -/
 
 open PadicLFunctions PadicLFunctions.Coleman
+
+open scoped IntermediateField
 
 noncomputable section
 
@@ -220,46 +224,149 @@ theorem evalPi_binomialSeries (a : ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
   rw [evalPi, seriesEval_map_binomialSeries p a (norm_pi_lt_one p hn),
     show (1 : ℂ_[p]) + pi p n = zetaSys p n from by rw [pi]; ring]
 
+set_option synthInstance.maxHeartbeats 1000000 in
+-- nested `IntermediateField (K p n) (extendScalars …)` instance synthesis (cf. Tower.lean)
+set_option maxHeartbeats 1000000 in
+-- the `adjoin.powerBasis`/`norm_eq_norm_adjoin` computation runs through the nested
+-- `IntermediateField (K p n) (extendScalars …)` layer; both instance synthesis and the
+-- power-basis term elaboration exceed the defaults (mirrors `minpoly_extendScalars_of_pow`)
+/-- **The cyclotomic norm of `ξ_{n+1}`** (RJW TeX 2581–2585, the `b = 1` un-translated
+analogue of `levelNorm_zetaSys_pow_sub_one`): for `n ≥ 1` and `p` odd,
+`N_{n+1,n}(ξ_{n+1}) = ξ_n`. The generator `ξ_{n+1}` is a primitive `p^{n+1}`-th root not in
+`K_n` (`primitiveRoot_notMem_K`) generating `K_{n+1}/K_n` (`extendScalars_adjoin_eq_top`)
+with minimal polynomial `X^p − C(ξ_n)` (`minpoly_extendScalars_of_pow`, since `ξ_{n+1}^p =
+ξ_n` by `zetaSys_pow_p`); the norm of a generator is `(−1)^p · coeff₀ = (−1)^p·(−ξ_n) = ξ_n`
+(`p` odd, `(−1)^{p+1} = 1`).
+
+`hp2 : p ≠ 2` is required (errata #14): at `p = 2`, `N(ξ_2) = (−1)^{2+1}·ξ_1 = −ξ_1 ≠ ξ_1`
+(`N_{ℚ₂(i)/ℚ₂}(i) = 1 ≠ −1`). -/
+private theorem levelNorm_zetaSys (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    levelNorm p n (zetaSys p (n + 1)) = zetaSys p n := by
+  haveI : FiniteDimensional ℚ_[p] (IntermediateField.extendScalars (K_le_succ p n)) :=
+    IsCyclotomicExtension.finiteDimensional {p ^ (n + 1)} ℚ_[p] (K p (n + 1))
+  haveI : FiniteDimensional (K p n) (IntermediateField.extendScalars (K_le_succ p n)) :=
+    FiniteDimensional.right ℚ_[p] (K p n) _
+  have hp0 : p ≠ 0 := hp.out.ne_zero
+  have hwK : zetaSys p (n + 1) ∈ K p (n + 1) := zetaSys_mem_K p (n + 1)
+  have hcK : zetaSys p n ∈ K p n := zetaSys_mem_K p n
+  -- `W := ξ_{n+1}` as an `extendScalars` element, with `W^p = (c := ξ_n)`
+  set W : IntermediateField.extendScalars (K_le_succ p n) :=
+    ⟨zetaSys p (n + 1), (IntermediateField.mem_extendScalars (K_le_succ p n)).2 hwK⟩ with hW
+  set c : K p n := ⟨zetaSys p n, hcK⟩ with hc
+  have hWc : W ^ p = algebraMap (K p n) (IntermediateField.extendScalars (K_le_succ p n)) c := by
+    apply Subtype.ext
+    change (zetaSys p (n + 1)) ^ p = (zetaSys p n : ℂ_[p])
+    rw [zetaSys_pow_p]
+  have hWbot : (W : ℂ_[p]) ∉ K p n := primitiveRoot_notMem_K p hn (zetaSys_primitiveRoot p (n + 1))
+  have hWtop : (K p n)⟮W⟯ = ⊤ := extendScalars_adjoin_eq_top p hn hWbot
+  have hmpW : minpoly (K p n) W = (Polynomial.X : Polynomial (K p n)) ^ p - Polynomial.C c :=
+    minpoly_extendScalars_of_pow p hn hWc hWtop
+  have hroot : (Polynomial.aeval W) ((Polynomial.X : Polynomial (K p n)) ^ p - Polynomial.C c)
+      = 0 := by
+    rw [map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C, hWc, sub_self]
+  have hint : IsIntegral (K p n) W := ⟨_, Polynomial.monic_X_pow_sub_C c hp0, hroot⟩
+  have hdeg : (minpoly (K p n) W).natDegree = p := by
+    rw [hmpW, Polynomial.natDegree_X_pow_sub_C]
+  -- the norm of the generator is `(−1)^p · coeff₀(minpoly) = (−1)^p·(−c) = c`
+  have hnorm : Algebra.norm (K p n) W
+      = (-1) ^ (minpoly (K p n) W).natDegree * (minpoly (K p n) W).coeff 0 := by
+    rw [Algebra.norm_eq_norm_adjoin (K p n) W]
+    have hrank : Module.finrank (↥(K p n)⟮W⟯)
+        (IntermediateField.extendScalars (K_le_succ p n)) = 1 := by
+      rw [hWtop]; exact IntermediateField.finrank_top
+    rw [hrank, pow_one]
+    have hpb := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly
+      (IntermediateField.adjoin.powerBasis hint)
+    rwa [IntermediateField.adjoin.powerBasis_gen, IntermediateField.adjoin.powerBasis_dim,
+      IntermediateField.minpoly_gen] at hpb
+  -- the norm value, as a `K_n`-element, is `c = ⟨ξ_n, _⟩`
+  have hnval : Algebra.norm (K p n) W = c := by
+    rw [hnorm, hdeg, hmpW, Polynomial.coeff_sub, Polynomial.coeff_C_zero,
+      Polynomial.coeff_X_pow, if_neg (show ¬(0 = p) by omega), zero_sub,
+      (hp.out.odd_of_ne_two hp2).neg_one_pow, neg_one_mul, neg_neg]
+  -- unfold `levelNorm` and coerce
+  rw [levelNorm_apply p n hwK]
+  change (Algebra.norm (K p n) W : ℂ_[p]) = zetaSys p n
+  rw [hnval, hc]
+
+/-- The `ℕ`-power form: `N_{n+1,n}(ξ_{n+1}^k) = ξ_n^k` for `n ≥ 1`, `p` odd. By
+`levelNorm` multiplicativity (`levelNorm_mul`, `levelNorm_one`) and `levelNorm_zetaSys`. -/
+private theorem levelNorm_zetaSys_pow (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) (k : ℕ) :
+    levelNorm p n (zetaSys p (n + 1) ^ k) = zetaSys p n ^ k := by
+  induction k with
+  | zero => rw [pow_zero, pow_zero, levelNorm_one]
+  | succ m ih =>
+    rw [pow_succ, pow_succ,
+      levelNorm_mul p n (pow_mem (zetaSys_mem_K p (n + 1)) m) (zetaSys_mem_K p (n + 1)),
+      ih, levelNorm_zetaSys p hp2 hn]
+
+/-- `zpPow ξ_n c = ξ_n^{(toZModPow n c).val}` (the `p^n`-periodicity of `ξ_n^·`): both sides
+are continuous in `c` and agree on `c ∈ ℕ` (`zpPow_natCast` vs `ξ_n^{k mod p^n} = ξ_n^k`).
+Re-derivation of the `private` `GaloisAction.zpPow_zetaSys`, needed un-`private`-d here. -/
+private theorem zpPow_zetaSys' {n : ℕ} (hn : 1 ≤ n) (c : ℤ_[p]) :
+    zpPow p (zetaSys p n) c
+      = zetaSys p n ^ ((PadicInt.toZModPow n c : ZMod (p ^ n)).val) := by
+  have hz1 : ‖zetaSys p n - 1‖ < 1 := norm_zetaSys_sub_one_lt_one p hn
+  have hcontL : Continuous (zpPow p (zetaSys p n)) := by
+    have h : zpPow p (zetaSys p n) = (PadicInt.addChar_of_value_at_one (zetaSys p n - 1)
+        (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hz1) : ℤ_[p] → ℂ_[p]) := by
+      funext a; rw [zpPow, dif_pos (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hz1)]
+    rw [h]; exact PadicInt.continuous_addChar_of_value_at_one _
+  have hcontR : Continuous fun c : ℤ_[p] =>
+      zetaSys p n ^ ((PadicInt.toZModPow n c : ZMod (p ^ n)).val) := by
+    have hlcZ : IsLocallyConstant fun c : ℤ_[p] => (PadicInt.toZModPow n c : ZMod (p ^ n)) :=
+      fun s => by
+        rw [← Set.biUnion_preimage_singleton]
+        exact isOpen_biUnion fun a _ => PadicMeasure.isOpen_toZModPow_fiber p n a
+    exact ((hlcZ.comp ZMod.val).comp fun k => zetaSys p n ^ k).continuous
+  have hnat : ∀ k : ℕ, zpPow p (zetaSys p n) (k : ℤ_[p])
+      = zetaSys p n ^ ((PadicInt.toZModPow n (k : ℤ_[p]) : ZMod (p ^ n)).val) := by
+    intro k
+    rw [zpPow_natCast p hz1]
+    refine zetaSys_pow_eq_pow_of_modEq p ?_
+    rw [← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val, map_natCast]
+  exact congrFun (PadicInt.denseRange_natCast.equalizer hcontL hcontR (funext hnat)) c
+
 /-- **The cyclotomic norm of `zpPow`** (RJW TeX 2581–2585, generalised from integer to
-`ℤ_p`-exponents): for `n ≥ 1`, `N_{n+1,n}(ξ_{n+1}^a) = ξ_n^a`, the norm-compatibility of the
-Tate-twist tower `(ξ_n^a)_n`.
+`ℤ_p`-exponents): for `n ≥ 1` and `p` odd, `N_{n+1,n}(ξ_{n+1}^a) = ξ_n^a`, the
+norm-compatibility of the Tate-twist tower `(ξ_n^a)_n`.
 
-OBSTACLE (single documented `sorry`, T-E12.3-II) — **the statement is FALSE for `p = 2` and
-is missing `hp2 : p ≠ 2`** (errata #14). The intended (`p`-odd) proof: for `a = b ∈ ℕ` with
-`p ∤ b`, `N_{n+1,n}(ξ_{n+1}^b)` is the `(−1)^p·(−ξ_n^b)` minpoly/constant-term value of the
-generator of `K_{n+1}/K_n` with minimal polynomial `X^p − C(ξ_n^b)` (the public
-`minpoly_extendScalars_of_pow` + `Algebra.norm_eq_norm_adjoin`, the `pow`-analogue of
-`levelNorm_zetaSys_pow_sub_one`); `(−1)^{p+1} = 1` for `p` odd gives `ξ_n^b`. For `p ∣ b`,
-`ξ_{n+1}^b ∈ K_n` (`zetaSys_pow_p`) and `N(x) = x^p`. The general `a : ℤ_p` reduces to the
-`ℕ`-power case by `ξ_{n+1}^{(toZModPow…).val}` (`zpPow_zetaSys`-style, GaloisAction.lean) plus
-`p^n`-periodicity (`zetaSys_pow_eq_pow_of_modEq`) — no `Algebra.norm` continuity needed.
-
-But at `p = 2` with odd `b`, `N_{n+1,n}(ξ_{n+1}^b) = (−1)^{2+1}·ξ_n^b = −ξ_n^b ≠ ξ_n^b`
-(concretely `N_{ℚ₂(i)/ℚ₂}(i) = 1 ≠ −1 = ξ_1`), so the claim is genuinely false for `p = 2`.
-The project follows §9/§12's standing "p odd" (TeX 2470) by threading `hp2 : p ≠ 2`
-everywhere (cf. `levelNorm_zetaSys_pow_sub_one`); this substrate `private` lemma is *missing*
-that hypothesis, and so are its (internal-only) consumers `normOp_binomialSeries` /
-`mem_ker_Col_iff_mem_ZpOne`. Closing it requires REDRAFTING those signatures to carry
-`hp2 : p ≠ 2` (a coordinated header change, including the already-green
-`mem_ker_Col_iff_mem_ZpOne` — out of scope for this pass); the `p`-odd proof itself is then
-the ~80-line minpoly + periodicity argument sketched above. Recorded as errata #14. -/
-private theorem levelNorm_zpPow_zetaSys (a : ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
+`hp2 : p ≠ 2` is required (errata #14): the lemma is FALSE for `p = 2` (at odd `b`,
+`N_{n+1,n}(ξ_{n+1}^b) = −ξ_n^b ≠ ξ_n^b`; concretely `N_{ℚ₂(i)/ℚ₂}(i) = 1 ≠ −1 = ξ_1`).
+The `ℤ_p`-exponent `a` reduces to the `ℕ`-power case by `zpPow_zetaSys'` (the
+`ξ_{n+1}^{(toZModPow…).val}` form at both levels): `levelNorm_zetaSys_pow` collapses the
+`(n+1)`-level norm to `ξ_n^{(toZModPow (n+1) a).val}`, and `p^n`-periodicity
+(`zetaSys_pow_eq_pow_of_modEq`, via `toZModPow (n+1) a ≡ toZModPow n a mod p^n`) matches it to
+`ξ_n^{(toZModPow n a).val} = zpPow ξ_n a` — no `Algebra.norm` continuity needed. -/
+private theorem levelNorm_zpPow_zetaSys (hp2 : p ≠ 2) (a : ℤ_[p]) {n : ℕ} (hn : 1 ≤ n) :
     levelNorm p n (zpPow p (zetaSys p (n + 1)) a) = zpPow p (zetaSys p n) a := by
-  sorry
+  rw [zpPow_zetaSys' p (by omega : 1 ≤ n + 1) a, levelNorm_zetaSys_pow p hp2 hn,
+    zpPow_zetaSys' p hn a]
+  -- match the two exponents: `toZModPow (n+1) a ≡ toZModPow n a (mod p^n)`
+  refine zetaSys_pow_eq_pow_of_modEq p ?_
+  haveI : NeZero (p ^ (n + 1)) := ⟨(pow_pos hp.out.pos (n + 1)).ne'⟩
+  haveI : NeZero (p ^ n) := ⟨(pow_pos hp.out.pos n).ne'⟩
+  rw [← ZMod.natCast_eq_natCast_iff,
+    show ((PadicInt.toZModPow (n + 1) a : ZMod (p ^ (n + 1))).val : ZMod (p ^ n))
+        = ZMod.cast (PadicInt.toZModPow (n + 1) a : ZMod (p ^ (n + 1))) from
+      ZMod.natCast_val _,
+    PadicInt.cast_toZModPow n (n + 1) (by omega) a, ZMod.natCast_zmod_val]
 
 /-- **Substrate (II): the binomial series is `𝒩`-fixed**: `𝒩(binomialSeries a) = binomialSeries
 a`. By `evalPi_injective` it suffices that the evaluation/norm square `evalPi_normOp` reads
-`levelNorm(ξ_{n+1}^a) = ξ_n^a` (`levelNorm_zpPow_zetaSys`), via `evalPi_binomialSeries`. -/
-theorem normOp_binomialSeries (a : ℤ_[p]) :
+`levelNorm(ξ_{n+1}^a) = ξ_n^a` (`levelNorm_zpPow_zetaSys`), via `evalPi_binomialSeries`.
+Carries `hp2 : p ≠ 2` (errata #14) from `levelNorm_zpPow_zetaSys` (false at `p = 2`). -/
+theorem normOp_binomialSeries (hp2 : p ≠ 2) (a : ℤ_[p]) :
     normOp (PowerSeries.binomialSeries ℤ_[p] a) = PowerSeries.binomialSeries ℤ_[p] a := by
   refine evalPi_injective p (fun n hn => ?_)
   rw [evalPi_normOp _ hn, evalPi_binomialSeries p a (by omega : 1 ≤ n + 1),
-    evalPi_binomialSeries p a hn, levelNorm_zpPow_zetaSys p a hn]
+    evalPi_binomialSeries p a hn, levelNorm_zpPow_zetaSys p hp2 a hn]
 
 /-- For `u ∈ ZpOne` with parameter `a`, the Coleman series is the binomial series:
 `colemanSeries u = binomialSeries a`. Both are `𝒩`-fixed units interpolating `ξ_n^a`
-(`normOp_binomialSeries`, `evalPi_binomialSeries`; `binomialSeries` is a unit by its constant
-coefficient `1`), so they agree by Coleman uniqueness (`evalPi_injective`). -/
+(`evalPi_binomialSeries`; `binomialSeries` is a unit by its constant coefficient `1`), so
+they agree by Coleman uniqueness (`evalPi_injective`) — only the interpolation `ha` and
+`evalPi`-multiplicativity enter, so no `hp2` is needed here. -/
 theorem colemanSeries_eq_binomialSeries_of_mem_ZpOne {u : NormCompatUnits p} {a : ℤ_[p]}
     (ha : ∀ n, 1 ≤ n → ((u.elems n : ℂ_[p]ˣ) : ℂ_[p]) = zpPow p (zetaSys p n) a) :
     colemanSeries p u = PowerSeries.binomialSeries ℤ_[p] a := by
@@ -686,18 +793,22 @@ private theorem oneUnit_pow_p_sub_one_eq_one {x : ℤ_[p]} (hx : ‖x - 1‖ < 1
 /-- **RJW thm:fund exact seq (TeX 3411–3418), left-exactness**: the kernel of `Col` on
 `𝒰_{∞,1}` is `ℤ_p(1)`.
 
-PROVED modulo the single substrate sorry `levelNorm_zpPow_zetaSys` (cyclotomic norm, used via
-`normOp_binomialSeries`). The composite `Col = (x⁻¹·) ∘ Res_{ℤ_p^×} ∘ 𝒜⁻¹ ∘ ∂log ∘
-colemanSeries` is pulled back: `Col_eq_zero_iff` reduces `Col u = 0` to `(1−φ)(∂log f_u) = 0`
-(through `unitsCmul invCM` and `ι` injective, `mahlerTransform_psi`); `phiHom_fixed_eq_C`
-then gives `∂log f_u = C c`; the `∂log = C c` ODE (`eq_C_mul_binomialSeries_of_dlog_eq_C`)
-writes `f_u = C(g₀)·binomialSeries c`; `𝒩`-fixedness (`normOp_binomialSeries`,
-`normOp_mul`, `normOp_C`) forces `g₀^p = g₀`, and `g₀` is a principal unit (the
-interpolation `f_u(π_n) = u_n ∈ 𝒰_{∞,1}` against `binomialSeries c(π_n) = ξ_n^c`), so
-`g₀ = 1` (`oneUnit_pow_p_sub_one_eq_one`); hence `f_u = binomialSeries c` and
-`u_n = ξ_n^c`. Conversely `u ∈ ZpOne` gives `f_u = binomialSeries a`
-(`colemanSeries_eq_binomialSeries_of_mem_ZpOne`), `∂log = C a`, `(1−φ)(C a) = 0`. -/
-theorem mem_ker_Col_iff_mem_ZpOne {u : NormCompatUnits p} (hu : u ∈ unitsTower1 p) :
+The composite `Col = (x⁻¹·) ∘ Res_{ℤ_p^×} ∘ 𝒜⁻¹ ∘ ∂log ∘ colemanSeries` is pulled back:
+`Col_eq_zero_iff` reduces `Col u = 0` to `(1−φ)(∂log f_u) = 0` (through `unitsCmul invCM` and
+`ι` injective, `mahlerTransform_psi`); `phiHom_fixed_eq_C` then gives `∂log f_u = C c`; the
+`∂log = C c` ODE (`eq_C_mul_binomialSeries_of_dlog_eq_C`) writes `f_u = C(g₀)·binomialSeries
+c`; `𝒩`-fixedness (`normOp_binomialSeries`, `normOp_mul`, `normOp_C`) forces `g₀^p = g₀`, and
+`g₀` is a principal unit (the interpolation `f_u(π_n) = u_n ∈ 𝒰_{∞,1}` against
+`binomialSeries c(π_n) = ξ_n^c`), so `g₀ = 1` (`oneUnit_pow_p_sub_one_eq_one`); hence
+`f_u = binomialSeries c` and `u_n = ξ_n^c`. Conversely `u ∈ ZpOne` gives
+`f_u = binomialSeries a` (`colemanSeries_eq_binomialSeries_of_mem_ZpOne`), `∂log = C a`,
+`(1−φ)(C a) = 0`.
+
+Carries `hp2 : p ≠ 2` (errata #14): the forward direction uses `normOp_binomialSeries`, hence
+the cyclotomic norm `levelNorm_zpPow_zetaSys`, which is false at `p = 2`. RJW §12 fixes `p`
+odd throughout (TeX 2470); the §12.5 milestone `iwasawa_theorem` already carries `hp2`. -/
+theorem mem_ker_Col_iff_mem_ZpOne (hp2 : p ≠ 2) {u : NormCompatUnits p}
+    (hu : u ∈ unitsTower1 p) :
     Col p u = 0 ↔ u ∈ ZpOne p := by
   rw [Col_eq_zero_iff]
   set g := colemanSeries p u with hg
@@ -752,7 +863,7 @@ theorem mem_ker_Col_iff_mem_ZpOne {u : NormCompatUnits p} (hu : u ∈ unitsTower
     -- `𝒩`-fixedness forces `g₀^p = g₀`
     have hg0pow : g₀ ^ p = g₀ := by
       have hNg := normOp_colemanSeries p u
-      rw [hgODE, normOp_mul, normOp_C, normOp_binomialSeries] at hNg
+      rw [hgODE, normOp_mul, normOp_C, normOp_binomialSeries p hp2] at hNg
       have hBu : IsUnit (PowerSeries.binomialSeries ℤ_[p] c) := isUnit_binomialSeries p c
       exact PowerSeries.C_injective (hBu.mul_right_cancel (by rw [hNg]))
     have hg0one : g₀ = 1 := by
@@ -869,7 +980,7 @@ theorem colemanSeries_invColeman (g : PowerSeries ℤ_[p]) (hg : IsUnit g) (hN :
     colemanSeries p (invColeman p g hg hN) = g := by
   refine evalPi_injective p (fun n hn => ?_)
   rw [evalPi_colemanSeries p (invColeman p g hg hN) hn]
-  show ((if hn' : 1 ≤ n then Units.mk0 (evalPi p g n) (evalPi_unit_ne_zero p hg hn') else 1 :
+  change ((if hn' : 1 ≤ n then Units.mk0 (evalPi p g n) (evalPi_unit_ne_zero p hg hn') else 1 :
       ℂ_[p]ˣ) : ℂ_[p]) = evalPi p g n
   rw [dif_pos hn, Units.val_mk0]
 
@@ -941,6 +1052,89 @@ theorem exists_invColeman_Col_eq (μ : PadicMeasure p ℤ_[p]ˣ)
     show PadicMeasure.unitsPowCM p 1 * PadicMeasure.invCM p = 1 from by
       rw [mul_comm]; exact invCM_mul_unitsPowCM_one p, one_mul]
 
+/-! ## The ℤ_[p]-Teichmüller principal split (cokernel converse, sorry-free)
+
+The cokernel converse `ker ⊆ image` needs to turn the preimage `u₀ = invColeman g`
+(`Col u₀ = μ`) into a *principal* preimage `w ∈ 𝒰_{∞,1}`. RJW splits off the Teichmüller
+part; the project's deferred `normCompat_eq_teichmuller_mul_principal` does this through the
+`𝒪_n`-residue section (still unbuilt). We avoid that entirely with the **constant**
+`ℤ_[p]`-Teichmüller system `v.elems n = ω(a)` (`a = constantCoeff g`), built from the
+already-formalised `ℤ_[p]` Teichmüller `teichmullerFun` of `Interpolation/Branches.lean`: it
+is norm-compatible (`levelNorm_const_eq_pow` + `ω(a)^{p−1}=1`), `(p−1)`-torsion (so
+`Col v = 0`), and `w := u₀·v⁻¹` is principal because `g(π_n) ≡ a mod 𝔭_n` and
+`a·ω(a)⁻¹ ≡ 1 mod p`. -/
+
+/-- The **constant `ℤ_[p]`-Teichmüller system**: every level is `toCp(ω(a))`, the image in
+`ℂ_[p]` of the `ℤ_[p]`-Teichmüller representative `ω(a)` of a unit `a` (`teichmullerFun`). It
+is norm-compatible: `N_{n+1,n}(ω(a)) = ω(a)^p = ω(a)` (`levelNorm_const_eq_pow` plus
+`ω(a)^{p−1} = 1` ⟹ `ω(a)^p = ω(a)`); `ω(a) ∈ ℚ_p ⊂ K_n` gives the `𝒪_n`-memberships. -/
+private def teichNCU (a : ℤ_[p]ˣ) : NormCompatUnits p where
+  elems _ := Units.map (toCp p).toMonoidHom (PadicInt.isUnit_teichmullerFun p a).unit
+  mem n := by
+    change toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p]) ∈ O p n
+    refine Subring.mem_inf.2 ⟨?_, ?_⟩
+    · change toCp p _ ∈ K p n
+      rw [toCp, RingHom.comp_apply]
+      exact IntermediateField.algebraMap_mem (K p n) _
+    · change ‖toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p])‖ ≤ 1
+      rw [norm_toCp]; exact PadicInt.norm_le_one _
+  inv_mem n := by
+    rw [← Units.val_inv_eq_inv_val, ← map_inv, Units.coe_map]
+    change toCp p (((PadicInt.isUnit_teichmullerFun p a).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) ∈ O p n
+    refine Subring.mem_inf.2 ⟨?_, ?_⟩
+    · change toCp p _ ∈ K p n
+      rw [toCp, RingHom.comp_apply]
+      exact IntermediateField.algebraMap_mem (K p n) _
+    · change ‖toCp p (((PadicInt.isUnit_teichmullerFun p a).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p])‖ ≤ 1
+      rw [norm_toCp]; exact PadicInt.norm_le_one _
+  compat n hn := by
+    have hmemK : (toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p])) ∈ K p n := by
+      rw [toCp, RingHom.comp_apply]; exact IntermediateField.algebraMap_mem (K p n) _
+    change levelNorm p n (toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p]))
+      = toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p])
+    rw [levelNorm_const_eq_pow p hn hmemK, ← map_pow]
+    congr 1
+    have hpow : ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p]) ^ (p - 1) = 1 := by
+      rw [IsUnit.unit_spec]; exact PadicInt.teichmullerFun_pow_card_sub_one p a
+    have hpsucc : (p - 1) + 1 = p := Nat.sub_add_cancel hp.out.one_le
+    have hxp : ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p]) ^ p
+        = ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p]) ^ (p - 1)
+          * ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p]) := by
+      rw [← pow_succ, hpsucc]
+    rw [hxp, hpow, one_mul]
+
+/-- `teichNCU a` is `(p−1)`-torsion: `(ω(a))^{p−1} = 1` (`teichmullerFun_pow_card_sub_one`). -/
+private theorem teichNCU_torsion (a : ℤ_[p]ˣ) (n : ℕ) :
+    (teichNCU p a).elems n ^ (p - 1) = 1 := by
+  apply Units.ext
+  rw [Units.val_pow_eq_pow_val, Units.val_one]
+  change (toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p])) ^ (p - 1) = 1
+  rw [IsUnit.unit_spec, ← map_pow, PadicInt.teichmullerFun_pow_card_sub_one p a, map_one]
+
+/-- The `ℂ_[p]`-value of `teichNCU a` at any level is `toCp(ω(a))`. -/
+private theorem teichNCU_elems (a : ℤ_[p]ˣ) (n : ℕ) :
+    ((teichNCU p a).elems n : ℂ_[p]) = toCp p (PadicInt.teichmullerFun p (a : ℤ_[p])) := by
+  change (toCp p ((PadicInt.isUnit_teichmullerFun p a).unit : ℤ_[p])) = _
+  rw [IsUnit.unit_spec]
+
+/-- `‖g(π_n) − toCp(constantCoeff g)‖ < 1` for `n ≥ 1`: `g(π_n) ≡ g₀ mod 𝔭_n`, because
+`g − C g₀ = X·U` evaluates at `π_n` to `π_n · U(π_n)`, of norm `≤ ‖π_n‖ < 1`. -/
+private theorem norm_evalPi_sub_constantCoeff_lt_one (g : PowerSeries ℤ_[p]) {n : ℕ}
+    (hn : 1 ≤ n) :
+    ‖evalPi p g n - toCp p (PowerSeries.constantCoeff g)‖ < 1 := by
+  set g₀ := PowerSeries.constantCoeff (R := ℤ_[p]) g with hg0
+  obtain ⟨U, hU⟩ := (PowerSeries.X_dvd_iff (φ := g - PowerSeries.C g₀)).2 (by
+    rw [map_sub, PowerSeries.constantCoeff_C, ← hg0, sub_self])
+  have hrw : evalPi p g n - toCp p g₀ = pi p n * evalPi p U n := by
+    rw [← evalPi_C p g₀ n, ← evalPi_sub p g (PowerSeries.C g₀) hn, hU,
+      evalPi_mul p _ _ hn, evalPi_X]
+  rw [hrw, norm_mul]
+  have hUle : ‖evalPi p U n‖ ≤ 1 := (Subring.mem_inf.1 (evalPi_mem_O p U hn)).2
+  calc ‖pi p n‖ * ‖evalPi p U n‖ ≤ ‖pi p n‖ * 1 :=
+        mul_le_mul_of_nonneg_left hUle (norm_nonneg _)
+    _ = ‖pi p n‖ := mul_one _
+    _ < 1 := norm_pi_lt_one p hn
+
 /-- **RJW thm:fund exact seq, right-exactness / cokernel**: the image of `Col` on
 `𝒰_{∞,1}` is the kernel of the `χ`-moment `μ ↦ ∫_𝒢 χ·μ = μ(x)` (cokernel `ℤ_p(1)`).
 
@@ -948,35 +1142,102 @@ The forward inclusion `image(Col) ⊆ ker(χ-moment)` is `Col_apply_unitsPowCM_o
 `Col u (unitsPowCM 1) = constantCoeff((1−φψ)(∂log f_u)) = 0`, since `φ` and `ψ` both fix the
 constant coefficient (`∂log f_u ∈ ψ=id`).
 
-The converse `ker ⊆ image` is now assembled from three pieces. (1) The **inverse Coleman map**
+The converse `ker ⊆ image` is assembled from three pieces. (1) The **inverse Coleman map**
 `invColeman` (above) realises any `𝒩`-fixed unit `g` as `colemanSeries (invColeman g)`
 (`colemanSeries_invColeman`), with `compat` from `evalPi_normOp`. (2) `exists_invColeman_Col_eq`
 solves `Col (invColeman g) = μ` for such a `g` by inverting the measure transport off the
 diagram `ℤ_p⟦T⟧^{ψ=id} →[1−φ] ℤ_p⟦T⟧^{ψ=0} → ℤ_p` (`exists_one_sub_phi_eq` +
 `dlog_surjective_onto_psiId`, `mahlerTransform_psi`/`_res_units`, `iota_comp_extendByZero`),
 the `μ(unitsPowCM 1)=0` condition feeding the `F(0)=0` hypothesis. (3) The resulting
-`u₀ = invColeman g` need not be *principal*; `normCompat_eq_teichmuller_mul_principal`
-(`Equivariance.lean`) writes `u₀ = v·w` with `w ∈ 𝒰_{∞,1}` and `v` a `(p−1)`-torsion
-(Teichmüller) system, and `Col v = 0` (`Col_eq_zero_of_torsion`), so by `Col_add`
-`Col w = Col u₀ = μ` with `w ∈ 𝒰_{∞,1}` the required preimage.
+`u₀ = invColeman g` need not be *principal*; instead of the deferred `𝒪_n`-residue split, we
+divide off the **constant `ℤ_[p]`-Teichmüller system** `v = teichNCU a` for `a = constantCoeff
+g` (a unit since `g` is): `Col v = 0` (`Col_eq_zero_of_torsion` + `teichNCU_torsion`), so by
+`Col_add` `Col (u₀·v⁻¹) = Col u₀ = μ`, and `w := u₀·v⁻¹` is principal because
+`g(π_n) ≡ a mod 𝔭_n` (`norm_evalPi_sub_constantCoeff_lt_one`) and `a·ω(a)⁻¹ ≡ 1 mod p`
+(`teichmullerFun_sub_self_mem`), so `w.elems n ≡ 1 mod 𝔭_n`.
 
-Note: this `←` direction is sorry-free *here*, but transitively depends on the project's one
-deferred §12 sorry `normCompat_eq_teichmuller_mul_principal` (the `𝒪_n`-residue/Teichmüller
-infrastructure pass). No `p`-odd hypothesis enters the converse. -/
+This `←` direction is now genuinely sorry-free: it no longer uses the deferred
+`normCompat_eq_teichmuller_mul_principal` (only the already-formalised `ℤ_[p]` Teichmüller of
+`Interpolation/Branches.lean`). No `p`-odd hypothesis enters the converse. -/
 theorem range_Col_eq_ker_chiMoment (μ : PadicMeasure p ℤ_[p]ˣ) :
     (∃ u ∈ unitsTower1 p, Col p u = μ) ↔ μ (PadicMeasure.unitsPowCM p 1) = 0 := by
   constructor
   · -- forward: `Col u = μ ⟹ μ(unitsPowCM 1) = Col u (unitsPowCM 1) = 0`
     rintro ⟨u, -, rfl⟩
     exact Col_apply_unitsPowCM_one_eq_zero p u
-  · -- converse: inverse Coleman map (`exists_invColeman_Col_eq`) + Teichmüller/principal split
+  · -- converse: inverse Coleman map + constant ℤ_[p]-Teichmüller principal split
     intro hμ
     obtain ⟨g, hgu, hgN, hCol⟩ := exists_invColeman_Col_eq p μ hμ
-    obtain ⟨v, w, hw, htor, huvw⟩ :=
-      normCompat_eq_teichmuller_mul_principal p (invColeman p g hgu hgN)
-    refine ⟨w, hw, ?_⟩
-    have hsplit : Col p (invColeman p g hgu hgN) = Col p v + Col p w := by rw [huvw, Col_add]
-    rw [Col_eq_zero_of_torsion p v htor, zero_add] at hsplit
-    rw [← hsplit, hCol]
+    set u₀ := invColeman p g hgu hgN with hu0
+    -- `a := constantCoeff g`, a unit; `v := teichNCU a`, `w := u₀ · v⁻¹`
+    set aU : ℤ_[p]ˣ := (PowerSeries.isUnit_iff_constantCoeff.1 hgu).unit with haU
+    have haUval : (aU : ℤ_[p]) = PowerSeries.constantCoeff g := IsUnit.unit_spec _
+    set v := teichNCU p aU with hv
+    set w := u₀ * v⁻¹ with hw
+    -- the level-`n` value of `u₀` is `g(π_n)`
+    have hu0elems : ∀ {n : ℕ}, 1 ≤ n → ((u₀.elems n : ℂ_[p]ˣ) : ℂ_[p]) = evalPi p g n := by
+      intro n hn
+      change ((if h : 1 ≤ n then Units.mk0 (evalPi p g n)
+          (evalPi_unit_ne_zero p hgu h) else 1 : ℂ_[p]ˣ) : ℂ_[p]) = _
+      rw [dif_pos hn, Units.val_mk0]
+    -- the level-`n` value of `w` is `g(π_n)·(toCp ω(a))⁻¹`
+    have hwelems : ∀ {n : ℕ}, 1 ≤ n → ((w.elems n : ℂ_[p]ˣ) : ℂ_[p])
+        = evalPi p g n * (toCp p (PadicInt.teichmullerFun p (aU : ℤ_[p])))⁻¹ := by
+      intro n hn
+      have hval : ((w.elems n : ℂ_[p]ˣ) : ℂ_[p])
+          = ((u₀.elems n : ℂ_[p]ˣ) : ℂ_[p]) * ((v.elems n : ℂ_[p]ˣ) : ℂ_[p])⁻¹ := by
+        change ((u₀.elems n * (v.elems n)⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = _
+        rw [Units.val_mul, Units.val_inv_eq_inv_val]
+      rw [hval, hu0elems hn, teichNCU_elems p aU n]
+    -- `toCp ω(a)` is a unit of norm `1`
+    have hzetanorm : ‖PadicInt.teichmullerFun p (aU : ℤ_[p])‖ = 1 :=
+      PadicInt.isUnit_iff.1 (PadicInt.isUnit_teichmullerFun p aU)
+    have hzeta0 : toCp p (PadicInt.teichmullerFun p (aU : ℤ_[p])) ≠ 0 := by
+      rw [← norm_pos_iff, norm_toCp, hzetanorm]; exact one_pos
+    -- `w ∈ 𝒰_{∞,1}`: each `w.elems n` is a principal unit
+    have hwmem : w ∈ unitsTower1 p := by
+      intro n hn
+      have hinv : ((w.elems n)⁻¹ : ℂ_[p]ˣ).val ∈ O p n := by
+        rw [Units.val_inv_eq_inv_val]; exact w.inv_mem n
+      refine (mem_localUnitsOne_iff (p := p)).2 ⟨⟨w.mem n, hinv⟩, ?_⟩
+      rw [hwelems hn]
+      -- `g(π_n)·ζ⁻¹ − 1 = (g(π_n) − ζ)·ζ⁻¹`, with `‖g(π_n) − ζ‖ < 1` and `‖ζ⁻¹‖ = 1`
+      set ζ := toCp p (PadicInt.teichmullerFun p (aU : ℤ_[p])) with hζ
+      have hζnorm : ‖ζ‖ = 1 := by rw [hζ, norm_toCp, hzetanorm]
+      have hsub : ‖evalPi p g n - ζ‖ < 1 := by
+        -- `g(π_n) − ζ = (g(π_n) − toCp a) + toCp(a − ω(a))`, both summands of norm `< 1`
+        have h1 : ‖evalPi p g n - toCp p (PowerSeries.constantCoeff g)‖ < 1 :=
+          norm_evalPi_sub_constantCoeff_lt_one p g hn
+        have h2 : ‖toCp p (PowerSeries.constantCoeff g) - ζ‖ < 1 := by
+          rw [hζ, ← haUval, ← map_sub, norm_toCp]
+          have hmem : (aU : ℤ_[p]) - PadicInt.teichmullerFun p (aU : ℤ_[p])
+              ∈ (Ideal.span {(p : ℤ_[p]) ^ 1} : Ideal ℤ_[p]) := by
+            rw [pow_one]
+            have := PadicInt.teichmullerFun_sub_self_mem p (aU : ℤ_[p])
+            rwa [show (aU : ℤ_[p]) - PadicInt.teichmullerFun p (aU : ℤ_[p])
+              = -(PadicInt.teichmullerFun p (aU : ℤ_[p]) - (aU : ℤ_[p])) by ring,
+              neg_mem_iff]
+          rw [← PadicInt.norm_le_pow_iff_mem_span_pow] at hmem
+          refine lt_of_le_of_lt hmem ?_
+          rw [Nat.cast_one, zpow_neg, zpow_one]
+          exact inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.out.one_lt)
+        have hsplit : evalPi p g n - ζ
+            = (evalPi p g n - toCp p (PowerSeries.constantCoeff g))
+              + (toCp p (PowerSeries.constantCoeff g) - ζ) := by ring
+        rw [hsplit]
+        exact lt_of_le_of_lt (IsUltrametricDist.norm_add_le_max _ _) (max_lt h1 h2)
+      have hkey : evalPi p g n * ζ⁻¹ - 1 = (evalPi p g n - ζ) * ζ⁻¹ := by
+        rw [sub_mul, mul_inv_cancel₀ hzeta0]
+      rw [hkey, norm_mul, norm_inv, hζnorm, inv_one, mul_one]
+      exact hsub
+    refine ⟨w, hwmem, ?_⟩
+    -- `Col w = Col u₀ + Col v⁻¹ = Col u₀ = μ` (`v⁻¹` is `(p−1)`-torsion, so `Col v⁻¹ = 0`)
+    have hvinv : Col p v⁻¹ = 0 := by
+      refine Col_eq_zero_of_torsion p v⁻¹ (fun n => ?_)
+      have hpow : (v⁻¹.elems n) ^ (p - 1) = ((v.elems n) ^ (p - 1))⁻¹ := by
+        rw [show v⁻¹.elems n = (v.elems n)⁻¹ from rfl, inv_pow]
+      rw [hpow, teichNCU_torsion p aU, inv_one]
+    have hsplit : Col p w = Col p u₀ + Col p v⁻¹ := by rw [hw, Col_add]
+    rw [hsplit, hvinv, add_zero, hu0, hCol]
 
 end PadicLFunctions.Coleman

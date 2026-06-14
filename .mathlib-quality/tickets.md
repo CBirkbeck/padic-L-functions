@@ -5636,7 +5636,7 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 - **Status**: open | **Depends on**: T1203.
 
 ### [T1204] E12.3: the fundamental exact sequence (FundamentalSequence.lean)
-- **Status**: in_progress (2026-06-14, agent ae3306 — 1/3). **`ZpOne` DONE** (integral Tate twist `{(ξ_n^a)_n}` via `zpPow` character laws; sorry-free, axiom-clean). The two exact-sequence theorems `mem_ker_Col_iff_mem_ZpOne` + `range_Col_eq_ker_chiMoment` remain (documented sorries, FundamentalSequence.lean:99/117) — blocked on substrate: (1) the measure-side `PadicMeasure.mahlerTransform_psi` bridge (`𝒜(ψμ)=psiSeries(𝒜μ)`), absent — `mahlerTransform_phi`/`psi`/`psi_phi`/`phi_psi` exist but the ψ-bridge needs the PadicMeasure digit-decomposition (analogue of MeasureR `existsUnique_measure_digits`), NOT derivable purely from the φ-bridge (orchestrator verified the formal derivation is circular); (2) `normOp(binomialSeries a)=binomialSeries a` + `a↦binomialSeries a` `WithPiTopology`-continuity + de-privatizing `normOp_continuous`/`digitMatrix_continuous`/`phiSeries_continuous`/`continuous_of_coeff` (LogDerivative) + `seriesEval_map_binomialSeries` (GaloisAction). → sub-tickets T1204a (substrate bridge) + T1204b (de-privatize + binomial layer). | **File**: IwasawaProof/FundamentalSequence.lean | **Sub-tickets**: T1204a, T1204b | **Depends on**: T1202, T1203
+- **Status**: **done** (2026-06-14, agents ae3306 → T1204a → T1204b → ab6d73 final closure). FundamentalSequence.lean **sorry-free** (the only build sorry is the deferred Equivariance.lean:159, a different file, which does NOT propagate here); `lake build PadicLFunctions.IwasawaProof.FundamentalSequence` clean (3711 jobs); `#print axioms mem_ker_Col_iff_mem_ZpOne range_Col_eq_ker_chiMoment` = {propext, Classical.choice, Quot.sound} (NO sorryAx — orchestrator verified independently via temp-file import, not agent self-report). FINAL CLOSURE (ab6d73): (a) added `hp2 : p ≠ 2` to `levelNorm_zpPow_zetaSys`→`normOp_binomialSeries`→`mem_ker_Col_iff_mem_ZpOne` cascade (errata #14: N(ξ_{n+1}^a)=ξ_n^a is FALSE at p=2; proved p-odd via `minpoly_extendScalars_of_pow` + `Algebra.norm_eq_norm_adjoin` + `zpPow_zetaSys'`/`PadicInt.cast_toZModPow` tower reduction); (b) re-routed the cokernel converse off the deferred `normCompat_eq_teichmuller_mul_principal` via the ℤ_[p]-Teichmüller `teichNCU (constantCoeff g)` (norm-compat by `levelNorm_const_eq_pow`+`ω^{p−1}=1`, torsion ⟹ `Col=0`, principality by `g(π_n)≡a` + `a·ω(a)⁻¹≡1 mod p`). HISTORY: in_progress (agent ae3306 — 1/3). **`ZpOne` DONE** (integral Tate twist `{(ξ_n^a)_n}` via `zpPow` character laws; sorry-free, axiom-clean). The two exact-sequence theorems `mem_ker_Col_iff_mem_ZpOne` + `range_Col_eq_ker_chiMoment` were (documented sorries, FundamentalSequence.lean:99/117) — were blocked on substrate: (1) the measure-side `PadicMeasure.mahlerTransform_psi` bridge (`𝒜(ψμ)=psiSeries(𝒜μ)`), absent — `mahlerTransform_phi`/`psi`/`psi_phi`/`phi_psi` exist but the ψ-bridge needs the PadicMeasure digit-decomposition (analogue of MeasureR `existsUnique_measure_digits`), NOT derivable purely from the φ-bridge (orchestrator verified the formal derivation is circular); (2) `normOp(binomialSeries a)=binomialSeries a` + `a↦binomialSeries a` `WithPiTopology`-continuity + de-privatizing `normOp_continuous`/`digitMatrix_continuous`/`phiSeries_continuous`/`continuous_of_coeff` (LogDerivative) + `seriesEval_map_binomialSeries` (GaloisAction). → sub-tickets T1204a (substrate bridge) + T1204b (de-privatize + binomial layer). | **File**: IwasawaProof/FundamentalSequence.lean | **Sub-tickets**: T1204a, T1204b | **Depends on**: T1202, T1203
 - **Parallel**: no | **Type**: def + theorems
 #### Statement
 `ZpOne` (ℤ_p(1) ⊂ 𝒰_∞); `mem_ker_Col_iff_mem_ZpOne` (kernel); `range_Col_eq_ker_chiMoment`
@@ -5651,7 +5651,7 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 - **Sizing**: ~180 LOC.
 
 ### [T1204a] PadicMeasure ψ↔series Mahler bridge `mahlerTransform_psi` (Measure substrate)
-- **Status**: open | **File**: PadicLFunctions/Measure/Toolbox.lean (or new Measure/PsiBridge.lean) | **Parent**: T1204 | **Type**: substrate lemma(s)
+- **Status**: **done** (2026-06-14, with T1204). `mahlerTransform_psi` (the PadicMeasure ψ↔series Mahler bridge `𝒜(ψμ)=psiSeries(𝒜μ)`) ported into FundamentalSequence.lean via a project `existsUnique_measure_digits` digit decomposition; sorry-free, axiom-clean (covered by the T1204 join axiom check). | **File**: FundamentalSequence.lean (built there, not Toolbox — both psiSeries+mahlerTransform visible) | **Parent**: T1204 | **Type**: substrate lemma(s)
 #### Statement
 `theorem PadicMeasure.mahlerTransform_psi (μ : PadicMeasure p ℤ_[p]) : mahlerTransform p (psi p μ) = psiSeries p (mahlerTransform p μ)` (the `ψ`-analogue of `mahlerTransform_phi`, Toolbox.lean:270).
 #### Proof sketch
@@ -5661,7 +5661,7 @@ NOT derivable from `mahlerTransform_phi` + `psi_phi` alone (circular — orchest
 - **Sizing**: ~150–250 LOC (substrate port; the MeasureR template exists).
 
 ### [T1204b] expose continuity/binomial layer + `normOp(binomialSeries a)=binomialSeries a`
-- **Status**: open | **File**: LogDerivative.lean + GaloisAction.lean (de-privatize) + FundamentalSequence.lean | **Parent**: T1204 | **Type**: visibility + lemma
+- **Status**: **done** (2026-06-14, with T1204). De-privatized `normOp_continuous`/`digitMatrix_continuous`/`phiSeries_continuous`/`continuous_of_coeff` (LogDerivative) + `seriesEval_map_binomialSeries` (GaloisAction); `normOp(binomialSeries a)=binomialSeries a` + the binomial-series layer proved in FundamentalSequence.lean; axiom-clean (covered by the T1204 join axiom check). | **File**: LogDerivative.lean + GaloisAction.lean (de-privatize) + FundamentalSequence.lean | **Parent**: T1204 | **Type**: visibility + lemma
 #### Statement / work
 (a) Make PUBLIC (remove `private`): `normOp_continuous`, `digitMatrix_continuous`, `phiSeries_continuous`, `continuous_of_coeff` (LogDerivative.lean) and `seriesEval_map_binomialSeries` (GaloisAction.lean) — visibility only, no proof change. (b) Prove `normOp (binomialSeries ℤ_[p] a) = binomialSeries ℤ_[p] a` (the binomial series is `𝒩`-fixed — it is `colemanSeries` of `ξ_n^a ∈ ℤ_p(1)`) + `a ↦ binomialSeries a` `WithPiTopology`-continuity. Used by T1204's kernel theorem (`colemanSeries u = binomialSeries a` for `u ∈ ZpOne`).
 - **Sizing**: (a) trivial; (b) ~40–80 LOC.
@@ -5744,6 +5744,60 @@ thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p
 - **Mathlib**: `MonoidHom`/`QuotientGroup` iso API; `Additive`/module-quotient plumbing.
 - **Sources**: Q15 (TeX 3587–3608) + §10 `coleman_to_kl`, §11 `zetaIdeal(Plus)`.
 - **Sizing**: ~200 LOC.
+- **Progress (2026-06-14, orchestrator dispatch-ready prep — Explore map + substrate verify)**:
+  T1206 blocked ONLY on T1204 landing (ab6d73 in flight); all other substrate verified present.
+  DISPATCH PLAN (assemble both theorems faithfully — no vacuous 0-map/triv-iso):
+  - **(i) `iwasawa_exact_sequence`**: build the genuine descent hom `[u] ↦ [Col u]`,
+    `Additive(𝒰₁/𝒞₁) →+ (Λ(𝒢) ⧸ zetaIdeal)`.
+    · Well-definedness `Col(𝒞₁) ⊆ zetaIdeal`: `Col_cyclo` (Map.lean:509,
+      `Col p (cyclo a) = -zetaNum p a`) + `zetaNum ∈ zetaIdeal` (it IS `([σ_a]−1)·ζ_p`;
+      cf. `coleman_to_kl` Map.lean:535) + `Col` is a hom (`Col_add`, FundSeq) + `cycloTower1`
+      is generated by the `cyclo a` systems (CyclotomicUnits.lean `cycloTower1`/closure) →
+      Col continuous/density to push the inclusion to the closure. The map descends since
+      `Col(𝒞₁) ⊆ zetaIdeal`. (Injectivity is NOT required by the `Nonempty (→+)` shape, but
+      the SES content — `ker = 𝒞₁`, `coker = ℤ_p(1)` — uses T1204 `mem_ker_Col_iff_mem_ZpOne`
+      + `range_Col_eq_ker_chiMoment`; record the SES structure in the proof even though the
+      statement only asks for the hom.)
+  - **(ii) `iwasawa_theorem`**: plus-descent of (i), as AddEquiv `𝒰₁⁺/𝒞₁⁺ ≃+ Λ(𝒢⁺)⧸zetaIdealPlus`.
+    · plus-functor exact for p odd: `isCompl_plusPart_minusPart` (PlusPart.lean:169).
+    · `(Λ(𝒢)⧸zetaIdeal)⁺ ≅ Λ(𝒢⁺)⧸zetaIdealPlus`: `plusEquiv` (PlusPart.lean:449),
+      `projPlus_surjective` (442), `ker_projPlus` (505), `augmentationIdealPlus_eq_span`
+      (ZetaGalois:306), `zetaIdealPlus_eq_span` (ZetaGalois:351).
+    · `ℤ_p(1)⁺ = 0` (c acts by −1, p odd): `ZpOne` (FundSeq:376) is c-anti-invariant →
+      its plus-part vanishes; mirror `mem_plusPart_iff_forall_odd_moment` (PlusPart:190) /
+      `cAct_apply_unitsPowCM` (178). NOTE `ZpOne` lives in the in-flight file — confirm its
+      final form after T1204 lands.
+    · Confirmed NOT needed (ticket line ~5774): the full `Λ(𝒢⁺)`-cyclic-module structure /
+      `cycloTower1Plus_cyclic_generator` full content (that's §13/IMC; the Generators stub's
+      vacuous `∃_μ,True` second conjunct is fine to leave — (ii) routes through plus-exactness,
+      not cyclicity).
+  - SUBSTRATE ALL PRESENT & VERIFIED: `Col_cyclo`/`coleman_to_kl`/`colemanSeries_cyclo`/`zetaNum`
+    (Map.lean), `plusEquiv`/`projPlus`(+surjective/ker/section)/`isCompl_plusPart_minusPart`/
+    `mem_plusPart_iff_forall_odd_moment` (PlusPart.lean), `zetaIdeal(Plus)`(+`_eq_span`)/
+    `augmentationIdeal(Plus)_eq_span`/`padicZeta_odd_moment_eq_zero` (ZetaGalois.lean). The ONLY
+    missing pieces are the two assembly theorems themselves + the `Col(𝒞₁)⊆zetaIdeal`
+    well-definedness sub-lemma (a T1206-internal step, possibly its own private lemma in Main.lean).
+  - NO safe parallel pre-build exists: every remaining piece touches `Col`/`ZpOne` (in-flight
+    FundamentalSequence/Map). Wait for ab6d73 → join T1204 → dispatch T1206 sorry-filler-deep on Main.lean.
+  - **EXACT signatures verified (2026-06-14, second prep pass)** — the (i) crux is the explicit-
+    reciprocity identity `Col(𝒞₁) = Iζ`, assembled from:
+    · `Col_cyclo` (Map.lean:509): `Col p (cyclo p ha hp2) = -zetaNum p a` (ha : ¬p∣a).
+    · `cyclo_mem_cycloTower1` (CyclotomicUnits.lean:477): `cyclo p ha hp2 ∈ cycloTower1 p`
+      (the generator system lives in the tower) + `cyclo_mem_unitsTower1` (500).
+    · `coleman_to_kl` (Map.lean:535) + the localisation relation (Map.lean:532-3, `IsLocalization.
+      mk'_spec'`): `([a]−1)·ζ_p = zetaNum a` in QuotientField, `[a]−1 ∈ augmentationIdeal` ⟹
+      `zetaNum a ∈ zetaIdeal` by `mem_zetaIdeal_iff` (ZetaGalois:270, Iff.rfl). Hence
+      `Col(cyclo a) = −zetaNum a ∈ zetaIdeal`.
+    · `zetaIdeal_eq_span` (ZetaGalois:279): `Iζ = span{ν}` for any witness ν of `([b]−1)ζ_p` at
+      a topological generator b ⟹ `zetaNum a₀` generates Iζ at the canonical generator a₀.
+    · `Col_add` (FundSeq:994, stable): `Col(u·v)=Col u+Col v` (the hom property for the descent).
+    · `Col_apply_unitsPowCM_one_eq_zero` (FundSeq:900): every `Col u` has χ¹-moment 0 (the easy
+      `range ⊆ ker χ-moment` half; the hard ⊇ is T1204 `range_Col_eq_ker_chiMoment`).
+    OPEN SUB-STEP for (i) ⊇ (`Iζ ⊆ Col(𝒞₁)`, the cokernel side): needs `cycloTower1` generated
+    (topologically) by the `cyclo a` systems — likely a T1206-internal Tier-A sub-lemma
+    (`cycloTower1 ≤ Subgroup.closure {cyclo a}` or the image equality `Col '' cycloTower1 = Iζ`).
+    For (ii): `plusEquiv` (PlusPart:449) `plusPart p ≃ₗ[ℤ_[p]] PadicMeasure p (GPlus p)`;
+    `projPlus_eq_zero_iff` (482) = minusPart; `ker_projPlus` (505) = `span{dirac(−1)−1}`.
 
 ### [CLEANUP-124] /cleanup Main.lean
 - **Status**: open | **Depends on**: T1206.
