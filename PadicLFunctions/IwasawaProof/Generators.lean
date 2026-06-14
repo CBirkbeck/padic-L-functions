@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chris Birkbeck
 -/
 import PadicLFunctions.IwasawaProof.GaloisAction
+import PadicLFunctions.IwasawaProof.FundamentalSequence
 import PadicLFunctions.Iwasawa.CyclotomicUnits
 import PadicLFunctions.Iwasawa.ZetaGalois
 
@@ -1099,5 +1100,123 @@ feeding the `I(𝒢)ζ_p`-image computation `Col(λ·c) = λ·Col(c)`. -/
 theorem Col_galNCU_eq_dirac_mul (a : ℤ_[p]ˣ) (u : NormCompatUnits p) :
     Col p (galNCU p a u) = (PadicMeasure.dirac p a) * Col p u := by
   rw [Col_galNCU p a u, dirac_mul_eq_pushforward]
+
+/-! ## The Teichmüller-corrected cyclotomic generator `wγ(a₀)` (RJW LemmaGeneratorCinfty1)
+
+Input (I) of `col_image_cycloTower1_eq_zetaIdeal` (Main.lean): the principal generator
+`wγ(a₀) ∈ 𝒞_{∞,1}` with `Col(wγ(a₀)) = −zetaNum a₀`, `a₀` the canonical integer topological
+generator (`exists_nat_topological_generator`, a primitive root mod `p²`, so `a₀ ≢ 1 mod p`).
+
+The cyclotomic system `cyclo a₀` has `Col(cyclo a₀) = −zetaNum a₀` (`Col_cyclo`) but is *not*
+principal (`c_n(a₀) ≡ a₀ ≢ 1 mod 𝔭_n`). The Teichmüller split (`Iwasawa/ResidueField.lean`,
+`normCompat_eq_teichmuller_mul_principal`) divides off the `(p−1)`-torsion residue part
+`v = ω(b)`, leaving the principal `wγ(a₀) := v⁻¹·cyclo a₀`, with `wγ(a₀) ≡ 1 mod 𝔭_n` the §11
+b2-note `w·γ_{n,a₀} ≡ 1` resolved. `Col(wγ(a₀)) = Col(cyclo a₀) = −zetaNum a₀` since `Col` kills
+the torsion `v` (`Col_eq_zero_of_torsion`). -/
+
+/-- The canonical integer topological generator `a₀` of `ℤ_p^×` (a primitive root mod `p²`,
+`exists_nat_topological_generator`), as a `ℕ`. -/
+private def a0 (hp2 : p ≠ 2) : ℕ := (PadicMeasure.exists_nat_topological_generator p hp2).choose
+
+private theorem a0_not_dvd (hp2 : p ≠ 2) : ¬ (p : ℕ) ∣ a0 p hp2 :=
+  (PadicMeasure.exists_nat_topological_generator p hp2).choose_spec.choose_spec.1
+
+/-- The Teichmüller split of `cyclo a₀` (RJW §12.1, `normCompat_eq_teichmuller_mul_principal`):
+`cyclo a₀ = v·w` with `v` `(p−1)`-torsion (the residue Teichmüller part) and `w` principal. -/
+private def splitCyclo (hp2 : p ≠ 2) :
+    {vw : NormCompatUnits p × NormCompatUnits p //
+      vw.2 ∈ unitsTower1 p ∧ (∀ n, (vw.1.elems n) ^ (p - 1) = 1)
+        ∧ cyclo p (a0_not_dvd p hp2) hp2 = vw.1 * vw.2} := by
+  choose v w hw hv heq using
+    normCompat_eq_teichmuller_mul_principal p (cyclo p (a0_not_dvd p hp2) hp2)
+  exact ⟨(v, w), hw, hv, heq⟩
+
+/-- **The Teichmüller-corrected cyclotomic generator `wγ(a₀)`** (RJW LemmaGeneratorCinfty1,
+TeX 3553): the principal part of the Teichmüller split of `cyclo a₀`. Levelwise it is
+`ω(b)⁻¹·c_n(a₀)` with `ω(b) ∈ μ_{p−1}` the residue correction making `wγ(a₀) ≡ 1 mod 𝔭_n`. -/
+def wGamma (hp2 : p ≠ 2) : NormCompatUnits p := (splitCyclo p hp2).1.2
+
+/-- The `(p−1)`-torsion (Teichmüller) part `v` of the split, `cyclo a₀ = v·wγ(a₀)`. -/
+private def wGammaTeich (hp2 : p ≠ 2) : NormCompatUnits p := (splitCyclo p hp2).1.1
+
+/-- **`wγ(a₀) ∈ 𝒰_{∞,1}`** (principal): immediate from the Teichmüller split (`wγ(a₀)` is its
+principal part). This is the §11 b2-note `w·γ_{n,a₀} ≡ 1 mod 𝔭_n` resolved. -/
+theorem wGamma_mem_unitsTower1 (hp2 : p ≠ 2) : wGamma p hp2 ∈ unitsTower1 p :=
+  (splitCyclo p hp2).2.1
+
+private theorem wGammaTeich_torsion (hp2 : p ≠ 2) :
+    ∀ n, (wGammaTeich p hp2).elems n ^ (p - 1) = 1 := (splitCyclo p hp2).2.2.1
+
+private theorem cyclo_eq_split (hp2 : p ≠ 2) :
+    cyclo p (a0_not_dvd p hp2) hp2 = wGammaTeich p hp2 * wGamma p hp2 :=
+  (splitCyclo p hp2).2.2.2
+
+/-- **`Col(wγ(a₀)) = −zetaNum a₀`** (RJW; the sign of `Col_cyclo`, TeX 2614/errata #12): the
+Teichmüller part `v` of the split is `(p−1)`-torsion, hence killed by `Col`
+(`Col_eq_zero_of_torsion`), so `Col(wγ(a₀)) = Col(cyclo a₀) = −zetaNum a₀` (`Col_cyclo`). This
+is the generator-image identity feeding `col_image_cycloTower1_eq_zetaIdeal` (input (I)). -/
+theorem Col_wGamma (hp2 : p ≠ 2) :
+    Col p (wGamma p hp2) = -PadicMeasure.zetaNum p (a0 p hp2) := by
+  have htor : Col p (wGammaTeich p hp2) = 0 :=
+    Col_eq_zero_of_torsion p _ (wGammaTeich_torsion p hp2)
+  have hsplit : Col p (cyclo p (a0_not_dvd p hp2) hp2)
+      = Col p (wGammaTeich p hp2) + Col p (wGamma p hp2) := by
+    rw [cyclo_eq_split p hp2, Col_add]
+  rw [Col_cyclo p (a0_not_dvd p hp2) hp2] at hsplit
+  rw [htor, zero_add] at hsplit
+  rw [← hsplit]
+
+/-- The level units of a power: `(uᵏ).elems n = (u.elems n)ᵏ`. -/
+private theorem elems_pow' (u : NormCompatUnits p) (k n : ℕ) :
+    (u ^ k).elems n = (u.elems n) ^ k := by
+  induction k with
+  | zero => rw [pow_zero, pow_zero]; rfl
+  | succ m ih => rw [pow_succ, pow_succ, ← ih]; rfl
+
+/-- `wγ(a₀)^{p−1} = (cyclo a₀)^{p−1}` (the Teichmüller part `v` is `(p−1)`-torsion). -/
+private theorem wGamma_pow_eq_cyclo_pow (hp2 : p ≠ 2) :
+    wGamma p hp2 ^ (p - 1) = cyclo p (a0_not_dvd p hp2) hp2 ^ (p - 1) := by
+  rw [cyclo_eq_split p hp2, mul_pow]
+  have hvpow : wGammaTeich p hp2 ^ (p - 1) = 1 := by
+    apply NormCompatUnits.ext; funext n
+    rw [elems_pow' p, wGammaTeich_torsion p hp2 n]; rfl
+  rw [hvpow, one_mul]
+
+/-- **The honest cyclotomic content** (RJW LemmaGeneratorCinfty1 modulo the deferred §13
+closure-crossing): `wγ(a₀)^{p−1} ∈ 𝒞_{∞,1}`. It equals `(cyclo a₀)^{p−1}` (the torsion part
+`v` cancels), which is *cyclotomic* (a power of the cyclotomic `c_n(a₀)`, in the topological
+closure of `𝒟_n`) and *principal* (`wγ(a₀) ∈ 𝒰_{∞,1}`, so its `(p−1)`-th power is too). This
+is the maximal fragment provable without the closure's `ℤ_p`-module structure. -/
+theorem wGamma_pow_mem_cycloTower1 (hp2 : p ≠ 2) : wGamma p hp2 ^ (p - 1) ∈ cycloTower1 p := by
+  intro n hn
+  have hmem : wGamma p hp2 ^ (p - 1) ∈ unitsTower1 p :=
+    pow_mem (wGamma_mem_unitsTower1 p hp2) (p - 1)
+  rw [cycloClosureOne, Subgroup.mem_inf]
+  refine ⟨?_, hmem n hn⟩
+  rw [cycloClosure, Subgroup.mem_inf]
+  refine ⟨?_, ((mem_localUnitsOne_iff p).1 (hmem n hn)).1⟩
+  -- `(c_n(a₀))^{p−1} ∈ topologicalClosure(cycloUnits)`
+  rw [wGamma_pow_eq_cyclo_pow p hp2, elems_pow' p]
+  exact pow_mem (Subgroup.le_topologicalClosure _
+    (cyclo_elems_mem_cycloUnits p (a0_not_dvd p hp2) hp2 hn)) (p - 1)
+
+/-- **`wγ(a₀) ∈ 𝒞_{∞,1}`** (RJW LemmaGeneratorCinfty1, TeX 3553): the Teichmüller-corrected
+cyclotomic generator lies in the cyclotomic tower. This is input (I) of
+`col_image_cycloTower1_eq_zetaIdeal`.
+
+BLOCKED on input (II) (the deferred §13 closure machinery): closing this from the proven
+`wGamma_mem_unitsTower1` (principal) and `wGamma_pow_mem_cycloTower1` (`wγ^{p−1} ∈ 𝒞_{∞,1}`)
+needs the `ℤ_p`-module structure of the closure `𝒞_{n,1} = clos(𝒟_{n,1})` — that it is
+`(p−1)`-divisible (`(p−1)𝒞_{n,1} = 𝒞_{n,1}`, RJW `lem:closure`/`lem:global generators 2`), so
+that the unique `(p−1)`-th root in `𝒰_{n,1}` of the cyclotomic-closure element `wγ^{p−1}` lies
+in `𝒞_{n,1}`. The `ℤ_p`-module/closure layer is the separate serialized §13 pass. -/
+theorem wGamma_mem_cycloTower1 (hp2 : p ≠ 2) : wGamma p hp2 ∈ cycloTower1 p := by
+  -- BLOCKED: needs the ℤ_p-module structure of the closure `cycloClosureOne` — that it is
+  -- `(p−1)`-divisible (`(p−1)𝒞_{n,1} = 𝒞_{n,1}`, RJW `lem:closure`/`lem:global generators 2`,
+  -- the deferred §13 input (II)). Proven here: `wGamma ∈ unitsTower1` (principal,
+  -- `wGamma_mem_unitsTower1`) and `wGamma^{p−1} ∈ cycloTower1` (`wGamma_pow_mem_cycloTower1`);
+  -- the gap is that the unique `(p−1)`-th root in `𝒰_{n,1}` of the cyclotomic-closure element
+  -- `wGamma^{p−1}` lies in `cycloClosureOne`, i.e. the closure is uniquely `(p−1)`-rooted.
+  sorry
 
 end PadicLFunctions.Coleman

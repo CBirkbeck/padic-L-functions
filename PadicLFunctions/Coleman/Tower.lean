@@ -420,6 +420,36 @@ theorem levelNorm_one (n : ℕ) : levelNorm p n 1 = 1 := by
       IntermediateField.extendScalars (K_le_succ p n)) = 1 from rfl, map_one]
   rfl
 
+set_option synthInstance.maxHeartbeats 1000000 in
+-- the `Algebra.norm_algebraMap`/`finrank` computation runs through the nested
+-- `IntermediateField (K p n) (extendScalars …)` layer; instance synthesis exceeds defaults
+set_option maxHeartbeats 1000000 in
+/-- **The level norm of a base constant is its `p`-th power** (RJW §12.1 norm-compatibility
+helper, the `N(ζ) = ζ^p` step): for `c ∈ K_n` with `n ≥ 1`, viewing `c ∈ K_{n+1}` through
+the inclusion, `N_{n+1,n}(c) = c^p`. The step `K_{n+1}/K_n` has degree `p`
+(`finrank_K_succ`, `n ≥ 1`), and the level norm of a `K_n`-constant is
+`Algebra.norm (K_n) (algebraMap c) = c ^ [K_{n+1}:K_n]` (`Algebra.norm_algebraMap`).
+
+This discharges the *norm-compatibility half* of the constant Teichmüller systems used in
+the §12.1/§12.5 splits: a `(p−1)`-th root of unity `ζ ∈ μ_{p−1} ⊂ ℤ_p^× ⊂ K_n^×` satisfies
+`N_{n+1,n}(ζ) = ζ^p = ζ` since `ζ^{p−1} = 1`. -/
+theorem levelNorm_const_eq_pow {n : ℕ} (hn : 1 ≤ n) {c : ℂ_[p]} (hc : c ∈ K p n) :
+    levelNorm p n c = c ^ p := by
+  have hcsucc : c ∈ K p (n + 1) := K_le_succ p n hc
+  haveI : NeZero (p ^ (n + 1)) := ⟨(pow_pos hp.out.pos (n + 1)).ne'⟩
+  haveI : FiniteDimensional ℚ_[p] (IntermediateField.extendScalars (K_le_succ p n)) :=
+    IsCyclotomicExtension.finiteDimensional {p ^ (n + 1)} ℚ_[p] (K p (n + 1))
+  haveI : FiniteDimensional (K p n) (IntermediateField.extendScalars (K_le_succ p n)) :=
+    FiniteDimensional.right ℚ_[p] (K p n) _
+  rw [levelNorm_apply p n hcsucc]
+  have hval : (⟨c, (IntermediateField.mem_extendScalars (K_le_succ p n)).2 hcsucc⟩ :
+        IntermediateField.extendScalars (K_le_succ p n))
+      = algebraMap (K p n) (IntermediateField.extendScalars (K_le_succ p n)) ⟨c, hc⟩ :=
+    Subtype.ext rfl
+  rw [hval, Algebra.norm_algebraMap, finrank_K_succ p hn]
+  push_cast
+  rfl
+
 /-! ### The norm collapse `N_{n+1,n}(ξ^b_{p^{n+1}} − 1) = ξ^b_{p^n} − 1`
 
 RJW TeX 2581–2585. The proof identifies `w := ξ^b_{p^{n+1}}` as a primitive

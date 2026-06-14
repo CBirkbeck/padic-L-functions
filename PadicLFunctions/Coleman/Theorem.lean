@@ -480,8 +480,11 @@ uniformiser. Writing `x = ∑_{i<φ(p^n)} q_i π_n^i` against the power basis of
 `K_n = ℚ_p(π_n)` (`q_i ∈ ℚ_p`), the terms have pairwise distinct norms
 (`term_norm_distinct`), so orthogonality gives `‖x‖ = max_i ‖q_i π_n^i‖`; from `‖x‖ ≤ 1`
 the constant coefficient has `‖q_0‖ ≤ 1` (so `a := q_0 ∈ ℤ_p`) and each higher term has
-norm `≤ ‖π_n‖` (`term_norm_le_pi`), whence `‖x − a‖ = ‖∑_{i≥1} q_i π_n^i‖ ≤ ‖π_n‖`. -/
-private theorem exists_residue_pi {n : ℕ} (hn : 1 ≤ n) {x : ℂ_[p]} (hx : x ∈ K p n)
+norm `≤ ‖π_n‖` (`term_norm_le_pi`), whence `‖x − a‖ = ‖∑_{i≥1} q_i π_n^i‖ ≤ ‖π_n‖`.
+
+(Promoted from `private` for the §12.5 residue-field infrastructure
+`Iwasawa/ResidueField.lean`, which builds the `𝒪_n`-residue Teichmüller lift on top of it.) -/
+theorem exists_residue_pi {n : ℕ} (hn : 1 ≤ n) {x : ℂ_[p]} (hx : x ∈ K p n)
     (hxnorm : ‖x‖ ≤ 1) :
     ∃ a : ℤ_[p], ‖x - toCp p a‖ ≤ ‖pi p n‖ := by
   classical
