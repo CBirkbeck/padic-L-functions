@@ -610,7 +610,7 @@ open scoped Topology in
 for `‖z‖ < 1`, `(binomialSeries c)(z) = zpPow (1+z) c`. Both sides are continuous in `c : ℤ_[p]`
 (uniform `‖·‖ ≤ ‖z‖^k` bound for LHS; `continuous_zpPow`-analogue for `zpPow`) and agree on
 `c ∈ ℕ` (`binomialSeries_nat`/`seriesEval_one_add_X_pow` vs `zpPow_natCast`); ℕ is dense. -/
-private theorem seriesEval_map_binomialSeries (c : ℤ_[p]) {z : ℂ_[p]} (hz : ‖z‖ < 1) :
+theorem seriesEval_map_binomialSeries (c : ℤ_[p]) {z : ℂ_[p]} (hz : ‖z‖ < 1) :
     seriesEval (PowerSeries.map (toCp p) (PowerSeries.binomialSeries ℤ_[p] c)) z
       = zpPow p (1 + z) c := by
   have hz1 : ‖(1 + z) - 1‖ < 1 := by rwa [add_sub_cancel_left]

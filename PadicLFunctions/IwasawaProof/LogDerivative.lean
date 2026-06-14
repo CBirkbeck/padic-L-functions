@@ -1374,7 +1374,7 @@ variable {p}
 
 /-- A map into `ℤ_p⟦T⟧` is continuous iff continuous in every coefficient
 (`tendsto_iff_coeff_tendsto`). -/
-private theorem continuous_of_coeff {X : Type*} [TopologicalSpace X]
+theorem continuous_of_coeff {X : Type*} [TopologicalSpace X]
     (g : X → PowerSeries ℤ_[p]) (h : ∀ n, Continuous (fun x => PowerSeries.coeff n (g x))) :
     Continuous g := by
   rw [continuous_iff_continuousAt]
@@ -1402,7 +1402,7 @@ private theorem coeff_phiSeries_finite (G : PowerSeries ℤ_[p]) (n : ℕ) :
 
 /-- `φ = subst((1+T)^p−1)` is continuous (each output coefficient is a finite `ℤ_[p]`-linear
 combination of input coefficients). -/
-private theorem phiSeries_continuous :
+theorem phiSeries_continuous :
     Continuous (phiSeries p : PowerSeries ℤ_[p] → PowerSeries ℤ_[p]) := by
   refine continuous_of_coeff _ (fun n => ?_)
   simp_rw [coeff_phiSeries_finite]
@@ -1442,7 +1442,7 @@ private theorem digitMatrix_eq_symm (f : PowerSeries ℤ_[p]) (j : Fin p) :
     (digitMatrix_col_isDigitDecomp (p := p) f j) ?_
   exact ((digitHomeo p).apply_symm_apply (f * (1 + PowerSeries.X) ^ (j : ℕ))).symm
 
-private theorem digitMatrix_continuous (i j : Fin p) :
+theorem digitMatrix_continuous (i j : Fin p) :
     Continuous (fun f : PowerSeries ℤ_[p] => digitMatrix f i j) := by
   rw [show (fun f : PowerSeries ℤ_[p] => digitMatrix f i j)
       = fun f => (digitHomeo p).symm (f * (1 + PowerSeries.X) ^ (j : ℕ)) i from by
@@ -1453,7 +1453,7 @@ private theorem digitMatrix_continuous (i j : Fin p) :
 
 /-- **`𝒩` is continuous** for the coefficientwise topology (`det` of the continuous
 `digitMatrix`). -/
-private theorem normOp_continuous : Continuous (normOp (p := p)) := by
+theorem normOp_continuous : Continuous (normOp (p := p)) := by
   rw [show (normOp (p := p)) = fun f => Matrix.det (digitMatrix f) from by
     funext f; exact normOp_eq_det f]
   simp_rw [Matrix.det_apply]
