@@ -5748,16 +5748,20 @@ The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (
   (3717 jobs). `#print axioms iwasawa_theorem/iwasawa_exact_sequence` = [propext,sorryAx,Classical.
   choice,Quot.sound] — sorryAx confined to the 2 deferred lemmas below.
   **The milestone is NOT a clean DONE** (sorryAx present); the 2 remaining inputs:
-  - **T1206b (Main.lean:107, §13/IMC boundary)** `col_mem_zetaIdeal_iff_mem_cycloTower1`: the
-    inverse-limit cyclic-Λ(𝒢)-module image computation `Col u ∈ I(𝒢)ζ ↔ u ∈ 𝒞_{∞,1}`. GENUINELY
-    blocked on §13 infra: `cycloTower1` = inverse limit of *topological closures* (`cycloClosureOne`),
-    so the level-n group-generation `cycloUnitsPlus_eq_closure_gammas` (generates *global* units, not
-    their closures) cannot be lifted without (i) continuity of `Col` (a deep Coleman-series-limit
-    theorem, unavailable) or (ii) the §13/IMC inverse-limit module structure (`cycloTower1Plus_cyclic_
-    generator`'s full form TeX 3573–3578, currently a vacuous-2nd-conjunct stub). Both milestone
-    theorems depend on this. → deferred to the §13/IMC pass (consistent with the project's §13 deferral
-    + D611–D613 gating). **PLANNING FINDING (errata): plan line ~5774 "NO leaf needs the deferred
-    Λ-module structure (§13/IMC)" was OPTIMISTIC — the faithful §12.5 milestone genuinely requires it.**
+  - **T1206b (Main.lean) `col_mem_zetaIdeal_iff_mem_cycloTower1`** — REDUCED + body sorry-free
+    (2026-06-14, agent a7678f). Agent built AXIOM-CLEAN reusable infrastructure: `galNCU_mul`/
+    `galNCU_one` (Generators.lean — the σ_a-action is a group hom of 𝒰_∞, the backbone of the
+    Λ(𝒢)-module structure), `zpPow_zetaSys_mem_cycloClosureOne` (CyclotomicUnits.lean — ξ_n^a ∈
+    𝒞_{n,1}), `ZpOne_le_cycloTower1` (Main.lean — ℤ_p(1) ⊆ 𝒞_{∞,1}, the injectivity sub-lemma).
+    Both directions of the iff (well-definedness + injectivity via `mem_ker_Col_iff_mem_ZpOne` +
+    `ZpOne_le_cycloTower1`) are now COMPLETE, reducing everything to the single set-identity:
+    **`col_image_cycloTower1_eq_zetaIdeal (hp2) : Col '' 𝒞_{∞,1} = I(𝒢)ζ_p`** (Main.lean:127, the
+    lone new sorry). This is RJW §12.4 `LemmaGeneratorCinfty1` content (TeX 3553–3578, the cyclic-
+    Λ(𝒢)-module generation of 𝒞_{∞,1} by the Teichmüller-corrected `wγ(a₀)`) — IN-SCOPE §12.4 (the
+    `cycloTower1Plus_cyclic_generator` stub, deferred to "E12.4"), NOT §13. Attacking via E12.4.
+    NOTE the canonical generator a₀ is not ≡1 mod p, so the principal generator is `wγ(a₀)` (Teich
+    correction), and NormCompatUnits has no topology yet (so route via the cyclic-module generation,
+    not Col-continuity).
   - **T1206a (Main.lean:263 / LocalUnits.lean, §12-bounded)** the Galois fixed-field characterisation
     `𝒰⁺_{n,1} = (𝒰_{n,1})^{⟨c⟩}` (`K_n⁺ = (K_n)^{σ_{-1}}`) needed for `colDescentPlusMul_bijective`'s
     injectivity (plus-equivariance of `Col`). KPlus is defined concretely (ξ+ξ⁻¹) with the Galois

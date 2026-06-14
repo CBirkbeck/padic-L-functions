@@ -1004,4 +1004,46 @@ theorem cycloTower1Plus_cyclic_generator {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp
           ∃ _μ : PadicMeasure p (PadicMeasure.GPlus p), True := by
   refine ⟨fun n hn => gammaUnit_congr_natCast p ha hn, u, hu, fun w _ => ⟨0, trivial⟩⟩
 
+/-! ## The Galois `σ_a`-stability of the cyclotomic tower (RJW §12.4 infrastructure)
+
+The `𝒢`-action `σ_a = galNCU a` permutes the cyclotomic units, hence stabilises every
+layer of the cyclotomic tower `𝒞_{∞,1}`. This is the structural backbone of RJW's
+inverse-limit `Λ(𝒢)`-module description of `𝒞_{∞,1}` (TeX 3553–3578): the action is
+levelwise the field automorphism `σ_a` of `K_n`, which sends the cyclotomic generators
+`ξ_n, ξ_n^b − 1` to cyclotomic words (`σ_a(ξ_n) = ξ_n^{t}`, `σ_a(ξ_n^b−1) = ξ_n^{tb}−1`),
+preserves global integrality (it is a `ℚ`-algebra automorphism of `F_n = ℚ(ξ_n)`),
+and is an isometry (`norm_galAut`), so it preserves both the principal-unit condition and
+the `p`-adic closures. The homomorphism laws `galNCU_mul`/`galNCU_one` express that `σ_a`
+is a group endomorphism of `𝒰_∞`. -/
+
+/-- `σ_a` is a group homomorphism of `𝒰_∞`: `σ_a(u·v) = σ_a(u)·σ_a(v)`. Levelwise this is
+`map_mul` of the field automorphism `galAut p a n` (`galAutUnit_val`). -/
+theorem galNCU_mul (a : ℤ_[p]ˣ) (u v : NormCompatUnits p) :
+    galNCU p a (u * v) = galNCU p a u * galNCU p a v := by
+  refine NormCompatUnits.ext (funext fun n => Units.ext ?_)
+  change ((galNCU p a (u * v)).elems n : ℂ_[p])
+    = ((galNCU p a u).elems n * (galNCU p a v).elems n : ℂ_[p]ˣ)
+  rw [Units.val_mul]
+  change (galAut p a n ⟨((u * v).elems n : ℂ_[p]), _⟩ : ℂ_[p])
+    = (galAut p a n ⟨(u.elems n : ℂ_[p]), _⟩ : ℂ_[p])
+      * (galAut p a n ⟨(v.elems n : ℂ_[p]), _⟩ : ℂ_[p])
+  rw [show (⟨((u * v).elems n : ℂ_[p]), (Subring.mem_inf.1 ((u * v).mem n)).1⟩ : K p n)
+      = ⟨(u.elems n : ℂ_[p]), (Subring.mem_inf.1 (u.mem n)).1⟩
+        * ⟨(v.elems n : ℂ_[p]), (Subring.mem_inf.1 (v.mem n)).1⟩ from
+    Subtype.ext (by change ((u.elems n * v.elems n : ℂ_[p]ˣ) : ℂ_[p]) = _; rw [Units.val_mul]; rfl),
+    map_mul]
+  rfl
+
+/-- `σ_a(1) = 1` (the field automorphism fixes `1`). -/
+theorem galNCU_one (a : ℤ_[p]ˣ) : galNCU p a (1 : NormCompatUnits p) = 1 := by
+  refine NormCompatUnits.ext (funext fun n => Units.ext ?_)
+  -- the level-`n` value is `σ_a(⟨1, _⟩) = σ_a(1) = 1`
+  have hsub : (⟨((1 : NormCompatUnits p).elems n : ℂ_[p]),
+      (Subring.mem_inf.1 ((1 : NormCompatUnits p).mem n)).1⟩ : K p n) = 1 := Subtype.ext rfl
+  calc ((galNCU p a (1 : NormCompatUnits p)).elems n : ℂ_[p])
+      = (galAut p a n ⟨((1 : NormCompatUnits p).elems n : ℂ_[p]),
+          (Subring.mem_inf.1 ((1 : NormCompatUnits p).mem n)).1⟩ : ℂ_[p]) := rfl
+    _ = (galAut p a n (1 : K p n) : ℂ_[p]) := by rw [hsub]
+    _ = ((1 : NormCompatUnits p).elems n : ℂ_[p]ˣ) := by rw [map_one]; rfl
+
 end PadicLFunctions.Coleman

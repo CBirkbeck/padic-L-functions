@@ -502,6 +502,124 @@ theorem cyclo_mem_unitsTower1 {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (hp2 : p ≠ 2
     cyclo p ha hp2 ∈ unitsTower1 p :=
   cycloTower1_le_unitsTower1 p (cyclo_mem_cycloTower1 p ha hp2 ha1)
 
+/-! ## The Tate twist `ℤ_p(1)` sits inside the cyclotomic tower (RJW §12.5, the
+injectivity sub-lemma)
+
+The systems `(ξ_n^a)_n` of `ℤ_p(1)` are limits of the integral powers `(ξ_n^k)_k` of the
+cyclotomic root of unity `ξ_n`. Each `ξ_n^k` is a cyclotomic unit lying in `𝒰_{n,1}`
+(`‖ξ_n^k − 1‖ < 1`, RJW: a power of the uniformiser's root of unity is principal), so the
+continuous `ℤ_p`-power `ξ_n^a = zpPow ξ_n a` lands in the p-adic closure `𝒞_{n,1}`. This
+is the inclusion `ℤ_p(1) ⊆ 𝒞_{∞,1}` used in the injectivity half of the image
+computation. -/
+
+/-- `ξ_{p^n} ≠ 0` (a nonzero root of unity). -/
+private theorem zetaSys_ne_zero' {n : ℕ} : zetaSys p n ≠ 0 :=
+  norm_ne_zero_iff.mp (by
+    rw [norm_primitiveRoot_eq_one' p (zetaSys_primitiveRoot p n)]; exact one_ne_zero)
+
+/-- `ξ_{p^n}` as a unit of `ℂ_[p]ˣ` (a nonzero root of unity). -/
+private noncomputable def zetaSysU {n : ℕ} (_hn : 1 ≤ n) : ℂ_[p]ˣ :=
+  Units.mk0 (zetaSys p n) (zetaSys_ne_zero' p)
+
+private theorem zetaSysU_val {n : ℕ} (hn : 1 ≤ n) : (zetaSysU p hn : ℂ_[p]) = zetaSys p n :=
+  Units.val_mk0 _
+
+/-- `‖ξ_{p^n} − 1‖ < 1`: the root of unity is a principal unit (`= ‖π_n‖ < 1`). -/
+private theorem norm_zetaSys_sub_one_lt_one' {n : ℕ} (hn : 1 ≤ n) :
+    ‖zetaSys p n - 1‖ < 1 := by
+  have := norm_pi_lt_one p hn; rwa [pi] at this
+
+/-- `ξ_{p^n}^k ∈ 𝒟_n` (the integral power of the root of unity is a cyclotomic unit):
+its value `ξ_n^k ∈ closure(cycloGenSet)` (a power of the generator `ξ_n`) and it is a
+global unit (a root of unity is integral with integral inverse, and lies in `F_n`). -/
+private theorem zetaSysU_pow_mem_cycloUnits {n : ℕ} (hn : 1 ≤ n) (k : ℕ) :
+    zetaSysU p hn ^ k ∈ cycloUnits p n := by
+  rw [cycloUnits, Subgroup.mem_inf]
+  have hgen : zetaSysU p hn ∈ cycloGenSet p n := Or.inl (zetaSysU_val p hn)
+  refine ⟨Subgroup.pow_mem _ (Subgroup.subset_closure hgen) k, ?_, ?_, ?_⟩
+  · -- `ξ_n^k ∈ F_n`
+    rw [Units.val_pow_eq_pow_val, zetaSysU_val]
+    exact pow_mem (IntermediateField.mem_adjoin_simple_self ℚ _) k
+  · -- `ξ_n^k` integral over `ℤ`
+    rw [Units.val_pow_eq_pow_val, zetaSysU_val]
+    exact ((zetaSys_primitiveRoot p n).isIntegral (pow_pos hp.out.pos n)).pow k
+  · -- `(ξ_n^k)⁻¹ = (ξ_n⁻¹)^k` integral over `ℤ` (`ξ_n⁻¹ = ξ_n^{p^n−1}` is a root of unity)
+    rw [show (((zetaSysU p hn ^ k)⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = ((zetaSys p n)⁻¹) ^ k from by
+      rw [Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val, zetaSysU_val, inv_pow]]
+    refine IsIntegral.pow ?_ k
+    -- `ξ_n⁻¹ = ξ_n^{p^n − 1}`, an integral power
+    rw [show (zetaSys p n)⁻¹ = (zetaSys p n) ^ (p ^ n - 1) from ?_]
+    · exact ((zetaSys_primitiveRoot p n).isIntegral (pow_pos hp.out.pos n)).pow _
+    · refine inv_eq_of_mul_eq_one_left ?_
+      rw [← pow_succ, Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.out.pos),
+        (zetaSys_primitiveRoot p n).pow_eq_one]
+
+/-- `ξ_{p^n}` is a principal local unit: `ξ_n ∈ 𝒰_{n,1}` (norm `1`, `≡ 1 mod 𝔭_n`). -/
+private theorem zetaSysU_mem_localUnitsOne {n : ℕ} (hn : 1 ≤ n) :
+    zetaSysU p hn ∈ localUnitsOne p n := by
+  have hξ1 : ‖zetaSys p n‖ = 1 := norm_primitiveRoot_eq_one' p (zetaSys_primitiveRoot p n)
+  have hmemO : (zetaSysU p hn : ℂ_[p]) ∈ O p n := by
+    rw [zetaSysU_val, O, Subring.mem_inf]; exact ⟨zetaSys_mem_K p n, le_of_eq hξ1⟩
+  have hinvval : (((zetaSysU p hn)⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) = (zetaSys p n)⁻¹ := by
+    rw [Units.val_inv_eq_inv_val, zetaSysU_val]
+  have hinvnorm : ‖(zetaSys p n)⁻¹‖ ≤ 1 := le_of_eq (by rw [norm_inv, hξ1, inv_one])
+  have hmemOinv : (((zetaSysU p hn)⁻¹ : ℂ_[p]ˣ) : ℂ_[p]) ∈ O p n := by
+    rw [hinvval, O, Subring.mem_inf]
+    exact ⟨(K p n).inv_mem (zetaSys_mem_K p n), hinvnorm⟩
+  rw [mem_localUnitsOne_iff]
+  exact ⟨⟨hmemO, hmemOinv⟩, by rw [zetaSysU_val]; exact norm_zetaSys_sub_one_lt_one' p hn⟩
+
+/-- The `ℤ_p`-power `ξ_{p^n}^a = zpPow ξ_n a` of the root of unity lands in `𝒞_{n,1}`:
+it is a continuous image of `ℤ_p` agreeing with the integral powers `ξ_n^k ∈ 𝒟_n` on
+the (dense) naturals, so it lies in the p-adic closure `(𝒟_n)⁻`; and it is a principal
+unit (`zpPow_mem_localUnitsOne`, `ξ_n ∈ 𝒰_{n,1}`). -/
+theorem zpPow_zetaSys_mem_cycloClosureOne {n : ℕ} (hn : 1 ≤ n) (a : ℤ_[p])
+    {x : ℂ_[p]ˣ} (hx : (x : ℂ_[p]) = zpPow p (zetaSys p n) a) :
+    x ∈ cycloClosureOne p n := by
+  have hz1 : ‖zetaSys p n - 1‖ < 1 := norm_zetaSys_sub_one_lt_one' p hn
+  -- continuity of `c ↦ zpPow ξ_n c`
+  have hcont : Continuous (zpPow p (zetaSys p n)) := by
+    have h : zpPow p (zetaSys p n) = (PadicInt.addChar_of_value_at_one (zetaSys p n - 1)
+        (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hz1) : ℤ_[p] → ℂ_[p]) := by
+      funext c; rw [zpPow, dif_pos (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mpr hz1)]
+    rw [h]; exact PadicInt.continuous_addChar_of_value_at_one _
+  -- the continuous unit-power `F : ℤ_[p] → ℂ_[p]ˣ`, `F c = ⟨ξ_n^c, ξ_n^{−c}⟩`
+  set F : ℤ_[p] → ℂ_[p]ˣ := fun c => ⟨zpPow p (zetaSys p n) c, zpPow p (zetaSys p n) (-c),
+    by rw [← zpPow_add p hz1, add_neg_cancel, show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) by norm_cast,
+      zpPow_natCast p hz1, pow_zero],
+    by rw [← zpPow_add p hz1, neg_add_cancel, show (0 : ℤ_[p]) = ((0 : ℕ) : ℤ_[p]) by norm_cast,
+      zpPow_natCast p hz1, pow_zero]⟩ with hF
+  have hFval : ∀ c, (F c : ℂ_[p]) = zpPow p (zetaSys p n) c := fun _ => rfl
+  have hFcont : Continuous F :=
+    Units.continuous_iff.2 ⟨hcont, hcont.comp continuous_neg⟩
+  -- `F (k : ℕ) = ξu^k` (matches the integral powers)
+  have hFnat : ∀ k : ℕ, F (k : ℤ_[p]) = zetaSysU p hn ^ k := by
+    intro k
+    refine Units.ext ?_
+    rw [hFval, zpPow_natCast p hz1, Units.val_pow_eq_pow_val, zetaSysU_val]
+  -- `x = F a` and `range F ⊆ closure(↑𝒟_n)`, so `x ∈ (𝒟_n)⁻`
+  have hxF : x = F a := Units.ext (by rw [hFval]; exact hx)
+  have hclos : x ∈ (cycloUnits p n).topologicalClosure := by
+    -- `F a ∈ closure(↑𝒟_n)` by density of `ℕ ↪ ℤ_[p]` and `F(ℕ) ⊆ 𝒟_n`
+    have hrange : Set.range F ⊆ closure (cycloUnits p n : Set ℂ_[p]ˣ) := by
+      -- `range F = F '' (closure (range cast)) ⊆ closure (F '' range cast) = closure {ξu^k}`
+      have h1 : Set.range F = F '' (closure (Set.range (Nat.cast : ℕ → ℤ_[p]))) := by
+        rw [PadicInt.denseRange_natCast.closure_range, Set.image_univ]
+      rw [h1]
+      refine (image_closure_subset_closure_image hFcont).trans (closure_mono ?_)
+      rw [← Set.range_comp]
+      rintro _ ⟨k, rfl⟩
+      show (F ∘ Nat.cast) k ∈ (cycloUnits p n : Set ℂ_[p]ˣ)
+      rw [Function.comp_apply, hFnat k]
+      exact zetaSysU_pow_mem_cycloUnits p hn k
+    have : x ∈ closure (cycloUnits p n : Set ℂ_[p]ˣ) := by rw [hxF]; exact hrange ⟨a, rfl⟩
+    rwa [← Subgroup.topologicalClosure_coe, SetLike.mem_coe] at this
+  -- the principal-unit part comes from `zpPow_mem_localUnitsOne` at `ξ_n ∈ 𝒰_{n,1}`
+  obtain ⟨v, hvval, hvmem⟩ := zpPow_mem_localUnitsOne p (zetaSysU_mem_localUnitsOne p hn) a
+  have hxv : x = v := Units.ext (by rw [hx, hvval, zetaSysU_val])
+  rw [cycloClosureOne, Subgroup.mem_inf, cycloClosure, Subgroup.mem_inf]
+  exact ⟨⟨hclos, by rw [hxv]; exact hvmem.1⟩, by rw [hxv]; exact hvmem⟩
+
 end Coleman
 
 end PadicLFunctions
