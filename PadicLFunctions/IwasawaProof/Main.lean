@@ -123,17 +123,43 @@ available) or the inverse-limit cyclic-module description of `cycloTower1Plus_cy
 milestones (the `Col` hom property, the descent through `QuotientGroup.lift`, the plus-part
 transport `plusEquiv`/`projPlus`/`isCompl_plusPart_minusPart`, the `ℤ_p(1)^{⟨c⟩}=0` collapse,
 surjectivity onto `ker(χ-moment)` via `range_Col_eq_ker_chiMoment`) are proved without
-further `sorry`. -/
+further `sorry`.
+
+**§12.4 infrastructure now in place (`Generators.lean`, all sorry-free, axiom-clean).**
+The cyclic-`Λ(𝒢)`-module scaffolding for RJW `LemmaGeneratorCinfty1` is built:
+* `galNCU_mul`/`galNCU_one` — `σ_a` is a group endomorphism of `𝒰_∞`;
+* `galNCU_mem_unitsTower1` — `σ_a` preserves the principal-unit tower `𝒰_{∞,1}` (isometry
+  `norm_galAut` fixing `1`), the levelwise half of the `𝒢`-stability of the tower;
+* `Col_galNCU_eq_dirac_mul` — the generator-image identity `Col(σ_a u) = [a]·Col u` in
+  convolution form (`Col_galNCU` + `dirac_mul_eq_pushforward`), i.e. the scalar `[σ_a]`-action
+  matching `Col(λ·c) = λ·Col(c)` for the group-element scalars `λ = [σ_a]`.
+With these, the image computation reduces to TWO genuinely-deferred inputs (both needed):
+* **(I) the generator `wγ(a₀) ∈ 𝒞_{∞,1}` with `Col(wγ(a₀)) = ±zetaNum a₀`.** The cyclotomic
+  system `cyclo a₀` has `Col(cyclo a₀) = −zetaNum a₀` (`Col_cyclo`) but is *not* in `𝒞_{∞,1}`:
+  `a₀` (`exists_nat_topological_generator`, a primitive root mod `p²`) is `≢ 1 mod p`, so
+  `c_n(a₀) ≡ a₀ ≢ 1 mod 𝔭_n` is not a principal unit (`cyclo_mem_cycloTower1` needs
+  `a₀ ≡ 1 mod p`). The Teichmüller correction `wγ_{n,a₀} = w·ξ^{(1−a₀)/2}·c_n(a₀)` with
+  `w ∈ μ_{p−1}`, `a₀w ≡ 1`, fixes the residue — but assembling `(wγ_{n,a₀})_n` as a
+  `NormCompatUnits` needs the `𝒪_n`-residue Teichmüller lift `w` (the deferred
+  `normCompat_eq_teichmuller_mul_principal` blocker, `Equivariance.lean`) and the
+  norm-compatibility of the `n`-dependent half-power tower `ξ_n^{halfExp(a₀,n)}`.
+* **(II) the closure-crossing / density.** Even with the generator, both inclusions need to
+  pass from the group-element scalars `[σ_a]` (whose `ℤ_p`-span is *dense* in `Λ(𝒢)`) to all
+  of `Λ(𝒢)`, which requires continuity of `Col` (unavailable) or closedness of `I(𝒢)ζ_p`
+  plus density of the `Λ(𝒢)`-span of `wγ(a₀)` in `𝒞_{∞,1}` (the inverse-limit cyclic-module
+  description, `cycloTower1Plus_cyclic_generator`, TeX 3573–3578, deferred §13). -/
 theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
     (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
-  -- BLOCKED: needs `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p`. The genuine minimal blocker is the
-  -- inverse-limit `Λ(𝒢)`-module structure of `𝒞_{∞,1}` (RJW TeX 3553–3578) together with
-  -- the closure-crossing (continuity of `Col`, or closedness of `I(𝒢)ζ_p` and density of
-  -- the `Λ(𝒢)`-span of `c(a₀)` in `𝒞_{∞,1}`). Neither is available in the project; see the
-  -- module note. The two named ingredients to build (either suffices):
-  --   (A) `Continuous (Col p)` + `IsClosed (↑(zetaIdeal p hp2))`, or
-  --   (B) `cycloTower1 p = ⨆-closure of the galNCU-translates of (Teichmüller-corrected
-  --       generator wγ(a₀))`, i.e. the cyclic-`Λ(𝒢)`-module structure.
+  -- BLOCKED on the genuine §13/IMC-deferred core `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p`. The §12.4
+  -- cyclic-`Λ(𝒢)`-module scaffolding is built (`Generators.lean`: `galNCU_mul`/`galNCU_one`,
+  -- `galNCU_mem_unitsTower1`, `Col_galNCU_eq_dirac_mul`); see the module note. Two inputs
+  -- remain, BOTH genuinely deferred (neither available in the project):
+  --   (I)  the generator `wγ(a₀) ∈ cycloTower1 p` with `Col (wγ a₀) = ±zetaNum a₀` — needs the
+  --        `𝒪_n`-residue Teichmüller lift `w` (deferred `normCompat_eq_teichmuller_mul_principal`)
+  --        + norm-compatibility of the half-power tower `ξ_n^{halfExp a₀ n}`;
+  --   (II) the closure-crossing: `Continuous (Col p)`, OR `IsClosed (↑(zetaIdeal p hp2))`
+  --        together with density of the `Λ(𝒢)`-span of `wγ(a₀)` in `cycloTower1 p`
+  --        (the inverse-limit cyclic-module description, `cycloTower1Plus_cyclic_generator`).
   sorry
 
 theorem col_mem_zetaIdeal_iff_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}

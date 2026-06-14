@@ -1046,4 +1046,58 @@ theorem galNCU_one (a : ℤ_[p]ˣ) : galNCU p a (1 : NormCompatUnits p) = 1 := b
     _ = (galAut p a n (1 : K p n) : ℂ_[p]) := by rw [hsub]
     _ = ((1 : NormCompatUnits p).elems n : ℂ_[p]ˣ) := by rw [map_one]; rfl
 
+/-- The level value of `σ_a u`: `(σ_a u)_n = σ_a(⟨u_n, _⟩)` as elements of `ℂ_[p]` (the
+defining levelwise application of the field automorphism `galAut`). -/
+theorem galNCU_elems_val (a : ℤ_[p]ˣ) (u : NormCompatUnits p) (n : ℕ) :
+    (((galNCU p a u).elems n : ℂ_[p]ˣ) : ℂ_[p])
+      = (galAut p a n ⟨(u.elems n : ℂ_[p]), (Subring.mem_inf.1 (u.mem n)).1⟩ : ℂ_[p]) :=
+  rfl
+
+/-- **`σ_a` preserves the principal-unit tower `𝒰_{∞,1}`** (RJW §12.4: the `𝒢`-action
+stabilises the level filtration of the local units). Levelwise: `σ_a u_n` and its inverse
+stay in `O_n` (the `NormCompatUnits` integrality of `σ_a u`), and `σ_a` is an isometry fixing
+`1` (`norm_galAut`, `map_one`), so `‖σ_a u_n − 1‖ = ‖σ_a(u_n − 1)‖ = ‖u_n − 1‖ < 1`. -/
+theorem galNCU_mem_unitsTower1 (a : ℤ_[p]ˣ) {u : NormCompatUnits p}
+    (hu : u ∈ unitsTower1 p) : galNCU p a u ∈ unitsTower1 p := by
+  intro n hn
+  have hone := ((mem_localUnitsOne_iff p).1 (hu n hn)).2
+  set y : K p n := ⟨(u.elems n : ℂ_[p]), (Subring.mem_inf.1 (u.mem n)).1⟩ with hy
+  have hval : (((galNCU p a u).elems n : ℂ_[p]ˣ) : ℂ_[p]) = (galAut p a n y : ℂ_[p]) := rfl
+  refine (mem_localUnitsOne_iff p).2 ⟨?_, ?_⟩
+  · -- `σ_a u_n ∈ 𝒰_n`: the value and inverse-value lie in `O_n` (the `NormCompatUnits` fields)
+    exact (mem_localUnits_iff p).2 ⟨(galNCU p a u).mem n, by
+      rw [Units.val_inv_eq_inv_val]; exact (galNCU p a u).inv_mem n⟩
+  · -- `‖σ_a u_n − 1‖ = ‖u_n − 1‖ < 1` (isometry fixing `1`)
+    rw [hval]
+    have h1 : (galAut p a n y : ℂ_[p]) - 1 = (galAut p a n (y - 1) : ℂ_[p]) := by
+      rw [map_sub, map_one]; rfl
+    rw [h1, norm_galAut p a (y - 1),
+      show ((y - 1 : K p n) : ℂ_[p]) = (u.elems n : ℂ_[p]) - 1 from by
+        change ((y : K p n) : ℂ_[p]) - ((1 : K p n) : ℂ_[p]) = _; rw [hy]; rfl]
+    exact hone
+
+/-- The convolution form of the `Λ(𝒢)`-equivariance of `Col` (RJW cor:G-eq, TeX 3217–3243):
+`Col(σ_a u) = [a]·Col u`, the multiplication by the Dirac mass `[a] = dirac a` in the Iwasawa
+algebra `Λ(ℤ_p^×)`. This is `Col_galNCU` (`Col(σ_a u) = π_*(Col u)` for `π = (a·)`) rewritten
+through `dirac a * μ = pushforward (a·) μ`: `dirac a` convolved with `μ` integrates `f(a·)`,
+exactly the pushforward along left multiplication. Together with `galNCU_mul`/`galNCU_one` this
+is the scalar `[a]`-action of the cyclic-`Λ(𝒢)`-module description of `𝒞_{∞,1}`. -/
+theorem dirac_mul_eq_pushforward (a : ℤ_[p]ˣ) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    (PadicMeasure.dirac p a) * μ = PadicMeasure.pushforward p (unitsMulLeftCM p a) μ := by
+  refine LinearMap.ext fun f => ?_
+  rw [PadicMeasure.pushforward_apply]
+  change PadicMeasure.dirac p a
+      (PadicMeasure.innerInt p μ (f.comp (PadicMeasure.mulCM₂ ℤ_[p]ˣ))) = _
+  rw [PadicMeasure.dirac_apply, PadicMeasure.innerInt_apply]
+  congr 1
+
+/-- **`Col(σ_a u) = [a]·Col u`** (RJW cor:G-eq, convolution form): the `𝒢`-translate `σ_a u`
+maps under `Col` to the Dirac translate `[a]·Col u` in `Λ(ℤ_p^×)`. Combines `Col_galNCU`
+(pushforward form) with `dirac_mul_eq_pushforward`. The scalar `[a]` ranges over the group
+elements `{[σ_a]}` whose `ℤ_p`-span is dense in `Λ(𝒢)`; this is the generator-image identity
+feeding the `I(𝒢)ζ_p`-image computation `Col(λ·c) = λ·Col(c)`. -/
+theorem Col_galNCU_eq_dirac_mul (a : ℤ_[p]ˣ) (u : NormCompatUnits p) :
+    Col p (galNCU p a u) = (PadicMeasure.dirac p a) * Col p u := by
+  rw [Col_galNCU p a u, dirac_mul_eq_pushforward]
+
 end PadicLFunctions.Coleman

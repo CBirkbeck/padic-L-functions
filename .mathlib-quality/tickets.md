@@ -5762,6 +5762,22 @@ The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (
     NOTE the canonical generator a₀ is not ≡1 mod p, so the principal generator is `wγ(a₀)` (Teich
     correction), and NormCompatUnits has no topology yet (so route via the cyclic-module generation,
     not Col-continuity).
+  - **CONVERGED BOUNDARY (2026-06-14, THREE agents ~600k tokens: a8d7585 → a7678f → a820a4)**: the
+    milestone is now reduced to the SINGLE identity `col_image_cycloTower1_eq_zetaIdeal (hp2) :
+    Col '' 𝒞_{∞,1} = I(𝒢)ζ_p` (Main.lean:151). All three agents independently converged on the SAME
+    precise blocker, needing TWO genuinely PROJECT-DEFERRED inputs:
+    (I) the principal generator `wγ(a₀) ∈ 𝒞_{∞,1}` with `Col(wγ a₀) = ±zetaNum a₀` — needs the
+        **𝒪_n-residue Teichmüller** lift `w` = exactly the **deferred T1202a**
+        `normCompat_eq_teichmuller_mul_principal` (Equivariance.lean:159; residue hom 𝒪_n^×→𝔽_p^× +
+        section + norm-residue compat = a dedicated residue-field-of-𝒪_n / local-CFT pass);
+    (II) the closure-crossing: `Continuous (Col p)` (unavailable; Col is a limit construction) OR
+        `IsClosed (↑zetaIdeal)` + the inverse-limit cyclic-Λ(𝒢)-module description
+        (`cycloTower1Plus_cyclic_generator` full form, TeX 3573–3578) = **deferred §13/IMC**.
+    Reusable AXIOM-CLEAN infra banked en route (a7678f + a820a4, 8 lemmas): `galNCU_mul`/`_one`/
+    `_elems_val`/`_mem_unitsTower1`, `Col_galNCU_eq_dirac_mul`, `dirac_mul_eq_pushforward`,
+    `zpPow_zetaSys_mem_cycloClosureOne`, `ZpOne_le_cycloTower1`. The milestone's full closure genuinely
+    requires the T1202a residue-field pass + §13 — both dedicated passes the project's plan defers
+    (rule #6 "don't widen ad hoc"; D611–D613 gating; MainConjecture is blueprint-only).
   - **T1206a (Main.lean:263 / LocalUnits.lean, §12-bounded)** the Galois fixed-field characterisation
     `𝒰⁺_{n,1} = (𝒰_{n,1})^{⟨c⟩}` (`K_n⁺ = (K_n)^{σ_{-1}}`) needed for `colDescentPlusMul_bijective`'s
     injectivity (plus-equivariance of `Col`). KPlus is defined concretely (ξ+ξ⁻¹) with the Galois
