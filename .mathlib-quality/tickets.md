@@ -5519,7 +5519,7 @@ LARGEST/DEEPEST section; the board stages the two critical-path sub-developments
 b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller correction w).
 
 ### [T1201] **E12.1 LINCHPIN: the Galois action on the tower** (GaloisAction.lean)
-- **Status**: in_progress (2026-06-14, beastmode §12 wave 1) | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
+- **Status**: in_progress (2026-06-14; agent filled 8/9 — galAut via autEquivPow + autToPow_zetaSys_eq root-independence bridge; levelNorm_galAut (the RISK-flagged norm-equivariance) via Algebra.norm_eq_of_equiv_equiv; THE LINCHPIN colemanSeries_galNCU via seriesEval_subst + zpPow_zetaSys + galAut_evalPi; galNCU/galSeries; ~25 helpers; norm_galAut isometry. All 8 axiom-clean (propext/Classical.choice/Quot.sound). 4 show→change lints fixed. Remaining: Col_galNCU SPAWNED as T1201b (measure-side σ_a-equivariance, key bridge mahlerTransform_sigma exists).) | **Sub-tickets**: T1201b | **File**: IwasawaProof/GaloisAction.lean | **Depends on**: §10/§11 done
 - **Parallel**: yes (vs T1203 — different file) | **Type**: defs + lemmas
 #### Statement (skeleton canonical)
 `galAut (a : ℤ_[p]ˣ) (n) : K p n ≃ₐ[ℚ_[p]] K p n`; `galAut_zetaSys` (σ_a ξ_n = ξ_n^{a_n});
@@ -5631,7 +5631,7 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Sizing**: ~180 LOC.
 
 ### [T1205] E12.4: generators of the cyclotomic units (Generators.lean)
-- **Status**: open | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
+- **Status**: in_progress (2026-06-14, beastmode §12 wave 2 — galAut ready) | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
 - **Parallel**: yes (vs T1203/T1204 — needs only T1201's finite Galois action) | **Type**: defs + lemmas
 #### Statement
 `gammaUnit` (γ_{n,a}); `gammaUnit_mem_cycloUnitsPlus`; `cycloUnitsPlus_eq_closure_gammas`
@@ -5779,3 +5779,28 @@ and the `C`-submodule explicitly).
   `modEqPow_of_tendsto`, `eq_of_forall_modEqPow`).
 - **Sources**: RJW lem:log der red mod p + lem:B mod p + thm:log der proof.
 - **Sizing**: ~150 LOC (the successive-approximation + the A=B assembly).
+
+### [T1201b] Col_galNCU — measure-side σ_a-equivariance of the Coleman map
+- **Status**: open | **File**: IwasawaProof/GaloisAction.lean | **Parent**: T1201
+- **Depends on**: T1201 (8/9 done — galAut/galNCU/galSeries/colemanSeries_galNCU + ~25 helpers) | **Type**: theorem
+#### Statement (finalized by T1201, authorised statement-fix)
+`Col_galNCU (a : ℤ_[p]ˣ) (u : NormCompatUnits p) : Col p (galNCU p a u)
+= PadicMeasure.pushforward p (unitsMulLeftCM p a) (Col p u)` where
+`unitsMulLeftCM a = ⟨fun v => a * v, _⟩ : C(ℤ_[p]ˣ, ℤ_[p]ˣ)` (define it). The last
+remaining sorry in GaloisAction.lean (line ~842).
+#### Proof sketch (T1201 agent's hand-off; source TeX 3217–3234)
+Unfold `Col u = unitsCmul (invCM) ((𝒜⁻¹(dlog (colemanSeries u))).comp extendByZero)`.
+1. `colemanSeries_galNCU` (DONE) gives `colemanSeries (galNCU a u) = galSeries a (colemanSeries u)`.
+2. dlog chain rule: `∂log(σ_a f) = a · galSeries a (∂log f)` — via `PowerSeries.derivative_subst`
+   + `(1+T)·(binomialSeries a)' = a · binomialSeries a` (the `del`-of-binomial identity).
+3. `𝒜⁻¹ ∘ galSeries a = PadicMeasure.sigma a ∘ 𝒜⁻¹` — this IS the existing
+   `PadicMeasure.mahlerTransform_sigma` (Measure/Toolbox.lean:262), since
+   `galSeries = subst (binomialSeries a − 1)`.
+4. The units-side `x⁻¹` (`invCM`) absorbs the `a` factor: `∂⁻¹∘σ_a = a⁻¹ σ_a∘∂⁻¹`
+   (TeX 3223) — the §4 zetaNum `x⁻¹`-renormalisation; restriction-to-ℤ_[p]ˣ is
+   equivariant under the pushforward `unitsMulLeftCM a`.
+- **Mathlib/project**: `PadicMeasure.mahlerTransform_sigma` (Toolbox.lean:262 — the key
+  bridge, already present), `PadicMeasure.sigma`, `PadicMeasure.pushforward`,
+  `PowerSeries.derivative_subst`, `colemanSeries_galNCU` + the §4 `invCM`/`unitsCmul` API.
+- **Sources**: RJW §12.1 Prop (TeX 3217–3234).
+- **Sizing**: ~80–120 LOC (~4–5 measure-side lemmas; the key bridge exists).
