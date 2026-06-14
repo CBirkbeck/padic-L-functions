@@ -82,7 +82,7 @@ splits it, so $`\sU_n=\mu_{p-1}\times\sU_{n,1}`. Passing to the inverse limit ov
 $`n` gives the claim.
 :::
 
-:::lemma_ "iwproof-mu-killed"
+:::lemma_ "iwproof-mu-killed" (lean := "PadicLFunctions.Coleman.Col_eq_zero_of_torsion")
 The subgroup $`\mu_{p-1}\subset\sU_\infty` is killed by the Coleman map. In
 particular no information is lost in restricting $`\Col` to $`\sU_{\infty,1}`.
 :::
@@ -95,7 +95,7 @@ $`0` under $`\Col`. Using {uses "iwproof-units-split"}[], this shows the
 restriction to $`\sU_{\infty,1}` loses nothing.
 :::
 
-:::lemma_ "iwproof-ker-dlog"
+:::lemma_ "iwproof-ker-dlog" (lean := "PadicLFunctions.Coleman.dlog_eq_zero_normOp_fixed")
 The kernel of $`\dlog` on $`\Zp[[T]]^\times` consists of the constant series.
 Consequently the kernel of $`\dlog` restricted to
 $`\WW=(\Zp[[T]]^\times)^{\cN=\mathrm{id}}` is exactly $`\mu_{p-1}`.
@@ -115,7 +115,7 @@ The Galois group $`\GGam=\Gal(F_\infty/\Q)\cong\Gal(K_\infty/\Qp)` acts on
 $`\sU_\infty`. For $`a\in\Zpx` we write $`\sigma_a\in\GGam` for the element with
 $`\chi(\sigma_a)=a`.
 
-:::proposition "iwproof-galois-equiv"
+:::proposition "iwproof-galois-equiv" (lean := "PadicLFunctions.Coleman.Col_galNCU")
 The Coleman map $`\Col : \sU_\infty \to \Lam(\GGam)` is $`\GGam`-equivariant: for all
 $`a\in\Zpx` and $`u\in\sU_\infty`, $`\Col(\sigma_a u) = \sigma_a\,\Col(u)`.
 :::
@@ -139,7 +139,7 @@ Since the $`\GGam`-action fixes $`1\in\mu_{p-1}` it stabilises $`\sU_{\infty,1}`
 this action commutes with the $`\Zp`-action there. Hence $`\sU_{\infty,1}` is a
 $`\Lam(\GGam)`-module, and we may summarise the section as follows.
 
-:::corollary "coleman-equivariance"
+:::corollary "coleman-equivariance" (lean := "PadicLFunctions.Coleman.Col_lambdaG_equivariant")
 The Coleman map restricts to a homomorphism of $`\Lam(\GGam)`-modules
 $$`\Col : \sU_{\infty,1} \longrightarrow \Lam(\GGam).`
 :::
@@ -165,12 +165,12 @@ $`u\mapsto f_u` is an isomorphism and the last two maps $`\partial^{-1}`,
 $`\sA^{-1}` are isomorphisms, so everything reduces to the two middle maps: the
 logarithmic derivative $`\Delta=\dlog`, and $`1-\varphi\circ\psi`.
 
-:::definition "iwproof-log-der"
+:::definition "iwproof-log-der" (lean := "PadicLFunctions.Coleman.dlog")
 For $`f\in\Zp[[T]]^\times` the *logarithmic derivative* is
 $$`\Delta(f) := \dlog f = \frac{\partial f}{f} = (1+T)\frac{f'(T)}{f(T)} \in \Zp[[T]].`
 :::
 
-:::theorem "iwproof-log-der-seq"
+:::theorem "iwproof-log-der-seq" (lean := "PadicLFunctions.Coleman.dlog_surjective_onto_psiId, PadicLFunctions.Coleman.dlog_mem_psiIdSeries, PadicLFunctions.Coleman.dlog_eq_zero_normOp_fixed")
 The logarithmic derivative induces a short exact sequence
 $$`0 \to \mu_{p-1} \to \big(\Zp[[T]]^\times\big)^{\cN=\mathrm{id}}
 \xrightarrow{\ \Delta\ } \Zp[[T]]^{\psi=\mathrm{id}} \to 0.`
@@ -187,7 +187,7 @@ and $`B=\overline{\Zp[[T]]^{\psi=\mathrm{id}}}`. That equality is supplied by
 they give $`A=B`.
 :::
 
-:::lemma_ "iwproof-log-der-image"
+:::lemma_ "iwproof-log-der-image" (lean := "PadicLFunctions.Coleman.dlog_mem_psiIdSeries")
 With $`\WW=(\Zp[[T]]^\times)^{\cN=\mathrm{id}}`, we have
 $`\Delta(\WW)\subseteq\Zp[[T]]^{\psi=\mathrm{id}}`.
 :::
@@ -219,7 +219,7 @@ $`\Delta(h_n)=f_0+(-1)^{n-1}p^{n}f_n`. By compactness of $`\WW`, a subsequence o
 $`(h_n)` converges to some $`h\in\WW` with $`\Delta(h)=f_0`.
 :::
 
-:::lemma_ "iwproof-W-modp"
+:::lemma_ "iwproof-W-modp" (lean := "PadicLFunctions.Coleman.exists_normOp_fixed_lift")
 The reduction modulo $`p` of $`\WW=(\Zp[[T]]^\times)^{\cN=\mathrm{id}}` is
 $`\overline{\WW}=\Fp[[T]]^\times`.
 :::
@@ -248,7 +248,7 @@ $`\psi(b)=\sum_m d_m\tfrac{T+1}{T}T^m`. Comparing with $`b` forces every $`d_m=0
 $`b=0` and $`f=\Delta(a)`.
 :::
 
-:::lemma_ "iwproof-B-modp-decomp"
+:::lemma_ "iwproof-B-modp-decomp" (lean := "PadicLFunctions.Coleman.fp_series_eq_dlog_add_frobC")
 In $`\Fp[[T]]` there is a decomposition
 $$`\Fp[[T]] = \Delta\big(\Fp[[T]]^\times\big) + \frac{T+1}{T}\,C,\qquad
 C=\Big\{\sum_{n\ge 1} a_n T^{pn}\Big\}.`
@@ -289,13 +289,13 @@ $`f` is non-constant, say $`f=a_0+a_rT^r+\cdots` with $`a_r\ne 0`, then
 $`\varphi(f)=a_0+pa_rT^r+\cdots\ne f`, so $`\ker(1-\varphi)=\Zp`.
 :::
 
-:::definition "iwproof-zp-one"
+:::definition "iwproof-zp-one" (lean := "PadicLFunctions.Coleman.ZpOne")
 Let $`\Zp(1):=\varprojlim_n\mu_{p^n}`: the module $`\Zp` carrying the $`\GGam`-action
 $`\sigma\cdot x=\chi(\sigma)x` through the cyclotomic character. It is an integral
 form of $`\Qp(1)`.
 :::
 
-:::theorem "fundamental-exact-sequence"
+:::theorem "fundamental-exact-sequence" (lean := "PadicLFunctions.Coleman.mem_ker_Col_iff_mem_ZpOne, PadicLFunctions.Coleman.range_Col_eq_ker_chiMoment")
 The Coleman map induces an exact sequence of $`\GGam`-modules
 $$`0 \to \mu_{p-1}\times\Zp(1) \longrightarrow \sU_\infty \xrightarrow{\Col}
 \Lam(\GGam) \longrightarrow \Zp(1) \to 0,`

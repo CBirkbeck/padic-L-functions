@@ -5838,7 +5838,20 @@ thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p
 - **Status**: open | **Depends on**: T1206.
 
 ### [T1207] Blueprint: wire IwasawaProof + the §11 thm:iwasawa node
-- **Status**: open | **Depends on**: all §12 proof tickets
+- **Status**: **PARTIAL** (2026-06-14, orchestrator). 11 §12 nodes wired+VERIFIED (`lake build
+  PadicLFunctionsBlueprint` green, 4137 jobs): `iwproof-mu-killed`→`Col_eq_zero_of_torsion`,
+  `iwproof-ker-dlog`→`dlog_eq_zero_normOp_fixed`, `iwproof-galois-equiv`→`Col_galNCU`,
+  `coleman-equivariance`→`Col_lambdaG_equivariant`, `iwproof-log-der`→`dlog`, `iwproof-log-der-seq`
+  →`dlog_surjective_onto_psiId`+`dlog_mem_psiIdSeries`+`dlog_eq_zero_normOp_fixed`,
+  `iwproof-log-der-image`→`dlog_mem_psiIdSeries`, `iwproof-W-modp`→`exists_normOp_fixed_lift`,
+  `iwproof-B-modp-decomp`→`fp_series_eq_dlog_add_frobC`, `iwproof-zp-one`→`ZpOne`,
+  `fundamental-exact-sequence`→`mem_ker_Col_iff_mem_ZpOne`+`range_Col_eq_ker_chiMoment`.
+  REMAINING (blocked on T1206 full closure, rule-2 "no partial-realisation wiring"):
+  `iwproof-iwasawa-final`→`iwasawa_theorem`+`iwasawa_exact_sequence` (IwasawaProof.lean:432) +
+  IwasawaZeros.lean:224 `iwasawa-zeros-theorem`→`iwasawa_theorem` — wire once the milestone's 2
+  deferred sorrys (T1206a/T1206b) close. Generator nodes (`iwproof-cyc-gen`/`-cyclic`/`global-gen-2`/
+  `-closure`/`-local-gen`) skipped: partial/stub matches. ci-pages.sh re-render pending final wiring.
+  | **Depends on**: all §12 proof tickets
 - **File**: PadicLFunctionsBlueprint/Chapters/IwasawaProof.lean (+ IwasawaZeros.lean's
   `iwasawa-zeros-theorem` node, currently prose)
 #### Work
