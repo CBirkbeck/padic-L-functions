@@ -313,26 +313,550 @@ private theorem neg_one_mem_cycloUnitsPlus {n : ℕ} :
     rw [Units.val_neg, Units.val_one]
     exact neg_mem (one_mem _)
 
+/-! ## The valuation homomorphism and the conjugation reality (RJW TeX 3470–3482)
+
+Two pieces of structure feed the normal-form argument for `lem:cyc units gen (i)`:
+
+* the additive valuation `V u = −log‖u‖` as a `MonoidHom ℂ_[p]ˣ → Multiplicative ℝ`
+  (norm is multiplicative); it vanishes on global units (norm `1`) and on every
+  `γ_{n,a}`/`±1` (norm `1`), and is *strictly positive* on the uniformiser `ξ − 1`
+  (`‖ξ−1‖ < 1`). This forces the `(ξ−1)`-exponent of a global unit to be `0`.
+* complex conjugation `σ_{−1}` (`galAut p (−1) n`, the cyclotomic-character value `−1`)
+  fixes `F_n⁺ = ℚ(ξ+ξ⁻¹)` pointwise and sends `ξ ↦ ξ⁻¹`; reality of `ξ^m` then forces
+  `ξ^{2m} = 1`, i.e. `ξ^m = 1` (`p` odd), killing the `ξ`-power exponent. -/
+
+/-- `‖ξ_{p^n}‖ = 1` (a primitive `p^n`-th root of unity). -/
+private theorem norm_zetaSys_eq_one (n : ℕ) : ‖zetaSys p n‖ = 1 := by
+  rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
+    rw [show (1 : ZMod (p ^ n)) = ((1 : ℕ) : ZMod (p ^ n)) by norm_cast, zhp_natCast, pow_one],
+    norm_zhp]
+
+/-- `ξ_{p^n} ≠ 0`. -/
+private theorem zetaSys_ne_zero (n : ℕ) : zetaSys p n ≠ 0 :=
+  norm_ne_zero_iff.mp (by rw [norm_zetaSys_eq_one]; exact one_ne_zero)
+
+/-- The additive valuation `V u = −log‖u‖` as a `MonoidHom` into `Multiplicative ℝ`
+(the `ℂ_[p]`-norm is multiplicative). -/
+private def valHom : ℂ_[p]ˣ →* Multiplicative ℝ where
+  toFun u := Multiplicative.ofAdd (-Real.log ‖(u : ℂ_[p])‖)
+  map_one' := by simp
+  map_mul' u v := by
+    show Multiplicative.ofAdd (-Real.log ‖((u * v : ℂ_[p]ˣ) : ℂ_[p])‖)
+      = Multiplicative.ofAdd _ * Multiplicative.ofAdd _
+    rw [← ofAdd_add]
+    congr 1
+    rw [Units.val_mul, norm_mul, Real.log_mul (norm_ne_zero_iff.mpr u.ne_zero)
+      (norm_ne_zero_iff.mpr v.ne_zero)]
+    ring
+
+/-- `V` vanishes on norm-`1` units. -/
+private theorem valHom_eq_one_of_norm_one {u : ℂ_[p]ˣ} (h : ‖(u : ℂ_[p])‖ = 1) :
+    valHom p u = 1 := by
+  show Multiplicative.ofAdd (-Real.log ‖(u : ℂ_[p])‖) = 1
+  rw [h, Real.log_one, neg_zero]; rfl
+
+/-- Conjugation `σ_{−1}` sends `ξ_{p^n} ↦ ξ_{p^n}⁻¹` (the cyclotomic-character value `−1`,
+read through `unitsToZModPow (−1) = −1` and `ξ^{(−1).val} = ξ⁻¹`). -/
+private theorem galAutNegOne_zetaSys {n : ℕ} (hn : 1 ≤ n) :
+    (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p]) = (zetaSys p n)⁻¹ := by
+  rw [galAut_zetaSys p (-1) hn]
+  have hneg : (PadicMeasure.unitsToZModPow p n (-1) : (ZMod (p ^ n))ˣ) = -1 := by
+    apply Units.ext; rw [PadicMeasure.unitsToZModPow_coe]; push_cast; simp
+  rw [hneg]
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← pow_succ]
+  refine (zetaSys_pow_eq_pow_of_modEq p
+    (i := (((-1 : (ZMod (p ^ n))ˣ) : ZMod (p ^ n))).val + 1) (j := 0) ?_).trans ?_
+  · rw [← ZMod.natCast_eq_natCast_iff]; push_cast [ZMod.natCast_val, ZMod.cast_id]; ring
+  · rw [pow_zero]
+
+/-- Conjugation `σ_{−1}` fixes the generator `ξ + ξ⁻¹` of `F_n⁺`. -/
+private theorem galAutNegOne_gen {n : ℕ} (hn : 1 ≤ n)
+    (hzK : zetaSys p n + (zetaSys p n)⁻¹ ∈ K p n) :
+    (galAut p (-1) n ⟨zetaSys p n + (zetaSys p n)⁻¹, hzK⟩ : ℂ_[p])
+      = zetaSys p n + (zetaSys p n)⁻¹ := by
+  rw [show (⟨zetaSys p n + (zetaSys p n)⁻¹, hzK⟩ : K p n)
+      = ⟨zetaSys p n, zetaSys_mem_K p n⟩ + (⟨zetaSys p n, zetaSys_mem_K p n⟩)⁻¹ from
+    Subtype.ext (by push_cast [Subtype.coe_mk]; rfl), map_add, map_inv₀,
+    show ((galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩
+        + (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩)⁻¹ : K p n) : ℂ_[p])
+        = (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p])
+          + ((galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p]))⁻¹ from by
+      push_cast; ring,
+    galAutNegOne_zetaSys p hn, inv_inv, add_comm]
+
+/-- **Reality of `F_n⁺`**: conjugation `σ_{−1}` fixes every element of `F_n⁺` pointwise.
+`F_n⁺ = ℚ(ξ+ξ⁻¹)`, and `σ_{−1}` (a `ℚ_p`-algebra automorphism of `K_n ⊇ F_n⁺`) fixes the
+generator `ξ+ξ⁻¹` and all of `ℚ`; closure under the field operations is the induction. -/
+private theorem galAutNegOne_fixes_FglobalPlus {n : ℕ} (hn : 1 ≤ n) {x : ℂ_[p]}
+    (hx : x ∈ FglobalPlus p n) (hxK : x ∈ K p n) :
+    (galAut p (-1) n ⟨x, hxK⟩ : ℂ_[p]) = x := by
+  have toK : ∀ {y : ℂ_[p]}, y ∈ FglobalPlus p n → y ∈ K p n :=
+    fun hy => Fglobal_le_K p (FglobalPlus_le_Fglobal p n hy)
+  have key : ∀ y ∈ FglobalPlus p n, ∀ (hyK : y ∈ K p n),
+      (galAut p (-1) n ⟨y, hyK⟩ : ℂ_[p]) = y := by
+    intro y hy
+    rw [FglobalPlus] at hy
+    induction hy using IntermediateField.adjoin_induction with
+    | mem z hz =>
+        obtain rfl := hz
+        intro hzK
+        exact galAutNegOne_gen p hn hzK
+    | algebraMap q =>
+        intro hqK
+        have hval : ((q : K p n) : ℂ_[p]) = (algebraMap ℚ ℂ_[p]) q := by
+          rw [eq_ratCast (algebraMap ℚ ℂ_[p]) q]; push_cast; ring
+        rw [show (⟨(algebraMap ℚ ℂ_[p]) q, hqK⟩ : K p n) = (q : K p n) from
+          Subtype.ext (by rw [hval]), map_ratCast, hval]
+    | add y z hy hz ihy ihz =>
+        intro hyzK
+        rw [show (⟨y + z, hyzK⟩ : K p n) = ⟨y, toK hy⟩ + ⟨z, toK hz⟩ from rfl, map_add]
+        push_cast
+        rw [ihy (toK hy), ihz (toK hz)]
+    | inv y hy ihy =>
+        intro hyinvK
+        rw [show (⟨y⁻¹, hyinvK⟩ : K p n) = (⟨y, toK hy⟩)⁻¹ from rfl, map_inv₀]
+        push_cast
+        rw [ihy (toK hy)]
+    | mul y z hy hz ihy ihz =>
+        intro hyzK
+        rw [show (⟨y * z, hyzK⟩ : K p n) = ⟨y, toK hy⟩ * ⟨z, toK hz⟩ from rfl, map_mul]
+        push_cast
+        rw [ihy (toK hy), ihz (toK hz)]
+  exact key x hx hxK
+
+/-- For `p` odd, a `ξ`-power that is real (`ξ^{2m} = 1`) is trivial. -/
+private theorem zpow_eq_one_of_two_mul {n : ℕ} (hp2 : p ≠ 2) (ζu : ℂ_[p]ˣ)
+    (hord : orderOf ζu = p ^ n) (m : ℤ) (h2m : ζu ^ (2 * m) = 1) : ζu ^ m = 1 := by
+  rw [← orderOf_dvd_iff_zpow_eq_one, hord] at h2m ⊢
+  rw [show ((p ^ n : ℕ) : ℤ) = (p : ℤ) ^ n by push_cast; ring] at h2m ⊢
+  have hcop : IsCoprime ((p : ℤ) ^ n) (2 : ℤ) := by
+    have hc : Nat.Coprime (p ^ n) 2 :=
+      Nat.Coprime.pow_left _ ((Nat.coprime_primes hp.out Nat.prime_two).2 hp2)
+    have := hc.isCoprime
+    rwa [show ((p ^ n : ℕ) : ℤ) = (p : ℤ) ^ n by push_cast; ring,
+      show ((2 : ℕ) : ℤ) = (2 : ℤ) by norm_num] at this
+  exact hcop.dvd_of_dvd_mul_left h2m
+
+/-- `ξ_{p^n}` packaged as a unit of `ℂ_[p]ˣ`. -/
+private def zetaSysUnit (n : ℕ) : ℂ_[p]ˣ := Units.mk0 (zetaSys p n) (zetaSys_ne_zero p n)
+
+private theorem zetaSysUnit_val (n : ℕ) : (zetaSysUnit p n : ℂ_[p]) = zetaSys p n :=
+  Units.val_mk0 _
+
+/-- `orderOf (ξ_{p^n} : ℂ_[p]ˣ) = p^n`. -/
+private theorem orderOf_zetaSysUnit (n : ℕ) : orderOf (zetaSysUnit p n) = p ^ n := by
+  have hprim : IsPrimitiveRoot (zetaSysUnit p n) (p ^ n) := by
+    rw [← IsPrimitiveRoot.coe_units_iff, zetaSysUnit_val]
+    exact zetaSys_primitiveRoot p n
+  exact hprim.eq_orderOf.symm
+
+/-- `(ξ^m : ℂ_[p]ˣ)` coerces to `ξ^m` in `ℂ_[p]`. -/
+private theorem zetaSysUnit_zpow_val (n : ℕ) (m : ℤ) :
+    ((zetaSysUnit p n ^ m : ℂ_[p]ˣ) : ℂ_[p]) = (zetaSys p n) ^ m := by
+  rw [Units.val_zpow_eq_zpow_val, zetaSysUnit_val]
+
+/-- **Reality kills the `ξ`-power** (RJW TeX 3478–3482): if a power `ξ^m` of the
+root of unity lies in `F_n⁺` (is real), then `ξ^m = 1`. Conjugation `σ_{−1}` fixes
+`F_n⁺` (`galAutNegOne_fixes_FglobalPlus`) and sends `ξ ↦ ξ⁻¹`, so `ξ^{−m} = ξ^m`,
+i.e. `ξ^{2m} = 1`, i.e. `ξ^m = 1` (`p` odd). -/
+private theorem zetaSysUnit_zpow_eq_one_of_mem_FglobalPlus {n : ℕ} (hp2 : p ≠ 2)
+    (hn : 1 ≤ n) (m : ℤ) (hmem : ((zetaSysUnit p n ^ m : ℂ_[p]ˣ) : ℂ_[p]) ∈ FglobalPlus p n) :
+    zetaSysUnit p n ^ m = 1 := by
+  -- `ξ^m ∈ K_n`
+  have hmemK : ((zetaSysUnit p n ^ m : ℂ_[p]ˣ) : ℂ_[p]) ∈ K p n :=
+    Fglobal_le_K p (FglobalPlus_le_Fglobal p n hmem)
+  -- conjugation fixes it (reality) and equals `ξ^{−m}` (character `−1`)
+  have hfix := galAutNegOne_fixes_FglobalPlus p hn hmem hmemK
+  -- `σ_{−1}(ξ^m) = ξ^{−m}` at the `ℂ_[p]` level
+  -- the subtype element is `⟨ξ,_⟩^m` (equal `.val`, proof-irrelevant membership)
+  have hsub : (⟨((zetaSysUnit p n ^ m : ℂ_[p]ˣ) : ℂ_[p]), hmemK⟩ : K p n)
+      = (⟨zetaSys p n, zetaSys_mem_K p n⟩ : K p n) ^ m :=
+    Subtype.ext ((zetaSysUnit_zpow_val p n m).trans
+      (map_zpow₀ (K p n).val (⟨zetaSys p n, zetaSys_mem_K p n⟩ : K p n) m).symm)
+  have hconj : (galAut p (-1) n ⟨((zetaSysUnit p n ^ m : ℂ_[p]ˣ) : ℂ_[p]), hmemK⟩ : ℂ_[p])
+      = (zetaSys p n) ^ (-m) := by
+    rw [hsub, map_zpow₀,
+      show ((galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ ^ m : K p n) : ℂ_[p])
+          = ((galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p])) ^ m from
+        map_zpow₀ (K p n).val _ m,
+      galAutNegOne_zetaSys p hn, inv_zpow, zpow_neg]
+  rw [hconj] at hfix
+  -- `hfix : ξ^{−m} = ↑(ξu^m)`, i.e. `ξ^{−m} = ξ^m`; lift to units
+  have hfix' : (zetaSys p n) ^ (-m) = (zetaSys p n) ^ m := by
+    rw [hfix, zetaSysUnit_zpow_val]
+  have hunit : zetaSysUnit p n ^ (-m) = zetaSysUnit p n ^ m :=
+    Units.ext (by rw [zetaSysUnit_zpow_val, zetaSysUnit_zpow_val]; exact hfix')
+  have h2m : zetaSysUnit p n ^ (2 * m) = 1 := by
+    rw [show (2 * m) = m + m by ring, zpow_add]
+    nth_rewrite 1 [← hunit]
+    rw [← zpow_add, neg_add_cancel, zpow_zero]
+  exact zpow_eq_one_of_two_mul p hp2 (zetaSysUnit p n) (orderOf_zetaSysUnit p n) m h2m
+
+/-- `‖ξ_{p^n}^k − 1‖ < 1` for every `k` (a conjugate uniformiser, dominated by
+`‖π_n‖ < 1`). -/
+private theorem norm_zetaSys_pow_sub_one_lt {n : ℕ} (hn : 1 ≤ n) (k : ℕ) :
+    ‖zetaSys p n ^ k - 1‖ < 1 := by
+  have hξ1 : ‖zetaSys p n‖ = 1 := norm_zetaSys_eq_one p n
+  have hbound : ‖zetaSys p n ^ k - 1‖ ≤ ‖zetaSys p n - 1‖ := by
+    rw [show zetaSys p n ^ k - 1
+        = (∑ i ∈ Finset.range k, zetaSys p n ^ i) * (zetaSys p n - 1) from
+      (geom_sum_mul _ k).symm, norm_mul]
+    have hgeom : ‖∑ i ∈ Finset.range k, zetaSys p n ^ i‖ ≤ 1 :=
+      IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one
+        (fun i _ => by rw [norm_pow, hξ1, one_pow])
+    nlinarith [norm_nonneg (zetaSys p n - 1), hgeom]
+  refine lt_of_le_of_lt hbound ?_
+  have := norm_pi_lt_one p hn
+  rwa [pi] at this
+
+/-- `ω = ξ_{p^n}^{p^{n−1}}` is a primitive `p`-th root of unity. -/
+private theorem zetaSys_pow_isPrimitiveRoot_p {n : ℕ} (hn : 1 ≤ n) :
+    IsPrimitiveRoot (zetaSys p n ^ (p ^ (n - 1))) p := by
+  refine (zetaSys_primitiveRoot p n).pow (pow_pos hp.out.pos n) ?_
+  rw [← pow_succ]
+  congr 1
+  omega
+
+/-- **The `p`-fold reduction identity (RJW TeX 3471)**: `ξ^{kp} − 1 = ∏_{i<p}
+(ξ^{k + i·p^{n−1}} − 1)`. (Factor `X^p − ξ^{kp}` over the `p`-th roots `ω^i` via
+`X_pow_sub_C_eq_prod`, evaluate at `X = 1`, multiply by `(−1)^p = −1`.) -/
+private theorem zetaSys_pow_mul_sub_one_prod (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) (k : ℕ) :
+    zetaSys p n ^ (k * p) - 1
+      = ∏ i ∈ Finset.range p, (zetaSys p n ^ (k + i * p ^ (n - 1)) - 1) := by
+  have hω := zetaSys_pow_isPrimitiveRoot_p p hn
+  have he : (zetaSys p n ^ k) ^ p = zetaSys p n ^ (k * p) := by rw [← pow_mul]
+  have hpoly := X_pow_sub_C_eq_prod hω hp.out.pos he
+  apply_fun (Polynomial.eval (1 : ℂ_[p])) at hpoly
+  simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X, Polynomial.eval_C,
+    Polynomial.eval_prod, one_pow] at hpoly
+  -- `hpoly : 1 − ξ^{kp} = ∏_{i<p}(1 − ω^i · ξ^k)`
+  have hsign : ((-1 : ℂ_[p]) ^ p) = -1 := Odd.neg_one_pow (hp.out.odd_of_ne_two hp2)
+  have hfac : ∀ i ∈ Finset.range p,
+      zetaSys p n ^ (k + i * p ^ (n - 1)) - 1
+        = (-1) * (1 - (zetaSys p n ^ p ^ (n - 1)) ^ i * zetaSys p n ^ k) := by
+    intro i _
+    rw [pow_add, ← pow_mul, mul_comm i (p ^ (n - 1))]; ring
+  rw [Finset.prod_congr rfl hfac, Finset.prod_mul_distrib, Finset.prod_const,
+    Finset.card_range, hsign, ← hpoly]
+  ring
+
+/-! ## The target generating set and its two invariants (`valHom`, `FglobalPlus`)
+
+Write `H = closure({γ_{n,b} : (b,p)=1} ∪ {−1})` for the target subgroup. Both the
+valuation `valHom` and reality (`↑· ∈ F_n⁺`) vanish on every generator (norm `1`,
+real), hence on all of `H`. These two facts are what the normal-form argument exploits:
+the `(ξ−1)`-exponent is killed by `valHom`, the `ξ`-exponent by reality. -/
+
+/-- The target generating set `{γ_{n,b} : (b,p)=1} ∪ {−1}`. -/
+private def gammaGenSet (n : ℕ) : Set ℂ_[p]ˣ :=
+  {g : ℂ_[p]ˣ | ∃ b : ℕ, ¬ (p : ℕ) ∣ b ∧ (g : ℂ_[p]) = gammaUnit p b n} ∪
+    {g : ℂ_[p]ˣ | (g : ℂ_[p]) = -1}
+
+/-- Every element of the closure of `gammaGenSet` is real (lies in `F_n⁺`). -/
+private theorem coe_mem_FglobalPlus_of_mem_closure_gammaGenSet (hp2 : p ≠ 2) {n : ℕ}
+    (hn : 1 ≤ n) {u : ℂ_[p]ˣ} (hu : u ∈ Subgroup.closure (gammaGenSet p n)) :
+    (u : ℂ_[p]) ∈ FglobalPlus p n := by
+  induction hu using Subgroup.closure_induction with
+  | mem x hx =>
+      rcases hx with ⟨b, _, hval⟩ | hval
+      · rw [hval]; exact gammaUnit_mem_FglobalPlus p hp2 hn
+      · rw [hval]; exact neg_mem (one_mem _)
+  | one => rw [Units.val_one]; exact one_mem _
+  | mul x y _ _ ihx ihy => rw [Units.val_mul]; exact mul_mem ihx ihy
+  | inv x _ ihx => rw [Units.val_inv_eq_inv_val]; exact (FglobalPlus p n).inv_mem ihx
+
+/-- `valHom` vanishes on every generator of `gammaGenSet`, hence on the whole closure. -/
+private theorem valHom_eq_one_of_mem_closure_gammaGenSet {n : ℕ}
+    (hn : 1 ≤ n) {u : ℂ_[p]ˣ} (hu : u ∈ Subgroup.closure (gammaGenSet p n)) :
+    valHom p u = 1 := by
+  induction hu using Subgroup.closure_induction with
+  | mem x hx =>
+      rcases hx with ⟨b, hb, hval⟩ | hval
+      · refine valHom_eq_one_of_norm_one p ?_
+        rw [hval, gammaUnit, norm_mul, norm_zhp, one_mul, norm_cycloUnit p hb hn]
+      · refine valHom_eq_one_of_norm_one p ?_
+        rw [hval, norm_neg, norm_one]
+  | one => exact map_one _
+  | mul x y _ _ ihx ihy => rw [map_mul, ihx, ihy, one_mul]
+  | inv x _ ihx => rw [map_inv, ihx, inv_one]
+
+/-! ## The uniformiser `δ = ξ − 1` as a unit, and `valHom δ ≠ 1`
+
+`δ = ξ_{p^n} − 1` is a nonzero element of the field `ℂ_[p]`, hence a unit. Its norm
+is `< 1` (`norm_zetaSys_pow_sub_one_lt`), so `valHom δ = ofAdd(−log‖δ‖)` with
+`−log‖δ‖ > 0`, i.e. `valHom δ ≠ 1`; this kills the `δ`-exponent in the normal form. -/
+
+/-- `δ = ξ_{p^n} − 1` packaged as a unit of `ℂ_[p]ˣ` (`n ≥ 1`, so `ξ ≠ 1`). -/
+private def deltaUnit {n : ℕ} (hn : 1 ≤ n) : ℂ_[p]ˣ :=
+  Units.mk0 (zetaSys p n - 1)
+    (sub_ne_zero_of_ne
+      ((zetaSys_primitiveRoot p n).ne_one (one_lt_pow₀ hp.out.one_lt (by omega))))
+
+private theorem deltaUnit_val {n : ℕ} (hn : 1 ≤ n) :
+    (deltaUnit p hn : ℂ_[p]) = zetaSys p n - 1 :=
+  Units.val_mk0 _
+
+/-- `0 < −log‖δ‖`, i.e. `valHom δ ≠ 1` (the uniformiser has norm `< 1`). -/
+private theorem valHom_deltaUnit_ne_one {n : ℕ} (hn : 1 ≤ n) :
+    valHom p (deltaUnit p hn) ≠ 1 := by
+  have hlt : ‖(deltaUnit p hn : ℂ_[p])‖ < 1 := by
+    rw [deltaUnit_val, show zetaSys p n - 1 = zetaSys p n ^ 1 - 1 by rw [pow_one]]
+    exact norm_zetaSys_pow_sub_one_lt p hn 1
+  have hpos : 0 < ‖(deltaUnit p hn : ℂ_[p])‖ :=
+    norm_pos_iff.mpr (deltaUnit p hn).ne_zero
+  have hlog : Real.log ‖(deltaUnit p hn : ℂ_[p])‖ < 0 := Real.log_neg hpos hlt
+  intro h
+  have hz : (-Real.log ‖(deltaUnit p hn : ℂ_[p])‖) = 0 := ofAdd_eq_one.mp h
+  linarith
+
+/-! ## The normal form: `closure(cycloGenSet) ≤ closure({ξ, δ} ∪ gammaGenSet)`
+
+Every generator of `𝒟_n` (`±ξ` and `ξ^a−1`) lies in the closure `M` of
+`{ξ} ∪ {δ} ∪ gammaGenSet`. The only nontrivial case is `ξ^a−1`: for `(a,p)=1` it is
+`δ·ξ^{c}·γ_{n,a}` (the `c_n(a)`-factorisation), and the `p∣a` case reduces to coprime
+exponents by the `p`-fold identity (`zetaSys_pow_mul_sub_one_prod`), inducting on
+`v_p(a)`. -/
+
+/-- The augmented generating set `{ξ} ∪ {δ} ∪ gammaGenSet`. -/
+private def augGenSet {n : ℕ} (hn : 1 ≤ n) : Set ℂ_[p]ˣ :=
+  ({zetaSysUnit p n} ∪ {deltaUnit p hn}) ∪ gammaGenSet p n
+
+private theorem zetaSysUnit_mem_aug {n : ℕ} (hn : 1 ≤ n) :
+    zetaSysUnit p n ∈ Subgroup.closure (augGenSet p hn) :=
+  Subgroup.subset_closure (Or.inl (Or.inl rfl))
+
+private theorem deltaUnit_mem_aug {n : ℕ} (hn : 1 ≤ n) :
+    deltaUnit p hn ∈ Subgroup.closure (augGenSet p hn) :=
+  Subgroup.subset_closure (Or.inl (Or.inr rfl))
+
+private theorem gammaGenSet_le_aug {n : ℕ} (hn : 1 ≤ n) {g : ℂ_[p]ˣ}
+    (hg : g ∈ gammaGenSet p n) : g ∈ Subgroup.closure (augGenSet p hn) :=
+  Subgroup.subset_closure (Or.inr hg)
+
+/-- `ξ^a − 1 ≠ 0` for `1 ≤ a < p^n` (`ξ^a ≠ 1`, since `ξ` has order `p^n`). -/
+private theorem zetaSys_pow_sub_one_ne_zero {n a : ℕ} (ha1 : 1 ≤ a) (ha2 : a < p ^ n) :
+    zetaSys p n ^ a - 1 ≠ 0 := by
+  refine sub_ne_zero_of_ne fun h => ?_
+  have hord : orderOf (zetaSysUnit p n) = p ^ n := orderOf_zetaSysUnit p n
+  have hpow : zetaSysUnit p n ^ a = 1 := by
+    apply Units.ext; rw [Units.val_pow_eq_pow_val, zetaSysUnit_val, Units.val_one, h]
+  have hdvd : p ^ n ∣ a := by rw [← hord]; exact orderOf_dvd_of_pow_eq_one hpow
+  exact absurd (Nat.le_of_dvd (by omega) hdvd) (by omega)
+
+/-- The base case `(a,p)=1`: `ξ^a − 1 = ↑(δ · ξ^{(−halfExp).val} · γ_{n,a})`, so the
+generator unit lies in `M`. -/
+private theorem zetaSys_pow_sub_one_mem_aug_coprime (_hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n)
+    {a : ℕ} (ha : ¬ (p : ℕ) ∣ a) (_ha1 : 1 ≤ a) (_ha2 : a < p ^ n) {g : ℂ_[p]ˣ}
+    (hgv : (g : ℂ_[p]) = zetaSys p n ^ a - 1) :
+    g ∈ Subgroup.closure (augGenSet p hn) := by
+  have hγ0 : gammaUnit p a n ≠ 0 :=
+    mul_ne_zero (zhp_ne_zero p _) (cycloUnit_ne_zero p ha hn)
+  set γu : ℂ_[p]ˣ := Units.mk0 (gammaUnit p a n) hγ0 with hγu
+  have hγuGen : γu ∈ gammaGenSet p n := Or.inl ⟨a, ha, Units.val_mk0 _⟩
+  -- `ξ^a − 1 = (ξ−1)·c_n(a)` and `c_n(a) = ξ^{(−halfExp).val}·γ_{n,a}`
+  have hword : g = deltaUnit p hn * zetaSysUnit p n ^ ((-halfExp p a n).val) * γu := by
+    refine Units.ext ?_
+    rw [Units.val_mul, Units.val_mul, deltaUnit_val, Units.val_pow_eq_pow_val,
+      zetaSysUnit_val, hγu, Units.val_mk0, hgv, gammaUnit,
+      show zetaSys p n ^ ((-halfExp p a n).val) = zhp p (-halfExp p a n) from rfl,
+      zhp_neg, cycloUnit]
+    have hzhpne : zhp p (halfExp p a n) ≠ 0 := zhp_ne_zero p _
+    have hδne : zetaSys p n - 1 ≠ 0 :=
+      sub_ne_zero_of_ne
+        ((zetaSys_primitiveRoot p n).ne_one (one_lt_pow₀ hp.out.one_lt (by omega)))
+    field_simp
+  rw [hword]
+  exact mul_mem (mul_mem (deltaUnit_mem_aug p hn)
+    (pow_mem (zetaSysUnit_mem_aug p hn) _)) (gammaGenSet_le_aug p hn hγuGen)
+
+/-- **The full `ξ^a − 1` case (RJW TeX 3471–3472)**: for every `1 ≤ a < p^n`, the
+generator unit `ξ^a − 1` lies in `M = closure({ξ, δ} ∪ gammaGenSet)`. Strong induction
+on `v_p(a)`: the base `(a,p)=1` is `zetaSys_pow_sub_one_mem_aug_coprime`; for `p∣a` the
+`p`-fold identity `zetaSys_pow_mul_sub_one_prod` writes `ξ^a−1` as a product of factors
+`ξ^{a/p + i·p^{n−1}} − 1`, each of strictly smaller `v_p`. -/
+private theorem zetaSys_pow_sub_one_mem_aug (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    ∀ m : ℕ, ∀ a : ℕ, padicValNat p a = m → 1 ≤ a → a < p ^ n → ∀ g : ℂ_[p]ˣ,
+      (g : ℂ_[p]) = zetaSys p n ^ a - 1 → g ∈ Subgroup.closure (augGenSet p hn) := by
+  intro m
+  induction m using Nat.strong_induction_on with
+  | _ m ih =>
+    intro a ham ha1 ha2 g hgv
+    by_cases hpa : (p : ℕ) ∣ a
+    · -- `p ∣ a`: reduce via the `p`-fold identity
+      have hppos : 0 < p := hp.out.pos
+      set k : ℕ := a / p with hk
+      have hak : a = k * p := by rw [hk, Nat.div_mul_cancel hpa]
+      have hk1 : 1 ≤ k := by
+        rw [hk, Nat.one_le_div_iff hppos]; exact Nat.le_of_dvd (by omega) hpa
+      have hm1 : 1 ≤ m := by
+        rw [← ham]; exact one_le_padicValNat_of_dvd (by omega) hpa
+      have hvk : padicValNat p k = m - 1 := by rw [hk, padicValNat.div hpa, ham]
+      have hmn : m < n := by
+        rw [← ham]
+        have hdvd : p ^ padicValNat p a ∣ a := pow_padicValNat_dvd
+        have hle : p ^ padicValNat p a ≤ a := Nat.le_of_dvd (by omega) hdvd
+        by_contra hge
+        push Not at hge
+        exact absurd (lt_of_le_of_lt hle ha2)
+          (not_lt.mpr (Nat.pow_le_pow_right hppos hge))
+      -- each factor exponent `e i = k + i·p^{n−1}`: bounds and smaller `v_p`
+      have hpsucc : p ^ (n - 1) * p = p ^ n := by rw [← pow_succ]; congr 1; omega
+      have hkb : k < p ^ (n - 1) := by
+        rw [hk, Nat.div_lt_iff_lt_mul hppos, hpsucc]; exact ha2
+      have he_range : ∀ i, i < p → k + i * p ^ (n - 1) < p ^ n := by
+        intro i hi
+        have hib : i * p ^ (n - 1) ≤ (p - 1) * p ^ (n - 1) :=
+          Nat.mul_le_mul_right _ (by omega)
+        have : k + i * p ^ (n - 1) < p ^ (n - 1) + (p - 1) * p ^ (n - 1) := by omega
+        calc k + i * p ^ (n - 1) < p ^ (n - 1) + (p - 1) * p ^ (n - 1) := this
+          _ = p ^ (n - 1) * p := by
+              rw [Nat.sub_one_mul, mul_comm p (p ^ (n - 1))]
+              have : p ^ (n - 1) ≤ p ^ (n - 1) * p := Nat.le_mul_of_pos_right _ hppos
+              omega
+          _ = p ^ n := hpsucc
+      have he1 : ∀ i, 1 ≤ k + i * p ^ (n - 1) := fun i => by omega
+      have he_ne : ∀ i, i < p → zetaSys p n ^ (k + i * p ^ (n - 1)) - 1 ≠ 0 :=
+        fun i hi => zetaSys_pow_sub_one_ne_zero p (he1 i) (he_range i hi)
+      have he_vlt : ∀ i, i < p → padicValNat p (k + i * p ^ (n - 1)) < m := by
+        intro i hi
+        rcases Nat.eq_zero_or_pos i with hi0 | hi0
+        · subst hi0; simp only [zero_mul, add_zero, hvk]; omega
+        · -- `p^m ∣ i·p^{n-1}` but `p^m ∤ k`, so `p^m ∤ e i`
+          rw [← not_le, ← padicValNat_dvd_iff_le (by omega : k + i * p ^ (n - 1) ≠ 0)]
+          intro hcontra
+          have hdvd2 : p ^ m ∣ i * p ^ (n - 1) :=
+            Dvd.dvd.mul_left (pow_dvd_pow p (by omega)) i
+          have hdvdk : p ^ m ∣ k := (Nat.dvd_add_right hdvd2).mp (by rwa [add_comm] at hcontra)
+          rw [padicValNat_dvd_iff_le (by omega : k ≠ 0)] at hdvdk; omega
+      -- the factor units, and `g = ∏ facU i`
+      let facU : ℕ → ℂ_[p]ˣ := fun i =>
+        if hi : i < p then Units.mk0 _ (he_ne i hi) else 1
+      have hfacU_val : ∀ i, i < p →
+          (facU i : ℂ_[p]) = zetaSys p n ^ (k + i * p ^ (n - 1)) - 1 := by
+        intro i hi; simp only [facU, dif_pos hi, Units.val_mk0]
+      have hgprod : g = ∏ i ∈ Finset.range p, facU i := by
+        refine Units.ext ?_
+        rw [hgv, hak, zetaSys_pow_mul_sub_one_prod p hp2 hn, Units.coe_prod]
+        exact Finset.prod_congr rfl fun i hi =>
+          (hfacU_val i (Finset.mem_range.mp hi)).symm
+      rw [hgprod]
+      refine prod_mem fun i hi => ?_
+      rw [Finset.mem_range] at hi
+      exact ih _ (he_vlt i hi) _ rfl (he1 i) (he_range i hi) _ (hfacU_val i hi)
+    · -- `(a,p)=1`: base case
+      exact zetaSys_pow_sub_one_mem_aug_coprime p hp2 hn hpa ha1 ha2 hgv
+
+/-- **The normal form (RJW TeX 3476)**: every `w ∈ M = closure({ξ, δ} ∪ gammaGenSet)`
+has the shape `w = ξ^D · δ^E · h` with `D E : ℤ` and `h ∈ closure(gammaGenSet)`.
+(`ℂ_[p]ˣ` is commutative, so the `ξ`- and `δ`-powers collect; `gammaGenSet`-generators
+go into `h`.) -/
+private theorem mem_aug_normal_form {n : ℕ} (hn : 1 ≤ n) {w : ℂ_[p]ˣ}
+    (hw : w ∈ Subgroup.closure (augGenSet p hn)) :
+    ∃ (D E : ℤ) (h : ℂ_[p]ˣ), h ∈ Subgroup.closure (gammaGenSet p n) ∧
+      w = zetaSysUnit p n ^ D * deltaUnit p hn ^ E * h := by
+  induction hw using Subgroup.closure_induction with
+  | mem x hx =>
+      rcases hx with (hξ | hδ) | hg
+      · exact ⟨1, 0, 1, one_mem _, by rw [hξ, zpow_one, zpow_zero, mul_one, mul_one]⟩
+      · exact ⟨0, 1, 1, one_mem _, by rw [hδ, zpow_one, zpow_zero, one_mul, mul_one]⟩
+      · exact ⟨0, 0, x, Subgroup.subset_closure hg, by
+          rw [zpow_zero, zpow_zero, mul_one, one_mul]⟩
+  | one => exact ⟨0, 0, 1, one_mem _, by rw [zpow_zero, zpow_zero, mul_one, mul_one]⟩
+  | mul x y _ _ ihx ihy =>
+      obtain ⟨D₁, E₁, h₁, hh₁, hx⟩ := ihx
+      obtain ⟨D₂, E₂, h₂, hh₂, hy⟩ := ihy
+      refine ⟨D₁ + D₂, E₁ + E₂, h₁ * h₂, mul_mem hh₁ hh₂, ?_⟩
+      rw [hx, hy, zpow_add, zpow_add]; ac_rfl
+  | inv x _ ihx =>
+      obtain ⟨D, E, h, hh, hx⟩ := ihx
+      refine ⟨-D, -E, h⁻¹, Subgroup.inv_mem _ hh, ?_⟩
+      rw [hx, mul_inv, mul_inv, zpow_neg, zpow_neg]
+
+/-- `closure(cycloGenSet) ≤ M`: the three generator types `ξ`, `−ξ`, `ξ^a−1` of `𝒟_n`
+all lie in `M = closure({ξ, δ} ∪ gammaGenSet)`. -/
+private theorem closure_cycloGenSet_le_aug (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    Subgroup.closure (cycloGenSet p n) ≤ Subgroup.closure (augGenSet p hn) := by
+  rw [Subgroup.closure_le]
+  rintro g (hξ | hξ | ⟨a, ha1, ha2, hgv⟩)
+  · -- `g = ξ`
+    rw [show g = zetaSysUnit p n from Units.ext (by rw [hξ, zetaSysUnit_val])]
+    exact zetaSysUnit_mem_aug p hn
+  · -- `g = −ξ = (−1)·ξ`
+    have hword : g = (-1 : ℂ_[p]ˣ) * zetaSysUnit p n := by
+      refine Units.ext ?_
+      rw [Units.val_mul, Units.val_neg, Units.val_one, zetaSysUnit_val, hξ, neg_one_mul]
+    rw [hword]
+    refine mul_mem (gammaGenSet_le_aug p hn (Or.inr ?_)) (zetaSysUnit_mem_aug p hn)
+    change ((-1 : ℂ_[p]ˣ) : ℂ_[p]) = -1
+    simp
+  · -- `g = ξ^a − 1` with `1 ≤ a ≤ p^n − 1`
+    have hpn : 1 ≤ p ^ n := Nat.one_le_pow _ _ hp.out.pos
+    exact zetaSys_pow_sub_one_mem_aug p hp2 hn (padicValNat p a) a rfl ha1
+      (by omega) g hgv
+
 /-- **RJW lem:cyc units gen (i) (TeX 3461–3482)**: `𝒟_n^+` is generated by `−1` and the
 `γ_{n,a}` with `(a,p)=1`. (`cor:cyc units gen 2`, TeX 3484–3486: a single `γ_{n,a}` with
 `a` generating `(ℤ/p^nℤ)^×` suffices as a `ℤ[𝒢_n^+]`-module generator — its statement
-needs the finite Galois action on units and is finalised in E12.4 at execution.)
-
-Statement note (T1205): the reverse inclusion `⊇` (every generator `γ_b`, `−1` lies in
-`𝒟_n^+`) is proven in full. The forward inclusion `⊆` is RJW's valuation/`Σe_a = 0`
-normal-form argument (TeX 3470–3482): writing an element as `±ξ^d ∏(ξ^a−1)^{e_a}`,
-the equal valuations `v_p(ξ^a−1)` force `Σe_a = 0` (unit), and reality forces the
-`ξ`-power exponent `e = 0`. Formalising it needs a normal-form decomposition of
-`closure(cycloGenSet)` plus the `v_p`-theory of the `ξ^a−1` (independent generators of
-the cyclotomic-unit group), infrastructure not yet in the project; recorded here as the
-single deferred step of E12.4. -/
+needs the finite Galois action on units and is finalised in E12.4 at execution.) -/
 theorem cycloUnitsPlus_eq_closure_gammas (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
     cycloUnitsPlus p n = Subgroup.closure
       ({g : ℂ_[p]ˣ | ∃ b : ℕ, ¬ (p : ℕ) ∣ b ∧ (g : ℂ_[p]) = gammaUnit p b n} ∪
         {g : ℂ_[p]ˣ | (g : ℂ_[p]) = -1}) := by
   refine le_antisymm ?_ ?_
-  · -- `⊆`: the deferred valuation/reality normal-form direction (see statement note)
-    sorry
+  · -- `⊆`: the valuation/reality normal-form direction (RJW TeX 3474–3481)
+    intro u hu
+    obtain ⟨hucyc, huReal⟩ := hu
+    rw [cycloUnits, Subgroup.mem_inf] at hucyc
+    obtain ⟨huClosure, huGlobal⟩ := hucyc
+    -- `u ∈ M`, extract the normal form `u = ξ^D · δ^E · h`
+    have huAug : u ∈ Subgroup.closure (augGenSet p hn) :=
+      closure_cycloGenSet_le_aug p hp2 hn huClosure
+    obtain ⟨D, E, h, hh, huDEh⟩ := mem_aug_normal_form p hn huAug
+    -- `h` is real, `valHom h = 1`
+    have hhReal : (h : ℂ_[p]) ∈ FglobalPlus p n :=
+      coe_mem_FglobalPlus_of_mem_closure_gammaGenSet p hp2 hn hh
+    have hhVal : valHom p h = 1 := valHom_eq_one_of_mem_closure_gammaGenSet p hn hh
+    -- `valHom u = 1` (global unit ⟹ norm 1)
+    have huNorm : ‖(u : ℂ_[p])‖ = 1 := by
+      obtain ⟨_, hint, hintInv⟩ := huGlobal
+      have h1 : ‖(u : ℂ_[p])‖ ≤ 1 := norm_le_one_of_isIntegral_int p hint
+      have h2 : ‖((u⁻¹ : ℂ_[p]ˣ) : ℂ_[p])‖ ≤ 1 := norm_le_one_of_isIntegral_int p hintInv
+      rw [Units.val_inv_eq_inv_val, norm_inv] at h2
+      have hpos : 0 < ‖(u : ℂ_[p])‖ := norm_pos_iff.mpr u.ne_zero
+      have hge : 1 ≤ ‖(u : ℂ_[p])‖ := (inv_le_one₀ hpos).mp h2
+      exact le_antisymm h1 hge
+    have huVal : valHom p u = 1 := valHom_eq_one_of_norm_one p huNorm
+    have hξVal : valHom p (zetaSysUnit p n) = 1 :=
+      valHom_eq_one_of_norm_one p (by rw [zetaSysUnit_val, norm_zetaSys_eq_one])
+    -- kill the `δ`-exponent: `valHom δ ^ E = 1` with `valHom δ ≠ 1` ⟹ `E = 0`
+    have hδpow : valHom p (deltaUnit p hn) ^ E = 1 := by
+      have := congrArg (valHom p) huDEh
+      rw [huVal, map_mul, map_mul, map_zpow, map_zpow, hξVal, hhVal, one_zpow, one_mul,
+        mul_one] at this
+      exact this.symm
+    have hE0 : E = 0 := by
+      by_contra hE
+      apply valHom_deltaUnit_ne_one p hn
+      -- `valHom δ = ofAdd c`, `(ofAdd c)^E = ofAdd (E•c) = 1 ⟹ c = 0`
+      set c : ℝ := -Real.log ‖(deltaUnit p hn : ℂ_[p])‖ with hc
+      have hval : valHom p (deltaUnit p hn) = Multiplicative.ofAdd c := rfl
+      rw [hval, ← ofAdd_zsmul, ofAdd_eq_one, zsmul_eq_mul] at hδpow
+      rw [hval, ofAdd_eq_one]
+      rcases mul_eq_zero.mp hδpow with hEz | hcz
+      · exact absurd (by exact_mod_cast hEz) hE
+      · exact hcz
+    -- kill the `ξ`-exponent: `ξ^D` is real ⟹ `ξ^D = 1`
+    rw [hE0, zpow_zero, mul_one] at huDEh
+    have hξDReal : ((zetaSysUnit p n ^ D : ℂ_[p]ˣ) : ℂ_[p]) ∈ FglobalPlus p n := by
+      rw [show zetaSysUnit p n ^ D = u * h⁻¹ from by rw [huDEh, mul_inv_cancel_right]]
+      rw [Units.val_mul, Units.val_inv_eq_inv_val]
+      exact mul_mem huReal ((FglobalPlus p n).inv_mem hhReal)
+    have hξD1 : zetaSysUnit p n ^ D = 1 :=
+      zetaSysUnit_zpow_eq_one_of_mem_FglobalPlus p hp2 hn D hξDReal
+    -- conclude `u = h ∈ closure(gammaGenSet)`
+    rw [huDEh, hξD1, one_mul]
+    exact hh
   · -- `⊇`: every generator lies in `𝒟_n^+`
     rw [Subgroup.closure_le]
     rintro g (⟨b, hb, hval⟩ | hval)
@@ -401,26 +925,6 @@ theorem closure_zspan_eq_zpspan {n : ℕ} (hn : 1 ≤ n) {g : ℂ_[p]ˣ}
   have hclosure : closure (Subgroup.zpowers g : Set ℂ_[p]ˣ) ⊆ T :=
     hTclosed.closure_subset_iff.mpr hsub
   exact hclosure hx
-
-/-- `‖ξ_{p^n}^k − 1‖ < 1` for every `k` (a conjugate uniformiser, dominated by
-`‖π_n‖ < 1`). -/
-private theorem norm_zetaSys_pow_sub_one_lt {n : ℕ} (hn : 1 ≤ n) (k : ℕ) :
-    ‖zetaSys p n ^ k - 1‖ < 1 := by
-  have hξ1 : ‖zetaSys p n‖ = 1 := by
-    rw [show zetaSys p n = zhp p (1 : ZMod (p ^ n)) by
-      rw [show (1 : ZMod (p ^ n)) = ((1:ℕ):ZMod (p^n)) by norm_cast, zhp_natCast, pow_one],
-      norm_zhp]
-  have hbound : ‖zetaSys p n ^ k - 1‖ ≤ ‖zetaSys p n - 1‖ := by
-    rw [show zetaSys p n ^ k - 1
-        = (∑ i ∈ Finset.range k, zetaSys p n ^ i) * (zetaSys p n - 1) from
-      (geom_sum_mul _ k).symm, norm_mul]
-    have hgeom : ‖∑ i ∈ Finset.range k, zetaSys p n ^ i‖ ≤ 1 :=
-      IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one
-        (fun i _ => by rw [norm_pow, hξ1, one_pow])
-    nlinarith [norm_nonneg (zetaSys p n - 1), hgeom]
-  refine lt_of_le_of_lt hbound ?_
-  have := norm_pi_lt_one p hn
-  rwa [pi] at this
 
 /-- `‖zhp c − 1‖ < 1` (a half-power root of unity is a principal unit). -/
 private theorem norm_zhp_sub_one_lt {n : ℕ} (hn : 1 ≤ n) (c : ZMod (p ^ n)) :

@@ -5651,7 +5651,7 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 - **Sizing**: ~180 LOC.
 
 ### [T1205] E12.4: generators of the cyclotomic units (Generators.lean)
-- **Status**: in_progress (2026-06-14, beastmode §12 wave 2 — 4/5 sorry-free; ⊆ of `cycloUnitsPlus_eq_closure_gammas` spawned as T1205a) | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
+- **Status**: **done** (2026-06-14, beastmode §12 wave 4). Generators.lean sorry-free; `lake build PadicLFunctions.IwasawaProof.Generators` ✓; `cycloUnitsPlus_eq_closure_gammas` axiom-clean {propext, Classical.choice, Quot.sound}. All of `gammaUnit`, `gammaUnit_mem_cycloUnitsPlus`, `cycloUnitsPlus_eq_closure_gammas` (both directions), `closure_zspan_eq_zpspan`, `cycloTower1Plus_cyclic_generator` complete. Sub-ticket T1205a (⊆) closed. | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
 - **Progress (2026-06-14)**: agent aeb98 closed `gammaUnit`, `gammaUnit_mem_cycloUnitsPlus`, `closure_zspan_eq_zpspan`, `cycloTower1Plus_cyclic_generator` (strengthened to the proven congruence `γ_{n,a} ≡ a mod 𝔭_n` = §11 b2-note), and the `⊇` direction of `cycloUnitsPlus_eq_closure_gammas`. The single remaining sorry is the `⊆` direction (Generators.lean:335) → T1205a.
 - **Parallel**: yes (vs T1203/T1204 — needs only T1201's finite Galois action) | **Type**: defs + lemmas
 #### Statement
@@ -5673,7 +5673,7 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 - **Sizing**: ~280 LOC.
 
 ### [T1205a] lem:cyc units gen (i) `⊆` — the valuation/reality normal-form direction
-- **Status**: open | **File**: IwasawaProof/Generators.lean | **Parent**: T1205 | **Type**: theorem
+- **Status**: **done** (2026-06-14, agent a282d89 + orchestrator binder fix). The full three-piece argument: normal form (A) `mem_aug_normal_form` (closure_induction giving `u = ξ^D·δ^E·h`, `h ∈ closure(gammaGenSet)`; the `ξ^a−1` generator handled by strong induction on `v_p(a)` via the TeX 3471 `p`-fold product `zetaSys_pow_mul_sub_one_prod`); valuation (B) `valHom` kills `E` (`valHom δ ≠ 1`); reality (C) `zetaSysUnit_zpow_eq_one_of_mem_FglobalPlus` kills `D`. ~12 private helpers. Orchestrator fixed one missing `{a : ℕ}` binder on `zetaSys_pow_sub_one_ne_zero` (the agent's reported "exits 0" predated that regression); clean build + axiom-clean confirmed after fix. | **File**: IwasawaProof/Generators.lean | **Parent**: T1205 | **Type**: theorem
 - **Depends on**: T1205 (⊇ done; `gammaUnit`, `gammaUnit_mem_cycloUnitsPlus`, `neg_one_mem_cycloUnitsPlus` available)
 #### Statement (the `⊆` half of `cycloUnitsPlus_eq_closure_gammas`, Generators.lean:333–335)
 `cycloUnitsPlus p n ≤ Subgroup.closure ({g | ∃ b, ¬p∣b ∧ (g:ℂ_[p]) = gammaUnit p b n} ∪ {g | (g:ℂ_[p]) = -1})`.
