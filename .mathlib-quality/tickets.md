@@ -5561,7 +5561,7 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
   resists, spawn a Tier-A sub-ticket for the conjugation-invariance of `levelNorm`.
 
 ### [T1202] E12.1 tail: ℤ_p-equivariance, Teichmüller split, cor:G-eq (Equivariance.lean)
-- **Status**: open | **File**: IwasawaProof/Equivariance.lean | **Depends on**: T1201
+- **Status**: in_progress (2026-06-14, agent a9db35 — 2/3 closed). `Col_lambdaG_equivariant` (cor:G-eq; RHS fixed to the `pushforward (unitsMulLeftCM a)` form matching T1201b's `Col_galNCU`) and `Col_eq_zero_of_torsion` (μ_{p−1} killed, via the homomorphism route `(p−1)·dlog=0` + ℤ_p⟦T⟧ torsion-free) both sorry-free + axiom-clean. The Teichmüller split `normCompat_eq_teichmuller_mul_principal` is the single remaining sorry (Equivariance.lean:122) → T1202a. | **File**: IwasawaProof/Equivariance.lean | **Sub-tickets**: T1202a | **Depends on**: T1201
 - **Parallel**: no (needs T1201) | **Type**: lemmas
 #### Statement
 `normCompat_eq_teichmuller_mul_principal` (𝒰_∞ = μ_{p−1} × 𝒰_{∞,1}); `Col_eq_zero_of_torsion`
@@ -5577,6 +5577,26 @@ b2-logged a≡1-mod-p note is resolved NATIVELY by E12.4 (the Teichmüller corre
 - **Mathlib**: reduction-mod-𝔭 / Teichmüller (§5 `teichmullerZMod` port if needed).
 - **Sources**: Q1, Q2, Q3, Q5 (TeX 3130–3243).
 - **Sizing**: ~140 LOC.
+
+### [T1202a] Teichmüller split `𝒰_∞ = μ_{p−1} × 𝒰_{∞,1}` (Equivariance.lean)
+- **Status**: open (OFF the T1206 critical path — see note) | **File**: IwasawaProof/Equivariance.lean | **Parent**: T1202 | **Type**: lemma + residue-field sub-development
+#### Statement (Equivariance.lean:~122, unchanged)
+`normCompat_eq_teichmuller_mul_principal (u : NormCompatUnits p) : ∃ v w, w ∈ unitsTower1 p ∧ (∀ n, (v.elems n)^(p−1) = 1) ∧ u = v * w`.
+#### Obstacle (agent a9db35) + plan
+Needs residue-field-of-`O_n` infrastructure absent from the project: (i) a residue/Teichmüller
+section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`); (ii) `levelNorm`-on-constants
+`N(ζ)=ζ^p` — EASY via `Algebra.norm_algebraMap` (ζ ∈ ℤ_[p] constant, `[K_{n+1}:K_n]=p` from Tower);
+(iii) norm-residue compatibility (so `v`,`w` are norm-compatible). (i) is the real sub-development
+(residue field of the totally-ramified `K_n`; μ_{p−1} ⊂ ℤ_[p]^× so the existing `teichmullerZMod`/
+`teichmullerFun` in Interpolation/Branches.lean is the ℤ_[p] analog to adapt).
+- **Note (off critical path)**: T1204 (FundamentalSequence) and T1206 (Main) are stated on
+  `unitsTower1` (= 𝒰_{∞,1}) directly, and `ℤ_p(1) ⊂ 𝒰_{∞,1}` (each `ξ_n ≡ 1 mod 𝔭_n`), so the
+  kernel/cokernel computations and the milestone iso never invoke the 𝒰_∞-vs-𝒰_{∞,1} split.
+  Recorded as deferred pending the residue-field pass; blueprint node stays unwired. Revisit only
+  if a downstream proof turns out to need it.
+- **Sources**: RJW §12.1 (TeX 3159–3168).
+- **Sizing**: (ii) ~10 LOC; (i)+(iii) a residue-field sub-development (scope TBD — possibly the
+  survey's global-number-field caveat).
 
 ### [CLEANUP-121] /cleanup GaloisAction.lean + Equivariance.lean
 - **Status**: open | **Depends on**: T1201, T1202. Degraded mode if no lean-lsp MCP.
@@ -5793,8 +5813,19 @@ and the `C`-submodule explicitly).
   the d_n=d_{np} invariant, the ∏-convergence).
 
 ### [T1203c] thm:log der — surjectivity of Δ onto ℤ_p⟦T⟧^{ψ=id}
-- **Status**: open | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
-- **Depends on**: T1203a, T1203b | **Type**: theorem
+- **Status**: open (gate RESOLVED ξ-free — see note; waiting on T1203b to free LogDerivative.lean) | **File**: IwasawaProof/LogDerivative.lean | **Parent**: T1203
+- **Depends on**: T1203a (done), T1203b | **Type**: theorem
+- **ξ-free route note (2026-06-14, orchestrator)**: the T1203 agent flagged the `B ⊆ A`
+  step's "ψ fixes `(T+1)/T`" as the deferred Eqphipsi. NOT a wall: RJW's `LemmaPsiInvariant`
+  (ψμ_a=μ_a, the measure analog) is ALREADY proven ξ-free in the project (`psi_muA`,
+  MuA.lean:460) via the ξ-free projection formula `psi_phi_mul` (Toolbox.lean:312 /
+  MuA.lean:366). The missing ξ-free ingredient is the SERIES analog
+  `psiSeries (phiSeries d * G) = d * psiSeries G` (the digit-shift projection formula —
+  provable from the unique digit decomposition like its measure cousin; FormalPsi.lean has
+  `psiSeries_phi`/`_C`/`_add`/`_C_mul`, NormOperator has `psiSeries_phi_padicInt`). Build that
+  helper, then "ψ fixes `(T+1)/T`" / "ψ b = b" follows ξ-free, mirroring the T1203a Jacobi win.
+  Second buildable input: dlog-continuity in the Pi topology (`derivativeFun` + `Ring.inverse`
+  on units continuous) — a §10-substrate addition, not deferred. So T1206 stays reachable.
 #### Statement
 `dlog_surjective_onto_psiId {F : PowerSeries ℤ_[p]} (hF : F ∈ psiIdSeries p) :
 ∃ g, IsUnit g ∧ normOp g = g ∧ dlog p g = F` (LogDerivative.lean:244).
