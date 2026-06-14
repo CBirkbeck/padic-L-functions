@@ -5904,6 +5904,24 @@ thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p
     `projPlus_eq_zero_iff` (482) = minusPart; `ker_projPlus` (505) = `span{dirac(−1)−1}`.
 
 ### [T1206c] col_image ⊆: the cyclic-module density `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`
+- **Status**: **BLOCKED on the plan-DEFERRED §13/IMC Λ(𝒢)-module layer — B3 boundary, surfaced to user
+  2026-06-14 (THREE deep agents converged: a7cc206, a4573cd, a276ef)**. Maximal reduction reached:
+  every closeable piece of the milestone is now axiom-clean + pushed — (i) ⊇ density-crossing
+  `zetaIdeal_le_col_image` (3d6455a, via the 536L ColContinuity.lean weak-* topology layer); (ii)
+  closedness `isClosed_zetaIdeal` (386020a, p-adic Banach–Alaoglu); (iii) **level-n cyclicity
+  `cor:cyc units gen 2` = `cycloUnit_mem_cycloTranslateSubgroup` (7167ea6, σ_a-action `galAutVal_cycloUnit`
+  + telescoping `prod_galAutValU_cycloUnit_telescope`, replacing the vacuous stub)**; (iv) injectivity
+  `mem_cycloTower1_of_col_mem_zetaIdeal`. The SOLE residual (Main:308 ⊆ sorry + the dependent Main:663
+  surjectivity) is the **inverse-limit `Λ(𝒢)`-module structure on `NormCompatUnits`**: a
+  `Module (Λ(𝒢)) (NormCompatUnits)` instance + the intertwining `Col(λ•u)=λ·Col u` for arbitrary
+  `λ∈Λ(𝒢)` — proven EQUIVALENT to the absent `Continuous Col` (circular), so it genuinely needs the
+  multi-file tower-lift `𝒞_{∞,1}=closure(Λ(𝒢)·wγ(a₀))` (RJW LemmaGeneratorCinfty1, TeX 3573–3578).
+  This is the **deferred §13/IMC module layer** (CLAUDE.md rule #6 "don't widen ad hoc"; plan "deferred
+  Λ-module structure theorem (that is §13/IMC)"; "MainConjecture is blueprint-only"; D611–D613 gating).
+  → **B3**: needs explicit user authorization for a dedicated multi-file §13 module-theory development
+  (a NEW scope decision beyond the user's earlier "§13-continuity + T1202a" authorization, which is now
+  fully discharged). `iwasawa_theorem`/`iwasawa_exact_sequence` carry sorryAx ONLY from this one residual.
+  --- (prior) ---
 - **Status**: **OPEN — closedness half BANKED, residual = level-n cyclic generation (2026-06-14, agent
   a4573cd + on-disk verify)**. NEW axiom-clean in ColContinuity.lean: `isClosed_zetaIdeal` (proved
   INDEPENDENTLY of the image identity via p-adic Banach–Alaoglu: `instCompactSpace (PadicMeasure ℤ_p^×)`
