@@ -324,29 +324,179 @@ def colDescentPlusMul (hp2 : p ≠ 2) :
     (col_mem_zetaIdeal_iff_mem_cycloTower1 p hp2 hxunit).2 hxcyclo
   rw [Ideal.Quotient.eq_zero_iff_mem.2 (projPlus_zetaIdeal_le_zetaIdealPlus p hp2 hmem)]; rfl
 
-/-- **DEFERRED (RJW §12.5, TeX 3592–3608 — the ⟨c⟩-invariants collapse / image isomorphism):**
-the plus-descent `colDescentPlusMul` is bijective — i.e. the genuine plus map
-`𝒰⁺_{∞,1}/𝒞⁺_{∞,1} → Λ(𝒢⁺)/I(𝒢⁺)ζ_p` is the RJW isomorphism `thm:iwasawa`.
+/-! ## Plus-equivariance of the Coleman map (RJW §12.5, the injectivity input)
 
-RJW's proof: apply the exact functor `(−)^{⟨c⟩}` (`⟨c⟩`-invariants, exact since `p` is odd —
-the ± splitting `isCompl_plusPart_minusPart`) to the fundamental sequence (i)
-`0 → 𝒰_{∞,1}/𝒞_{∞,1} → Λ(𝒢)/I(𝒢)ζ_p → ℤ_p(1) → 0`. As `c` acts by `−1` on `ℤ_p(1)` and `p`
-is odd, `ℤ_p(1)^{⟨c⟩} = 0`, so the cokernel dies and the sequence collapses to the iso (ii),
-using `(𝒰_{∞,1}/𝒞_{∞,1})^{⟨c⟩} = 𝒰⁺_{∞,1}/𝒞⁺_{∞,1}` and
-`(Λ(𝒢)/I(𝒢)ζ_p)^{⟨c⟩} = Λ(𝒢⁺)/I(𝒢⁺)ζ_p` (`plusEquiv`, `zetaIdealPlus_eq_map_projPlus`).
+The Galois fixed-field characterisation `K_n⁺ = (K_n)^{⟨σ_{-1}⟩}`
+(`mem_localUnitsOnePlus_iff_galAut_fixed`, `GaloisAction.lean`) lets us transport
+`c`-invariance from a plus-tower unit `u` to its Coleman image `Col u`: a plus-tower unit is
+fixed by complex conjugation `σ_{-1}` levelwise, hence `σ_{-1}·u = u` in `𝒰_∞`
+(`galNCU`), and `Col(σ_{-1}·u) = [−1]·Col u = c·Col u` (`Col_galNCU_eq_dirac_mul`), so
+`c·Col u = Col u`, i.e. `Col u ∈ Λ(𝒢)⁺`. -/
 
-This is blocked on the §12/§13-deferred infrastructure in two places: (a) surjectivity needs
-the inverse-limit cyclic-module image computation (same source as
-`col_mem_zetaIdeal_iff_mem_cycloTower1`); (b) injectivity additionally needs the **Galois
-fixed-field characterisation** `𝒰⁺_{n,1} = (𝒰_{n,1})^{⟨c⟩}` — i.e. `K_n⁺` is the fixed field
-of complex conjugation `σ_{−1}` — to transport `c`-invariance of `Col u` (`Col u ∈ plusPart`)
-from the plus-tower membership of `u`; the project's `KPlus` is currently defined by its
-concrete generator `ξ + ξ⁻¹` with the Galois characterisation flagged "§12 material"
-(`LocalUnits.lean`), so the plus-equivariance of `Col` is not yet derivable. Everything
-structural around this (the genuine map `colDescentPlusMul`, the plus-ideal bridge
-`zetaIdealPlus_eq_map_projPlus`, the `≃+` assembly) is built without further `sorry`. -/
+/-- A plus-tower unit is fixed by complex conjugation `σ_{-1}` on `𝒰_∞`: `σ_{-1}·u = u`.
+Levelwise `(σ_{-1}·u)_n = σ_{-1}(u_n) = u_n` — for `n ≥ 1` because `u_n ∈ 𝒰⁺_{n,1}` is
+`σ_{-1}`-fixed (`mem_localUnitsOnePlus_iff_galAut_fixed`), and for `n = 0` because
+`σ_{-1} = id` on `K_0 = ℚ_p` (`galAut … 0 = AlgEquiv.refl`). -/
+theorem galNCU_neg_one_of_mem_unitsTower1Plus (hp2 : p ≠ 2) {u : NormCompatUnits p}
+    (hu : u ∈ unitsTower1Plus p) : galNCU p (-1) u = u := by
+  refine NormCompatUnits.ext (funext fun n => Units.ext ?_)
+  rw [galNCU_elems_val]
+  rcases Nat.eq_zero_or_pos n with hn0 | hn
+  · -- `n = 0`: `σ_{-1} = AlgEquiv.refl` on `K_0`
+    subst hn0
+    rw [show galAut p (-1) 0 = AlgEquiv.refl from by rw [galAut, dif_neg (by omega)]]
+    rfl
+  · -- `n ≥ 1`: `u_n ∈ 𝒰⁺_{n,1}` is `σ_{-1}`-fixed
+    have hun : u.elems n ∈ localUnitsOne p n := (Subgroup.mem_inf.1 (hu n hn)).1
+    exact (mem_localUnitsOnePlus_iff_galAut_fixed p hp2 hn hun).1 (hu n hn)
+
+/-- **Plus-equivariance of the Coleman map** (RJW §12.5): for a plus-tower unit
+`u ∈ 𝒰⁺_{∞,1}`, the Coleman image `Col u` is `c`-invariant, i.e. lies in the plus part
+`Λ(𝒢)⁺`. Proof: `σ_{-1}·u = u` (`galNCU_neg_one_of_mem_unitsTower1Plus`), so
+`c·Col u = [−1]·Col u = Col(σ_{-1}·u) = Col u` (`Col_galNCU_eq_dirac_mul`, `cAct`). -/
+theorem Col_mem_plusPart_of_mem_unitsTower1Plus (hp2 : p ≠ 2) {u : NormCompatUnits p}
+    (hu : u ∈ unitsTower1Plus p) : Col p u ∈ PadicMeasure.plusPart p := by
+  rw [PadicMeasure.mem_plusPart_iff]
+  -- `[−1]·Col u = Col(σ_{-1}·u) = Col u`
+  rw [← Col_galNCU_eq_dirac_mul p (-1) u, galNCU_neg_one_of_mem_unitsTower1Plus p hp2 hu]
+
+/-- `𝒞⁺_{∞,1} = 𝒞_{∞,1} ⊓ 𝒰⁺_{∞,1}`: the plus closure-tower is exactly the principal-plus
+units inside the full closure-tower (levelwise `cycloClosureOnePlus = cycloClosureOne ⊓
+localUnitsPlus`, the only reshuffle of the `⊓`-factors). The `←` inclusion is the step
+`u ∈ 𝒞_{∞,1} ∧ u ∈ 𝒰⁺_{∞,1} ⟹ u ∈ 𝒞⁺_{∞,1}` of the injectivity argument. -/
+theorem mem_cycloTower1Plus_of_mem_cycloTower1_unitsTower1Plus {u : NormCompatUnits p}
+    (hc : u ∈ cycloTower1 p) (hp : u ∈ unitsTower1Plus p) : u ∈ cycloTower1Plus p := by
+  intro n hn
+  have hcn := hc n hn
+  have hpn := hp n hn
+  rw [cycloClosureOne, Subgroup.mem_inf] at hcn
+  rw [localUnitsOnePlus, Subgroup.mem_inf] at hpn
+  rw [cycloClosureOnePlus, Subgroup.mem_inf, cycloClosurePlus, Subgroup.mem_inf]
+  exact ⟨⟨hcn.1, hpn.2⟩, hcn.2⟩
+
+/-- The even idempotent `e⁺ = ½([1] + [−1]) ∈ Λ(𝒢)` (the projector onto `Λ(𝒢)⁺`). -/
+private noncomputable def ePlus (hp2 : p ≠ 2) : PadicMeasure p ℤ_[p]ˣ :=
+  (((PadicLFunctions.isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p])
+    • (1 + PadicMeasure.dirac p (-1 : ℤ_[p]ˣ))
+
+/-- `[−1]·[−1] = 1` in `Λ(𝒢)`. -/
+private theorem dirac_neg_one_sq :
+    PadicMeasure.dirac p (-1 : ℤ_[p]ˣ) * PadicMeasure.dirac p (-1 : ℤ_[p]ˣ) = 1 := by
+  rw [PadicMeasure.units_dirac_mul_dirac, show (-1 : ℤ_[p]ˣ) * (-1) = 1 by rw [neg_mul_neg,
+    one_mul], ← PadicMeasure.units_one_def]
+
+/-- `e⁺ ∈ Λ(𝒢)⁺`: `[−1]·e⁺ = ½([−1] + [1]) = e⁺`. -/
+private theorem ePlus_mem_plusPart (hp2 : p ≠ 2) : ePlus p hp2 ∈ PadicMeasure.plusPart p := by
+  rw [PadicMeasure.mem_plusPart_iff, ePlus, mul_smul_comm, mul_add, mul_one,
+    dirac_neg_one_sq p, add_comm]
+
+/-- `π_*` is `ℤ_[p]`-linear (its underlying map is `pushforward`, a `LinearMap`). -/
+private theorem projPlus_smul (c : ℤ_[p]) (μ : PadicMeasure p ℤ_[p]ˣ) :
+    PadicMeasure.projPlus p (c • μ) = c • PadicMeasure.projPlus p μ :=
+  (PadicMeasure.pushforward p (PadicMeasure.quotientMk p)).map_smul c μ
+
+/-- `π_*(e⁺) = 1`: under the quotient `mk (−1) = mk 1`, so `e⁺ ↦ ½(1 + 1) = 1`. -/
+private theorem projPlus_ePlus (hp2 : p ≠ 2) :
+    PadicMeasure.projPlus p (ePlus p hp2) = 1 := by
+  rw [ePlus, projPlus_smul, map_add, map_one, PadicMeasure.projPlus_dirac,
+    show (QuotientGroup.mk (-1 : ℤ_[p]ˣ) : PadicMeasure.GPlus p) = QuotientGroup.mk 1 from by
+      rw [QuotientGroup.eq, Subgroup.mem_zpowers_iff]
+      exact ⟨1, by rw [zpow_one, inv_neg, neg_mul, inv_mul_cancel]⟩]
+  rw [show (PadicMeasure.dirac p (QuotientGroup.mk (1 : ℤ_[p]ˣ) : PadicMeasure.GPlus p))
+      = 1 from by rw [← PadicMeasure.projPlus_dirac, ← PadicMeasure.units_one_def, map_one],
+    show (1 : PadicMeasure p (PadicMeasure.GPlus p)) + 1
+      = (2 : ℤ_[p]) • (1 : PadicMeasure p (PadicMeasure.GPlus p)) from by rw [two_smul], smul_smul,
+    (PadicLFunctions.isUnit_two_padicInt p hp2).val_inv_mul, one_smul]
+
+/-- The plus ζ-ideal pulls back to the ζ-ideal on `c`-invariant measures: if `μ ∈ Λ(𝒢)⁺`
+and `π_*(μ) ∈ I(𝒢⁺)ζ_p`, then `μ ∈ I(𝒢)ζ_p`. `I(𝒢⁺)ζ_p = π_*(I(𝒢)ζ_p)`
+(`zetaIdealPlus_eq_map_projPlus`), so `π_*(μ) = π_*(ν)` for some `ν ∈ I(𝒢)ζ_p`. Replacing `ν`
+by its plus part `e⁺·ν` (still in `I(𝒢)ζ_p` since it is an ideal, and with the same
+pushforward since `π_*(e⁺) = 1`), both `μ` and `e⁺·ν` lie in `Λ(𝒢)⁺` where `π_*` is injective
+(`plusSection_projPlus`), so `μ = e⁺·ν ∈ I(𝒢)ζ_p`. -/
+theorem mem_zetaIdeal_of_mem_plusPart_projPlus (hp2 : p ≠ 2) {μ : PadicMeasure p ℤ_[p]ˣ}
+    (hμ : μ ∈ PadicMeasure.plusPart p)
+    (hproj : PadicMeasure.projPlus p μ ∈ PadicMeasure.zetaIdealPlus p hp2) :
+    μ ∈ PadicMeasure.zetaIdeal p hp2 := by
+  -- `π_*(μ) ∈ π_*(I(𝒢)ζ_p)`, so `π_*(ν) = π_*(μ)` with `ν ∈ I(𝒢)ζ_p`
+  rw [zetaIdealPlus_eq_map_projPlus p hp2, Ideal.mem_map_iff_of_surjective _
+    (PadicMeasure.projPlus_surjective p hp2)] at hproj
+  obtain ⟨ν, hν, hμν⟩ := hproj
+  -- the plus part `e⁺·ν ∈ I(𝒢)ζ_p ∩ Λ(𝒢)⁺` with `π_*(e⁺·ν) = π_*(ν) = π_*(μ)`
+  set ν' := ePlus p hp2 * ν with hν'
+  have hν'ideal : ν' ∈ PadicMeasure.zetaIdeal p hp2 := Ideal.mul_mem_left _ _ hν
+  have hν'plus : ν' ∈ PadicMeasure.plusPart p := by
+    rw [hν', mul_comm]; exact PadicMeasure.mul_mem_plusPart p (ePlus_mem_plusPart p hp2)
+  have hprojν' : PadicMeasure.projPlus p ν' = PadicMeasure.projPlus p μ := by
+    rw [hν', map_mul, projPlus_ePlus p hp2]
+    exact (one_mul _).trans hμν
+  -- `π_*` injective on `Λ(𝒢)⁺`, so `μ = ν' ∈ I(𝒢)ζ_p`
+  have hμeq : ν' = μ := by
+    have h := congrArg (PadicMeasure.plusSection p hp2) hprojν'
+    rwa [PadicMeasure.plusSection_projPlus p hp2 hν'plus,
+      PadicMeasure.plusSection_projPlus p hp2 hμ] at h
+  rw [← hμeq]; exact hν'ideal
+
+/-- **The plus-descent `colDescentPlusMul` is injective** (RJW §12.5, the `⟨c⟩`-invariants
+half now discharged via the Galois fixed-field). For a plus-tower unit `u` with
+`[π_*(Col u)] = 0`:
+* `Col u ∈ Λ(𝒢)⁺` (plus-equivariance `Col_mem_plusPart_of_mem_unitsTower1Plus`, from the
+  Galois characterisation `K_n⁺ = (K_n)^{⟨σ_{-1}⟩}`);
+* `π_*(Col u) ∈ I(𝒢⁺)ζ_p`, so `Col u ∈ I(𝒢)ζ_p` (`mem_zetaIdeal_of_mem_plusPart_projPlus`);
+* hence `u ∈ 𝒞_{∞,1}` (`col_mem_zetaIdeal_iff_mem_cycloTower1`, the `→` direction), and
+  `u ∈ 𝒞⁺_{∞,1}` since `u` is plus (`mem_cycloTower1Plus_of_mem_cycloTower1_unitsTower1Plus`),
+i.e. `[u] = 0`. (Transitively this still rests on the deferred image identity `col_image`
+through `col_mem_zetaIdeal_iff_mem_cycloTower1`; no *additional* gap is introduced.) -/
+theorem colDescentPlusMul_injective (hp2 : p ≠ 2) :
+    Function.Injective (colDescentPlusMul p hp2) := by
+  rw [injective_iff_map_eq_one]
+  intro x hx
+  induction x using QuotientGroup.induction_on with
+  | _ u =>
+    -- `colDescentPlusMul [u] = ofAdd [π_*(Col u)] = 1`, i.e. `π_*(Col u) ∈ I(𝒢⁺)ζ_p`
+    rw [colDescentPlusMul, QuotientGroup.lift_mk, MonoidHom.comp_apply,
+      (unitsTower1Plus p).coe_subtype, ColPlusMul_apply] at hx
+    have hproj : PadicMeasure.projPlus p (Col p (u : NormCompatUnits p))
+        ∈ PadicMeasure.zetaIdealPlus p hp2 := by
+      rwa [← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff,
+        Ideal.Quotient.eq_zero_iff_mem] at hx
+    -- `Col u ∈ Λ(𝒢)⁺` (plus-equivariance), so `Col u ∈ I(𝒢)ζ_p`
+    have hplus : Col p (u : NormCompatUnits p) ∈ PadicMeasure.plusPart p :=
+      Col_mem_plusPart_of_mem_unitsTower1Plus p hp2 u.2
+    have hzeta : Col p (u : NormCompatUnits p) ∈ PadicMeasure.zetaIdeal p hp2 :=
+      mem_zetaIdeal_of_mem_plusPart_projPlus p hp2 hplus hproj
+    -- hence `u ∈ 𝒞_{∞,1}`, and being plus, `u ∈ 𝒞⁺_{∞,1}`, i.e. `[u] = 1`
+    have huunit : (u : NormCompatUnits p) ∈ unitsTower1 p :=
+      unitsTower1Plus_le_unitsTower1 p u.2
+    have hcyclo : (u : NormCompatUnits p) ∈ cycloTower1 p :=
+      (col_mem_zetaIdeal_iff_mem_cycloTower1 p hp2 huunit).1 hzeta
+    have hcycloPlus : (u : NormCompatUnits p) ∈ cycloTower1Plus p :=
+      mem_cycloTower1Plus_of_mem_cycloTower1_unitsTower1Plus p hcyclo u.2
+    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
+    exact hcycloPlus
+
+/-- **RJW thm:iwasawa 2 (ii) — the milestone bijectivity**: the plus-descent
+`colDescentPlusMul : 𝒰⁺_{∞,1}/𝒞⁺_{∞,1} → Λ(𝒢⁺)/I(𝒢⁺)ζ_p` is bijective. The injectivity is
+proved (`colDescentPlusMul_injective`), enabled by the Galois fixed-field characterisation
+`K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` (`mem_localUnitsOnePlus_iff_galAut_fixed`, `GaloisAction.lean`).
+
+Surjectivity is the one remaining gap, and it reduces to the **single** deferred identity
+`col_image_cycloTower1_eq_zetaIdeal` (Main.lean): RJW's `(−)^{⟨c⟩}`-collapse of the
+fundamental sequence (i) `0 → 𝒰_{∞,1}/𝒞_{∞,1} → Λ(𝒢)/I(𝒢)ζ_p → ℤ_p(1) → 0` makes
+`colDescentPlusMul` onto because `ℤ_p(1)^{⟨c⟩} = 0` (`p` odd), and the (i) image
+`range Col = ker(χ-moment)` (`range_Col_eq_ker_chiMoment`) together with the image
+computation `col_image_cycloTower1_eq_zetaIdeal` pins the cokernel. With that identity in
+hand (the §13/IMC-deferred core, the SAME blocker as the injectivity input
+`col_mem_zetaIdeal_iff_mem_cycloTower1`), both halves close — the milestone bottlenecks on
+exactly `col_image_cycloTower1_eq_zetaIdeal`. -/
 theorem colDescentPlusMul_bijective (hp2 : p ≠ 2) :
-    Function.Bijective (colDescentPlusMul p hp2) := sorry
+    Function.Bijective (colDescentPlusMul p hp2) :=
+  ⟨colDescentPlusMul_injective p hp2, by
+    -- DEFERRED: surjectivity reduces to `col_image_cycloTower1_eq_zetaIdeal` (Main.lean:151),
+    -- the §13/IMC-deferred image identity (the same blocker as the injectivity input). With
+    -- `col_image` the `(−)^{⟨c⟩}`-collapse of the fundamental sequence (i) gives surjectivity
+    -- (`ℤ_p(1)^{⟨c⟩} = 0`, `range_Col_eq_ker_chiMoment`). No further gap beyond `col_image`.
+    sorry⟩
 
 /-- **RJW thm:iwasawa 2 (ii) — THE MILESTONE (TeX 3592–3593)**: the Coleman map induces an
 isomorphism of `Λ(𝒢^+)`-modules `𝒰_{∞,1}^+/𝒞_{∞,1}^+ ≅ Λ(𝒢^+)/I(𝒢^+)ζ_p`. This is

@@ -146,6 +146,55 @@ theorem galAut_zetaSys (a : ℤ_[p]ˣ) {n : ℕ} (hn : 1 ≤ n) :
   rw [SubmonoidClass.coe_pow] at hcoe
   exact hcoe.symm
 
+/-! ### Complex conjugation `σ_{-1}` and the Galois structure of `K_n` (RJW §12 material)
+
+The automorphism `σ_{-1} = galAut p (-1) n` is *complex conjugation* on the cyclotomic
+tower: it sends `ξ_n ↦ ξ_n⁻¹`. For `p` odd and `n ≥ 1` it has order exactly `2`
+(`ξ_n ≠ ξ_n⁻¹`), and `K_n/ℚ_p` is (abelian) Galois (`IsCyclotomicExtension.isGalois`).
+These feed the fixed-field characterisation `K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` of `LocalUnits.lean`. -/
+
+/-- **Complex conjugation** `σ_{-1}` sends `ξ_{p^n} ↦ ξ_{p^n}⁻¹` (the cyclotomic-character
+value `-1`, read through `unitsToZModPow (-1) = -1` and `ξ^{(-1).val} = ξ⁻¹`). RJW TeX 3185. -/
+theorem galAut_neg_one_zetaSys {n : ℕ} (hn : 1 ≤ n) :
+    (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p]) = (zetaSys p n)⁻¹ := by
+  rw [galAut_zetaSys p (-1) hn]
+  have hneg : (PadicMeasure.unitsToZModPow p n (-1) : (ZMod (p ^ n))ˣ) = -1 := by
+    apply Units.ext; rw [PadicMeasure.unitsToZModPow_coe]; push_cast; simp
+  rw [hneg]
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← pow_succ]
+  refine (zetaSys_pow_eq_pow_of_modEq p
+    (i := (((-1 : (ZMod (p ^ n))ˣ) : ZMod (p ^ n))).val + 1) (j := 0) ?_).trans ?_
+  · rw [← ZMod.natCast_eq_natCast_iff]; push_cast [ZMod.natCast_val, ZMod.cast_id]; ring
+  · rw [pow_zero]
+
+/-- `K_n/ℚ_p` is a Galois extension (it is a cyclotomic extension). -/
+instance isGalois_K (n : ℕ) : IsGalois ℚ_[p] (K p n) := by
+  haveI : NeZero (p ^ n) := ⟨(pow_pos hp.out.pos n).ne'⟩
+  exact IsCyclotomicExtension.isGalois {p ^ n} ℚ_[p] (K p n)
+
+/-- `K_n` is finite-dimensional over `ℚ_p` (degree `φ(p^n) > 0`). -/
+instance finiteDimensional_K (n : ℕ) : FiniteDimensional ℚ_[p] (K p n) :=
+  Module.finite_of_finrank_pos (R := ℚ_[p])
+    (by rw [finrank_K]; exact Nat.totient_pos.2 (pow_pos hp.out.pos n))
+
+/-- `ξ_{p^n} ≠ ξ_{p^n}⁻¹` for `p` odd and `n ≥ 1`: otherwise `ξ_n^2 = 1`, but `ξ_n` has
+order `p^n ≥ 3` (RJW: this is where `p ≠ 2` enters the order-2 of conjugation). -/
+theorem zetaSys_ne_inv (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    zetaSys p n ≠ (zetaSys p n)⁻¹ := by
+  intro h
+  -- `ξ_n = ξ_n⁻¹` ⟹ `ξ_n^2 = 1`, so the order `p^n` divides `2`
+  have hξ0 : zetaSys p n ≠ 0 := (zetaSys_primitiveRoot p n).ne_zero (pow_pos hp.out.pos n).ne'
+  have hsq : zetaSys p n ^ 2 = 1 := by
+    rw [pow_two]; nth_rewrite 2 [h]; exact mul_inv_cancel₀ hξ0
+  have hdvd : p ^ n ∣ 2 := (zetaSys_primitiveRoot p n).dvd_of_pow_eq_one 2 hsq
+  -- but `p^n ≥ p ≥ 3` (p odd prime, n ≥ 1), contradicting `p^n ∣ 2`
+  have hp3 : 3 ≤ p := by
+    have := hp.out.two_le
+    omega
+  have : 3 ≤ p ^ n := le_trans hp3 (le_self_pow (by omega) (by omega))
+  exact absurd (Nat.le_of_dvd (by norm_num) hdvd) (by omega)
+
 /-- `⟨ξ_n, _⟩` is integral over `ℚ_p` inside `K_n` (it is a root of unity). -/
 private theorem isIntegral_zetaSysK (n : ℕ) :
     IsIntegral ℚ_[p] (⟨zetaSys p n, zetaSys_mem_K p n⟩ : K p n) :=
@@ -173,6 +222,267 @@ private theorem adjoin_zetaSysK_eq_top (n : ℕ) :
   obtain ⟨z, hz, hzy⟩ := hmap
   have hzeq : (⟨y, hy⟩ : K p n) = z := Subtype.ext hzy.symm
   rw [hzeq]; exact hz
+
+/-- **`σ_{-1}` has order `2`** (RJW §12, `p` odd, `n ≥ 1`): it is an involution
+(`σ_{-1}^2 = id` since `(-1)·(-1) = 1`) and is non-trivial (`σ_{-1}(ξ) = ξ⁻¹ ≠ ξ`). -/
+theorem orderOf_galAut_neg_one (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    orderOf (galAut p (-1) n) = 2 := by
+  refine orderOf_eq_prime ?_ ?_
+  · -- `σ_{-1}^2 = id`: both `σ_{-1}^2` and `id` send the generator `ξ` to itself, and
+    -- agree on `ℚ_p`, so they are equal `ℚ_p`-algebra automorphisms
+    refine AlgEquiv.ext fun y => ?_
+    -- it suffices to check on `ξ`
+    have hξ : ((galAut p (-1) n ^ 2) ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p])
+        = (⟨zetaSys p n, zetaSys_mem_K p n⟩ : K p n) := by
+      rw [pow_two]
+      change (galAut p (-1) n (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩) : ℂ_[p]) = _
+      -- `σ_{-1}(ξ) = ξ⁻¹`, then `σ_{-1}(ξ⁻¹) = (σ_{-1} ξ)⁻¹ = ξ`
+      have h1 : galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩
+          = ⟨(zetaSys p n)⁻¹, (K p n).inv_mem (zetaSys_mem_K p n)⟩ :=
+        Subtype.ext (by rw [galAut_neg_one_zetaSys p hn])
+      rw [h1]
+      have h2 : (⟨(zetaSys p n)⁻¹, (K p n).inv_mem (zetaSys_mem_K p n)⟩ : K p n)
+          = (⟨zetaSys p n, zetaSys_mem_K p n⟩ : K p n)⁻¹ :=
+        Subtype.ext (by rw [IntermediateField.coe_inv])
+      rw [h2, map_inv₀, IntermediateField.coe_inv, galAut_neg_one_zetaSys p hn, inv_inv]
+    -- promote the generator-agreement to all of `K_n`
+    have hcongr : (galAut p (-1) n ^ 2) ⟨zetaSys p n, zetaSys_mem_K p n⟩
+        = (1 : (K p n) ≃ₐ[ℚ_[p]] (K p n)) ⟨zetaSys p n, zetaSys_mem_K p n⟩ :=
+      Subtype.ext (by rw [hξ]; rfl)
+    have heq : (galAut p (-1) n ^ 2) = (1 : (K p n) ≃ₐ[ℚ_[p]] (K p n)) := by
+      apply AlgEquiv.coe_algHom_injective
+      apply AlgHom.ext_of_adjoin_eq_top (adjoin_zetaSysK_eq_top p n)
+      rintro z (rfl : z = ⟨zetaSys p n, zetaSys_mem_K p n⟩)
+      exact hcongr
+    exact AlgEquiv.ext_iff.1 heq y
+  · -- non-triviality: `σ_{-1}(ξ) = ξ⁻¹ ≠ ξ`
+    intro hone
+    have : (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p]) = zetaSys p n := by
+      rw [hone]; rfl
+    rw [galAut_neg_one_zetaSys p hn] at this
+    exact zetaSys_ne_inv p hp2 hn this.symm
+
+/-! ### The fixed-field characterisation `K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` (RJW §12 material)
+
+The maximal totally real subfield `K_n⁺ = ℚ_p(ξ + ξ⁻¹)` (`LocalUnits.KPlus`) is the fixed
+field of complex conjugation `σ_{-1}`. This is the §12 Galois characterisation flagged in
+`LocalUnits.lean`. It lives here (rather than in `LocalUnits`) because it couples `KPlus`
+(`LocalUnits`) with `galAut` (this file, which imports `LocalUnits`).
+
+`(⊆)` is the reality of `K_n⁺`: `σ_{-1}` fixes the generator `ξ + ξ⁻¹`. The equality is the
+Galois correspondence: `[K_n : (K_n)^{⟨σ_{-1}⟩}] = |⟨σ_{-1}⟩| = 2` (`σ_{-1}` order 2) and
+`[K_n : K_n⁺] ≤ 2` (`ξ` is a root of `X² − (ξ+ξ⁻¹)X + 1` over `K_n⁺`), so the two subfields,
+one inside the other, have the same `ℚ_p`-dimension. -/
+
+/-- `K_n⁺` viewed as an intermediate field of `K_n / ℚ_p` (it sits inside `K_n` by
+`KPlus_le_K`). Reducible so that the relative-algebra instances on `K_n` over it resolve. -/
+noncomputable abbrev KPlusRestrict (n : ℕ) : IntermediateField ℚ_[p] (K p n) :=
+  IntermediateField.restrict (KPlus_le_K p n)
+
+/-- **Reality of `K_n⁺`**: complex conjugation `σ_{-1}` fixes every element of `K_n⁺`
+pointwise. `K_n⁺ = ℚ_p(ξ+ξ⁻¹)` and `σ_{-1}` (a `ℚ_p`-automorphism of `K_n ⊇ K_n⁺`) fixes the
+generator `ξ+ξ⁻¹` (`galAut_neg_one_zetaSys` + `add_comm`) and all of `ℚ_p`; closure under the
+field operations is the `adjoin` induction. -/
+theorem galAut_neg_one_fixes_KPlus {n : ℕ} (hn : 1 ≤ n) {x : ℂ_[p]}
+    (hx : x ∈ KPlus p n) (hxK : x ∈ K p n) :
+    (galAut p (-1) n ⟨x, hxK⟩ : ℂ_[p]) = x := by
+  -- the generator `ξ + ξ⁻¹` is fixed
+  have hgen : ∀ (hzK : zetaSys p n + (zetaSys p n)⁻¹ ∈ K p n),
+      (galAut p (-1) n ⟨zetaSys p n + (zetaSys p n)⁻¹, hzK⟩ : ℂ_[p])
+        = zetaSys p n + (zetaSys p n)⁻¹ := fun hzK => by
+    rw [show (⟨zetaSys p n + (zetaSys p n)⁻¹, hzK⟩ : K p n)
+        = ⟨zetaSys p n, zetaSys_mem_K p n⟩ + (⟨zetaSys p n, zetaSys_mem_K p n⟩)⁻¹ from
+      Subtype.ext (by push_cast [Subtype.coe_mk]; rfl), map_add, map_inv₀,
+      show ((galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩
+          + (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩)⁻¹ : K p n) : ℂ_[p])
+          = (galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p])
+            + ((galAut p (-1) n ⟨zetaSys p n, zetaSys_mem_K p n⟩ : ℂ_[p]))⁻¹ from by
+        push_cast; ring,
+      galAut_neg_one_zetaSys p hn, inv_inv, add_comm]
+  -- induct over `K_n⁺ = ℚ_p⟮ξ+ξ⁻¹⟯`
+  have key : ∀ y ∈ KPlus p n, ∀ (hyK : y ∈ K p n),
+      (galAut p (-1) n ⟨y, hyK⟩ : ℂ_[p]) = y := by
+    intro y hy
+    rw [KPlus] at hy
+    induction hy using IntermediateField.adjoin_induction with
+    | mem z hz => obtain rfl := hz; intro hzK; exact hgen hzK
+    | algebraMap r =>
+        intro hrK
+        have hcoe : ((algebraMap ℚ_[p] (K p n) r : K p n) : ℂ_[p])
+            = (algebraMap ℚ_[p] ℂ_[p]) r := by
+          rw [← IntermediateField.algebraMap_apply]; rfl
+        rw [show (⟨(algebraMap ℚ_[p] ℂ_[p]) r, hrK⟩ : K p n) = algebraMap ℚ_[p] (K p n) r from
+          Subtype.ext hcoe, AlgEquiv.commutes, hcoe]
+    | add a b ha hb iha ihb =>
+        intro habK
+        have haK : a ∈ K p n := KPlus_le_K p n ha
+        have hbK : b ∈ K p n := KPlus_le_K p n hb
+        rw [show (⟨a + b, habK⟩ : K p n) = ⟨a, haK⟩ + ⟨b, hbK⟩ from Subtype.ext rfl, map_add]
+        rw [show ((galAut p (-1) n ⟨a, haK⟩ + galAut p (-1) n ⟨b, hbK⟩ : K p n) : ℂ_[p])
+            = (galAut p (-1) n ⟨a, haK⟩ : ℂ_[p]) + (galAut p (-1) n ⟨b, hbK⟩ : ℂ_[p]) from rfl,
+          iha haK, ihb hbK]
+    | mul a b ha hb iha ihb =>
+        intro habK
+        have haK : a ∈ K p n := KPlus_le_K p n ha
+        have hbK : b ∈ K p n := KPlus_le_K p n hb
+        rw [show (⟨a * b, habK⟩ : K p n) = ⟨a, haK⟩ * ⟨b, hbK⟩ from Subtype.ext rfl, map_mul]
+        rw [show ((galAut p (-1) n ⟨a, haK⟩ * galAut p (-1) n ⟨b, hbK⟩ : K p n) : ℂ_[p])
+            = (galAut p (-1) n ⟨a, haK⟩ : ℂ_[p]) * (galAut p (-1) n ⟨b, hbK⟩ : ℂ_[p]) from rfl,
+          iha haK, ihb hbK]
+    | inv a ha iha =>
+        intro haInvK
+        have haK : a ∈ K p n := KPlus_le_K p n ha
+        rw [show (⟨a⁻¹, haInvK⟩ : K p n) = (⟨a, haK⟩ : K p n)⁻¹ from
+          Subtype.ext (by push_cast; rfl), map_inv₀]
+        push_cast
+        rw [iha haK]
+  exact key x hx hxK
+
+/-- `K_n⁺ ⊆ (K_n)^{⟨σ_{-1}⟩}`: every element of `K_n⁺` is fixed by complex conjugation, so
+`K_n⁺` sits inside the fixed field. (The Galois reformulation of `galAut_neg_one_fixes_KPlus`,
+via `K ≤ fixedField H ↔ H ≤ fixingSubgroup K` and `zpowers σ ≤ G ↔ σ ∈ G`.) -/
+theorem KPlusRestrict_le_fixedField {n : ℕ} (hn : 1 ≤ n) :
+    KPlusRestrict p n ≤ IntermediateField.fixedField
+      (Subgroup.zpowers (galAut p (-1) n)) := by
+  rw [IntermediateField.le_iff_le, Subgroup.zpowers_le, IntermediateField.mem_fixingSubgroup_iff]
+  intro x hx
+  -- `x ∈ KPlusRestrict` means `(x : ℂ_[p]) ∈ KPlus`; conjugation fixes it
+  rw [KPlusRestrict, IntermediateField.mem_restrict] at hx
+  exact Subtype.ext (galAut_neg_one_fixes_KPlus p hn hx x.2)
+
+/-- `[K_n : (K_n)^{⟨σ_{-1}⟩}] = 2` (Galois correspondence: the fixed-field degree equals the
+order of the subgroup, here `|⟨σ_{-1}⟩| = orderOf σ_{-1} = 2`). -/
+theorem finrank_fixedField_galAut_neg_one (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    Module.finrank
+      (IntermediateField.fixedField (Subgroup.zpowers (galAut p (-1) n))) (K p n) = 2 := by
+  rw [IntermediateField.finrank_fixedField_eq_card, Nat.card_zpowers,
+    orderOf_galAut_neg_one p hp2 hn]
+
+/-- `ℚ_p(ξ_n) = K_n` as an intermediate field of `K_n / ℚ_p` (the `IntermediateField`
+recast of `adjoin_zetaSysK_eq_top`). -/
+private theorem adjoinSimple_zetaSysK_eq_top (n : ℕ) :
+    IntermediateField.adjoin ℚ_[p] {(⟨zetaSys p n, zetaSys_mem_K p n⟩ : K p n)} = ⊤ := by
+  apply IntermediateField.toSubalgebra_injective
+  rw [IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
+    (isIntegral_zetaSysK p n).isAlgebraic, IntermediateField.top_toSubalgebra,
+    adjoin_zetaSysK_eq_top p n]
+
+set_option maxHeartbeats 1600000 in
+-- Field theory over the `restrict`-subtype `↥(KPlusRestrict p n)` (a `fieldRange` of an
+-- inclusion) makes instance search and `compute_degree`/`minpoly.min` heavy; raised limits.
+set_option synthInstance.maxHeartbeats 400000 in
+/-- `[K_n : K_n⁺] ≤ 2`: `ξ_n` is a root of the monic degree-2 polynomial
+`X² − (ξ+ξ⁻¹)X + 1` over `K_n⁺`, and `K_n = K_n⁺(ξ_n)` (since `ℚ_p(ξ_n) = K_n`), so the
+relative degree is `(minpoly K_n⁺ ξ_n).natDegree ≤ 2`. -/
+theorem finrank_K_over_KPlusRestrict_le {n : ℕ} (_hn : 1 ≤ n) :
+    Module.finrank (KPlusRestrict p n) (K p n) ≤ 2 := by
+  set ξK : K p n := ⟨zetaSys p n, zetaSys_mem_K p n⟩ with hξK
+  -- `K_n⁺(ξ_n) = ⊤` over `K_n⁺` (since `ℚ_p(ξ_n) = ⊤`)
+  have htop : IntermediateField.adjoin (KPlusRestrict p n) {ξK} = ⊤ :=
+    IntermediateField.adjoin_eq_top_of_adjoin_eq_top (F := ℚ_[p])
+      (adjoinSimple_zetaSysK_eq_top p n)
+  -- `ξ_n` is integral over `K_n⁺`
+  have hξint : IsIntegral (KPlusRestrict p n) ξK := (isIntegral_zetaSysK p n).tower_top
+  -- the coefficient `β = ξ + ξ⁻¹` as an element of `K_n⁺`
+  have hβmem : (zetaSys p n + (zetaSys p n)⁻¹) ∈ KPlus p n :=
+    IntermediateField.subset_adjoin _ _ (Set.mem_singleton _)
+  set βK : K p n := ⟨zetaSys p n + (zetaSys p n)⁻¹, KPlus_le_K p n hβmem⟩ with hβK
+  have hβrestrict : βK ∈ KPlusRestrict p n :=
+    (IntermediateField.mem_restrict (KPlus_le_K p n) βK).2 hβmem
+  set β : KPlusRestrict p n := ⟨βK, hβrestrict⟩ with hβdef
+  -- the monic degree-2 annihilator `g = X² − βX + 1` over `K_n⁺`
+  set g : Polynomial (KPlusRestrict p n) := Polynomial.X ^ 2 - Polynomial.C β * Polynomial.X + 1
+    with hg
+  have hgmonic : g.Monic := by rw [hg]; monicity!
+  have hgdeg : g.natDegree = 2 := by rw [hg]; compute_degree!
+  have hroot : (Polynomial.aeval ξK) g = 0 := by
+    have hξne : zetaSys p n ≠ 0 :=
+      (zetaSys_primitiveRoot p n).ne_zero (pow_pos hp.out.pos n).ne'
+    rw [hg, map_add, map_sub, map_pow, map_mul, Polynomial.aeval_X, Polynomial.aeval_C,
+      Polynomial.aeval_one]
+    -- `ξ² − algebraMap(β)·ξ + 1 = 0` in `K_n`; check via the `ℂ_[p]`-coercion
+    apply Subtype.ext
+    have hcoe : ((algebraMap (KPlusRestrict p n) (K p n) β : K p n) : ℂ_[p])
+        = zetaSys p n + (zetaSys p n)⁻¹ := rfl
+    push_cast [hξK]
+    rw [hcoe]
+    field_simp
+    ring
+  -- the relative degree is the minpoly degree, `≤ g.natDegree = 2`
+  rw [show Module.finrank (KPlusRestrict p n) (K p n)
+      = Module.finrank (KPlusRestrict p n) (IntermediateField.adjoin (KPlusRestrict p n) {ξK}) from
+    by rw [htop]; exact (LinearEquiv.finrank_eq IntermediateField.topEquiv.toLinearEquiv).symm,
+    IntermediateField.adjoin.finrank hξint]
+  calc (minpoly (KPlusRestrict p n) ξK).natDegree
+      ≤ g.natDegree := Polynomial.natDegree_le_natDegree (minpoly.min _ _ hgmonic hroot)
+    _ = 2 := hgdeg
+
+/-- **RJW §12, the Galois fixed-field characterisation of `K_n⁺`**: the maximal totally real
+subfield `K_n⁺ = ℚ_p(ξ + ξ⁻¹)` is exactly the fixed field of complex conjugation
+`σ_{-1} = galAut p (-1) n`. (Stated through `KPlusRestrict`, the realisation of `K_n⁺` as an
+intermediate field of `K_n/ℚ_p`, so both sides have the same type.)
+
+Proof: `K_n⁺ ⊆ (K_n)^{⟨σ_{-1}⟩}` (reality), and the two have the same `ℚ_p`-dimension —
+`[K_n : (K_n)^{⟨σ_{-1}⟩}] = 2` (order of `σ_{-1}`) while `[K_n : K_n⁺] ≤ 2` (`ξ` quadratic over
+`K_n⁺`), so via `[K_n:ℚ_p] = [F:ℚ_p]·[K_n:F]` both equal `φ(p^n)/2`. -/
+theorem KPlus_eq_fixedField (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) :
+    KPlusRestrict p n
+      = IntermediateField.fixedField (Subgroup.zpowers (galAut p (-1) n)) := by
+  -- `K_n⁺ ≤ (K_n)^{⟨σ_{-1}⟩}` and `[K_n : K_n⁺] ≤ 2 = [K_n : (K_n)^{⟨σ_{-1}⟩}]`, so equal
+  refine IntermediateField.eq_of_le_of_finrank_le' (KPlusRestrict_le_fixedField p hn) ?_
+  rw [finrank_fixedField_galAut_neg_one p hp2 hn]
+  exact finrank_K_over_KPlusRestrict_le p hn
+
+/-- **Membership form of the fixed-field characterisation**: an element `x ∈ K_n` lies in
+`K_n⁺` iff it is fixed by complex conjugation `σ_{-1}`. (`KPlus_eq_fixedField` applied through
+`KPlusRestrict`/`fixedField` membership, with the `zpowers σ_{-1}` collapse to the single
+generator `σ_{-1}`.) -/
+theorem mem_KPlus_iff_galAut_neg_one_fixed (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n) {x : ℂ_[p]}
+    (hxK : x ∈ K p n) :
+    x ∈ KPlus p n ↔ (galAut p (-1) n ⟨x, hxK⟩ : ℂ_[p]) = x := by
+  -- `x ∈ K_n⁺ ↔ ⟨x,_⟩ ∈ KPlusRestrict ↔ ⟨x,_⟩ ∈ fixedField⟨σ_{-1}⟩ ↔ σ_{-1}⟨x,_⟩ = ⟨x,_⟩`
+  rw [show (x ∈ KPlus p n) ↔ (⟨x, hxK⟩ : K p n) ∈ KPlusRestrict p n from
+    (IntermediateField.mem_restrict (KPlus_le_K p n) ⟨x, hxK⟩).symm,
+    KPlus_eq_fixedField p hp2 hn, IntermediateField.mem_fixedField_iff]
+  constructor
+  · -- the generator `σ_{-1}` is in `zpowers σ_{-1}`, so it fixes `⟨x,_⟩`
+    intro h
+    have := h (galAut p (-1) n) (Subgroup.mem_zpowers _)
+    exact congrArg (Subtype.val) this
+  · -- conversely, if `σ_{-1}` fixes `⟨x,_⟩` then every `σ_{-1}^k` does
+    intro h f hf
+    rw [Subgroup.mem_zpowers_iff] at hf
+    obtain ⟨k, rfl⟩ := hf
+    have hfix : galAut p (-1) n ⟨x, hxK⟩ = ⟨x, hxK⟩ := Subtype.ext h
+    have hfixinv : (galAut p (-1) n)⁻¹ ⟨x, hxK⟩ = ⟨x, hxK⟩ := by
+      apply (galAut p (-1) n).injective
+      rw [hfix, ← AlgEquiv.mul_apply, mul_inv_cancel, AlgEquiv.one_apply]
+    -- `σ_{-1}^k ⟨x,_⟩ = ⟨x,_⟩` by induction transported through the fixed point
+    change (galAut p (-1) n ^ k) (⟨x, hxK⟩ : K p n) = ⟨x, hxK⟩
+    induction k using Int.induction_on with
+    | zero => simp
+    | succ m ih => rw [zpow_add_one, AlgEquiv.mul_apply, hfix, ih]
+    | pred m ih => rw [zpow_sub_one, AlgEquiv.mul_apply, hfixinv, ih]
+
+/-- **The unit-level fixed-field criterion** (RJW §12.5, the form fed to the milestone): a
+principal unit `u ∈ 𝒰_{n,1}` lies in the totally real subgroup `𝒰⁺_{n,1}` iff its value is
+fixed by complex conjugation `σ_{-1}`. This transports `mem_KPlus_iff_galAut_neg_one_fixed`
+through `localUnitsOnePlus = localUnitsOne ⊓ localUnitsPlus` (`localUnitsPlus` membership is
+`localUnits` + `(u : ℂ_[p]) ∈ K_n⁺`). -/
+theorem mem_localUnitsOnePlus_iff_galAut_fixed (hp2 : p ≠ 2) {n : ℕ} (hn : 1 ≤ n)
+    {u : ℂ_[p]ˣ} (hu : u ∈ localUnitsOne p n) :
+    u ∈ localUnitsOnePlus p n
+      ↔ (galAut p (-1) n ⟨(u : ℂ_[p]), (Subring.mem_inf.1 hu.1.1).1⟩ : ℂ_[p]) = (u : ℂ_[p]) := by
+  have hxK : (u : ℂ_[p]) ∈ K p n := (Subring.mem_inf.1 hu.1.1).1
+  rw [localUnitsOnePlus, Subgroup.mem_inf]
+  constructor
+  · -- `u ∈ 𝒰⁺_{n,1}` ⟹ `(u : ℂ_[p]) ∈ K_n⁺` ⟹ `σ_{-1}` fixes `u`
+    rintro ⟨-, hplus⟩
+    have hmem : (u : ℂ_[p]) ∈ KPlus p n := hplus.2
+    exact (mem_KPlus_iff_galAut_neg_one_fixed p hp2 hn hxK).1 hmem
+  · -- conversely `σ_{-1}` fixes `u` ⟹ `(u : ℂ_[p]) ∈ K_n⁺`, so `u ∈ 𝒰_n⁺`, hence `u ∈ 𝒰⁺_{n,1}`
+    intro hfix
+    refine ⟨hu, hu.1, (mem_KPlus_iff_galAut_neg_one_fixed p hp2 hn hxK).2 hfix⟩
 
 /-- Tower compatibility: `σ_a` at level `n+1` restricts to `σ_a` at level `n`
 (uniqueness of the automorphism realising the character value). -/

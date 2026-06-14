@@ -5778,6 +5778,20 @@ The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (
     `zpPow_zetaSys_mem_cycloClosureOne`, `ZpOne_le_cycloTower1`. The milestone's full closure genuinely
     requires the T1202a residue-field pass + §13 — both dedicated passes the project's plan defers
     (rule #6 "don't widen ad hoc"; D611–D613 gating; MainConjecture is blueprint-only).
+  - **T1206a DONE — Galois fixed-field + (ii) injectivity (2026-06-14, agent a8699e, axiom-clean)**:
+    `KPlus_eq_fixedField : K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` (via cyclotomic Galois theory — `isGalois_K`,
+    `orderOf_galAut_neg_one`=2, `finrank`-counting, `IntermediateField.eq_of_le_of_finrank_le'`),
+    `mem_localUnitsOnePlus_iff_galAut_fixed`, plus-equivariance `Col_mem_plusPart_of_mem_unitsTower1Plus`,
+    and **`colDescentPlusMul_injective` proven** (≈15 helpers in GaloisAction.lean + Main.lean, all
+    axiom-clean `{propext,Classical.choice,Quot.sound}` modulo the shared col_image). `colDescentPlusMul_
+    bijective`'s ONLY remaining sorry (surjectivity, Main:492) now reduces to col_image too.
+  - **MAXIMAL REDUCTION REACHED (2026-06-14)**: the ENTIRE §12.5 milestone (both `iwasawa_theorem` and
+    `iwasawa_exact_sequence`) now bottlenecks on the SINGLE identity `col_image_cycloTower1_eq_zetaIdeal`
+    (Main:151). Everything else — genuine Coleman descents, kernel (`mem_ker_Col_iff_mem_ZpOne`), cokernel
+    (`range_Col_eq_ker_chiMoment`), plus-descent (`plusEquiv`/`isCompl`), Galois fixed-field, (ii)
+    injectivity, ℤ_p(1)⊆𝒞₁ — is sorry-free + axiom-clean. ~23 reusable axiom-clean infra lemmas banked
+    across 4 agents (~900k tokens). col_image is the genuine §13/IMC + T1202a-residue-field boundary
+    (4-agent converged). `lake build PadicLFunctions` 3840 jobs ✓.
   - **T1206a (Main.lean:263 / LocalUnits.lean, §12-bounded)** the Galois fixed-field characterisation
     `𝒰⁺_{n,1} = (𝒰_{n,1})^{⟨c⟩}` (`K_n⁺ = (K_n)^{σ_{-1}}`) needed for `colDescentPlusMul_bijective`'s
     injectivity (plus-equivariance of `Col`). KPlus is defined concretely (ξ+ξ⁻¹) with the Galois

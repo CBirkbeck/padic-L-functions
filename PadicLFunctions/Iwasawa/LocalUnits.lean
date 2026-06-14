@@ -104,8 +104,10 @@ lemma mem_localUnitsOne_iff {n : ℕ} {u : ℂ_[p]ˣ} :
 /-! ## The maximal totally real subfield K_n⁺ and the ⁺-variants (RJW TeX 2473–2475) -/
 
 /-- `K_n⁺ = ℚ_p(ξ_{p^n} + ξ_{p^n}⁻¹)`: the "+"-subfield, rendered by its standard
-concrete generator (the fixed points of `ξ ↦ ξ⁻¹`; the Galois characterisation is
-§12 material). RJW TeX 2473. -/
+concrete generator (the fixed points of `ξ ↦ ξ⁻¹`). The Galois characterisation
+`K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` (§12 material) is now proved as `KPlus_eq_fixedField`
+(`IwasawaProof/GaloisAction.lean`), with the unit-level form
+`mem_localUnitsOnePlus_iff_galAut_fixed`. RJW TeX 2473. -/
 noncomputable def KPlus (n : ℕ) : IntermediateField ℚ_[p] ℂ_[p] :=
   ℚ_[p]⟮zetaSys p n + (zetaSys p n)⁻¹⟯
 
