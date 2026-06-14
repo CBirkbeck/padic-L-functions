@@ -5904,6 +5904,40 @@ thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p
     `projPlus_eq_zero_iff` (482) = minusPart; `ker_projPlus` (505) = `span{dirac(−1)−1}`.
 
 ### [T1206c] col_image ⊆: the cyclic-module density `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`
+- **Status**: **ENTIRE attackable layer BANKED + axiom-clean — residual is now genuinely irreducible
+  by sorry-filling: the deferred §13 inverse-limit `Module (Λ(𝒢)) (NormCompatUnits)` structure.
+  B3 surfaced to user 2026-06-15 (SEVENTH converged agent; this time after every sub-layer is closed,
+  NOT premature).** Since the user re-fired (below), the full ⊆ chain was driven to its irreducible
+  core across 7 background agents (3d6455a→425b957). BANKED axiom-clean ({propext,Classical.choice,
+  Quot.sound}), build green (3857 jobs):
+  • **ST1** — inverse-limit `TopologicalSpace (NormCompatUnits p)` (SOURCE side, the missing piece all 3
+    prior agents flagged): `elemsCoe`/`instTopologicalSpace`/`continuous_elems`/`continuous_iff_elems`/
+    `instT2Space`/`continuous_elemsUnits`/`isClosed_cycloTower1` (ColContinuity.lean).
+  • **ST2** — `continuous_Col` w.r.t. ST1, via the colemanSeries-continuity core 4+ agents had circled:
+    colemanSeries is the UNIQUE solution of `coleman_existsUnique` (NOT an opaque `Classical.choose`),
+    so the diagonal collapses to a homeomorphism — `normFixedUnits` compact → `colEval`/`colSec` closed
+    embedding → `continuous_colemanSeries`/`continuous_inv_NCU`/`continuous_Col` (ColContinuity.lean).
+  • **ST3a** — `continuous_levelNorm` gateway (ColContinuity.lean:375).
+  • **Outer reduction** — `col_image_cycloTower1_le_zetaIdeal_of_density` + `cycloGenSubgroup` (M=⟨σ_a·wγ⟩),
+    `colPreimageZeta`/`isClosed_colPreimageZeta`/`galNCU_wGamma_mem_colPreimageZeta`/
+    `cycloGenSubgroup_le_colPreimageZeta` (Col''M⊆ζ-ideal)/`closure_cycloGenSubgroup_le_cycloTower1` (Main).
+  • **(A)** `wGamma_elems_pow_eq_cycloUnit_pow` — (wγ(a₀).elems n)^(p−1)=c_n(a₀)^(p−1), Teichmüller factor
+    cancels (Generators.lean:1764, 425b957).
+  • **(B)** `cycloUnitU_a0_generates` — every c_n(b') (p∤b') ∈ 𝒢_n-translate subgroup of c_n(a₀) via a₀
+    generating (ℤ/p^nℤ)^× + explicit telescoping (Generators.lean:1798, 425b957).
+  **SOLE RESIDUAL** (the 2 documented sorries: Main:419 density hypothesis fed to
+  `col_image_cycloTower1_le_zetaIdeal_of_density`, + the dependent Main:774 `colDescentPlusMul`
+  surjectivity): the **inverse-limit `Module (Λ(𝒢)) (NormCompatUnits)` structure** — a coherent
+  `Λ(𝒢)`-module action on the unit tower reconciling (B)'s level-n cyclicity (whose telescoping
+  exponent is level-dependent) into the tower-level density `𝒞_{∞,1}=closure(Λ(𝒢)·wγ(a₀))` over the
+  ST1 limit topology. This is a major architectural addition (a `Module (Λ(𝒢)) (NormCompatUnits)`
+  instance + the level-compatibility of the telescoping), **outside the deep sorry-filler's mandate**
+  and **explicitly deferred by plan.md** ("deferred Λ-module structure theorem (that is §13/IMC)") and
+  **CLAUDE.md rule #6** ("don't widen ad hoc"). → **B3**: needs explicit user authorization for a
+  dedicated `/develop`-planned §13 inverse-limit module-theory pass (with ST1/ST2/ST3a/(A)/(B) as the
+  banked foundations) OR acceptance of the maximally-reduced milestone. `iwasawa_theorem`/
+  `iwasawa_exact_sequence` carry sorryAx ONLY from this one residual.
+  --- (RE-OPEN that drove the above; superseded — all 4 sub-steps now closed) ---
 - **Status**: **RE-OPENED 2026-06-14 (user re-fired beastmode = keep attacking) — NEW ANGLE: the
   inverse-limit `TopologicalSpace` on `NormCompatUnits`, never attempted.** The 3 prior agents all
   hit the same wall: ⊆ needs to push `𝒞_{∞,1}=closure(Λ·wγ)` through `Col` into the closed `zetaIdeal`,
