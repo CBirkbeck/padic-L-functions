@@ -5737,7 +5737,33 @@ The literal argument is normal-form `±ξ^d ∏(ξ^a−1)^{e_a}` ⟹ `Σe_a=0` (
   T1201–T1205 + CLEANUP-121/122/123.
 
 ### [T1206] **MILESTONE: thm:iwasawa 2** (Main.lean)
-- **Status**: open | **File**: IwasawaProof/Main.lean | **Depends on**: T1204, T1205, CLEANUP-ALL-7
+- **Status**: **STRUCTURE COMPLETE — 2 documented deferred sorrys** (2026-06-14, agent a8d7585 +
+  orchestrator verify). Both milestone theorems are GENUINELY proved (the real RJW Coleman-map
+  descents, NOT vacuous maps): `iwasawa_exact_sequence (i)` = `⟨colDescent⟩` ([u]↦[Col u] via
+  `QuotientGroup.lift` of the real `ColMul` hom); `iwasawa_theorem (ii)` = the genuine `≃+` via the
+  plus-descent `colDescentPlusMul` + `MulEquiv.ofBijective`. ~12 helper lemmas all clean
+  ({propext,Classical.choice,Quot.sound}): `Col_one`, `ColMul`, `Col_cyclo_mem_zetaIdeal`,
+  `colDescentMul`/`colDescent`, `cycloTower1Plus_le_cycloTower1`, `zetaIdealPlus_eq_map_projPlus`
+  (the bridge `I(𝒢⁺)ζ=π_*(I(𝒢)ζ)`), `ColPlusMul`, `colDescentPlusMul`. `lake build ...Main` clean
+  (3717 jobs). `#print axioms iwasawa_theorem/iwasawa_exact_sequence` = [propext,sorryAx,Classical.
+  choice,Quot.sound] — sorryAx confined to the 2 deferred lemmas below.
+  **The milestone is NOT a clean DONE** (sorryAx present); the 2 remaining inputs:
+  - **T1206b (Main.lean:107, §13/IMC boundary)** `col_mem_zetaIdeal_iff_mem_cycloTower1`: the
+    inverse-limit cyclic-Λ(𝒢)-module image computation `Col u ∈ I(𝒢)ζ ↔ u ∈ 𝒞_{∞,1}`. GENUINELY
+    blocked on §13 infra: `cycloTower1` = inverse limit of *topological closures* (`cycloClosureOne`),
+    so the level-n group-generation `cycloUnitsPlus_eq_closure_gammas` (generates *global* units, not
+    their closures) cannot be lifted without (i) continuity of `Col` (a deep Coleman-series-limit
+    theorem, unavailable) or (ii) the §13/IMC inverse-limit module structure (`cycloTower1Plus_cyclic_
+    generator`'s full form TeX 3573–3578, currently a vacuous-2nd-conjunct stub). Both milestone
+    theorems depend on this. → deferred to the §13/IMC pass (consistent with the project's §13 deferral
+    + D611–D613 gating). **PLANNING FINDING (errata): plan line ~5774 "NO leaf needs the deferred
+    Λ-module structure (§13/IMC)" was OPTIMISTIC — the faithful §12.5 milestone genuinely requires it.**
+  - **T1206a (Main.lean:263 / LocalUnits.lean, §12-bounded)** the Galois fixed-field characterisation
+    `𝒰⁺_{n,1} = (𝒰_{n,1})^{⟨c⟩}` (`K_n⁺ = (K_n)^{σ_{-1}}`) needed for `colDescentPlusMul_bijective`'s
+    injectivity (plus-equivariance of `Col`). KPlus is defined concretely (ξ+ξ⁻¹) with the Galois
+    characterisation flagged "§12 material" in LocalUnits.lean. This is BOUNDED, in-scope — being
+    attacked via Tier-A. (Note: `colDescentPlusMul_bijective`'s *surjectivity* also needs T1206b.)
+- **File**: IwasawaProof/Main.lean | **Depends on**: T1204✓, T1205✓, CLEANUP-ALL-7✓ | **Sub**: T1206a, T1206b
 - **Type**: theorems (MILESTONE)
 #### Statement
 `iwasawa_theorem` (ii): 𝒰_{∞,1}^+/𝒞_{∞,1}^+ ≅ Λ(𝒢^+)/I(𝒢^+)ζ_p (= §11's unwired
