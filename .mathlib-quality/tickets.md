@@ -5636,7 +5636,7 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 - **Status**: open | **Depends on**: T1203.
 
 ### [T1204] E12.3: the fundamental exact sequence (FundamentalSequence.lean)
-- **Status**: open | **File**: IwasawaProof/FundamentalSequence.lean | **Depends on**: T1202, T1203
+- **Status**: in_progress (2026-06-14, agent ae3306 — 1/3). **`ZpOne` DONE** (integral Tate twist `{(ξ_n^a)_n}` via `zpPow` character laws; sorry-free, axiom-clean). The two exact-sequence theorems `mem_ker_Col_iff_mem_ZpOne` + `range_Col_eq_ker_chiMoment` remain (documented sorries, FundamentalSequence.lean:99/117) — blocked on substrate: (1) the measure-side `PadicMeasure.mahlerTransform_psi` bridge (`𝒜(ψμ)=psiSeries(𝒜μ)`), absent — `mahlerTransform_phi`/`psi`/`psi_phi`/`phi_psi` exist but the ψ-bridge needs the PadicMeasure digit-decomposition (analogue of MeasureR `existsUnique_measure_digits`), NOT derivable purely from the φ-bridge (orchestrator verified the formal derivation is circular); (2) `normOp(binomialSeries a)=binomialSeries a` + `a↦binomialSeries a` `WithPiTopology`-continuity + de-privatizing `normOp_continuous`/`digitMatrix_continuous`/`phiSeries_continuous`/`continuous_of_coeff` (LogDerivative) + `seriesEval_map_binomialSeries` (GaloisAction). → sub-tickets T1204a (substrate bridge) + T1204b (de-privatize + binomial layer). | **File**: IwasawaProof/FundamentalSequence.lean | **Sub-tickets**: T1204a, T1204b | **Depends on**: T1202, T1203
 - **Parallel**: no | **Type**: def + theorems
 #### Statement
 `ZpOne` (ℤ_p(1) ⊂ 𝒰_∞); `mem_ker_Col_iff_mem_ZpOne` (kernel); `range_Col_eq_ker_chiMoment`
@@ -5649,6 +5649,22 @@ section `O_n^× → μ_{p−1}` (the (p−1)-th root of unity `≡ u mod 𝔭_n`
 4. Λ(𝒢)-exactness: T1201/T1202 equivariance + ∫χ·σμ = χ(σ)∫χμ.
 - **Sources**: Q9, Q10, Q11 (TeX 3382–3441).
 - **Sizing**: ~180 LOC.
+
+### [T1204a] PadicMeasure ψ↔series Mahler bridge `mahlerTransform_psi` (Measure substrate)
+- **Status**: open | **File**: PadicLFunctions/Measure/Toolbox.lean (or new Measure/PsiBridge.lean) | **Parent**: T1204 | **Type**: substrate lemma(s)
+#### Statement
+`theorem PadicMeasure.mahlerTransform_psi (μ : PadicMeasure p ℤ_[p]) : mahlerTransform p (psi p μ) = psiSeries p (mahlerTransform p μ)` (the `ψ`-analogue of `mahlerTransform_phi`, Toolbox.lean:270).
+#### Proof sketch
+NOT derivable from `mahlerTransform_phi` + `psi_phi` alone (circular — orchestrator verified). Needs the PadicMeasure **digit decomposition**: every `μ = Σ_{i<p} σ_i(φ μ_i)` uniquely (the measure analogue of `existsUnique_measure_digits`/`existsUnique_digits_padicInt`), with `psi μ = μ_0`. Then `𝒜` intertwines the two digit decompositions (`𝒜(σ_i ν)`, `𝒜(φν)=phiSeries(𝒜ν)` via `mahlerTransform_phi`), so `𝒜(ψμ)=𝒜(μ_0)= 0`-th series digit `= psiSeries(𝒜μ)`. Build: (1) PadicMeasure digit existence+uniqueness (port the MeasureR `existsUnique_measure_digits` substrate from FormalPsi.lean to `PadicMeasure p ℤ_[p]`; the series-side port `existsUnique_digits_padicInt` is the template), (2) `𝒜`-intertwining of the digit shift, (3) assemble `mahlerTransform_psi`.
+- **Mathlib/project**: `mahlerTransform_phi`, `psi`/`phi`/`psi_phi`/`phi_psi` (Toolbox), `psiSeries`/`phiSeries`/`existsUnique_digits_padicInt`/`psiSeries_phi_padicInt` (FormalPsi/NormOperator), MeasureR `existsUnique_measure_digits`/`mahlerTransform_psi` (the template to port).
+- **Sources**: RJW §3.5.5 (TeX 1147–1151) + §12.2 transport.
+- **Sizing**: ~150–250 LOC (substrate port; the MeasureR template exists).
+
+### [T1204b] expose continuity/binomial layer + `normOp(binomialSeries a)=binomialSeries a`
+- **Status**: open | **File**: LogDerivative.lean + GaloisAction.lean (de-privatize) + FundamentalSequence.lean | **Parent**: T1204 | **Type**: visibility + lemma
+#### Statement / work
+(a) Make PUBLIC (remove `private`): `normOp_continuous`, `digitMatrix_continuous`, `phiSeries_continuous`, `continuous_of_coeff` (LogDerivative.lean) and `seriesEval_map_binomialSeries` (GaloisAction.lean) — visibility only, no proof change. (b) Prove `normOp (binomialSeries ℤ_[p] a) = binomialSeries ℤ_[p] a` (the binomial series is `𝒩`-fixed — it is `colemanSeries` of `ξ_n^a ∈ ℤ_p(1)`) + `a ↦ binomialSeries a` `WithPiTopology`-continuity. Used by T1204's kernel theorem (`colemanSeries u = binomialSeries a` for `u ∈ ZpOne`).
+- **Sizing**: (a) trivial; (b) ~40–80 LOC.
 
 ### [T1205] E12.4: generators of the cyclotomic units (Generators.lean)
 - **Status**: **done** (2026-06-14, beastmode §12 wave 4). Generators.lean sorry-free; `lake build PadicLFunctions.IwasawaProof.Generators` ✓; `cycloUnitsPlus_eq_closure_gammas` axiom-clean {propext, Classical.choice, Quot.sound}. All of `gammaUnit`, `gammaUnit_mem_cycloUnitsPlus`, `cycloUnitsPlus_eq_closure_gammas` (both directions), `closure_zspan_eq_zpspan`, `cycloTower1Plus_cyclic_generator` complete. Sub-ticket T1205a (⊆) closed. | **File**: IwasawaProof/Generators.lean | **Depends on**: T1201
