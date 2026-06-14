@@ -179,11 +179,13 @@ remaining blocker), using the now-available `Λ(𝒢)`-action homomorphism laws
 The remaining `col_image_cycloTower1_eq_zetaIdeal` is the genuine §13/IMC-deferred core: it
 requires the inverse-limit `Λ(𝒢)`-module structure of `𝒞_{∞,1}` — defined as the inverse
 limit of the *topological closures* `𝒞_{n,1} = clos(𝒟_{n,1}) ⊓ 𝒰_{n,1}` (`cycloClosureOne`).
-Passing the level-`n` group generation `cycloUnitsPlus_eq_closure_gammas` (which generates
-the *global* units `𝒟_n^+`, not their closures) up to the tower needs either continuity of
+Passing the level-`n` single-generator cyclicity `cor:cyc units gen 2`
+(`cycloUnit_mem_cycloTranslateSubgroup`, now banked — the single `c_n(a₀)`
+`ℤ[𝒢_n]`-generates every `c_n(b')`) up to the tower needs either continuity of
 `Col` (`Col` is built from the Coleman-series limit construction — no continuity is
-available) or the inverse-limit cyclic-module description of `cycloTower1Plus_cyclic_generator`
-(whose full form, TeX 3573–3578, is the deferred §13 input). All other ingredients of both
+available) or the inverse-limit cyclic-`Λ(𝒢)`-module structure on the unit tower
+(the full LemmaGeneratorCinfty1, TeX 3573–3578, the deferred §13 input). All other
+ingredients of both
 milestones (the `Col` hom property, the descent through `QuotientGroup.lift`, the plus-part
 transport `plusEquiv`/`projPlus`/`isCompl_plusPart_minusPart`, the `ℤ_p(1)^{⟨c⟩}=0` collapse,
 surjectivity onto `ker(χ-moment)` via `range_Col_eq_ker_chiMoment`) are proved without
@@ -217,8 +219,9 @@ With these, input **(I)** is now CLOSED and only the closure-crossing **(II)** r
     READ-ONLY and has no continuity lemma), plus `IsClosed (↑(zetaIdeal p hp2))`; OR
   - **cyclic-module route** — a convolution `Λ(𝒢)`-module action `μ • u` on the inverse-limit
     unit tower (no `Module (PadicMeasure …) (NormCompatUnits …)` instance exists) and a proof
-    that `Col` intertwines it (no `Col`-`smul` lemma exists), i.e. the full inverse-limit
-    cyclic-module description `cycloTower1Plus_cyclic_generator`, TeX 3573–3578.
+    that `Col` intertwines it (no `Col`-`smul` lemma exists), i.e. the tower lift of the
+    now-banked level-`n` cyclicity `cycloUnit_mem_cycloTranslateSubgroup` to the full
+    inverse-limit cyclic-module description (LemmaGeneratorCinfty1, TeX 3573–3578).
   Neither is reachable within the file confinement without first building a multi-file §13
   topology/module layer; left as a single documented blocker below. -/
 /-- `Col '' 𝒞_{∞,1}` packaged as an *additive subgroup* of `Λ(ℤ_p^×)` (the image of the
@@ -286,30 +289,36 @@ Banach–Alaoglu compactness `PadicMeasure.instCompactSpace` of `Λ(ℤ_p^×)` �
 does not use the image identity). So `⊆` reduces *exactly* to the algebraic cyclic-module
 density `Col '' 𝒞_{∞,1} ⊆ closure(ℤ_p·{[σ_a]·ζ_num a₀})` (equivalently `𝒞_{∞,1} ⊆
 closure(Λ(𝒢)·wγ(a₀))`, RJW LemmaGeneratorCinfty1, TeX 3573–3578): every cyclotomic-tower
-unit is a `Λ(𝒢)`-limit of `σ_a`-translates of `wγ(a₀)`. This last density is the genuine
-deferred tower-level Iwasawa-module input and is NOT supplied by any available layer — it
-needs either the inverse-limit cyclic-`Λ(𝒢)`-module structure on the unit tower (no
-`Module (PadicMeasure …) (NormCompatUnits …)` and no `Col`-`smul` intertwining for arbitrary
-scalars exist; the latter is equivalent to the absent `Continuous (Col)`) or, on the
+unit is a `Λ(𝒢)`-limit of `σ_a`-translates of `wγ(a₀)`.
+
+The level-`n` single-generator cyclicity `cor:cyc units gen 2` (RJW TeX 3484–3486) is now
+**banked** (`cycloUnit_mem_cycloTranslateSubgroup`, `Generators.lean`): the single
+`c_n(a₀)` `ℤ[𝒢_n]`-generates every cyclotomic unit `c_n(b')` via the explicit closed-form
+`σ_a`-action `σ_a(c_n(b)) = (ξ^{tb}−1)/(ξ^t−1)` (`galAutVal_cycloUnit`) and the telescoping
+product `c_n(b') = ∏_{i<r} σ_{a₀^i}(c_n(a₀))` (`prod_galAutValU_cycloUnit_telescope`).
+
+What remains is *only* the **tower lift** of this level-`n` cyclicity to the inverse limit:
+`𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`, the genuine deferred §13 Iwasawa-module input not supplied
+by any available layer. It needs the inverse-limit cyclic-`Λ(𝒢)`-module structure on the unit
+tower (no `Module (PadicMeasure …) (NormCompatUnits …)` and no `Col`-`smul` intertwining for
+arbitrary scalars exist; the latter is equivalent to the absent `Continuous (Col)`) or, on the
 power-series side `Col '' 𝒞_{∞,1} = colemanPipe2 '' colemanPairSet`, the density of the
-cyclotomic pairs in `colemanPairSet` (whose level-`n` constraints `f(π_n) ∈ val '' 𝒞_{n,1}`
-are themselves the closures `clos(𝒟_{n,1})`, tied across levels only by the same module
-structure). The level-`n` single-generator cyclicity `cor:cyc units gen 2` (the `σ_a`-action
-closed form on the `c_n(b)`) is likewise not banked — `galAutValU_mem_cycloUnits` is only a
-*membership-preservation* fact, not the generation relation. -/
+cyclotomic pairs in `colemanPairSet` (whose level-`n` constraints `f(π_n) ∈ val '' 𝒞_{n,1}` are
+the closures `clos(𝒟_{n,1})`, tied across levels only by that module structure). -/
 theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
     (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
   apply le_antisymm
   · -- BLOCKED: `Col '' 𝒞_{∞,1} ⊆ I(𝒢)ζ_p`. Its closedness half is banked
     -- (`PadicMeasure.isClosed_zetaIdeal p hp2`, from `PadicMeasure.instCompactSpace`), so this
-    -- inclusion now reduces *exactly* to the algebraic cyclic-module density
+    -- inclusion reduces *exactly* to the algebraic cyclic-module density
     -- `Col '' 𝒞_{∞,1} ⊆ closure(ℤ_p·{[σ_a]·ζ_num a₀})` — `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`,
-    -- RJW LemmaGeneratorCinfty1, TeX 3573–3578. That tower-level inverse-limit module density
-    -- is the genuine deferred §13 input: there is no `Λ(𝒢)`-module action on `NormCompatUnits`,
-    -- no `Col(λ•u) = λ·Col u` intertwining for arbitrary `λ` (≡ the absent `Continuous (Col)`),
-    -- and the level-`n` single-generator cyclicity (`cor:cyc units gen 2`, the `σ_a`-action on
-    -- the `c_n(b)`) is not banked. The `⊇` direction (the density-crossing facet) is proved
-    -- below. (See the docstring for the precise residual sub-lemma and what is banked.)
+    -- RJW LemmaGeneratorCinfty1, TeX 3573–3578. The level-`n` single-generator cyclicity
+    -- `cor:cyc units gen 2` is now BANKED (`cycloUnit_mem_cycloTranslateSubgroup`, the single
+    -- `c_n(a₀)` `ℤ[𝒢_n]`-generates every `c_n(b')` via the telescoping closed-form `σ_a`-action).
+    -- What remains is ONLY the tower lift of that level-`n` cyclicity to the inverse limit: the
+    -- genuine deferred §13 input — no `Λ(𝒢)`-module action on `NormCompatUnits`, no `Col(λ•u) =
+    -- λ·Col u` for arbitrary `λ` (≡ the absent `Continuous (Col)`). The `⊇` direction
+    -- (density-crossing) is proved below. (See the docstring for what is banked and the residual.)
     sorry
   · -- `I(𝒢)ζ_p ⊆ Col '' 𝒞_{∞,1}`: the density-crossing, PROVED (`zetaIdeal_le_col_image`).
     exact zetaIdeal_le_col_image p hp2
