@@ -5904,6 +5904,21 @@ thm:iwasawa); `iwasawa_exact_sequence` (i): the Λ(𝒢) SES with cokernel ℤ_p
     `projPlus_eq_zero_iff` (482) = minusPart; `ker_projPlus` (505) = `span{dirac(−1)−1}`.
 
 ### [T1206c] col_image ⊆: the cyclic-module density `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))`
+- **Status**: **RE-OPENED 2026-06-14 (user re-fired beastmode = keep attacking) — NEW ANGLE: the
+  inverse-limit `TopologicalSpace` on `NormCompatUnits`, never attempted.** The 3 prior agents all
+  hit the same wall: ⊆ needs to push `𝒞_{∞,1}=closure(Λ·wγ)` through `Col` into the closed `zetaIdeal`,
+  which needs a TOPOLOGY ON `NormCompatUnits` (the SOURCE side) + `Continuous Col` w.r.t. it — they
+  flagged it ABSENT but a7cc206 only built topology on `PadicMeasure`/`PowerSeries` (the TARGET side).
+  THE CHAIN (4 sub-steps, all now feasible given the banked pieces): (ST1) inverse-limit
+  `TopologicalSpace (NormCompatUnits p)` from the levelwise `ℂ_pˣ` topologies (the `elems n` coords);
+  (ST2) `Continuous (Col p)` w.r.t. it (Col factors levelwise via the Coleman series → `colemanPipe2`,
+  banked continuous); (ST3) `𝒞_{∞,1} = closure(ℤ_p[𝒢]-span{σ_a•wγ(a₀)})` in that topology — the
+  inverse-limit assembly of the BANKED `cycloUnit_mem_cycloTranslateSubgroup` (cor:cyc units gen 2) +
+  `galNCU` σ_a-action + `closure_zspan_eq_zpspan` + (p−1)-descent; (ST4) ⊆: `Col(closure(span)) ⊆
+  closure(Col span) = closure(ℤ_p[𝒢]·ζ_num) ⊆ zetaIdeal` via ST2 continuity + banked `isClosed_zetaIdeal`
+  + `dirac_mul_zetaNum_mem_col_image`. This is in-scope §12/§13 (RJW's own LemmaGeneratorCinfty1 route);
+  "multi-file" = beastmode target, not exit. Dispatching a fresh agent on the full chain (new angle).
+  --- (prior B3 surface, now superseded by the re-fire) ---
 - **Status**: **BLOCKED on the plan-DEFERRED §13/IMC Λ(𝒢)-module layer — B3 boundary, surfaced to user
   2026-06-14 (THREE deep agents converged: a7cc206, a4573cd, a276ef)**. Maximal reduction reached:
   every closeable piece of the milestone is now axiom-clean + pushed — (i) ⊇ density-crossing

@@ -314,6 +314,56 @@ theorem continuous_evalPi {n : ℕ} (hn : 1 ≤ n) :
   refine SeqContinuous.continuous (fun {g h} hg => ?_)
   exact tendsto_evalPi_of_tendsto p hg hn
 
+/-! ## The inverse-limit topology on `NormCompatUnits` (the source side, ST1)
+
+The Coleman map's source `𝒰_∞ = NormCompatUnits` is an inverse limit of the local unit groups
+`𝒪_n^×`. We give it the coarsest topology making every level coordinate
+`u ↦ (u.elems n : ℂ_[p])` continuous (the *induced*/inverse-limit topology), exactly mirroring
+the weak-* topology `PadicMeasure.instTopologicalSpace` on the target. With it the level
+coordinates are continuous (`continuous_elems`), continuity *into* `𝒰_∞` is checked
+coordinatewise (`continuous_iff_elems`), and `𝒰_∞` is Hausdorff (`elems`-injective). -/
+
+/-- The coordinate map `u ↦ (n ↦ (u.elems n : ℂ_[p]))` of a norm-compatible unit system into
+the product `∏ n, ℂ_[p]`. The inverse-limit topology on `𝒰_∞` is induced along this map. -/
+def elemsCoe (u : NormCompatUnits p) : ℕ → ℂ_[p] := fun n => ((u.elems n : ℂ_[p]ˣ) : ℂ_[p])
+
+/-- **The inverse-limit topology on `𝒰_∞ = NormCompatUnits`**: the coarsest topology making
+every level coordinate `u ↦ (u.elems n : ℂ_[p])` continuous, induced from the product topology
+on `∏ n, ℂ_[p]` along `elemsCoe`. (Source-side analogue of `PadicMeasure.instTopologicalSpace`.)
+-/
+instance instTopologicalSpace : TopologicalSpace (NormCompatUnits p) :=
+  TopologicalSpace.induced (elemsCoe p) inferInstance
+
+/-- **The level coordinate `u ↦ (u.elems n : ℂ_[p])` is continuous** on `𝒰_∞`. -/
+theorem continuous_elems (n : ℕ) :
+    Continuous (fun u : NormCompatUnits p => ((u.elems n : ℂ_[p]ˣ) : ℂ_[p])) :=
+  (continuous_apply n).comp (continuous_induced_dom (f := elemsCoe p))
+
+/-- **Continuity into `𝒰_∞` is coordinatewise**: a map `g : Y → 𝒰_∞` is continuous iff every
+level coordinate `y ↦ (g y).elems n : ℂ_[p]` is. (Source-side analogue of
+`PadicMeasure.continuous_iff_eval`.) -/
+theorem continuous_iff_elems {Y : Type*} [TopologicalSpace Y] (g : Y → NormCompatUnits p) :
+    Continuous g ↔ ∀ n : ℕ, Continuous (fun y => (((g y).elems n : ℂ_[p]ˣ) : ℂ_[p])) := by
+  rw [continuous_induced_rng, continuous_pi_iff]
+  rfl
+
+/-- `𝒰_∞` is Hausdorff: two systems agreeing at every level coordinate are equal
+(`NormCompatUnits.ext` + `Units.ext`). -/
+instance instT2Space : T2Space (NormCompatUnits p) := by
+  refine ⟨fun u v huv => ?_⟩
+  refine separated_by_continuous continuous_induced_dom (fun h => huv ?_)
+  refine NormCompatUnits.ext (funext fun n => Units.ext ?_)
+  exact congrFun h n
+
+/-- **The unit-valued level coordinate `u ↦ u.elems n : ℂ_[p]ˣ` is continuous** on `𝒰_∞`. Since
+`Units.val : ℂ_[p]ˣ → ℂ_[p]` is a topological embedding on the normed field `ℂ_[p]`
+(`Units.isEmbedding_val₀`), continuity into `ℂ_[p]ˣ` is equivalent to continuity of `val ∘ ·`,
+which is `continuous_elems`. -/
+theorem continuous_elemsUnits (n : ℕ) :
+    Continuous (fun u : NormCompatUnits p => u.elems n) := by
+  rw [Units.isEmbedding_val₀.continuous_iff]
+  exact continuous_elems p n
+
 /-! ## Continuity of the measure-side pipeline `ofPowerSeries`/`Col` -/
 
 /-- **`g ↦ (μ_g)(ψ)` is coefficientwise-continuous** for a fixed test function `ψ`:
@@ -470,6 +520,21 @@ theorem isClosed_cycloClosureOne (n : ℕ) :
   rw [h]
   exact ((Subgroup.isClosed_topologicalClosure _).inter (isClosed_localUnits p n)).inter
     (isClosed_localUnitsOne p n)
+
+/-- **`𝒞_{∞,1}` is closed in `𝒰_∞`** (the inverse-limit topology ST1). It is the intersection
+over `n ≥ 1` of the preimages, under the continuous unit coordinate `u ↦ u.elems n`
+(`continuous_elemsUnits`), of the closed level sets `𝒞_{n,1} = cycloClosureOne p n`
+(`isClosed_cycloClosureOne`). -/
+theorem isClosed_cycloTower1 : IsClosed (cycloTower1 p : Set (NormCompatUnits p)) := by
+  have hset : (cycloTower1 p : Set (NormCompatUnits p))
+      = ⋂ n, ⋂ (_ : 1 ≤ n),
+          (fun u : NormCompatUnits p => u.elems n) ⁻¹' (cycloClosureOne p n : Set ℂ_[p]ˣ) := by
+    ext u
+    simp only [SetLike.mem_coe, Set.mem_iInter, Set.mem_preimage]
+    rfl
+  rw [hset]
+  refine isClosed_iInter fun n => isClosed_iInter fun _ => ?_
+  exact (isClosed_cycloClosureOne p n).preimage (continuous_elemsUnits p n)
 
 /-- **The value set `C_n := val '' 𝒞_{n,1}` is closed in `ℂ_[p]`.** `Units.val` is a topological
 embedding (ℂ_[p] is a normed field, `Units.isEmbedding_val₀`), `𝒞_{n,1}` is closed in `ℂ_[p]ˣ`,
