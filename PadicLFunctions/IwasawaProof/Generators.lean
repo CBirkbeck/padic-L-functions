@@ -1643,6 +1643,14 @@ theorem galNCU_neg_one_fixed_mem_unitsTower1Plus (hp2 : p ≠ 2) {w : NormCompat
   have hev := congrArg (fun x : ℂ_[p]ˣ => (x : ℂ_[p])) he
   rwa [galAutValU_val_mem p (-1) hmem, galAutVal_mem p (-1) hmem] at hev
 
+/-- **(H1) `σ_{-1}` preserves the cyclotomic tower** `𝒞_{∞,1}`: the Galois action permutes the
+cyclotomic units (`galAutValU_mem_cycloUnits`), preserves the local units (`galAut_mem_O`) and the
+principal units (`σ` is an isometry, `norm_galAut`), and is continuous, so it preserves the p-adic
+closure `cycloClosureOne` levelwise. -/
+theorem galNCU_neg_one_mem_cycloTower1 {u : NormCompatUnits p} (hu : u ∈ cycloTower1 p) :
+    galNCU p (-1) u ∈ cycloTower1 p := by
+  sorry
+
 /-! ## The Teichmüller-corrected cyclotomic generator `wγ(a₀)` (RJW LemmaGeneratorCinfty1)
 
 Input (I) of `col_image_cycloTower1_eq_zetaIdeal` (Main.lean): the principal generator

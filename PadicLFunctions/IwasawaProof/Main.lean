@@ -528,9 +528,52 @@ remaining sorry). The faithful Route-P proof (to replace this) is: split `Col u`
 `isUnit_two_padicInt`) gives `Col u ∈ I(𝒢)ζ_p`. -/
 theorem col_mem_zetaIdeal_of_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}
     (hu' : u ∈ cycloTower1 p) : Col p u ∈ PadicMeasure.zetaIdeal p hp2 := by
-  have himg := col_image_cycloTower1_eq_zetaIdeal p hp2
-  rw [← SetLike.mem_coe, ← himg]
-  exact ⟨u, hu', rfl⟩
+  have hcmem : galNCU p (-1) u ∈ cycloTower1 p := galNCU_neg_one_mem_cycloTower1 p hu'
+  have hColc : Col p (galNCU p (-1) u) = PadicMeasure.dirac p (-1) * Col p u :=
+    Col_galNCU_eq_dirac_mul p (-1) u
+  -- the `c`-plus part `u·σ_{-1}(u) ∈ 𝒞⁺_{∞,1}`
+  have huc_cyclo : u * galNCU p (-1) u ∈ cycloTower1 p := mul_mem hu' hcmem
+  have huc_fix : galNCU p (-1) (u * galNCU p (-1) u) = u * galNCU p (-1) u := by
+    rw [galNCU_mul, galNCU_neg_one_involutive p hp2, mul_comm]
+  have huc_plus : u * galNCU p (-1) u ∈ unitsTower1Plus p :=
+    galNCU_neg_one_fixed_mem_unitsTower1Plus p hp2 (cycloTower1_le_unitsTower1 p huc_cyclo) huc_fix
+  have hplus : u * galNCU p (-1) u ∈ cycloTower1Plus p := by
+    intro n hn
+    have hcn := huc_cyclo n hn; have hpn := huc_plus n hn
+    rw [cycloClosureOne, Subgroup.mem_inf] at hcn
+    rw [localUnitsOnePlus, Subgroup.mem_inf] at hpn
+    rw [cycloClosureOnePlus, Subgroup.mem_inf, cycloClosurePlus, Subgroup.mem_inf]
+    exact ⟨⟨hcn.1, hpn.2⟩, hcn.2⟩
+  have hColplus : Col p (u * galNCU p (-1) u) ∈ PadicMeasure.zetaIdeal p hp2 :=
+    col_mem_zetaIdeal_of_mem_cycloTower1Plus p hp2 hplus
+  -- the `c`-minus part `u·σ_{-1}(u)⁻¹ ∈ ℤ_p(1)`, so `Col(u·σ_{-1}(u)⁻¹) = 0`
+  have hanti : galNCU p (-1) (u * (galNCU p (-1) u)⁻¹) = (u * (galNCU p (-1) u)⁻¹)⁻¹ := by
+    rw [galNCU_mul, galNCU_inv, galNCU_neg_one_involutive p hp2, mul_inv_rev, inv_inv]
+  have hColminus : Col p (u * (galNCU p (-1) u)⁻¹) = 0 :=
+    (mem_ker_Col_iff_mem_ZpOne p hp2
+      (mul_mem (cycloTower1_le_unitsTower1 p hu')
+        ((unitsTower1 p).inv_mem (cycloTower1_le_unitsTower1 p hcmem)))).2
+      (mem_ZpOne_of_mem_cycloTower1_cAnti p hp2
+        (mul_mem hu' ((cycloTower1 p).inv_mem hcmem)) hanti)
+  have hColcinv : Col p (galNCU p (-1) u)⁻¹ = -Col p (galNCU p (-1) u) := by
+    have h := Col_add p (galNCU p (-1) u) (galNCU p (-1) u)⁻¹
+    rw [mul_inv_cancel, Col_one] at h; linear_combination -h
+  -- `Col(u·c⁻¹) = Col u − [−1]·Col u = 0` ⟹ `[−1]·Col u = Col u`
+  have hfix : PadicMeasure.dirac p (-1) * Col p u = Col p u := by
+    have h0 : Col p (u * (galNCU p (-1) u)⁻¹)
+        = Col p u - PadicMeasure.dirac p (-1) * Col p u := by
+      rw [Col_add, hColcinv, hColc]; ring
+    rw [hColminus] at h0; linear_combination h0
+  -- `Col(u·c) = (1+[−1])·Col u = 2·Col u ∈ I(𝒢)ζ_p`; `2` a unit ⟹ `Col u ∈ I(𝒢)ζ_p`
+  have h2 : (2 : ℤ_[p]) • Col p u ∈ PadicMeasure.zetaIdeal p hp2 := by
+    have hsum : Col p (u * galNCU p (-1) u) = (2 : ℤ_[p]) • Col p u := by
+      rw [Col_add, hColc, hfix, two_smul]
+    rwa [hsum] at hColplus
+  obtain ⟨v, hv⟩ := PadicLFunctions.isUnit_two_padicInt p hp2
+  have hfin := (PadicMeasure.zetaIdeal p hp2).smul_of_tower_mem ((v⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) h2
+  rwa [smul_smul,
+    show ((v⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (2 : ℤ_[p]) = 1 from by
+      rw [← hv, ← Units.val_mul, inv_mul_cancel, Units.val_one], one_smul] at hfin
 
 theorem col_mem_zetaIdeal_iff_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}
     (hu : u ∈ unitsTower1 p) :
