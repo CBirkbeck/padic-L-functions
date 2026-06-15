@@ -6048,7 +6048,14 @@ the closed `colImageSubgroup`-style span — reuse `isClosed`/`approxDirac` mach
   rewrite via plus+minus+2-inv, col_image ⊆, surjectivity via ℤ_p(1)^⟨c⟩=0) → Main-tree agent.
 - Reframing CONFIRMED: NO Module(Λ(𝒢))(NormCompatUnits) needed; level-0 handled by Col-insensitivity.
 - Un-privated: `cycloTranslateSubgroup`, `galAutValU`, `galNCU_elems_eq_galAutValU` (Generators).
-- IN-FLIGHT (status check): the two dispatched agents are on the deepest proofs (T1222
+- RE-DISPATCHED 2026-06-15 (after a premature kill — the agents were progressing, not stuck):
+  T1222 → worktree agent ac377453 (Generators, level-n plus density, with explicit (p−1)-descent +
+  lem:closure structure); T1224' → worktree agent acd539bc (Main, minus→ℤ_p(1) via lem:cyc units
+  gen(ii), with the ξ×𝒟⁺ decomposition + galAut(-1) building blocks). Both NARROW single-lemma
+  targets + plumbing tips (conv-targeted rw, Units.ext). PATIENT this time: let them run to
+  auto-completion. On both landing: apply proofs → main tree, then col_mem assembly (plus+minus+
+  2-inv via T1223+T1224') + col_image ⊆ + surjectivity (ℤ_p(1)^⟨c⟩=0) + blueprint wiring (T1228).
+- IN-FLIGHT (prior, superseded by re-dispatch): the two dispatched agents are on the deepest proofs (T1222
   LemmaGeneratorCinfty1(i) level-n plus density; T1224' lem:cyc units gen(ii) minus→ℤ_p(1) +
   col_mem assembly + surjectivity), both ACTIVE (Main agent transcript ~442KB = extensive
   search/build cycles, expected for these PhD-grade formalisations; no successful Lean emitted
