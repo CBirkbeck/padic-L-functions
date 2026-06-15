@@ -6033,6 +6033,22 @@ the closed `colImageSubgroup`-style span — reuse `isClosed`/`approxDirac` mach
   cannot close it after a genuine algebraic attack, it is a real B3-adjacent boundary → surface to user
   with the precise residual (do NOT fake).
 
+## Route-P board — EXECUTION LOG (2026-06-15 /beastmode)
+- **TOP cluster DONE + axiom-clean** (commit 41fd35d): `mem_closure_iff_elemsCoe` (closure_induced
+  bridge), `Col_eq_of_elems_eq` (Col level-0-insensitivity, the KEY lever — level-0 coord is free,
+  Col ignores it), `exists_delta_descent` + `mem_closure_of_levelwise` (inverse-limit descent).
+- **Col-density layer DONE** (commit 27b9481): `glueLevel0` + `Col_mem_closure_image_of_levelwise`
+  (level-0-SATURATED density — the correct workhorse, since cycloGenSubgroup's level-0 image is
+  ⟨wγ.elems 0⟩, p−1-torsion, NOT {1}, making the h0-form unusable). **T1223 PROVED**:
+  `col_mem_zetaIdeal_of_mem_cycloTower1Plus` (u∈𝒞⁺ ⟹ Col u∈ζ-ideal) via the saturated density +
+  T1222(stmt) + `elemsMonoidHom`/`map_elemsMonoidHom_cycloGenSubgroup` + Units.val bridge.
+- **DISPATCHED (background agents, 2026-06-15)**: T1222 (`cycloClosureOnePlus_le_closure_wGammaTranslate`,
+  level-n plus density = LemmaGeneratorCinfty1(i)) → Generators worktree agent; the Main completion
+  (T1224' minus-structural `mem_ZpOne_of_mem_cycloTower1_cAnti` = lem:cyc units gen (ii), col_mem
+  rewrite via plus+minus+2-inv, col_image ⊆, surjectivity via ℤ_p(1)^⟨c⟩=0) → Main-tree agent.
+- Reframing CONFIRMED: NO Module(Λ(𝒢))(NormCompatUnits) needed; level-0 handled by Col-insensitivity.
+- Un-privated: `cycloTranslateSubgroup`, `galAutValU`, `galNCU_elems_eq_galAutValU` (Generators).
+
 ## Route-P board (§12.4–12.5 finish, faithful plus-part) — created 2026-06-15 (/develop)
 
 **Goal**: close the milestone's two sorries — `col_image_cycloTower1_eq_zetaIdeal` ⊆ (Main:433) and
