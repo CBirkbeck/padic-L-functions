@@ -1629,6 +1629,20 @@ theorem galNCU_neg_one_involutive (hp2 : p ≠ 2) (u : NormCompatUnits p) :
         = galAut p (-1) n ⟨(u.elems n : ℂ_[p]), hmem⟩ from Subtype.ext rfl,
       ← AlgEquiv.mul_apply, h2, AlgEquiv.one_apply]
 
+/-- **(H3) `σ_{-1}`-fixed principal units are totally real**: a norm-compatible system `w` in
+`𝒰_{∞,1}` fixed by complex conjugation lies in `𝒰⁺_{∞,1}` (`mem_localUnitsOnePlus_iff_galAut_fixed`
+levelwise). Used for `u·σ_{-1}(u) ∈ 𝒞⁺_{∞,1}` in the col_mem split. -/
+theorem galNCU_neg_one_fixed_mem_unitsTower1Plus (hp2 : p ≠ 2) {w : NormCompatUnits p}
+    (hw : w ∈ unitsTower1 p) (hfix : galNCU p (-1) w = w) : w ∈ unitsTower1Plus p := fun n hn => by
+  have hone : w.elems n ∈ localUnitsOne p n := hw n hn
+  have hmem : (w.elems n : ℂ_[p]) ∈ K p n := (Subring.mem_inf.1 hone.1.1).1
+  rw [mem_localUnitsOnePlus_iff_galAut_fixed p hp2 hn hone]
+  have he : galAutValU p (-1) n (w.elems n) = w.elems n := by
+    have h := congrFun (congrArg NormCompatUnits.elems hfix) n
+    rwa [galNCU_elems_eq_galAutValU] at h
+  have hev := congrArg (fun x : ℂ_[p]ˣ => (x : ℂ_[p])) he
+  rwa [galAutValU_val_mem p (-1) hmem, galAutVal_mem p (-1) hmem] at hev
+
 /-! ## The Teichmüller-corrected cyclotomic generator `wγ(a₀)` (RJW LemmaGeneratorCinfty1)
 
 Input (I) of `col_image_cycloTower1_eq_zetaIdeal` (Main.lean): the principal generator
