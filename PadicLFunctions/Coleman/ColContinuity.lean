@@ -449,6 +449,110 @@ theorem continuous_elemsUnits (n : ℕ) :
   rw [Units.isEmbedding_val₀.continuous_iff]
   exact continuous_elems p n
 
+/-- **T1220 — the inverse-limit closure bridge**: since the topology on `𝒰_∞` is induced along
+`elemsCoe`, membership in the closure of a set `S` transfers to the product `ℕ → ℂ_[p]`:
+`u ∈ closure S ↔ elemsCoe u ∈ closure (elemsCoe '' S)`. This is the foundation for the levelwise
+density characterisation (RJW LemmaGeneratorCinfty1 inverse-limit step). -/
+theorem mem_closure_iff_elemsCoe {S : Set (NormCompatUnits p)} {u : NormCompatUnits p} :
+    u ∈ closure S ↔ elemsCoe p u ∈ closure (elemsCoe p '' S) :=
+  closure_induced
+
+/-- **T1220b — `Col` is insensitive to the level-`0` coordinate**: `Col u = Col v` whenever the
+unit systems agree at every level `n ≥ 1`. `Col` factors through `colemanSeries`, which is pinned
+by the `n ≥ 1` interpolation data (`colemanSeries_eq_iff`; the vestigial `elems 0` is unconstrained
+by `compat`). This is the lever that lets the tower-density argument normalise the free level-`0`
+coordinate without changing `Col`. -/
+theorem Col_eq_of_elems_eq {u v : NormCompatUnits p} (h : ∀ n, 1 ≤ n → u.elems n = v.elems n) :
+    Col p u = Col p v := by
+  have hcs : colemanSeries p u = colemanSeries p v := by rw [colemanSeries_eq_iff]; exact h
+  unfold Col
+  rw [hcs]
+
+/-- `levelNorm p n` is continuous on `K_{n+1}` as a map of ambient `ℂ_[p]` values (ST3a recast
+through `ContinuousOn`, so the `ε`-`δ` lives in the ambient metric, not the subtype metric). -/
+private theorem continuousOn_levelNorm (n : ℕ) :
+    ContinuousOn (levelNorm p n) (K p (n + 1) : Set ℂ_[p]) := by
+  rw [continuousOn_iff_continuous_restrict]
+  exact continuous_levelNorm p n
+
+/-- **Descent control**: for a norm-compatible system `u`, matching another system `s` at the top
+level `N` within a suitable `δ` controls every level `1 ≤ n ≤ N`. Proof by `Nat.le_induction` on
+`N`, threading the tolerance one `levelNorm`-step at a time (`continuousOn_levelNorm`, the
+norm-compatibility `compat`). -/
+private theorem exists_delta_descent (u : NormCompatUnits p) :
+    ∀ N : ℕ, 1 ≤ N → ∀ ε : ℝ, 0 < ε → ∃ δ > 0, ∀ s : NormCompatUnits p,
+      ‖(s.elems N : ℂ_[p]) - (u.elems N : ℂ_[p])‖ < δ →
+      ∀ n, 1 ≤ n → n ≤ N → ‖(s.elems n : ℂ_[p]) - (u.elems n : ℂ_[p])‖ < ε := by
+  intro N hN
+  induction N, hN using Nat.le_induction with
+  | base =>
+    intro ε hε
+    refine ⟨ε, hε, fun s hs n hn1 hnN => ?_⟩
+    obtain rfl : n = 1 := le_antisymm hnN hn1
+    exact hs
+  | succ N hN ih =>
+    intro ε hε
+    obtain ⟨δN, hδNpos, hihN⟩ := ih ε hε
+    have huK1 : (u.elems (N + 1) : ℂ_[p]) ∈ K p (N + 1) := (Subring.mem_inf.1 (u.mem (N + 1))).1
+    obtain ⟨δ', hδ'pos, hδ'⟩ :=
+      Metric.continuousOn_iff.1 (continuousOn_levelNorm p N) _ huK1 δN hδNpos
+    refine ⟨min ε δ', lt_min hε hδ'pos, fun s hs n hn1 hnN1 => ?_⟩
+    rcases Nat.lt_succ_iff_lt_or_eq.1 (Nat.lt_succ_of_le hnN1) with hlt | rfl
+    · -- `n ≤ N`: propagate level-(N+1) closeness to level `N`, then apply the IH
+      have hsK1 : (s.elems (N + 1) : ℂ_[p]) ∈ K p (N + 1) := (Subring.mem_inf.1 (s.mem (N + 1))).1
+      have hstep := hδ' _ hsK1 (by
+        rw [dist_eq_norm]; exact lt_of_lt_of_le hs (min_le_right _ _))
+      rw [dist_eq_norm, s.compat N hN, u.compat N hN] at hstep
+      exact hihN s hstep n hn1 (Nat.lt_succ_iff.1 hlt)
+    · -- `n = N+1`
+      exact lt_of_lt_of_le hs (min_le_left _ _)
+
+/-- **T1221 — the inverse-limit (levelwise) density characterisation** (RJW LemmaGeneratorCinfty1
+inverse-limit step): for a subgroup `S` whose members all share `u`'s level-`0` coordinate, if
+each level-`n` (`n ≥ 1`) coordinate of `u` lies in the closure of the level-`n` image of `S`, then
+`u ∈ closure S`. The level-`0` coordinate is unconstrained by `compat`, so it is matched by the
+shared-value hypothesis; the higher levels are matched by a single `s ∈ S` close to `u` at the top
+constrained level (`exists_delta_descent` propagates down the tower). -/
+theorem mem_closure_of_levelwise {S : Subgroup (NormCompatUnits p)} {u : NormCompatUnits p}
+    (h0 : ∀ s ∈ S, (s.elems 0 : ℂ_[p]) = (u.elems 0 : ℂ_[p]))
+    (h : ∀ n, 1 ≤ n → (u.elems n : ℂ_[p]) ∈
+      closure ((fun s : NormCompatUnits p => (s.elems n : ℂ_[p])) '' (S : Set (NormCompatUnits p)))) :
+    u ∈ closure (S : Set (NormCompatUnits p)) := by
+  rw [mem_closure_iff_elemsCoe, mem_closure_iff_nhds]
+  intro t ht
+  rw [nhds_pi, Filter.mem_pi] at ht
+  obtain ⟨I, hI, V, hV, hVt⟩ := ht
+  -- per-coordinate radius `εf n` with `ball (elemsCoe u n) (εf n) ⊆ V n`
+  choose εf hεfpos hεfsub using fun n => Metric.mem_nhds_iff.1 (hV n)
+  rcases I.eq_empty_or_nonempty with hIempty | hIne
+  · -- empty box: any element of `S` works (`1 ∈ S`)
+    exact ⟨elemsCoe p 1,
+      hVt (Set.mem_pi.2 fun n hn => ((Set.mem_empty_iff_false n).1 (hIempty ▸ hn)).elim),
+      ⟨1, one_mem _, rfl⟩⟩
+  · -- nonempty: a single `s ∈ S` close at level `N' = max(bound, 1)` matches all of `I`
+    obtain ⟨b, hb⟩ := hI.bddAbove
+    have hN'1 : 1 ≤ max b 1 := le_max_right _ _
+    have hIfne : hI.toFinset.Nonempty := (Set.Finite.toFinset_nonempty hI).2 hIne
+    set ε := hI.toFinset.inf' hIfne εf with hεdef
+    have hεpos : 0 < ε := by
+      rw [hεdef, Finset.lt_inf'_iff]; exact fun n _ => hεfpos n
+    obtain ⟨δ, hδpos, hδ⟩ := exists_delta_descent p u (max b 1) hN'1 ε hεpos
+    obtain ⟨_, ⟨s, hsS, rfl⟩, hsclose⟩ := Metric.mem_closure_iff.1 (h _ hN'1) δ hδpos
+    refine ⟨elemsCoe p s, hVt (Set.mem_pi.2 fun n hnI => ?_), ⟨s, hsS, rfl⟩⟩
+    refine hεfsub n ?_
+    rw [Metric.mem_ball]
+    rcases Nat.eq_zero_or_pos n with rfl | hn1
+    · -- level 0: shared coordinate
+      simp only [elemsCoe, h0 s hsS, dist_self]; exact hεfpos 0
+    · -- level n ≥ 1: descent from level `max b 1`
+      have hnN' : n ≤ max b 1 := le_trans (hb hnI) (le_max_left _ _)
+      have hεle : ε ≤ εf n := Finset.inf'_le εf (hI.mem_toFinset.2 hnI)
+      have hsN' : ‖(s.elems (max b 1) : ℂ_[p]) - (u.elems (max b 1) : ℂ_[p])‖ < δ := by
+        rw [← dist_eq_norm, dist_comm]; exact hsclose
+      have hclose := hδ s hsN' n hn1 hnN'
+      rw [dist_eq_norm]
+      exact lt_of_lt_of_le hclose hεle
+
 /-! ## Continuity of the measure-side pipeline `ofPowerSeries`/`Col` -/
 
 /-- **`g ↦ (μ_g)(ψ)` is coefficientwise-continuous** for a fixed test function `ψ`:
