@@ -1599,6 +1599,36 @@ theorem galNCU_inv (a : ℤ_[p]ˣ) (u : NormCompatUnits p) :
     galNCU p a u⁻¹ = (galNCU p a u)⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← galNCU_mul, inv_mul_cancel, galNCU_one])
 
+/-- At level `0` the Galois action is trivial (`K_0 = ℚ_p`, `σ_a 0 = refl`): `galAutValU a 0 = id`. -/
+private theorem galAutValU_zero (a : ℤ_[p]ˣ) (v : ℂ_[p]ˣ) : galAutValU p a 0 v = v := by
+  by_cases h : (v : ℂ_[p]) ∈ K p 0
+  · refine Units.ext ?_
+    rw [galAutValU_val_mem p a h, galAutVal_mem p a h,
+      show galAut p a 0 = AlgEquiv.refl from by rw [galAut, dif_neg (by omega)]]
+    rfl
+  · rw [galAutValU, dif_neg h]
+
+/-- **(H2) `σ_{-1}` is an involution on `𝒰_∞`** (complex conjugation has order 2, `p` odd):
+`galNCU (-1)` applied twice is the identity. Levelwise: `galAut (-1) n` has order `2` for `n ≥ 1`
+(`orderOf_galAut_neg_one`), and is `refl` at level `0`. -/
+theorem galNCU_neg_one_involutive (hp2 : p ≠ 2) (u : NormCompatUnits p) :
+    galNCU p (-1) (galNCU p (-1) u) = u := by
+  refine NormCompatUnits.ext (funext fun n => Units.ext ?_)
+  rw [galNCU_elems_eq_galAutValU, galNCU_elems_eq_galAutValU]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [galAutValU_zero, galAutValU_zero]
+  · have hmem : (u.elems n : ℂ_[p]) ∈ K p n := (Subring.mem_inf.1 (u.mem n)).1
+    have hinnerK : (galAutValU p (-1) n (u.elems n) : ℂ_[p]) ∈ K p n := by
+      rw [galAutValU_val_mem p (-1) hmem, galAutVal_mem p (-1) hmem]; exact SetLike.coe_mem _
+    rw [galAutValU_val_mem p (-1) hinnerK, galAutValU_val_mem p (-1) hmem,
+      galAutVal_mem p (-1) hmem, galAutVal_mem p (-1) (SetLike.coe_mem _)]
+    have h2 : galAut p (-1) n * galAut p (-1) n = 1 := by
+      have h := pow_orderOf_eq_one (galAut p (-1) n)
+      rwa [orderOf_galAut_neg_one p hp2 hn, sq] at h
+    rw [show (⟨(galAut p (-1) n ⟨(u.elems n : ℂ_[p]), hmem⟩ : ℂ_[p]), SetLike.coe_mem _⟩ : K p n)
+        = galAut p (-1) n ⟨(u.elems n : ℂ_[p]), hmem⟩ from Subtype.ext rfl,
+      ← AlgEquiv.mul_apply, h2, AlgEquiv.one_apply]
+
 /-! ## The Teichmüller-corrected cyclotomic generator `wγ(a₀)` (RJW LemmaGeneratorCinfty1)
 
 Input (I) of `col_image_cycloTower1_eq_zetaIdeal` (Main.lean): the principal generator
