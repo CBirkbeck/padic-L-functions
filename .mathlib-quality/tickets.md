@@ -6063,6 +6063,25 @@ the closed `colImageSubgroup`-style span — reuse `isClosed`/`approxDirac` mach
   completion: apply T1222 worktree proof → main Generators, verify Main agent's
   col_mem/col_image/surjectivity, `#print axioms` milestone, then T1228 blueprint wiring.
 
+- **MILESTONE STATUS 2026-06-15 (late) — 3/4 cores DONE+pushed**:
+  • T1222 + H1 (`galNCU_neg_one_mem_cycloTower1`) → Generators sorry-free @ad5a631. Ported from
+    worktree agents, then degraded-mode build-fixed (no lean-lsp this session): `⟨c,rfl⟩`
+    elaboration order (`refine pow_mem (subset_closure ?_)`), cycloUnit rw-count, the
+    `zetaSys_eq_cycloUnit_two_ratio` field identity (`pow_mul` direction, `eq_div_iff`+`mul_inv_cancel₀`
+    instead of group-only `mul_inv_eq_iff_eq_mul`), inline K-closedness (`isClosed_KCp` is in
+    ColContinuity which imports Generators ⟹ unavailable; used `Submodule.closed_of_finiteDimensional`),
+    `MulOpposite.continuous_op` + field-inverse `hcoeinv`.
+  • surj `colDescentPlusMul_bijective` sorry-free @a16c95c — right-exactness route, col_image OFF path.
+  • LAST: T1224' `mem_ZpOne_of_mem_cycloTower1_cAnti` — agent a3402eb9 (3rd dispatch).
+  ROOT OBSTACLE: `cycloUnits_normalForm`/`galAutVal_cycloUnit`/`cycloUnit`/`cycloGenSet` are PRIVATE in
+  Generators ⟹ T1224' can't be done in Main alone; need a PUBLIC bridge lemma in Generators.
+  CORRECTED PLAN (target is ⟨−ξ⟩ NOT ⟨ξ⟩): cycloGenSet gens are RAW values ξ, −ξ, ξ^a−1; the
+  antisymmetrisation A(w)=w·σ(w)⁻¹ gives A(ξ^a−1)=−ξ^a, A(ξ)=ξ², A(−ξ)=ξ² — all in ⟨−ξ⟩ (order 2pⁿ,
+  finite⟹closed). Public `cycloUnits_anti_mem_zpowers_negZeta : ∃m, A(w).val=(−ξ)^m`; then Main:
+  z_n²=(−ξ)^m, principal⟹m even⟹ξ-power, sqrt(2⁻¹), level-assemble via `levelNorm_zpPow_zetaSysM`+compat.
+  LESSON: do NOT kill agents on file-idle/small-transcript — they work in `lean_run_code` (no file
+  writes) for long stretches; a8b5e038 was killed wrongly while productively deriving this plan.
+
 ## Route-P board (§12.4–12.5 finish, faithful plus-part) — created 2026-06-15 (/develop)
 
 **Goal**: close the milestone's two sorries — `col_image_cycloTower1_eq_zetaIdeal` ⊆ (Main:433) and
@@ -6147,7 +6166,10 @@ theorem elems_image_cycloGenSubgroupPlus (hp2 : p ≠ 2) (n : ℕ) :
 - **Status**: open | **Depends on**: T1221 | **Type**: cleanup
 
 ### [T1222] Level-n PLUS density 𝒞⁺_{n,1} ⊆ closure(Dⁿ⁺) (LemmaGeneratorCinfty1(i))
-- **Status**: open | **File**: IwasawaProof/Generators.lean | **Depends on**: (A),(B) banked |
+- **Status**: DONE (@ad5a631, 2026-06-15) — `cycloClosureOnePlus_le_closure_wGammaTranslate`
+  sorry-free (+18 private helpers: (p−1)-power descent over c_n/ξ/γ/𝒟ₙ normal form +
+  zpPow-closure of the unique (p−1)-root). Verified via degraded-mode build (lean-lsp absent
+  this session). | **File**: IwasawaProof/Generators.lean | **Depends on**: (A),(B) banked |
   **Type**: theorem (the hard plus cyclicity — most banked)
 #### Statement
 ```lean
@@ -6250,7 +6272,11 @@ on ZpOne. If also `=z` then `z²=1`; `z=ξ^a`-type with `2a≡0`, p odd ⟹ `a` 
 - **Banked**: `galAut p (-1) … = (zetaSys)⁻¹` (Gen:362), `ZpOne` group laws (`zpPow` character).
 
 ### [T1227] colDescentPlusMul surjectivity (closes Main:786) + milestone
-- **Status**: open | **File**: IwasawaProof/Main.lean | **Depends on**: T1225,T1226,
+- **Status**: DONE (@a16c95c, 2026-06-15) — `colDescentPlusMul_bijective` sorry-free. REPLAN:
+  surjectivity proved DIRECTLY via right-exactness `range_Col_eq_ker_chiMoment` + odd-moment
+  vanishing on the plus part (the `ℤ_p(1)^⟨c⟩=0` step internalised), NOT via the deferred
+  `col_image_cycloTower1_eq_zetaIdeal` (T1225) — that identity is OFF this path. | **File**:
+  IwasawaProof/Main.lean | **Depends on**: T1225,T1226,
   range_Col_eq_ker_chiMoment (banked) | **Type**: theorem (MILESTONE-closing)
 #### Statement
 ```lean
@@ -6486,3 +6512,16 @@ Unfold `Col u = unitsCmul (invCM) ((𝒜⁻¹(dlog (colemanSeries u))).comp exte
   `PowerSeries.derivative_subst`, `colemanSeries_galNCU` + the §4 `invCM`/`unitsCmul` API.
 - **Sources**: RJW §12.1 Prop (TeX 3217–3234).
 - **Sizing**: ~80–120 LOC (~4–5 measure-side lemmas; the key bridge exists).
+
+- **MILESTONE COMPLETE 2026-06-16 — §12.4–12.5 (RJW thm:iwasawa 2) sorry-free + axiom-clean**:
+  all 4 cores done & pushed — T1222 `cycloClosureOnePlus_le_closure_wGammaTranslate` + H1
+  `galNCU_neg_one_mem_cycloTower1` (@ad5a631), surjectivity `colDescentPlusMul_bijective`
+  (@a16c95c, right-exactness route), T1224' `mem_ZpOne_of_mem_cycloTower1_cAnti` (@579bb00,
+  antisymmetrisation A(w)=w·σ(w)⁻¹ into ⟨−ξ⟩ + zpPow sqrt + levelNorm assembly). `#print axioms`
+  on `iwasawa_theorem`, `iwasawa_exact_sequence` (+ all 4 cores) = {propext, Classical.choice,
+  Quot.sound}. `lake build PadicLFunctions.IwasawaProof.Main` green (3734 jobs), zero sorry.
+  DEFERRED (paused at user request 2026-06-16 to change approach — NOT yet done): T1228 blueprint
+  wiring (iwproof-iwasawa-final, iwasawa-zeros-theorem → the 2 milestone decls; build
+  PadicLFunctionsBlueprint + ci-pages), full ticket done-markings (T1206/T1206c/T1207/T1220-T1228),
+  CLEANUP-124/131. NOTE: T1224' was proved by a worktree agent in degraded (no-lean-lsp) main
+  session; a tooled /cleanup pass on the new Generators bridge + Main assembly is advisable.
