@@ -858,33 +858,85 @@ theorem colDescentPlusMul_injective (hp2 : p ≠ 2) :
     rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
     exact hcycloPlus
 
-/-- **RJW thm:iwasawa 2 (ii) — the milestone bijectivity**: the plus-descent
-`colDescentPlusMul : 𝒰⁺_{∞,1}/𝒞⁺_{∞,1} → Λ(𝒢⁺)/I(𝒢⁺)ζ_p` is bijective. The injectivity is
-proved (`colDescentPlusMul_injective`), enabled by the Galois fixed-field characterisation
-`K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` (`mem_localUnitsOnePlus_iff_galAut_fixed`, `GaloisAction.lean`).
+/-- **The `c`-plus part of a principal tower unit is a plus tower unit**: for
+`u ∈ 𝒰_{∞,1}`, the symmetrisation `u·σ_{-1}(u) ∈ 𝒰⁺_{∞,1}`. Membership: `σ_{-1}` preserves
+`𝒰_{∞,1}` (`galNCU_mem_unitsTower1`), the product is `σ_{-1}`-fixed (`σ_{-1}` involutive,
+`galNCU_neg_one_involutive`, plus commutativity), and a `σ_{-1}`-fixed principal unit is
+totally real (`galNCU_neg_one_fixed_mem_unitsTower1Plus`). This is the unit-side `(1+c)`
+projector feeding the `⟨c⟩`-collapse surjectivity. -/
+private theorem mul_galNCU_neg_one_mem_unitsTower1Plus (hp2 : p ≠ 2) {u : NormCompatUnits p}
+    (hu : u ∈ unitsTower1 p) : u * galNCU p (-1) u ∈ unitsTower1Plus p := by
+  have hcmem : galNCU p (-1) u ∈ unitsTower1 p := galNCU_mem_unitsTower1 p (-1) hu
+  have hfix : galNCU p (-1) (u * galNCU p (-1) u) = u * galNCU p (-1) u := by
+    rw [galNCU_mul, galNCU_neg_one_involutive p hp2, mul_comm]
+  exact galNCU_neg_one_fixed_mem_unitsTower1Plus p hp2 (mul_mem hu hcmem) hfix
 
-Surjectivity is the one remaining gap, and it reduces to the **single** deferred identity
-`col_image_cycloTower1_eq_zetaIdeal` (Main.lean): RJW's `(−)^{⟨c⟩}`-collapse of the
-fundamental sequence (i) `0 → 𝒰_{∞,1}/𝒞_{∞,1} → Λ(𝒢)/I(𝒢)ζ_p → ℤ_p(1) → 0` makes
-`colDescentPlusMul` onto because `ℤ_p(1)^{⟨c⟩} = 0` (`p` odd), and the (i) image
-`range Col = ker(χ-moment)` (`range_Col_eq_ker_chiMoment`) together with the image
-computation `col_image_cycloTower1_eq_zetaIdeal` pins the cokernel. With that identity in
-hand (the §13/IMC-deferred core, the SAME blocker as the injectivity input
-`col_mem_zetaIdeal_iff_mem_cycloTower1`), both halves close — the milestone bottlenecks on
-exactly `col_image_cycloTower1_eq_zetaIdeal`. -/
+/-- **The Coleman image of the `(1+c)` symmetrisation collapses the `c`-action**: for a
+`c`-invariant target `μ ∈ Λ(𝒢)⁺` realised as `μ = Col u` (`u ∈ 𝒰_{∞,1}`),
+`Col(u·σ_{-1}(u)) = (1+[−1])·μ = 2·μ`, since `[−1]·μ = μ` on the plus part. The RJW `(1+c)`
+half of the `⟨c⟩`-projection on the fundamental sequence. -/
+private theorem col_mul_galNCU_neg_one_of_plusPart {u : NormCompatUnits p}
+    (hu : Col p u ∈ PadicMeasure.plusPart p) :
+    Col p (u * galNCU p (-1) u) = (2 : ℤ_[p]) • Col p u := by
+  have hColc : Col p (galNCU p (-1) u) = PadicMeasure.dirac p (-1) * Col p u :=
+    Col_galNCU_eq_dirac_mul p (-1) u
+  have hfix : PadicMeasure.dirac p (-1) * Col p u = Col p u :=
+    (PadicMeasure.mem_plusPart_iff p).1 hu
+  rw [Col_add, hColc, hfix, two_smul]
+
+/-- **RJW thm:iwasawa 2 (ii) — the milestone bijectivity**: the plus-descent
+`colDescentPlusMul : 𝒰⁺_{∞,1}/𝒞⁺_{∞,1} → Λ(𝒢⁺)/I(𝒢⁺)ζ_p` is bijective.
+
+Injectivity is `colDescentPlusMul_injective`, enabled by the Galois fixed-field
+characterisation `K_n⁺ = (K_n)^{⟨σ_{-1}⟩}` (`mem_localUnitsOnePlus_iff_galAut_fixed`).
+
+**Surjectivity is RJW's `(−)^{⟨c⟩}`-collapse of the fundamental sequence (i)** (TeX 3587–3608),
+and goes *directly* through the right-exactness `range(Col|𝒰_{∞,1}) = ker(χ-moment)`
+(`range_Col_eq_ker_chiMoment`) — it does **not** need the deferred image identity
+`col_image_cycloTower1_eq_zetaIdeal`. Given a target class `[ν⁺]` with `ν⁺ ∈ Λ(𝒢⁺)`:
+* lift `ν := σ(ν⁺) ∈ Λ(𝒢)⁺` with `π_*(ν) = ν⁺` (`plusSection`, `projPlus_plusSection`);
+* the scaled plus measure `μ := 2⁻¹·ν ∈ Λ(𝒢)⁺` has vanishing χ-moment `μ(unitsPowCM 1) = 0`
+  (odd moments of plus measures vanish, `mem_plusPart_iff_forall_odd_moment`, `1` odd), so by
+  right-exactness there is `u ∈ 𝒰_{∞,1}` with `Col u = μ`;
+* the symmetrisation `w := u·σ_{-1}(u) ∈ 𝒰⁺_{∞,1}` (`mul_galNCU_neg_one_mem_unitsTower1Plus`)
+  has `Col w = (1+[−1])·μ = 2·μ = ν` (`col_mul_galNCU_neg_one_of_plusPart`, `[−1]·μ = μ`);
+* hence `colDescentPlusMul [w] = [π_*(Col w)] = [π_*(ν)] = [ν⁺]`.
+The `ℤ_p(1)^{⟨c⟩} = 0` step of RJW is *internalised* here: it is exactly why `μ` (and not just
+`2·μ`) is forced into `range Col`, via the odd-moment vanishing on the plus part. The previously
+deferred `col_image_cycloTower1_eq_zetaIdeal` is *not* on this path. -/
 theorem colDescentPlusMul_bijective (hp2 : p ≠ 2) :
-    Function.Bijective (colDescentPlusMul p hp2) :=
-  ⟨colDescentPlusMul_injective p hp2, by
-    -- DEFERRED: surjectivity reduces to the `⊆` half of `col_image_cycloTower1_eq_zetaIdeal`
-    -- (the well-definedness/cokernel pin). The `⊇` half (density-crossing) is now PROVED
-    -- (`zetaIdeal_le_col_image`, via `Coleman/ColContinuity.lean`: `Col '' 𝒞_{∞,1}` closed +
-    -- Dirac span dense), and the injectivity input `mem_cycloTower1_of_col_mem_zetaIdeal` is
-    -- now axiom-clean. The remaining `⊆` is the deferred cyclic-module density
-    -- `𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))` (RJW LemmaGeneratorCinfty1, TeX 3573–3578); with it the
-    -- `(−)^{⟨c⟩}`-collapse of the fundamental sequence (i) (`ℤ_p(1)^{⟨c⟩} = 0`,
-    -- `range_Col_eq_ker_chiMoment`) gives surjectivity. The continuity layer alone does not
-    -- supply this tower-level algebraic density.
-    sorry⟩
+    Function.Bijective (colDescentPlusMul p hp2) := by
+  refine ⟨colDescentPlusMul_injective p hp2, ?_⟩
+  -- write the target as `ofAdd [ν⁺]` for some `ν⁺ ∈ Λ(𝒢⁺)`
+  rintro y
+  obtain ⟨z, rfl⟩ := Multiplicative.toAdd.surjective y
+  obtain ⟨νplus, rfl⟩ := Ideal.Quotient.mk_surjective z
+  -- lift `ν⁺` to the plus part of `Λ(𝒢)` and scale by `2⁻¹`
+  set ν : PadicMeasure p ℤ_[p]ˣ := PadicMeasure.plusSection p hp2 νplus with hν
+  have hνplus : ν ∈ PadicMeasure.plusPart p := PadicMeasure.plusSection_mem_plusPart p hp2 νplus
+  have hprojν : PadicMeasure.projPlus p ν = νplus := PadicMeasure.projPlus_plusSection p hp2 νplus
+  set μ : PadicMeasure p ℤ_[p]ˣ :=
+    (((PadicLFunctions.isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • ν with hμ
+  have hμplus : μ ∈ PadicMeasure.plusPart p := (PadicMeasure.plusPart p).smul_mem _ hνplus
+  -- `μ(unitsPowCM 1) = 0`: `1` is odd and `μ ∈ Λ(𝒢)⁺`
+  have hχ : μ (PadicMeasure.unitsPowCM p 1) = 0 :=
+    (PadicMeasure.mem_plusPart_iff_forall_odd_moment p).1 hμplus 1 ⟨0, by ring⟩
+  -- right-exactness: `μ ∈ range(Col|𝒰_{∞,1})`
+  obtain ⟨u, huU, hCol⟩ := (range_Col_eq_ker_chiMoment p μ).2 hχ
+  -- the symmetrisation `w := u·σ_{-1}(u) ∈ 𝒰⁺_{∞,1}` has `Col w = 2·μ = ν`
+  have hwplus : u * galNCU p (-1) u ∈ unitsTower1Plus p :=
+    mul_galNCU_neg_one_mem_unitsTower1Plus p hp2 huU
+  have hColmem : Col p u ∈ PadicMeasure.plusPart p := hCol ▸ hμplus
+  have hColw : Col p (u * galNCU p (-1) u) = ν := by
+    rw [col_mul_galNCU_neg_one_of_plusPart p hColmem, hCol, hμ, smul_smul,
+      show (2 : ℤ_[p]) * (((PadicLFunctions.isUnit_two_padicInt p hp2).unit⁻¹ : ℤ_[p]ˣ) : ℤ_[p])
+          = 1 from by
+        rw [mul_comm]; exact (PadicLFunctions.isUnit_two_padicInt p hp2).val_inv_mul, one_smul]
+  -- `colDescentPlusMul [w] = ofAdd [π_*(Col w)] = ofAdd [π_*(ν)] = ofAdd [ν⁺]`
+  refine ⟨QuotientGroup.mk ⟨u * galNCU p (-1) u, hwplus⟩, ?_⟩
+  rw [colDescentPlusMul, QuotientGroup.lift_mk, MonoidHom.comp_apply,
+    (unitsTower1Plus p).coe_subtype, ColPlusMul_apply, hColw, hprojν]
+  rfl
 
 /-- **RJW thm:iwasawa 2 (ii) — THE MILESTONE (TeX 3592–3593)**: the Coleman map induces an
 isomorphism of `Λ(𝒢^+)`-modules `𝒰_{∞,1}^+/𝒞_{∞,1}^+ ≅ Λ(𝒢^+)/I(𝒢^+)ζ_p`. This is
