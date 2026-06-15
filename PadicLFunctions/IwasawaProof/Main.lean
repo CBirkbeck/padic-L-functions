@@ -462,9 +462,32 @@ theorem mem_cycloTower1_of_col_mem_zetaIdeal (hp2 : p ≠ 2) {u : NormCompatUnit
   rw [this]
   exact mul_mem hzp hc
 
-/-- **`u ∈ 𝒞_{∞,1} ⟹ Col u ∈ I(𝒢)ζ_p`** (RJW §12.5, the well-definedness half). This is the
-`⊆` half of the image identity, which still rests on the deferred cyclic-module density
-`𝒞_{∞,1} = closure(Λ(𝒢)·wγ(a₀))` (`col_image_cycloTower1_eq_zetaIdeal`'s `⊆` inclusion). -/
+/-- **T1223 — `u ∈ 𝒞⁺_{∞,1} ⟹ Col u ∈ I(𝒢)ζ_p`** (RJW LemmaGeneratorCinfty1(ii) + the `Col`-image
+of the plus generator). For a plus cyclotomic-tower unit `u`, its level-`0`-normalised version `ũ`
+lies in `closure(⟨σ_a·wγ(a₀)⟩)` (by `mem_closure_of_levelwise` (T1221), the level-`n` images being
+the `cycloTranslateSubgroup` whose closure contains `𝒞⁺_{n,1}` by T1222), and that closure lands in
+`Col⁻¹(I(𝒢)ζ_p)` (`cycloGenSubgroup_le_colPreimageZeta`); since `Col ũ = Col u`
+(`Col_eq_of_elems_eq`) the claim follows. -/
+theorem col_mem_zetaIdeal_of_mem_cycloTower1Plus (hp2 : p ≠ 2) {u : NormCompatUnits p}
+    (hu : u ∈ cycloTower1Plus p) : Col p u ∈ PadicMeasure.zetaIdeal p hp2 := by
+  sorry
+
+/-- **T1224' — the minus part of `𝒞_{∞,1}` is `ℤ_p(1)`** (RJW lem:cyc units gen (ii): `𝒟_n =
+⟨ξ,𝒟⁺_n⟩`, so the `c`-anti-invariant part of the cyclotomic closure is the `ξ`-power tower). A
+cyclotomic-tower unit `z` fixed up to inversion by complex conjugation `σ_{-1}` lies in
+`ℤ_p(1) = ZpOne`. -/
+theorem mem_ZpOne_of_mem_cycloTower1_cAnti (hp2 : p ≠ 2) {z : NormCompatUnits p}
+    (hz : z ∈ cycloTower1 p) (hc : galNCU p (-1) z = z⁻¹) : z ∈ ZpOne p := by
+  sorry
+
+/-- **`u ∈ 𝒞_{∞,1} ⟹ Col u ∈ I(𝒢)ζ_p`** (RJW §12.5, the well-definedness half). Currently still
+derived from the image identity `col_image_cycloTower1_eq_zetaIdeal` (whose `⊆` branch carries the
+remaining sorry). The faithful Route-P proof (to replace this) is: split `Col u` into `c`-plus and
+`c`-minus parts — `u·σ_{-1}(u) ∈ 𝒞⁺_{∞,1}` gives `(1+[−1])·Col u ∈ I(𝒢)ζ_p`
+(`col_mem_zetaIdeal_of_mem_cycloTower1Plus`, T1223); `u·σ_{-1}(u)⁻¹` is `c`-anti-invariant in
+`𝒞_{∞,1}` hence in `ℤ_p(1)` (`mem_ZpOne_of_mem_cycloTower1_cAnti`, T1224'), so
+`(1−[−1])·Col u = 0` and `(1+[−1])·Col u = 2·Col u ∈ I(𝒢)ζ_p`; `2` a unit (`p` odd,
+`isUnit_two_padicInt`) gives `Col u ∈ I(𝒢)ζ_p`. -/
 theorem col_mem_zetaIdeal_of_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}
     (hu' : u ∈ cycloTower1 p) : Col p u ∈ PadicMeasure.zetaIdeal p hp2 := by
   have himg := col_image_cycloTower1_eq_zetaIdeal p hp2
