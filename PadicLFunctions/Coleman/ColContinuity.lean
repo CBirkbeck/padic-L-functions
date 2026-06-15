@@ -1030,4 +1030,76 @@ theorem isClosed_col_image :
     IsClosed (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) :=
   (isCompact_col_image p).isClosed
 
+/-- Re-glue at level `0`: `glueLevel0 m u` keeps `m`'s levels `≥ 1` but takes `u`'s level-`0`
+coordinate. Used to re-set a witness's free level-`0` coordinate (which `Col` ignores) so it lands
+inside a given neighbourhood box. -/
+def glueLevel0 (m u : NormCompatUnits p) : NormCompatUnits p where
+  elems k := if k = 0 then u.elems 0 else m.elems k
+  mem k := by
+    rcases eq_or_ne k 0 with rfl | hk
+    · simpa using u.mem 0
+    · simpa only [if_neg hk] using m.mem k
+  inv_mem k := by
+    rcases eq_or_ne k 0 with rfl | hk
+    · simpa using u.inv_mem 0
+    · simpa only [if_neg hk] using m.inv_mem k
+  compat n hn := by
+    rw [if_neg (by omega : ¬ n + 1 = 0), if_neg (by omega : ¬ n = 0)]
+    exact m.compat n hn
+
+@[simp] theorem glueLevel0_elems_zero (m u : NormCompatUnits p) :
+    (glueLevel0 p m u).elems 0 = u.elems 0 := by simp [glueLevel0]
+
+theorem glueLevel0_elems_of_pos (m u : NormCompatUnits p) {n : ℕ} (hn : 1 ≤ n) :
+    (glueLevel0 p m u).elems n = m.elems n := by
+  simp only [glueLevel0, if_neg (by omega : ¬ n = 0)]
+
+/-- **The level-`0`-saturated Col-density** (the form that drives RJW LemmaGeneratorCinfty1's
+inverse-limit step): if every level-`n` (`n ≥ 1`) coordinate of `u` lies in the closure of the
+level-`n` image of a subgroup `S`, then `Col u ∈ closure(Col '' S)`. No level-`0` hypothesis is
+needed — `Col` ignores the free level-`0` coordinate (`Col_eq_of_elems_eq`), so a witness `m ∈ S`
+matching `u` only on levels `≥ 1` (found by `exists_delta_descent`) can be re-glued at level `0`
+(`glueLevel0`) to land in any neighbourhood box without changing `Col m`. -/
+theorem Col_mem_closure_image_of_levelwise {S : Subgroup (NormCompatUnits p)}
+    {u : NormCompatUnits p}
+    (h : ∀ n, 1 ≤ n → (u.elems n : ℂ_[p]) ∈
+      closure ((fun s : NormCompatUnits p => (s.elems n : ℂ_[p])) '' (S : Set (NormCompatUnits p)))) :
+    Col p u ∈ closure (Col p '' (S : Set (NormCompatUnits p))) := by
+  rw [mem_closure_iff_nhds]
+  intro W hW
+  have hpre : Col p ⁻¹' W ∈ nhds u := (continuous_Col p).continuousAt.preimage_mem_nhds hW
+  rw [nhds_induced, Filter.mem_comap] at hpre
+  obtain ⟨t, ht, htsub⟩ := hpre
+  rw [nhds_pi, Filter.mem_pi] at ht
+  obtain ⟨I, hI, V, hV, hVt⟩ := ht
+  choose εf hεfpos hεfsub using fun n => Metric.mem_nhds_iff.1 (hV n)
+  rcases I.eq_empty_or_nonempty with hIempty | hIne
+  · refine ⟨Col p 1, htsub ?_, ⟨1, one_mem _, rfl⟩⟩
+    rw [Set.mem_preimage]
+    exact hVt (by rw [hIempty, Set.empty_pi]; exact Set.mem_univ _)
+  · obtain ⟨b, hb⟩ := hI.bddAbove
+    have hN'1 : 1 ≤ max b 1 := le_max_right _ _
+    have hIfne : hI.toFinset.Nonempty := (Set.Finite.toFinset_nonempty hI).2 hIne
+    set ε := hI.toFinset.inf' hIfne εf with hεdef
+    have hεpos : 0 < ε := by rw [hεdef, Finset.lt_inf'_iff]; exact fun n _ => hεfpos n
+    obtain ⟨δ, hδpos, hδ⟩ := exists_delta_descent p u (max b 1) hN'1 ε hεpos
+    obtain ⟨_, ⟨m, hmS, rfl⟩, hmclose⟩ := Metric.mem_closure_iff.1 (h _ hN'1) δ hδpos
+    refine ⟨Col p m, ?_, ⟨m, hmS, rfl⟩⟩
+    have hColeq : Col p (glueLevel0 p m u) = Col p m :=
+      Col_eq_of_elems_eq p (fun n hn => glueLevel0_elems_of_pos p m u hn)
+    rw [← hColeq]
+    refine htsub ?_
+    rw [Set.mem_preimage]
+    refine hVt fun n hnI => hεfsub n ?_
+    rw [Metric.mem_ball]
+    rcases Nat.eq_zero_or_pos n with rfl | hn1
+    · simp only [elemsCoe, glueLevel0_elems_zero, dist_self]; exact hεfpos 0
+    · have hnN' : n ≤ max b 1 := le_trans (hb hnI) (le_max_left _ _)
+      have hεle : ε ≤ εf n := Finset.inf'_le εf (hI.mem_toFinset.2 hnI)
+      have hsN' : ‖(m.elems (max b 1) : ℂ_[p]) - (u.elems (max b 1) : ℂ_[p])‖ < δ := by
+        rw [← dist_eq_norm, dist_comm]; exact hmclose
+      have hclose := hδ m hsN' n hn1 hnN'
+      simp only [elemsCoe, glueLevel0_elems_of_pos p m u hn1]
+      rw [dist_eq_norm]; exact lt_of_lt_of_le hclose hεle
+
 end PadicLFunctions.Coleman

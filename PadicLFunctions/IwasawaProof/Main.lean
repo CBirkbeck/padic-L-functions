@@ -462,15 +462,53 @@ theorem mem_cycloTower1_of_col_mem_zetaIdeal (hp2 : p ≠ 2) {u : NormCompatUnit
   rw [this]
   exact mul_mem hzp hc
 
+/-- The level-`n` coordinate as a monoid hom `𝒰_∞ →* ℂ_[p]ˣ` (multiplicative + unital levelwise). -/
+def elemsMonoidHom (n : ℕ) : NormCompatUnits p →* ℂ_[p]ˣ where
+  toFun u := u.elems n
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- **The level-`n` image of the generating subgroup** `M = ⟨σ_a·wγ(a₀)⟩` is exactly the
+`𝒢_n`-translate subgroup of `wγ(a₀)`'s level-`n` coordinate (`Subgroup.map_closure` +
+`galNCU_elems_eq_galAutValU`). -/
+theorem map_elemsMonoidHom_cycloGenSubgroup (hp2 : p ≠ 2) (n : ℕ) :
+    Subgroup.map (elemsMonoidHom p n) (cycloGenSubgroup p hp2)
+      = cycloTranslateSubgroup p n ((wGamma p hp2).elems n) := by
+  rw [cycloGenSubgroup, MonoidHom.map_closure, cycloTranslateSubgroup]
+  congr 1
+  ext x
+  constructor
+  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+    exact ⟨a, (galNCU_elems_eq_galAutValU p a (wGamma p hp2) n)⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨galNCU p a (wGamma p hp2), ⟨a, rfl⟩, galNCU_elems_eq_galAutValU p a (wGamma p hp2) n⟩
+
 /-- **T1223 — `u ∈ 𝒞⁺_{∞,1} ⟹ Col u ∈ I(𝒢)ζ_p`** (RJW LemmaGeneratorCinfty1(ii) + the `Col`-image
-of the plus generator). For a plus cyclotomic-tower unit `u`, its level-`0`-normalised version `ũ`
-lies in `closure(⟨σ_a·wγ(a₀)⟩)` (by `mem_closure_of_levelwise` (T1221), the level-`n` images being
-the `cycloTranslateSubgroup` whose closure contains `𝒞⁺_{n,1}` by T1222), and that closure lands in
-`Col⁻¹(I(𝒢)ζ_p)` (`cycloGenSubgroup_le_colPreimageZeta`); since `Col ũ = Col u`
-(`Col_eq_of_elems_eq`) the claim follows. -/
+of the plus generator). `Col u ∈ closure(Col '' M)` by the level-`0`-saturated density
+`Col_mem_closure_image_of_levelwise`: at each level `n ≥ 1`, `u.elems n ∈ 𝒞⁺_{n,1} ⊆
+closure(D_n)` (T1222 `cycloClosureOnePlus_le_closure_wGammaTranslate`), and `D_n =
+elems_n '' M` (`map_elemsMonoidHom_cycloGenSubgroup`) modulo the continuous `Units.val`. Then
+`closure(Col '' M) ⊆ I(𝒢)ζ_p` (each `Col(σ_a·wγ) ∈ I(𝒢)ζ_p`, `cycloGenSubgroup_le_colPreimageZeta`;
+`I(𝒢)ζ_p` weak-* closed, `isClosed_zetaIdeal`). -/
 theorem col_mem_zetaIdeal_of_mem_cycloTower1Plus (hp2 : p ≠ 2) {u : NormCompatUnits p}
     (hu : u ∈ cycloTower1Plus p) : Col p u ∈ PadicMeasure.zetaIdeal p hp2 := by
-  sorry
+  have hcl : Col p u ∈ closure (Col p '' (cycloGenSubgroup p hp2 : Set (NormCompatUnits p))) := by
+    apply Col_mem_closure_image_of_levelwise
+    intro n hn
+    have h1222 : (u.elems n) ∈
+        closure (cycloTranslateSubgroup p n ((wGamma p hp2).elems n) : Set ℂ_[p]ˣ) :=
+      cycloClosureOnePlus_le_closure_wGammaTranslate p hp2 hn (hu n hn)
+    have himg : (fun s : NormCompatUnits p => (s.elems n : ℂ_[p]))
+          '' (cycloGenSubgroup p hp2 : Set (NormCompatUnits p))
+        = (Units.val : ℂ_[p]ˣ → ℂ_[p])
+          '' (cycloTranslateSubgroup p n ((wGamma p hp2).elems n) : Set ℂ_[p]ˣ) := by
+      rw [← map_elemsMonoidHom_cycloGenSubgroup p hp2 n, Subgroup.coe_map, ← Set.image_comp]
+      rfl
+    rw [himg]
+    exact image_closure_subset_closure_image Units.continuous_val ⟨u.elems n, h1222, rfl⟩
+  refine (closure_minimal ?_ (PadicMeasure.isClosed_zetaIdeal p hp2)) hcl
+  rintro _ ⟨v, hv, rfl⟩
+  exact cycloGenSubgroup_le_colPreimageZeta p hp2 hv
 
 /-- **T1224' — the minus part of `𝒞_{∞,1}` is `ℤ_p(1)`** (RJW lem:cyc units gen (ii): `𝒟_n =
 ⟨ξ,𝒟⁺_n⟩`, so the `c`-anti-invariant part of the cyclotomic closure is the `ξ`-power tower). A
