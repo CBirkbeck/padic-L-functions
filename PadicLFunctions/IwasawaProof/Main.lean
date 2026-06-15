@@ -389,7 +389,8 @@ theorem col_image_cycloTower1_le_zetaIdeal_of_density (hp2 : p ≠ 2)
       (by exact_mod_cast cycloGenSubgroup_le_colPreimageZeta p hp2)
   exact hclosure (hdense hu)
 
-/-- **The §12.5 image computation** `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p` (RJW thm:iwasawa 2, the image
+/- (`col_image_cycloTower1_eq_zetaIdeal` is now stated+proved BELOW `col_mem`, via `col_mem`.)
+**The §12.5 image computation** `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p` (RJW thm:iwasawa 2, the image
 identity). The `⊇` inclusion is the genuine density-crossing `zetaIdeal_le_col_image` (proved
 via the §13 continuity layer `Coleman/ColContinuity.lean`: `Col '' 𝒞_{∞,1}` is closed and the
 Dirac span is dense).
@@ -416,23 +417,9 @@ arbitrary scalars exist; the latter is equivalent to the absent `Continuous (Col
 power-series side `Col '' 𝒞_{∞,1} = colemanPipe2 '' colemanPairSet`, the density of the
 cyclotomic pairs in `colemanPairSet` (whose level-`n` constraints `f(π_n) ∈ val '' 𝒞_{n,1}` are
 the closures `clos(𝒟_{n,1})`, tied across levels only by that module structure). -/
-theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
-    (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
-  apply le_antisymm
-  · -- `Col '' 𝒞_{∞,1} ⊆ I(𝒢)ζ_p` is now reduced *axiom-clean* (via the banked `continuous_Col`
-    -- + `isClosed_zetaIdeal`) to the SOLE cyclic-module density `𝒞_{∞,1} ⊆ closure(M)`,
-    -- `M = ⟨σ_a · wγ(a₀)⟩` (`col_image_cycloTower1_le_zetaIdeal_of_density`). The closedness half,
-    -- the well-definedness `Col '' M ⊆ I(𝒢)ζ_p`, and the easy reverse `closure(M) ⊆ 𝒞_{∞,1}` are
-    -- all banked above. What remains is ONLY the tower density (RJW LemmaGeneratorCinfty1,
-    -- TeX 3573–3578): the inverse-limit lift of the banked level-`n` single-generator cyclicity
-    -- `cycloUnit_mem_cycloTranslateSubgroup` (`cor:cyc units gen 2`), assembled via the level-norm
-    -- continuity `Coleman.continuous_levelNorm` (ST3a, banked) and the top-level cyclotomic
-    -- density. The `⊇` direction (density-crossing) is proved below.
-    refine col_image_cycloTower1_le_zetaIdeal_of_density p hp2 ?_
-    -- DEFERRED (the single §13 residual): `𝒞_{∞,1} ⊆ closure(⟨σ_a · wγ(a₀)⟩)`.
-    sorry
-  · -- `I(𝒢)ζ_p ⊆ Col '' 𝒞_{∞,1}`: the density-crossing, PROVED (`zetaIdeal_le_col_image`).
-    exact zetaIdeal_le_col_image p hp2
+-- `col_image_cycloTower1_eq_zetaIdeal` is stated+proved below `col_mem_zetaIdeal_of_mem_cycloTower1`
+-- (its `⊆` is exactly `col_mem`; the old `_of_density` route was unsound at the free level-0
+-- coordinate, so the faithful plus/minus `col_mem` supersedes it). -/
 
 /-- **`Col u ∈ I(𝒢)ζ_p ⟹ u ∈ 𝒞_{∞,1}`** (RJW §12.5, the injectivity corollary).
 **Axiom-clean**: uses only the *proved* density-crossing `⊇` half `zetaIdeal_le_col_image`
@@ -574,6 +561,16 @@ theorem col_mem_zetaIdeal_of_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnit
   rwa [smul_smul,
     show ((v⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * (2 : ℤ_[p]) = 1 from by
       rw [← hv, ← Units.val_mul, inv_mul_cancel, Units.val_one], one_smul] at hfin
+
+/-- **The §12.5 image computation** `Col '' 𝒞_{∞,1} = I(𝒢)ζ_p` (RJW thm:iwasawa 2). The `⊆`
+inclusion is the faithful plus/minus `col_mem_zetaIdeal_of_mem_cycloTower1`; the `⊇` is the
+density-crossing `zetaIdeal_le_col_image`. -/
+theorem col_image_cycloTower1_eq_zetaIdeal (hp2 : p ≠ 2) :
+    (Col p '' (cycloTower1 p : Set (NormCompatUnits p))) = PadicMeasure.zetaIdeal p hp2 := by
+  apply le_antisymm
+  · rintro _ ⟨u, hu, rfl⟩
+    exact col_mem_zetaIdeal_of_mem_cycloTower1 p hp2 hu
+  · exact zetaIdeal_le_col_image p hp2
 
 theorem col_mem_zetaIdeal_iff_mem_cycloTower1 (hp2 : p ≠ 2) {u : NormCompatUnits p}
     (hu : u ∈ unitsTower1 p) :
