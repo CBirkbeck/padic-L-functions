@@ -429,7 +429,7 @@ $`\CC_{\infty,1}^+\cong\varprojlim_n\Zp[\GGam_n^+]\cdot w\gamma_{n,a}
 
 We can now assemble the pieces and prove Iwasawa's theorem.
 
-:::theorem "iwproof-iwasawa-final"
+:::theorem "iwproof-iwasawa-final" (lean := "PadicLFunctions.Coleman.iwasawa_theorem, PadicLFunctions.Coleman.iwasawa_exact_sequence")
 The Coleman map induces: (i) a short exact sequence of $`\Lam(\GGam)`-modules
 $$`0 \to \sU_{\infty,1}/\CC_{\infty,1} \to \Lam(\GGam)/I(\GGam)\zeta_p \to \Zp(1) \to 0;`
 and (ii) an isomorphism of $`\Lam(\GGam^+)`-modules

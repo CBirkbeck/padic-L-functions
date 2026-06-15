@@ -221,7 +221,7 @@ explicitly to the $`p`-adic zeta function: the cyclotomic units capture exactly 
 zeros of $`\zeta_p`. This is the theorem that ultimately motivated his Main
 Conjecture.
 
-:::theorem "iwasawa-zeros-theorem"
+:::theorem "iwasawa-zeros-theorem" (lean := "PadicLFunctions.Coleman.iwasawa_theorem")
 The Coleman map induces an isomorphism of $`\Lam(\GG^+)`-modules
 $$`\UU_{\infty,1}^+ / \CC_{\infty,1}^+ \xrightarrow{\sim} \Lam(\GG^+) / I(\GG^+)\,\zeta_p.`
 This rests on the {uses "coleman-map"}[Coleman map], the ideal
