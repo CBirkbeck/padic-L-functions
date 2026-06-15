@@ -6048,6 +6048,13 @@ the closed `colImageSubgroup`-style span — reuse `isClosed`/`approxDirac` mach
   rewrite via plus+minus+2-inv, col_image ⊆, surjectivity via ℤ_p(1)^⟨c⟩=0) → Main-tree agent.
 - Reframing CONFIRMED: NO Module(Λ(𝒢))(NormCompatUnits) needed; level-0 handled by Col-insensitivity.
 - Un-privated: `cycloTranslateSubgroup`, `galAutValU`, `galNCU_elems_eq_galAutValU` (Generators).
+- IN-FLIGHT (status check): the two dispatched agents are on the deepest proofs (T1222
+  LemmaGeneratorCinfty1(i) level-n plus density; T1224' lem:cyc units gen(ii) minus→ℤ_p(1) +
+  col_mem assembly + surjectivity), both ACTIVE (Main agent transcript ~442KB = extensive
+  search/build cycles, expected for these PhD-grade formalisations; no successful Lean emitted
+  yet). Watches armed (bguivy9ah on Main sorry-drop); agents auto-notify on completion. On
+  completion: apply T1222 worktree proof → main Generators, verify Main agent's
+  col_mem/col_image/surjectivity, `#print axioms` milestone, then T1228 blueprint wiring.
 
 ## Route-P board (§12.4–12.5 finish, faithful plus-part) — created 2026-06-15 (/develop)
 
